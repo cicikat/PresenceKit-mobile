@@ -1,6 +1,6 @@
-# AGENTS.md - Emerald-mobile 工作入口
+# AGENTS.md - PresenceKit-mobile 工作入口
 
-> 每次开始任务前先读。本文档描述 Emerald-mobile 仓库 `D:\ai\yexuan_memery\` 的真实边界、当前实现和文档入口。
+> 每次开始任务前先读。本文档描述 PresenceKit-mobile 仓库 `D:\ai\yexuan_memery\` 的真实边界、当前实现和文档入口。
 
 ## ⚠ 禁止照抄的参考目录
 
@@ -12,7 +12,7 @@
 
 ## 项目定位
 
-`Emerald-mobile` 是叶瑄陪伴系统的 Flutter 手机薄客户端。核心人格、记忆、调度、主动触发、花园和日记数据仍在 `D:\ai\Emerald-presence\`；本仓库负责移动端 UI、Android 原生能力和 mobile channel 消息收发。
+`PresenceKit-mobile` 是叶瑄陪伴系统的 Flutter 手机薄客户端。核心人格、记忆、调度、主动触发、花园和日记数据仍在 `D:\ai\Emerald-presence\`；本仓库负责移动端 UI、Android 原生能力和 mobile channel 消息收发。
 
 当前实际状态：
 
