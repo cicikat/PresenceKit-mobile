@@ -1,0 +1,18 @@
+# ntfy server config — spike / local only, no auth, no TLS
+base-url: http://localhost:8080
+listen-http: :8080
+
+# Keep last 100 messages per topic for 24h (lets offline devices catch up)
+cache-file: /var/cache/ntfy/cache.db
+cache-duration: 24h
+
+# No authentication — spike only
+auth-file: ""
+auth-default-access: read-write
+
+# Generous limits for spike testing
+visitor-request-limit-burst: 200
+visitor-subscription-limit: 10
+
+# Log level: info prints publish/subscribe events
+log-level: info

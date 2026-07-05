@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    command: serve --config /etc/ntfy/ntfy.yml
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./ntfy.yml:/etc/ntfy/ntfy.yml:ro
+      - ntfy_cache:/var/cache/ntfy
+      - ntfy_data:/var/lib/ntfy
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+
+volumes:
+  ntfy_cache:
+  ntfy_data:

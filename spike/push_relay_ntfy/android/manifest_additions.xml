@@ -1,0 +1,36 @@
+<!--
+  Paste these additions into android/app/src/main/AndroidManifest.xml.
+  Do NOT add them during the spike — this file is a reference only.
+  All spike code lives under spike/ and is never imported by the main app.
+
+  1. Add to <uses-permission> block:
+-->
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+<!-- INTERNET and FOREGROUND_SERVICE / FOREGROUND_SERVICE_DATA_SYNC already declared in main manifest -->
+
+<!--
+  2. Add to <application> block:
+-->
+<service
+    android:name=".spike.NtfyRelayService"
+    android:exported="false"
+    android:foregroundServiceType="dataSync"
+    android:stopWithTask="false" />
+
+<receiver
+    android:name=".spike.NtfyBootReceiver"
+    android:exported="false">
+    <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+    </intent-filter>
+</receiver>
+
+<activity
+    android:name=".spike.NtfySpikeActivity"
+    android:exported="true"
+    android:label="ntfy Spike" />
+
+<!--
+  3. No additional build.gradle changes needed — NtfyRelayService uses
+     only java.net.HttpURLConnection (no OkHttp dependency).
+-->
