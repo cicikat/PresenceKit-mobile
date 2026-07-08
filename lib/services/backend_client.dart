@@ -590,9 +590,9 @@ class BackendClient {
     }
     switch (statusCode) {
       case 401:
-        return 'token 无效，请检查系统设置里的 token';
+        return '密钥错误';
       case 403:
-        return 'token 权限不足：${detail ?? "HTTP 403"}';
+        return '密钥权限不足：${detail ?? "HTTP 403"}';
       case 429:
         return '认证失败过多，来源已被临时限制，稍后再试';
       default:

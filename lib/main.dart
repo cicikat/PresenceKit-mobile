@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -38,9 +38,9 @@ const String _defaultBackendBaseUrl = String.fromEnvironment(
 /// app label if that ever changes.
 const String _appDisplayName = '陪伴';
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorWidget.builder = (details) => AppErrorFallback(details: details);
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -66,6 +66,102 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1F3A2E)),
       ),
       home: const YexuanCompanionApp(),
+    );
+  }
+}
+
+class AppErrorFallback extends StatefulWidget {
+  const AppErrorFallback({super.key, required this.details});
+
+  final FlutterErrorDetails details;
+
+  @override
+  State<AppErrorFallback> createState() => _AppErrorFallbackState();
+}
+
+class _AppErrorFallbackState extends State<AppErrorFallback> {
+  int _retryCount = 0;
+
+  void _retry() {
+    final navigator = Navigator.maybeOf(context, rootNavigator: true);
+    if (navigator != null && navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    setState(() => _retryCount += 1);
+  }
+
+  void _backHome() {
+    final navigator = Navigator.maybeOf(context, rootNavigator: true);
+    if (navigator == null) return;
+    navigator.popUntil((route) => route.isFirst);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final errorText = widget.details.exceptionAsString();
+    return Material(
+      color: const Color(0xFFECE3D0),
+      child: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 36,
+                    color: Color(0xFF8B3A2B),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    '页面出了点问题',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF2A1F18),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    errorText,
+                    key: ValueKey(_retryCount),
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFF5A4A3A)),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _backHome,
+                          icon: const Icon(Icons.home_outlined),
+                          label: const Text('回到主界面'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _retry,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('重试'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

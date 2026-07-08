@@ -373,67 +373,119 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     if (!mounted) return;
     final controller = TextEditingController();
     String? dialogError;
-    await showDialog<void>(
+    final savedToken = await showDialog<String>(
       context: context,
       barrierDismissible: !required,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, dialogSetState) => AlertDialog(
-          backgroundColor: c.surface,
-          title: Text(required ? '设置访问 Token' : '设置 / 更换 Token'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '填后端签发的 mobile token（emt_ 开头）；旧 admin secret 仍可用但不建议。'
-                'Token 只保存在 Android 本机私有存储中，不会打包进应用。',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                obscureText: true,
-                enableSuggestions: false,
-                autocorrect: false,
-                decoration: InputDecoration(
-                  labelText: '访问 Token',
-                  errorText: dialogError,
+      builder: (dialogContext) => Theme(
+        data: Theme.of(dialogContext).copyWith(
+          colorScheme: Theme.of(dialogContext).colorScheme.copyWith(
+            surface: c.surface,
+            onSurface: c.ink1,
+            primary: c.character,
+            error: c.danger,
+          ),
+          textSelectionTheme: TextSelectionThemeData(
+            cursorColor: c.character,
+            selectionColor: c.characterSoft,
+            selectionHandleColor: c.character,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: c.surfaceSoft,
+            labelStyle: TextStyle(color: c.ink2),
+            hintStyle: TextStyle(color: c.ink3),
+            errorStyle: TextStyle(color: c.danger),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: c.surfaceEdge),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: c.character, width: 1.4),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: c.danger),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: c.danger, width: 1.4),
+            ),
+          ),
+        ),
+        child: StatefulBuilder(
+          builder: (dialogContext, dialogSetState) => AlertDialog(
+            backgroundColor: c.surface,
+            title: Text(
+              required ? '设置访问 Token' : '设置 / 更换 Token',
+              style: TextStyle(color: c.ink1),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '填后端签发的 mobile token（emt_ 开头）；旧 admin secret 仍可用但不建议。'
+                  'Token 只保存在 Android 本机私有存储中，不会打包进应用。',
+                  style: TextStyle(color: c.ink2),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  obscureText: false,
+                  enableInteractiveSelection: true,
+                  keyboardType: TextInputType.text,
+                  textInputAction: TextInputAction.done,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  style: TextStyle(color: c.ink1),
+                  decoration: InputDecoration(
+                    labelText: '访问 Token',
+                    errorText: dialogError,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              if (!required)
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('取消'),
+                ),
+              FilledButton(
+                onPressed: () async {
+                  final value = controller.text.trim();
+                  if (value.isEmpty) {
+                    dialogSetState(() => dialogError = '请填写访问 Token');
+                    return;
+                  }
+                  try {
+                    await _settingsStore.saveAdminToken(value);
+                  } catch (e) {
+                    if (!dialogContext.mounted) return;
+                    dialogSetState(() => dialogError = '保存失败：$e');
+                    return;
+                  }
+                  if (!dialogContext.mounted) return;
+                  Navigator.pop(dialogContext, value);
+                },
+                child: const Text('保存'),
               ),
             ],
           ),
-          actions: [
-            if (!required)
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('取消'),
-              ),
-            FilledButton(
-              onPressed: () async {
-                final value = controller.text.trim();
-                if (value.isEmpty) {
-                  dialogSetState(() => dialogError = '请填写访问 Token');
-                  return;
-                }
-                try {
-                  await _settingsStore.saveAdminToken(value);
-                } catch (e) {
-                  if (!dialogContext.mounted) return;
-                  dialogSetState(() => dialogError = '保存失败：$e');
-                  return;
-                }
-                if (!mounted || !dialogContext.mounted) return;
-                setState(() => _adminToken = value);
-                Navigator.pop(dialogContext);
-                if (!_backendSyncStarted) _startBackendSync();
-              },
-              child: const Text('保存'),
-            ),
-          ],
         ),
       ),
     );
     controller.dispose();
+    if (savedToken == null || !mounted) return;
+    final shouldStartSync = !_backendSyncStarted;
+    setState(() => _adminToken = savedToken);
+    if (shouldStartSync) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _startBackendSync();
+      });
+    }
   }
 
   Future<void> _changeBackgroundNotifications(bool enabled) async {
