@@ -308,7 +308,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                         : () =>
                               _run(widget.onRequestIgnoreBatteryOptimizations),
                   ),
-                  _OemBackgroundGuide(c: c),
+                  _OemBackgroundGuide(c: c, appDisplayName: _appDisplayName),
                   CapabilityRow(
                     c: c,
                     icon: Icons.picture_in_picture_alt_outlined,
@@ -991,9 +991,10 @@ class BehaviorDecisionDebugCard extends StatelessWidget {
 }
 
 class _OemBackgroundGuide extends StatelessWidget {
-  const _OemBackgroundGuide({required this.c});
+  const _OemBackgroundGuide({required this.c, required this.appDisplayName});
 
   final YxPalette c;
+  final String appDisplayName;
 
   @override
   Widget build(BuildContext context) {
@@ -1005,10 +1006,10 @@ class _OemBackgroundGuide extends StatelessWidget {
       ),
       child: Text(
         '厂商后台白名单参考：\n'
-        '小米：设置 → 应用设置 → 应用管理 → 叶瑄 → 省电策略/自启动 → 无限制并开启自启动\n'
-        'OPPO：设置 → 应用 → 自启动/耗电管理 → 叶瑄 → 允许后台运行\n'
-        'vivo：设置 → 电池 → 后台耗电管理 → 叶瑄 → 允许后台高耗电\n'
-        '华为：设置 → 应用和服务 → 应用启动管理 → 叶瑄 → 手动管理并允许后台活动',
+        '小米：设置 → 应用设置 → 应用管理 → $appDisplayName → 省电策略/自启动 → 无限制并开启自启动\n'
+        'OPPO：设置 → 应用 → 自启动/耗电管理 → $appDisplayName → 允许后台运行\n'
+        'vivo：设置 → 电池 → 后台耗电管理 → $appDisplayName → 允许后台高耗电\n'
+        '华为：设置 → 应用和服务 → 应用启动管理 → $appDisplayName → 手动管理并允许后台活动',
         style: mono(c, 10.5, color: c.ink3),
       ),
     );

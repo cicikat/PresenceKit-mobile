@@ -7,20 +7,20 @@ void main() {
   test('prompt assets parses the Emerald-client response shape', () {
     final assets = PromptAssets.fromJson({
       'characters': [
-        {'id': 'yexuan', 'label': '叶瑄'},
+        {'id': 'test-character', 'label': 'Nova'},
       ],
       'lorebooks': ['base'],
       'jailbreaks': [
         {'id': 'gentle', 'label': '温和破限'},
       ],
       'active': {
-        'active_character': 'yexuan',
+        'active_character': 'test-character',
         'enabled_lorebooks': ['base'],
         'enabled_jailbreaks': ['gentle'],
       },
     });
 
-    expect(assets.activeCharacter, 'yexuan');
+    expect(assets.activeCharacter, 'test-character');
     expect(assets.lorebooks.single.label, 'base');
     expect(assets.enabledJailbreaks, {'gentle'});
   });
@@ -36,7 +36,7 @@ void main() {
   testWidgets('renders the companion shell', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    expect(find.text('叶瑄'), findsWidgets);
+    expect(find.text('TA'), findsWidgets);
     expect(find.text('主对话'), findsNothing);
     expect(find.text('对他说些什么…'), findsOneWidget);
   });
@@ -99,7 +99,7 @@ void main() {
           body: DreamPage(
             c: YxPalette.light,
             prefs: const YxPrefs(),
-            profileDisplayName: '叶瑄',
+            profileDisplayName: 'Nova',
             profileAvatarBytes: null,
             state: DreamState.fromJson({
               'status': 'DREAM_ACTIVE',
@@ -120,7 +120,7 @@ void main() {
       ),
     );
 
-    expect(find.text('梦 · 叶瑄'), findsOneWidget);
+    expect(find.text('梦 · Nova'), findsOneWidget);
     expect(find.text('在这儿写点什么…'), findsOneWidget);
 
     await tester.tap(find.text('醒来'));

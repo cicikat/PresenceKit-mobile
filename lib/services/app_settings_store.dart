@@ -6,7 +6,7 @@ import '../models/background_status.dart';
 import '../models/screen_context.dart';
 
 class AppSettingsStore {
-  static const MethodChannel _channel = MethodChannel('yexuan_memery/settings');
+  static const MethodChannel _channel = MethodChannel('presence_mobile/settings');
 
   const AppSettingsStore();
 

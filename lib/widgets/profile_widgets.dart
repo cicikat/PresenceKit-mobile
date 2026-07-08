@@ -5,6 +5,7 @@ class ProfilePage extends StatelessWidget {
     super.key,
     required this.c,
     required this.profileDisplayName,
+    required this.hasProfileNameOverride,
     required this.profileAvatarBytes,
     required this.promptAssets,
     required this.onBack,
@@ -20,6 +21,7 @@ class ProfilePage extends StatelessWidget {
 
   final YxPalette c;
   final String profileDisplayName;
+  final bool hasProfileNameOverride;
   final Uint8List? profileAvatarBytes;
   final VoidCallback onBack;
   final VoidCallback onEditProfileName;
@@ -40,7 +42,7 @@ class ProfilePage extends StatelessWidget {
         PageHeader(
           c: c,
           title: '角色资料',
-          eyebrow: '叶瑄 · 本机显示',
+          eyebrow: '$profileDisplayName · 本机显示',
           onBack: onBack,
           trailing: '本机',
         ),
@@ -118,9 +120,9 @@ class ProfilePage extends StatelessWidget {
                   c: c,
                   icon: Icons.drive_file_rename_outline_rounded,
                   title: '本机备注名',
-                  value: profileDisplayName == '叶瑄'
-                      ? '默认角色名'
-                      : profileDisplayName,
+                  value: hasProfileNameOverride
+                      ? profileDisplayName
+                      : '默认角色名',
                   body: '只影响这台手机里的显示：顶部栏、抽屉、偏好页和 HIM 聊天气泡。不会写回后端，也不会改核心人格配置。',
                   actionIcon: Icons.edit_rounded,
                   onAction: onEditProfileName,
@@ -202,7 +204,7 @@ class ProfilePage extends StatelessWidget {
                   icon: Icons.visibility_outlined,
                   title: '显示位置',
                   value: 'UI 已跟随',
-                  body: '顶部栏、抽屉、偏好页和叶瑄消息头像都会读取这份本机资料。用户自己的头像设置仍独立处理。',
+                  body: '顶部栏、抽屉、偏好页和$profileDisplayName消息头像都会读取这份本机资料。用户自己的头像设置仍独立处理。',
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
@@ -213,7 +215,7 @@ class ProfilePage extends StatelessWidget {
                       border: Border.all(color: c.ink4),
                     ),
                     child: Text(
-                      '这页只管理手机薄客户端的外观身份。叶瑄的核心人格、记忆和调度仍然以后端为准。',
+                      '这页只管理手机薄客户端的外观身份。$profileDisplayName的核心人格、记忆和调度仍然以后端为准。',
                       style: serif(
                         c,
                         13,

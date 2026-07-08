@@ -4,6 +4,7 @@ class DiaryPage extends StatefulWidget {
   const DiaryPage({
     super.key,
     required this.c,
+    required this.profileDisplayName,
     required this.entries,
     required this.loading,
     required this.loaded,
@@ -14,6 +15,7 @@ class DiaryPage extends StatefulWidget {
   });
 
   final YxPalette c;
+  final String profileDisplayName;
   final List<DiaryListItem> entries;
   final bool loading;
   final bool loaded;
@@ -61,7 +63,7 @@ class _DiaryPageState extends State<DiaryPage> {
         PageHeader(
           c: widget.c,
           title: '日记',
-          eyebrow: '叶瑄 · 私写',
+          eyebrow: '${widget.profileDisplayName} · 私写',
           onBack: widget.onBack,
           trailing: widget.loading
               ? '同步中'

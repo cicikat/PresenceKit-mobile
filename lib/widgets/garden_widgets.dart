@@ -4,6 +4,7 @@ class GardenPage extends StatelessWidget {
   const GardenPage({
     super.key,
     required this.c,
+    required this.profileDisplayName,
     required this.onBack,
     required this.gardenState,
     required this.loading,
@@ -12,6 +13,7 @@ class GardenPage extends StatelessWidget {
   });
 
   final YxPalette c;
+  final String profileDisplayName;
   final VoidCallback onBack;
   final GardenState? gardenState;
   final bool loading;
@@ -35,7 +37,7 @@ class GardenPage extends StatelessWidget {
           PageHeader(
             c: c,
             title: '陪伴花园',
-            eyebrow: '叶瑄 · 状态花园',
+            eyebrow: '$profileDisplayName · 状态花园',
             onBack: onBack,
             darkHeader: true,
             trailing: loading

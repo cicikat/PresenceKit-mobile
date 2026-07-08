@@ -545,7 +545,7 @@ class SystemSettingsSheet extends StatelessWidget {
             SettingsRow(
               c: c,
               title: '花园状态',
-              subtitle: '自动同步叶瑄今天的心境花园',
+              subtitle: '自动同步今天的心境花园',
               child: Text(
                 loadingGarden
                     ? '● 读取'

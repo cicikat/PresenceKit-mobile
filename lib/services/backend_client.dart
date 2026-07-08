@@ -331,7 +331,7 @@ class BackendClient {
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       final boundary =
-          '----yexuan-mobile-${DateTime.now().millisecondsSinceEpoch}';
+          '----presence-mobile-${DateTime.now().millisecondsSinceEpoch}';
       request.headers.set(
         HttpHeaders.contentTypeHeader,
         'multipart/form-data; boundary=$boundary',
@@ -403,7 +403,7 @@ class BackendClient {
     );
   }
 
-  // 前台是叶瑄 App 自身时，只发焦点信号，不带任何正文。
+  // 前台是本 App 自身时，只发焦点信号，不带任何正文。
   Future<void> pushSelfFocusSignal({required String token}) async {
     await _request(
       '/sensor/realtime',
@@ -419,7 +419,7 @@ class BackendClient {
           'mouse_distance_px': 0,
           'idle_seconds': 0,
         },
-        'focus': {'app': 'self', 'title_hint': 'yexuan_app', 'switch_count': 0},
+        'focus': {'app': 'self', 'title_hint': 'presence_app', 'switch_count': 0},
         'screen': {
           'package_name': 'self',
           'app_label': '',

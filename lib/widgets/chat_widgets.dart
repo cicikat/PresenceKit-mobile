@@ -444,7 +444,7 @@ class HimMessage extends StatelessWidget {
     required this.time,
     required this.text,
     required this.prefs,
-    this.profileDisplayName = '叶瑄',
+    this.profileDisplayName = kFallbackCharacterDisplayName,
     this.profileAvatarBytes,
     this.tag,
     this.tagVariant = 'solid',
@@ -535,7 +535,7 @@ class TypingHimMessage extends StatelessWidget {
     required this.c,
     required this.time,
     required this.prefs,
-    this.profileDisplayName = '叶瑄',
+    this.profileDisplayName = kFallbackCharacterDisplayName,
     this.profileAvatarBytes,
   });
 

@@ -182,7 +182,7 @@ class _ThemePaletteSheetState extends State<ThemePaletteSheet> {
     _PaletteRole('ink2', '次文字', Icons.text_fields_rounded),
     _PaletteRole('ink3', '弱文字', Icons.short_text_rounded),
     _PaletteRole('ink4', '淡线条', Icons.linear_scale_rounded),
-    _PaletteRole('character', '叶瑄主色/焦点', Icons.spa_outlined),
+    _PaletteRole('character', '角色主色/焦点', Icons.spa_outlined),
     _PaletteRole('characterDeep', '顶部/侧边栏背景', Icons.view_sidebar_outlined),
     _PaletteRole('characterSoft', '选中项/柔底', Icons.select_all_rounded),
     _PaletteRole('characterOn', '侧边栏文字图标', Icons.text_format_rounded),
@@ -481,7 +481,10 @@ class _ThemePreview extends StatelessWidget {
             children: [
               _ColorDot(color: c.character, border: c.surfaceEdge, size: 26),
               const SizedBox(width: 8),
-              Text('叶瑄', style: serif(c, 17, weight: FontWeight.w500)),
+              Text(
+                kFallbackCharacterDisplayName,
+                style: serif(c, 17, weight: FontWeight.w500),
+              ),
               const Spacer(),
               Container(
                 width: 58,

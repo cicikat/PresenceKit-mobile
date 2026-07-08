@@ -70,7 +70,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   DreamSettings? _dreamSettings;
   GardenState? _gardenState;
   String _backendBaseUrl = _defaultBackendBaseUrl;
-  String _profileDisplayName = '叶瑄';
+  String? _profileNameOverride;
   Uint8List? _profileAvatarBytes;
   String _ownerUserId = '';
   String _adminToken = '';
@@ -97,6 +97,23 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   bool get _hasAdminToken => _adminToken.trim().isNotEmpty;
+
+  bool get _hasProfileNameOverride =>
+      cleanCharacterDisplayName(_profileNameOverride) != null;
+
+  String? get _backendCharacterDisplayName {
+    final assets = _promptAssets;
+    if (assets == null) return null;
+    for (final character in assets.characters) {
+      if (character.id == assets.activeCharacter) return character.label;
+    }
+    return null;
+  }
+
+  String get _profileDisplayName => resolveCharacterDisplayName(
+    localOverride: _profileNameOverride,
+    backendName: _backendCharacterDisplayName,
+  );
 
   String _requireAdminToken() {
     final token = _adminToken.trim();
@@ -142,7 +159,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         _ownerUserId = ownerUserId?.trim() ?? '';
         _screenContextUploadEnabled = screenContextUploadEnabled;
         _lastAckedMobileSeq = lastAckedMobileSeq;
-        _profileDisplayName = _cleanProfileName(storedName) ?? '叶瑄';
+        _profileNameOverride = storedName;
         _profileAvatarBytes = storedAvatar;
         _customPalette = storedPalette;
         _customThemeEnabled = storedPalette != null;
@@ -165,12 +182,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         (_) => unawaited(_openAdminTokenSettings(required: true)),
       );
     }
-  }
-
-  String? _cleanProfileName(String? raw) {
-    final value = raw?.trim();
-    if (value == null || value.isEmpty) return null;
-    return value.characters.take(12).toString();
   }
 
   void _startBackendSync() {
@@ -486,7 +497,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     if (!locked) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('请先启用“叶瑄锁屏确认”的设备管理器权限')));
+      ).showSnackBar(const SnackBar(content: Text('请先启用“陪伴锁屏确认”的设备管理器权限')));
     }
   }
 
@@ -496,7 +507,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     if (enabled) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('叶瑄操作助手已授权')));
+      ).showSnackBar(const SnackBar(content: Text('陪伴操作助手已授权')));
       return;
     }
     await _settingsStore.requestAccessibilityPermission();
@@ -645,7 +656,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   Future<void> _editProfileName() async {
     final controller = TextEditingController(
-      text: _profileDisplayName == '叶瑄' ? '' : _profileDisplayName,
+      text: cleanCharacterDisplayName(_profileNameOverride) ?? '',
     );
     final value = await showDialog<String>(
       context: context,
@@ -681,10 +692,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       },
     );
     if (value == null) return;
-    final cleaned = _cleanProfileName(value);
+    final cleaned = cleanCharacterDisplayName(value);
     await _settingsStore.saveProfileDisplayName(cleaned ?? '');
     if (!mounted) return;
-    setState(() => _profileDisplayName = cleaned ?? '叶瑄');
+    setState(() => _profileNameOverride = cleaned);
   }
 
   Future<void> _importProfileAvatar() async {
@@ -2211,6 +2222,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           key: const ValueKey('profile'),
           c: c,
           profileDisplayName: _profileDisplayName,
+          hasProfileNameOverride: _hasProfileNameOverride,
           profileAvatarBytes: _profileAvatarBytes,
           onBack: () => setState(() => _route = AppRoute.chat),
           onEditProfileName: _editProfileName,
@@ -2228,6 +2240,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         return DiaryPage(
           key: const ValueKey('diary'),
           c: c,
+          profileDisplayName: _profileDisplayName,
           entries: _diaryEntries,
           loading: _loadingDiary,
           loaded: _diaryLoaded,
@@ -2240,6 +2253,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         return GardenPage(
           key: const ValueKey('garden'),
           c: c,
+          profileDisplayName: _profileDisplayName,
           gardenState: _gardenState,
           loading: _loadingGarden,
           error: _gardenError,

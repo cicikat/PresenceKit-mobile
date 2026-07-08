@@ -12,6 +12,7 @@ import 'models/capability_status.dart';
 import 'models/screen_context.dart';
 import 'services/app_settings_store.dart';
 import 'services/backend_client.dart';
+import 'services/character_naming.dart';
 
 part 'models/app_models.dart';
 part 'pages/app_shell.dart';
@@ -30,6 +31,12 @@ const String _defaultBackendBaseUrl = String.fromEnvironment(
   'BACKEND_BASE_URL',
   defaultValue: 'http://127.0.0.1:8080',
 );
+
+/// The app's own label as registered with the OS (Android manifest / iOS
+/// Info.plist), used when guiding the user to find this app in system
+/// settings. Not runtime-configurable — keep it in sync with the native
+/// app label if that ever changes.
+const String _appDisplayName = '陪伴';
 
 
 Future<void> main() async {
@@ -52,7 +59,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: '叶瑄 · AI 陪伴',
+      title: '陪伴',
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'serif',

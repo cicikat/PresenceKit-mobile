@@ -112,7 +112,7 @@ class YxDrawer extends StatelessWidget {
                   DrawerItem(
                     c: c,
                     icon: Icons.menu_book_outlined,
-                    title: '叶瑄的日记',
+                    title: '$profileDisplayName的日记',
                     subtitle: '他写给自己的',
                     active: route == AppRoute.diary,
                     onTap: () => onRoute(AppRoute.diary),
