@@ -480,12 +480,22 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     controller.dispose();
     if (savedToken == null || !mounted) return;
     final shouldStartSync = !_backendSyncStarted;
-    setState(() => _adminToken = savedToken);
-    if (shouldStartSync) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _startBackendSync();
-      });
-    }
+    _adminToken = savedToken;
+    _backendError = null;
+    _mobileError = null;
+    Navigator.maybeOf(context, rootNavigator: true)?.popUntil(
+      (route) => route.isFirst,
+    );
+    unawaited(
+      Future<void>.delayed(const Duration(milliseconds: 320), () {
+        if (!mounted) return;
+        if (shouldStartSync) {
+          _startBackendSync();
+        } else {
+          setState(() {});
+        }
+      }),
+    );
   }
 
   Future<void> _changeBackgroundNotifications(bool enabled) async {
