@@ -1,19 +1,42 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set "FLUTTER=D:\soft3\flutter\bin\flutter.bat"
-set "ADB=D:\soft3\AndroidSDK\platform-tools\adb.exe"
+cd /d %~dp0
+
 set "PACKAGE=com.example.yexuan_memery"
 set "APK=build\app\outputs\flutter-apk\app-debug.apk"
 
-cd /d %~dp0
+rem ---- Resolve flutter / adb: local.properties > env vars > PATH > legacy default ----
+set "FLUTTER="
+set "ADB="
+set "FLUTTER_SDK="
+set "ANDROID_SDK="
+if exist "%~dp0android\local.properties" (
+  for /f "usebackq tokens=1,* delims==" %%a in ("%~dp0android\local.properties") do (
+    if "%%a"=="flutter.sdk" set "FLUTTER_SDK=%%b"
+    if "%%a"=="sdk.dir" set "ANDROID_SDK=%%b"
+  )
+)
+if defined FLUTTER_SDK set "FLUTTER_SDK=!FLUTTER_SDK:\\=\!"
+if defined ANDROID_SDK set "ANDROID_SDK=!ANDROID_SDK:\\=\!"
 
-if not exist "%FLUTTER%" (
-  echo [ERROR] flutter not found: %FLUTTER%
+if defined FLUTTER_SDK if exist "!FLUTTER_SDK!\bin\flutter.bat" set "FLUTTER=!FLUTTER_SDK!\bin\flutter.bat"
+if not defined FLUTTER if defined FLUTTER_HOME if exist "%FLUTTER_HOME%\bin\flutter.bat" set "FLUTTER=%FLUTTER_HOME%\bin\flutter.bat"
+if not defined FLUTTER for /f "delims=" %%i in ('where flutter.bat 2^>nul') do if not defined FLUTTER set "FLUTTER=%%i"
+if not defined FLUTTER if exist "D:\soft3\flutter\bin\flutter.bat" set "FLUTTER=D:\soft3\flutter\bin\flutter.bat"
+
+if defined ANDROID_SDK if exist "!ANDROID_SDK!\platform-tools\adb.exe" set "ADB=!ANDROID_SDK!\platform-tools\adb.exe"
+if not defined ADB if defined ANDROID_HOME if exist "%ANDROID_HOME%\platform-tools\adb.exe" set "ADB=%ANDROID_HOME%\platform-tools\adb.exe"
+if not defined ADB if defined ANDROID_SDK_ROOT if exist "%ANDROID_SDK_ROOT%\platform-tools\adb.exe" set "ADB=%ANDROID_SDK_ROOT%\platform-tools\adb.exe"
+if not defined ADB for /f "delims=" %%i in ('where adb 2^>nul') do if not defined ADB set "ADB=%%i"
+if not defined ADB if exist "D:\soft3\AndroidSDK\platform-tools\adb.exe" set "ADB=D:\soft3\AndroidSDK\platform-tools\adb.exe"
+
+if not defined FLUTTER (
+  echo [ERROR] flutter not found. Set flutter.sdk in android\local.properties, or FLUTTER_HOME, or add flutter to PATH.
   pause & exit /b 1
 )
-if not exist "%ADB%" (
-  echo [ERROR] adb not found: %ADB%
+if not defined ADB (
+  echo [ERROR] adb not found. Set sdk.dir in android\local.properties, or ANDROID_HOME, or add adb to PATH.
   pause & exit /b 1
 )
 

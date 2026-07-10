@@ -1,8 +1,27 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
+cd /d %~dp0
 
-set ADB=D:\soft3\AndroidSDK\platform-tools\adb.exe
 set PACKAGE=com.example.yexuan_memery
+
+rem ---- Resolve adb: local.properties > env vars > PATH > legacy default ----
+set "ADB="
+set "ANDROID_SDK="
+if exist "%~dp0android\local.properties" (
+  for /f "usebackq tokens=1,* delims==" %%a in ("%~dp0android\local.properties") do (
+    if "%%a"=="sdk.dir" set "ANDROID_SDK=%%b"
+  )
+)
+if defined ANDROID_SDK set "ANDROID_SDK=!ANDROID_SDK:\\=\!"
+if defined ANDROID_SDK if exist "!ANDROID_SDK!\platform-tools\adb.exe" set "ADB=!ANDROID_SDK!\platform-tools\adb.exe"
+if not defined ADB if defined ANDROID_HOME if exist "%ANDROID_HOME%\platform-tools\adb.exe" set "ADB=%ANDROID_HOME%\platform-tools\adb.exe"
+if not defined ADB if defined ANDROID_SDK_ROOT if exist "%ANDROID_SDK_ROOT%\platform-tools\adb.exe" set "ADB=%ANDROID_SDK_ROOT%\platform-tools\adb.exe"
+if not defined ADB for /f "delims=" %%i in ('where adb 2^>nul') do if not defined ADB set "ADB=%%i"
+if not defined ADB if exist "D:\soft3\AndroidSDK\platform-tools\adb.exe" set "ADB=D:\soft3\AndroidSDK\platform-tools\adb.exe"
+if not defined ADB (
+  echo [ERROR] adb not found. Set sdk.dir in android\local.properties, or ANDROID_HOME, or add adb to PATH.
+  pause & exit /b 1
+)
 
 :menu
 cls
