@@ -866,7 +866,7 @@ class BackendChatResponse {
           : int.tryParse((json['affection'] ?? '0').toString()) ?? 0,
       level: (json['level'] ?? '').toString(),
       emotion: (json['emotion'] ?? 'neutral').toString(),
-      msgId: toId(json['msg_id']),
+      msgId: toId(json['msg_id']) ?? toId(json['turn_id']),
       turnId: toId(json['turn_id']),
     );
   }
