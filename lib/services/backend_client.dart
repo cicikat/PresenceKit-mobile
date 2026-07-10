@@ -27,10 +27,15 @@ import '../models/screen_context.dart';
 import 'app_settings_store.dart';
 
 class BackendClient {
-  BackendClient({required this.baseUrl, required this.settingsStore});
+  BackendClient({
+    required this.baseUrl,
+    required this.settingsStore,
+    @visibleForTesting HttpClient Function()? httpClientFactory,
+  }) : _httpClientFactory = httpClientFactory ?? HttpClient.new;
 
   final String baseUrl;
   final AppSettingsStore settingsStore;
+  final HttpClient Function() _httpClientFactory;
 
   Future<Uri> _endpoint(String path, {required String token}) async {
     if (token.trim().isEmpty) {
@@ -50,7 +55,8 @@ class BackendClient {
     Duration timeout = const Duration(seconds: 20),
     bool expectJson = true,
   }) async {
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
+    final client = _httpClientFactory()
+      ..connectionTimeout = const Duration(seconds: 8);
     try {
       final endpoint = await _endpoint(path, token: token);
       final request = switch (method) {
@@ -324,7 +330,8 @@ class BackendClient {
     if (files.isEmpty) {
       throw const BackendException('没有选择文件');
     }
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
+    final client = _httpClientFactory()
+      ..connectionTimeout = const Duration(seconds: 8);
     try {
       final endpoint = await _endpoint('/upload/ingest', token: token);
       final request = await client.postUrl(endpoint);
