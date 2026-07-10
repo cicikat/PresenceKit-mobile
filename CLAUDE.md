@@ -1,15 +1,9 @@
 # yexuan_memery — 开发说明
 
-## 运行测试
+## 协作偏好
 
-本机使用系统代理（`HTTP_PROXY=http://127.0.0.1:7897`），Dart 的 HTTP 客户端会把对
-`127.0.0.1` 的连接也路由到代理，导致 flutter_tester 内部通信失败：
-`HttpException: Connection closed before full header was received`。
-
-运行测试前必须设置 `NO_PROXY`：
-
-```powershell
-$env:NO_PROXY = "localhost,127.0.0.1,::1"; flutter test
-```
-
-或在 CI / 无代理环境中直接运行 `flutter test`（无需额外设置）。
+1. **用中文回复。**
+2. **默认自主推进、替用户拍板**，不要逐项确认；只在不可逆决策（删数据、改契约、对外发布）时提问。
+3. **不要全仓 grep**，先按 AGENTS.md / 架构文档定位到具体文件再精准搜索。
+4. **交付物一次性批量输出**，多个工单/提示词要标注哪些可并行、哪些有前置依赖，减少一来一回。
+5. **小步 commit**：每完成一个独立修复即 commit。

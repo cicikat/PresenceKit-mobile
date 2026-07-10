@@ -15,8 +15,8 @@
 
 相关外部项目：
 
-- 后端核心：`D:\ai\qq-st-bot\`
-- 桌面客户端参考：`D:\ai\Emerald-client\`
+- 后端核心：`Emerald-presence` 仓库（通常与本仓库同级；旧名 qq-st-bot）
+- 桌面客户端参考：`Emerald-client` 仓库（通常与本仓库同级）
 
 维护约定：
 

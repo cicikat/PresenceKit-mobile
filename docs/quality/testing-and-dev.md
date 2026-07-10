@@ -2,30 +2,31 @@
 
 ## 常用命令
 
+> 以下命令在仓库根目录执行。`flutter`/`adb` 不在 PATH 时，SDK 位置以
+> `android/local.properties` 的 `flutter.sdk`、`sdk.dir` 为准（机器本地文件，不入库）。
+
 ```powershell
 # Flutter 分析
 $env:DART_SUPPRESS_ANALYTICS='true'
-$env:APPDATA='D:\ai\yexuan_memery\.tool-home'
-D:\soft3\flutter\bin\flutter.bat analyze
+$env:APPDATA="$PWD\.tool-home"
+flutter analyze
 
 # Flutter 测试
 $env:DART_SUPPRESS_ANALYTICS='true'
-$env:APPDATA='D:\ai\yexuan_memery\.tool-home'
-D:\soft3\flutter\bin\flutter.bat test
+$env:APPDATA="$PWD\.tool-home"
+flutter test
 
-# Debug APK
+# Debug APK（ANDROID_HOME 按本机 SDK 位置设置，或省略让 gradle 读 local.properties）
 $env:DART_SUPPRESS_ANALYTICS='true'
-$env:APPDATA='D:\ai\yexuan_memery\.tool-home'
-$env:ANDROID_HOME='D:\soft3\AndroidSDK'
-$env:ANDROID_SDK_ROOT='D:\soft3\AndroidSDK'
-D:\soft3\flutter\bin\flutter.bat build apk --debug
+$env:APPDATA="$PWD\.tool-home"
+flutter build apk --debug
 ```
 
 ## ADB 调试
 
 ```powershell
-D:\soft3\AndroidSDK\platform-tools\adb.exe reverse tcp:8080 tcp:8080
-D:\soft3\AndroidSDK\platform-tools\adb.exe install build\app\outputs\flutter-apk\app-debug.apk
+adb reverse tcp:8080 tcp:8080
+adb install build\app\outputs\flutter-apk\app-debug.apk
 ```
 
 也可以用根目录：

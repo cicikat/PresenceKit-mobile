@@ -1,6 +1,6 @@
 # 后端集成
 
-后端核心在 `D:\ai\Emerald-presence\`。手机端只通过 HTTP 接口交互，不直接读写后端数据文件。
+后端核心在 `Emerald-presence` 仓库（通常与本仓库同级）。手机端只通过 HTTP 接口交互，不直接读写后端数据文件。
 
 ## 连接方式
 
@@ -13,7 +13,7 @@ http://127.0.0.1:8080
 插线调试：
 
 ```powershell
-D:\soft3\AndroidSDK\platform-tools\adb.exe reverse tcp:8080 tcp:8080
+adb reverse tcp:8080 tcp:8080
 ```
 
 脱线调试：

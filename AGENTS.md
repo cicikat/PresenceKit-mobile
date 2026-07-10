@@ -1,6 +1,6 @@
 # AGENTS.md - PresenceKit-mobile 工作入口
 
-> 每次开始任务前先读。本文档描述 PresenceKit-mobile 仓库 `D:\ai\yexuan_memery\` 的真实边界、当前实现和文档入口。
+> 每次开始任务前先读。本文档描述 PresenceKit-mobile 仓库（本文件所在目录即仓库根，可整体改名/移盘）的真实边界、当前实现和文档入口。
 
 ## ⚠ 禁止照抄的参考目录
 
@@ -12,7 +12,7 @@
 
 ## 项目定位
 
-`PresenceKit-mobile` 是叶瑄陪伴系统的 Flutter 手机薄客户端。核心人格、记忆、调度、主动触发、花园和日记数据仍在 `D:\ai\Emerald-presence\`；本仓库负责移动端 UI、Android 原生能力和 mobile channel 消息收发。
+`PresenceKit-mobile` 是叶瑄陪伴系统的 Flutter 手机薄客户端。核心人格、记忆、调度、主动触发、花园和日记数据仍在后端仓库 `Emerald-presence`（通常与本仓库同级）；本仓库负责移动端 UI、Android 原生能力和 mobile channel 消息收发。
 
 当前实际状态：
 
@@ -32,15 +32,13 @@
 
 不在本项目范围内的事：
 
-- 不修改 `D:\ai\Emerald-presence\`，除非用户明确把后端也纳入任务。
-- 不修改 `D:\ai\Emerald-client\`，它只是桌面客户端和文档组织参考。
+- 不修改后端仓库 `Emerald-presence`，除非用户明确把后端也纳入任务。
+- 不修改 `Emerald-client`，它只是桌面客户端和文档组织参考。
 - 不把手机端变成记忆或人格的 single source of truth。
 
 ## 代码根目录
 
-```text
-D:\ai\yexuan_memery\
-```
+本文件所在目录即仓库根。所有路径一律相对仓库根书写，不依赖盘符或上级目录名。
 
 ## 必读文档
 
@@ -95,7 +93,7 @@ docs/
 
 ## 后端连接信息
 
-- 后端项目：`D:\ai\Emerald-presence\`
+- 后端项目：`Emerald-presence` 仓库（通常与本仓库同级）
 - 默认节点：`http://127.0.0.1:8080`
 - 插线调试：`adb reverse tcp:8080 tcp:8080`
 - 主对话发消息：`POST /desktop/chat`
@@ -120,17 +118,17 @@ docs/
 ## 启动与调试
 
 ```powershell
-# 插线调试后端转发
-D:\soft3\AndroidSDK\platform-tools\adb.exe reverse tcp:8080 tcp:8080
+# 插线调试后端转发（adb 路径见 android/local.properties 的 sdk.dir，或直接用 PATH 里的 adb）
+adb reverse tcp:8080 tcp:8080
 
 # Flutter 分析
-D:\soft3\flutter\bin\flutter.bat analyze
+flutter analyze
 
 # Flutter 测试
-D:\soft3\flutter\bin\flutter.bat test
+flutter test
 
 # Debug APK
-D:\soft3\flutter\bin\flutter.bat build apk --debug
+flutter build apk --debug
 ```
 
-也可以用根目录的 `mobile_dev_control.bat` 做 ADB reverse、启动 App 和查看连接状态。
+若 `flutter`/`adb` 不在 PATH：SDK 位置以 `android/local.properties` 里的 `flutter.sdk` 和 `sdk.dir` 为准（机器本地文件，不入库）。根目录的 `mobile_dev_control.bat` 和 `AA打包安装到手机.bat` 会自动按 local.properties → 环境变量 → PATH 的顺序探测，无需改脚本。
