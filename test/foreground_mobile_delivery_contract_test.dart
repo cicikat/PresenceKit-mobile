@@ -292,6 +292,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     await tester.enterText(find.byType(TextField).last, '测试 id 对账');
+    await tester.pump();
     await tester.tap(find.byIcon(Icons.send_rounded));
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text(reply), findsOneWidget);
@@ -347,6 +348,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       await tester.enterText(find.byType(TextField).last, '测试不同 id');
+      await tester.pump();
       await tester.tap(find.byIcon(Icons.send_rounded));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump(const Duration(seconds: 5));
