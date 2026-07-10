@@ -2,6 +2,40 @@
 
 > 修复前请先对照代码确认问题仍存在；修复后在本文件改状态或移到已修复区。
 
+## P0：后台弹窗通知从未触发 — 根因是后端中继（ntfy）从未配置
+
+**位置**：后端 `Emerald-presence/config.yaml`（缺 `relay_base_url/relay_topic`）、
+`Emerald-presence/channels/relay_publisher.py`；手机端代码本身无致命问题。
+
+**排查结论**（2026-07-10，按实证修正过一次）：
+
+1. 入队路径**正常**：`core/turn_sink.py` 已有 durable mobile fallback——主动消息即使手机离线
+   （`is_active=False`）也会写入 `mobile_queue`。实测 `mobile_queue_seq` 已到 608，证明消息一直在流。
+   队列当前为空是因为前台 poll+ack 正常消费。**不需要改 `is_active`**（保持 TTL 门控，它只该管
+   实时广播目标，不管入队）。
+2. 真正断掉的一环：`config.yaml` 里从来没有 `relay_base_url/relay_topic/relay_token` 三个键
+   （`config.example.yaml` 之前也没记载）→ `schedule_signal_publish()` 静默直接 return →
+   **后端从不向 ntfy 发唤醒信号** → 手机后台服务永远等不到 SSE 信号 → 无弹窗。
+3. 次级问题（已修）：`_relay_config()` 要求 token 必填，而手机端订阅侧 token 是可选的——
+   无鉴权自建 ntfy 会导致后端永远判定"未配置"。已改为 token 可选。
+4. 兜底路径也弱：中继未配置时手机端只剩 6 小时一次补偿轮询，且默认节点 `127.0.0.1:8080`
+   在脱线后台时不可达（adb reverse 只在插线时有效）；命中后还有 23:30–06:30 静音 +
+   30 分钟冷却两道闸（`notificationTestMode` 可绕过，用于测试）。
+
+**已修**（后端，已过 `tests/test_relay_publisher.py` + `tests/test_mobile_queue_ack.py` 全部 10 例）：
+
+- `config.example.yaml` 补上 `relay_*` 三键的文档化示例。
+- `relay_publisher.py`：token 改为可选（无 token 不带 Authorization 头）；中继未配置时打一次
+  warning 日志，不再静默。
+
+**用户侧待办**（代码修完弹窗也不会来，还差配置）：
+
+1. 起一个 ntfy 服务（`spike/push_relay_ntfy/server/docker-compose.yml` 有现成的，或用公网 ntfy.sh）。
+2. 后端 `config.yaml` 填 `relay_base_url`、`relay_topic`（token 可选），重启后端。
+3. App 设置里填同一组中继地址/topic，后端节点用局域网 IP 或 HTTPS（别用 127.0.0.1，后台不可达）。
+4. 打开 App 后台通知开关、授予通知权限；测试时开 `notificationTestMode` 绕过静音/冷却。
+5. 能力检查页看"中继已连接"和最近信号时间即可验证。
+
 ## 已收缩：手机端不再持有 admin 全权 token
 
 **位置**：`lib/services/backend_client.dart`、`android/app/src/main/kotlin/com/example/yexuan_memery/MobileNotificationService.kt`、
