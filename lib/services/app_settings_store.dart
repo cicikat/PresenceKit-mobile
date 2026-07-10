@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../models/background_status.dart';
@@ -8,10 +9,18 @@ import '../models/screen_context.dart';
 class AppSettingsStore {
   static const MethodChannel _channel = MethodChannel('presence_mobile/settings');
 
+  // `flutter test` always runs as the host OS (e.g. windows), so
+  // `Platform.isAndroid` is never true there. This lets contract tests force
+  // the channel path without touching production behavior.
+  @visibleForTesting
+  static bool debugForceChannelAvailable = false;
+
+  bool get _channelAvailable => Platform.isAndroid || debugForceChannelAvailable;
+
   const AppSettingsStore();
 
   Future<String?> loadBackendBaseUrl() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<String>('getBackendBaseUrl');
     } on PlatformException {
@@ -20,7 +29,7 @@ class AppSettingsStore {
   }
 
   Future<void> saveBackendBaseUrl(String value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('setBackendBaseUrl', {'value': value});
     } on PlatformException {
@@ -29,7 +38,7 @@ class AppSettingsStore {
   }
 
   Future<String?> loadAdminToken() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<String>('getAdminToken');
     } on PlatformException {
@@ -38,12 +47,12 @@ class AppSettingsStore {
   }
 
   Future<void> saveAdminToken(String value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setAdminToken', {'value': value});
   }
 
   Future<String?> loadOwnerUserId() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<String>('getOwnerUserId');
     } on PlatformException {
@@ -52,12 +61,12 @@ class AppSettingsStore {
   }
 
   Future<void> saveOwnerUserId(String value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setOwnerUserId', {'value': value});
   }
 
   Future<Set<String>> loadTrustedCleartextOrigins() async {
-    if (!Platform.isAndroid) return const {};
+    if (!_channelAvailable) return const {};
     try {
       final values = await _channel.invokeMethod<List<dynamic>>(
         'getTrustedCleartextOrigins',
@@ -69,7 +78,7 @@ class AppSettingsStore {
   }
 
   Future<bool> addTrustedCleartextOrigin(String value) async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('addTrustedCleartextOrigin', {
             'value': value,
@@ -81,7 +90,7 @@ class AppSettingsStore {
   }
 
   Future<bool> isAllowedBaseUrl(String raw) async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('isAllowedBaseUrl', {
             'value': raw,
@@ -93,7 +102,7 @@ class AppSettingsStore {
   }
 
   Future<String?> normalizeOrigin(String raw) async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<String?>('normalizeOrigin', {
         'value': raw,
@@ -104,7 +113,7 @@ class AppSettingsStore {
   }
 
   Future<bool> isConfirmablePrivateCleartextOrigin(String origin) async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>(
             'isConfirmablePrivateCleartextOrigin',
@@ -117,7 +126,7 @@ class AppSettingsStore {
   }
 
   Future<bool> loadScreenContextUploadEnabled() async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>(
             'getScreenContextUploadEnabled',
@@ -129,14 +138,14 @@ class AppSettingsStore {
   }
 
   Future<void> saveScreenContextUploadEnabled(bool value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setScreenContextUploadEnabled', {
       'value': value,
     });
   }
 
   Future<Set<String>> loadScreenTextUploadAllowedPackages() async {
-    if (!Platform.isAndroid) return const {};
+    if (!_channelAvailable) return const {};
     try {
       final values = await _channel.invokeMethod<List<dynamic>>(
         'getScreenTextUploadAllowedPackages',
@@ -152,7 +161,7 @@ class AppSettingsStore {
   }
 
   Future<void> saveScreenTextUploadAllowedPackages(Set<String> values) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setScreenTextUploadAllowedPackages', {
       'values': values.toList(growable: false),
     });
@@ -160,7 +169,7 @@ class AppSettingsStore {
 
   Future<List<ScreenTextUploadAppOption>>
   loadScreenTextUploadAppOptions() async {
-    if (!Platform.isAndroid) return const [];
+    if (!_channelAvailable) return const [];
     try {
       final values = await _channel.invokeMethod<List<dynamic>>(
         'getScreenTextUploadAppOptions',
@@ -177,7 +186,7 @@ class AppSettingsStore {
   }
 
   Future<String?> loadCustomThemePalette() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<String>('getCustomThemePalette');
     } on PlatformException {
@@ -186,7 +195,7 @@ class AppSettingsStore {
   }
 
   Future<void> saveCustomThemePalette(String value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('setCustomThemePalette', {
         'value': value,
@@ -197,7 +206,7 @@ class AppSettingsStore {
   }
 
   Future<void> deleteCustomThemePalette() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('deleteCustomThemePalette');
     } on PlatformException {
@@ -206,7 +215,7 @@ class AppSettingsStore {
   }
 
   Future<String?> loadProfileDisplayName() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<String>('getProfileDisplayName');
     } on PlatformException {
@@ -215,7 +224,7 @@ class AppSettingsStore {
   }
 
   Future<void> saveProfileDisplayName(String value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('setProfileDisplayName', {
         'value': value,
@@ -226,7 +235,7 @@ class AppSettingsStore {
   }
 
   Future<Uint8List?> pickProfileImage() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<Uint8List>('pickProfileImage');
     } on PlatformException {
@@ -235,7 +244,7 @@ class AppSettingsStore {
   }
 
   Future<PickedUploadFile?> pickUploadFile() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       final raw = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'pickUploadFile',
@@ -251,7 +260,7 @@ class AppSettingsStore {
   }
 
   Future<List<PickedUploadFile>> pickUploadImages() async {
-    if (!Platform.isAndroid) return const [];
+    if (!_channelAvailable) return const [];
     try {
       final raw = await _channel.invokeMethod<List<dynamic>>(
         'pickUploadImages',
@@ -277,7 +286,7 @@ class AppSettingsStore {
   }
 
   Future<Uint8List?> loadProfileAvatar() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<Uint8List>('loadProfileAvatar');
     } on PlatformException {
@@ -286,7 +295,7 @@ class AppSettingsStore {
   }
 
   Future<bool> saveProfileAvatar(Uint8List bytes) async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('saveProfileAvatar', {
             'bytes': bytes,
@@ -298,7 +307,7 @@ class AppSettingsStore {
   }
 
   Future<void> deleteProfileAvatar() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('deleteProfileAvatar');
     } on PlatformException {
@@ -307,7 +316,7 @@ class AppSettingsStore {
   }
 
   Future<bool> loadBackgroundNotificationsEnabled() async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>(
             'getBackgroundNotificationsEnabled',
@@ -319,7 +328,7 @@ class AppSettingsStore {
   }
 
   Future<void> saveBackgroundNotificationsEnabled(bool value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('setBackgroundNotificationsEnabled', {
         'value': value,
@@ -330,7 +339,7 @@ class AppSettingsStore {
   }
 
   Future<void> startBackgroundNotifications() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('startBackgroundNotifications');
     } on PlatformException {
@@ -339,12 +348,12 @@ class AppSettingsStore {
   }
 
   Future<void> saveSeenMobileMessageIds(List<String> ids) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setSeenMobileMessageIds', {'ids': ids});
   }
 
   Future<List<String>> loadSeenMobileMessageIds() async {
-    if (!Platform.isAndroid) return const [];
+    if (!_channelAvailable) return const [];
     final values = await _channel.invokeMethod<List<dynamic>>(
       'getSeenMobileMessageIds',
     );
@@ -353,12 +362,12 @@ class AppSettingsStore {
   }
 
   Future<int?> loadLastAckedMobileSeq() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     return await _channel.invokeMethod<int>('getLastAckedMobileSeq');
   }
 
   Future<void> saveLastAckedMobileSeq(int value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setLastAckedMobileSeq', {
       'value': value,
     });
@@ -368,7 +377,7 @@ class AppSettingsStore {
     required String content,
     String? behaviorJson,
   }) async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('debugBackgroundDelivery', {
             'content': content,
@@ -381,7 +390,7 @@ class AppSettingsStore {
   }
 
   Future<void> stopBackgroundNotifications() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('stopBackgroundNotifications');
     } on PlatformException {
@@ -390,7 +399,7 @@ class AppSettingsStore {
   }
 
   Future<bool> areNotificationsEnabled() async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('areNotificationsEnabled') ??
           false;
@@ -400,7 +409,7 @@ class AppSettingsStore {
   }
 
   Future<void> requestNotificationPermission() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('requestNotificationPermission');
     } on PlatformException {
@@ -409,7 +418,7 @@ class AppSettingsStore {
   }
 
   Future<bool> isBackgroundNotificationServiceRunning() async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>(
             'isBackgroundNotificationServiceRunning',
@@ -421,7 +430,7 @@ class AppSettingsStore {
   }
 
   Future<BackgroundPollStatus> loadBackgroundPollStatus() async {
-    if (!Platform.isAndroid) return const BackgroundPollStatus();
+    if (!_channelAvailable) return const BackgroundPollStatus();
     try {
       final raw = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'getBackgroundPollStatus',
@@ -433,7 +442,7 @@ class AppSettingsStore {
   }
 
   Future<RelayConnectionStatus> loadRelayConnectionStatus() async {
-    if (!Platform.isAndroid) return const RelayConnectionStatus();
+    if (!_channelAvailable) return const RelayConnectionStatus();
     try {
       final raw = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'getRelayConnectionStatus',
@@ -445,7 +454,7 @@ class AppSettingsStore {
   }
 
   Future<NotificationGateStatus> loadNotificationGateStatus() async {
-    if (!Platform.isAndroid) return const NotificationGateStatus();
+    if (!_channelAvailable) return const NotificationGateStatus();
     try {
       final raw = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'getNotificationGateStatus',
@@ -457,7 +466,7 @@ class AppSettingsStore {
   }
 
   Future<void> setNotificationTestMode(bool value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('setNotificationTestMode', {
         'value': value,
@@ -468,7 +477,7 @@ class AppSettingsStore {
   }
 
   Future<bool> isIgnoringBatteryOptimizations() async {
-    if (!Platform.isAndroid) return true;
+    if (!_channelAvailable) return true;
     try {
       return await _channel.invokeMethod<bool>(
             'isIgnoringBatteryOptimizations',
@@ -480,7 +489,7 @@ class AppSettingsStore {
   }
 
   Future<void> requestIgnoreBatteryOptimizations() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('requestIgnoreBatteryOptimizations');
     } on PlatformException {
@@ -489,7 +498,7 @@ class AppSettingsStore {
   }
 
   Future<bool> canDrawOverlays() async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('canDrawOverlays') ?? false;
     } on PlatformException {
@@ -498,7 +507,7 @@ class AppSettingsStore {
   }
 
   Future<void> requestOverlayPermission() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('requestOverlayPermission');
     } on PlatformException {
@@ -507,7 +516,7 @@ class AppSettingsStore {
   }
 
   Future<bool> showFloatingBubble() async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('showFloatingBubble') ?? false;
     } on PlatformException {
@@ -516,7 +525,7 @@ class AppSettingsStore {
   }
 
   Future<bool> showOrderBubble(String target) async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('showOrderBubble', {
             'target': target,
@@ -528,7 +537,7 @@ class AppSettingsStore {
   }
 
   Future<void> hideFloatingBubble() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('hideFloatingBubble');
     } on PlatformException {
@@ -537,7 +546,7 @@ class AppSettingsStore {
   }
 
   Future<bool> isDeviceAdminActive() async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('isDeviceAdminActive') ?? false;
     } on PlatformException {
@@ -546,7 +555,7 @@ class AppSettingsStore {
   }
 
   Future<void> requestDeviceAdmin() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('requestDeviceAdmin');
     } on PlatformException {
@@ -555,7 +564,7 @@ class AppSettingsStore {
   }
 
   Future<bool> lockScreen() async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('lockScreen') ?? false;
     } on PlatformException {
@@ -564,7 +573,7 @@ class AppSettingsStore {
   }
 
   Future<bool> isAccessibilityServiceEnabled() async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>(
             'isAccessibilityServiceEnabled',
@@ -576,7 +585,7 @@ class AppSettingsStore {
   }
 
   Future<void> requestAccessibilityPermission() async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     try {
       await _channel.invokeMethod<void>('requestAccessibilityPermission');
     } on PlatformException {
@@ -585,7 +594,7 @@ class AppSettingsStore {
   }
 
   Future<ScreenContextSnapshot?> captureScreenContext() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       final raw = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'captureScreenContext',
@@ -598,7 +607,7 @@ class AppSettingsStore {
   }
 
   Future<ScreenContextSnapshot?> captureScreenContextForUpload() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       final raw = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'captureScreenContextForUpload',
@@ -611,7 +620,7 @@ class AppSettingsStore {
   }
 
   Future<bool> openShoppingApp(String target) async {
-    if (!Platform.isAndroid) return false;
+    if (!_channelAvailable) return false;
     try {
       return await _channel.invokeMethod<bool>('openShoppingApp', {
             'target': target,
@@ -623,7 +632,7 @@ class AppSettingsStore {
   }
 
   Future<String?> loadRelayBaseUrl() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<String>('getRelayBaseUrl');
     } on PlatformException {
@@ -632,12 +641,12 @@ class AppSettingsStore {
   }
 
   Future<void> saveRelayBaseUrl(String value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setRelayBaseUrl', {'value': value});
   }
 
   Future<String?> loadRelayToken() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<String>('getRelayToken');
     } on PlatformException {
@@ -646,12 +655,12 @@ class AppSettingsStore {
   }
 
   Future<void> saveRelayToken(String value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setRelayToken', {'value': value});
   }
 
   Future<String?> loadRelayTopic() async {
-    if (!Platform.isAndroid) return null;
+    if (!_channelAvailable) return null;
     try {
       return await _channel.invokeMethod<String>('getRelayTopic');
     } on PlatformException {
@@ -660,7 +669,7 @@ class AppSettingsStore {
   }
 
   Future<void> saveRelayTopic(String value) async {
-    if (!Platform.isAndroid) return;
+    if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setRelayTopic', {'value': value});
   }
 }
