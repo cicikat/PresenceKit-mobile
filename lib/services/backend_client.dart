@@ -396,6 +396,102 @@ class BackendClient {
     }
   }
 
+  /// 语音输入：上传本机录音文件（m4a），返回转写文本。
+  Future<String> transcribeAudio({
+    required String filePath,
+    required String token,
+    String channel = 'mobile',
+  }) async {
+    final file = File(filePath);
+    if (!await file.exists()) {
+      throw const BackendException('录音文件不存在');
+    }
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty) {
+      throw const BackendException('录音内容为空');
+    }
+    final client = _httpClientFactory()
+      ..connectionTimeout = const Duration(seconds: 8);
+    try {
+      final endpoint = await _endpoint('/transcribe', token: token);
+      final request = await client.postUrl(endpoint);
+      request.followRedirects = false;
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      final boundary =
+          '----presence-mobile-${DateTime.now().millisecondsSinceEpoch}';
+      request.headers.set(
+        HttpHeaders.contentTypeHeader,
+        'multipart/form-data; boundary=$boundary',
+      );
+
+      void writeTextField(String name, String value) {
+        request.add(
+          utf8.encode(
+            '--$boundary\r\n'
+            'Content-Disposition: form-data; name="$name"\r\n\r\n'
+            '$value\r\n',
+          ),
+        );
+      }
+
+      writeTextField('channel', channel);
+      request.add(
+        utf8.encode(
+          '--$boundary\r\n'
+          'Content-Disposition: form-data; name="file"; filename="voice_input.m4a"\r\n'
+          'Content-Type: audio/mp4\r\n\r\n',
+        ),
+      );
+      request.add(bytes);
+      request.add(utf8.encode('\r\n'));
+      request.add(utf8.encode('--$boundary--\r\n'));
+
+      final response = await request.close().timeout(
+        const Duration(seconds: 60),
+      );
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw BackendException(
+          _extractError(body, response.statusCode),
+          statusCode: response.statusCode,
+        );
+      }
+      final decoded = jsonDecode(body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const BackendException('语音转写返回格式不是 JSON object');
+      }
+      final text = decoded['text'];
+      return text is String ? text : '';
+    } on TimeoutException {
+      throw const BackendException('语音转写响应超时');
+    } on SocketException {
+      throw const BackendException('连不上后端：请确认后端已启动，或 adb reverse 已生效');
+    } on FormatException {
+      throw const BackendException('语音转写返回不是有效 JSON');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  /// 传感器上报：步数/电量/亮屏次数，均可选，有什么传什么。
+  Future<void> pushSensorData({
+    required String token,
+    int? steps,
+    int? battery,
+    int? screenSessions,
+  }) async {
+    await _request(
+      '/sensor/push',
+      token: token,
+      method: 'POST',
+      body: {
+        if (steps != null) 'steps': steps,
+        if (battery != null) 'battery': battery,
+        if (screenSessions != null) 'screen_sessions': screenSessions,
+      },
+    );
+  }
+
   Future<void> pushScreenContext(
     ScreenContextSnapshot snapshot, {
     required String token,

@@ -35,6 +35,7 @@ class MainActivity : FlutterActivity() {
     private var pendingImagePickResult: MethodChannel.Result? = null
     private var pendingFilePickResult: MethodChannel.Result? = null
     private var pendingImagesPickResult: MethodChannel.Result? = null
+    private val voiceRecorder by lazy { VoiceRecorder(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -466,6 +467,54 @@ class MainActivity : FlutterActivity() {
                             prefs.edit().putString(BackendSecurityPolicy.RELAY_TOPIC_KEY, value).apply()
                         }
                         result.success(null)
+                    }
+                    // ── W9：语音输入 ──────────────────────────────────────────────
+                    "hasRecordAudioPermission" -> {
+                        result.success(
+                            checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                                PackageManager.PERMISSION_GRANTED,
+                        )
+                    }
+                    "requestRecordAudioPermission" -> {
+                        requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 2402)
+                        result.success(null)
+                    }
+                    "startVoiceRecording" -> {
+                        result.success(voiceRecorder.start())
+                    }
+                    "stopVoiceRecording" -> {
+                        result.success(voiceRecorder.stop())
+                    }
+                    "cancelVoiceRecording" -> {
+                        voiceRecorder.cancel()
+                        result.success(null)
+                    }
+                    // ── W9：传感器上报 ────────────────────────────────────────────
+                    "readBatteryPercent" -> {
+                        result.success(SensorAccess.readBatteryPercent(this))
+                    }
+                    "hasActivityRecognitionPermission" -> {
+                        val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) ==
+                                PackageManager.PERMISSION_GRANTED
+                        } else {
+                            true
+                        }
+                        result.success(granted)
+                    }
+                    "requestActivityRecognitionPermission" -> {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            requestPermissions(
+                                arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),
+                                2403,
+                            )
+                        }
+                        result.success(null)
+                    }
+                    "readTodaySteps" -> {
+                        SensorAccess.readTodaySteps(this, prefs, 2500L) { steps ->
+                            result.success(steps)
+                        }
                     }
                     else -> result.notImplemented()
                 }

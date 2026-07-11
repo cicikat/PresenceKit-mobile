@@ -672,4 +672,98 @@ class AppSettingsStore {
     if (!_channelAvailable) return;
     await _channel.invokeMethod<void>('setRelayTopic', {'value': value});
   }
+
+  // ── W9：语音输入 ────────────────────────────────────────────────────────────
+
+  Future<bool> hasRecordAudioPermission() async {
+    if (!_channelAvailable) return false;
+    try {
+      return await _channel.invokeMethod<bool>('hasRecordAudioPermission') ??
+          false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<void> requestRecordAudioPermission() async {
+    if (!_channelAvailable) return;
+    try {
+      await _channel.invokeMethod<void>('requestRecordAudioPermission');
+    } on PlatformException {
+      // 用户仍可去系统设置手动授权。
+    }
+  }
+
+  /// 开始录音，返回是否成功启动（已有一段在录时返回 false）。
+  Future<bool> startVoiceRecording() async {
+    if (!_channelAvailable) return false;
+    try {
+      return await _channel.invokeMethod<bool>('startVoiceRecording') ??
+          false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// 停止录音，返回本机 m4a 文件路径；调用方读取上传后应自行删除该文件。
+  /// 未在录音或停止失败时返回 null。
+  Future<String?> stopVoiceRecording() async {
+    if (!_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<String>('stopVoiceRecording');
+    } on PlatformException {
+      return null;
+    }
+  }
+
+  /// 取消录音（用户中途放弃），丢弃已录内容，不返回文件。
+  Future<void> cancelVoiceRecording() async {
+    if (!_channelAvailable) return;
+    try {
+      await _channel.invokeMethod<void>('cancelVoiceRecording');
+    } on PlatformException {
+      // 忽略——最坏情况是留一个孤儿缓存文件，下次录音会被覆盖或由系统清理缓存目录。
+    }
+  }
+
+  // ── W9：传感器上报 ──────────────────────────────────────────────────────────
+
+  Future<int?> readBatteryPercent() async {
+    if (!_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<int>('readBatteryPercent');
+    } on PlatformException {
+      return null;
+    }
+  }
+
+  Future<bool> hasActivityRecognitionPermission() async {
+    if (!_channelAvailable) return false;
+    try {
+      return await _channel
+              .invokeMethod<bool>('hasActivityRecognitionPermission') ??
+          false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<void> requestActivityRecognitionPermission() async {
+    if (!_channelAvailable) return;
+    try {
+      await _channel.invokeMethod<void>('requestActivityRecognitionPermission');
+    } on PlatformException {
+      // 用户仍可去系统设置手动授权。
+    }
+  }
+
+  /// 今日步数（按本机 baseline 换算）；权限未开启、传感器不存在或读取超时均返回 null。
+  Future<int?> readTodaySteps() async {
+    if (!_channelAvailable) return null;
+    try {
+      return await _channel.invokeMethod<int>('readTodaySteps');
+    } on PlatformException {
+      return null;
+    }
+  }
 }

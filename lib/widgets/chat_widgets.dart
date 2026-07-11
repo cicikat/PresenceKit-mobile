@@ -33,6 +33,9 @@ class ChatScene extends StatelessWidget {
     required this.onOpenMeituan,
     required this.onOpenTaobao,
     required this.onShowOrderBubble,
+    required this.onVoiceRecordStart,
+    required this.onVoiceRecordStop,
+    required this.onVoiceRecordCancel,
   });
 
   final YxPalette c;
@@ -65,6 +68,9 @@ class ChatScene extends StatelessWidget {
   final VoidCallback onOpenMeituan;
   final VoidCallback onOpenTaobao;
   final VoidCallback onShowOrderBubble;
+  final Future<bool> Function() onVoiceRecordStart;
+  final Future<String?> Function() onVoiceRecordStop;
+  final VoidCallback onVoiceRecordCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -172,6 +178,9 @@ class ChatScene extends StatelessWidget {
               sending: backendBusy,
               onOpenAttach: onOpenAttach,
               onSend: onSend,
+              onVoiceRecordStart: onVoiceRecordStart,
+              onVoiceRecordStop: onVoiceRecordStop,
+              onVoiceRecordCancel: onVoiceRecordCancel,
             ),
           ],
         ),
@@ -822,12 +831,24 @@ class Composer extends StatefulWidget {
     required this.sending,
     required this.onOpenAttach,
     required this.onSend,
+    required this.onVoiceRecordStart,
+    required this.onVoiceRecordStop,
+    required this.onVoiceRecordCancel,
   });
 
   final YxPalette c;
   final bool sending;
   final VoidCallback onOpenAttach;
   final ValueChanged<String> onSend;
+
+  /// 开始录音；返回 false 表示启动失败（如无权限），composer 会回退到未录音态。
+  final Future<bool> Function() onVoiceRecordStart;
+
+  /// 停止录音并转写；返回识别文本（可能为空串），null 表示失败。
+  final Future<String?> Function() onVoiceRecordStop;
+
+  /// 中途放弃（如长按被系统手势打断），丢弃已录内容。
+  final VoidCallback onVoiceRecordCancel;
 
   @override
   State<Composer> createState() => _ComposerState();
@@ -836,6 +857,44 @@ class Composer extends StatefulWidget {
 class _ComposerState extends State<Composer> {
   final TextEditingController _controller = TextEditingController();
   final ValueNotifier<String> _draft = ValueNotifier<String>('');
+  bool _recording = false;
+  bool _transcribing = false;
+
+  Future<void> _handleRecordStart() async {
+    if (_recording || _transcribing) return;
+    setState(() => _recording = true);
+    final started = await widget.onVoiceRecordStart();
+    if (!mounted) return;
+    if (!started) {
+      setState(() => _recording = false);
+    }
+  }
+
+  Future<void> _handleRecordEnd() async {
+    if (!_recording) return;
+    setState(() {
+      _recording = false;
+      _transcribing = true;
+    });
+    final text = await widget.onVoiceRecordStop();
+    if (!mounted) return;
+    setState(() => _transcribing = false);
+    if (text != null && text.trim().isNotEmpty) {
+      final trimmed = text.trim();
+      _controller.text =
+          _controller.text.isEmpty ? trimmed : '${_controller.text}$trimmed';
+      _controller.selection = TextSelection.collapsed(
+        offset: _controller.text.length,
+      );
+      _draft.value = _controller.text;
+    }
+  }
+
+  void _handleRecordCancel() {
+    if (!_recording) return;
+    setState(() => _recording = false);
+    widget.onVoiceRecordCancel();
+  }
 
   @override
   void dispose() {
@@ -898,12 +957,36 @@ class _ComposerState extends State<Composer> {
                 valueListenable: _draft,
                 builder: (context, draft, _) {
                   if (draft.trim().isEmpty) {
-                    return YxIconButton(
-                      c: widget.c,
-                      icon: Icons.mic_none_rounded,
-                      size: 38,
-                      onPressed: () {},
-                      tooltip: '长按说话',
+                    if (_transcribing) {
+                      return SizedBox(
+                        width: 38,
+                        height: 38,
+                        child: Center(
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: widget.c.ink3,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return GestureDetector(
+                      onLongPressStart: (_) => unawaited(_handleRecordStart()),
+                      onLongPressEnd: (_) => unawaited(_handleRecordEnd()),
+                      onLongPressCancel: _handleRecordCancel,
+                      child: YxIconButton(
+                        c: widget.c,
+                        icon: _recording
+                            ? Icons.mic_rounded
+                            : Icons.mic_none_rounded,
+                        size: 38,
+                        onPressed: () {},
+                        onDark: _recording,
+                        tooltip: _recording ? '松开发送' : '长按说话',
+                      ),
                     );
                   }
                   return SizedBox(

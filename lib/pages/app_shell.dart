@@ -26,6 +26,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   Timer? _mobilePollTimer;
   Timer? _screenContextTimer;
   Timer? _dreamStateTimer;
+  Timer? _sensorPushTimer;
   AppRoute _route = AppRoute.chat;
   bool _dark = false;
   bool _customThemeEnabled = false;
@@ -205,6 +206,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         unawaited(_pushScreenContextOnce(silent: true));
       }
     });
+    unawaited(_pushSensorDataOnce());
+    _sensorPushTimer?.cancel();
+    _sensorPushTimer = Timer.periodic(
+      const Duration(minutes: 30),
+      (_) => unawaited(_pushSensorDataOnce()),
+    );
   }
 
   void _startMobilePollTimer() {
@@ -241,6 +248,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _stopMobilePollTimer();
     _screenContextTimer?.cancel();
     _dreamStateTimer?.cancel();
+    _sensorPushTimer?.cancel();
     _chatScrollController.removeListener(_handleChatScroll);
     if (_hasAdminToken) {
       unawaited(
@@ -595,6 +603,81 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         ),
       ),
     );
+  }
+
+  // ── W9：语音输入 ──────────────────────────────────────────────────────────
+
+  Future<bool> _startVoiceRecording() async {
+    var granted = await _settingsStore.hasRecordAudioPermission();
+    if (!granted) {
+      await _settingsStore.requestRecordAudioPermission();
+      // 系统权限弹窗是异步的，这里给用户一点交互时间后再查一次；
+      // 拒绝的话下面 startVoiceRecording 会失败，composer 侧会回退到未录音态。
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      granted = await _settingsStore.hasRecordAudioPermission();
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('需要麦克风权限才能语音输入')),
+          );
+        }
+        return false;
+      }
+    }
+    return _settingsStore.startVoiceRecording();
+  }
+
+  Future<String?> _stopVoiceRecordingAndTranscribe() async {
+    final filePath = await _settingsStore.stopVoiceRecording();
+    if (filePath == null) return null;
+    try {
+      final text = await _backend.transcribeAudio(
+        filePath: filePath,
+        token: _requireAdminToken(),
+      );
+      return text;
+    } on BackendException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('语音转写失败：${e.message}')));
+      }
+      return null;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('语音转写失败：$e')));
+      }
+      return null;
+    } finally {
+      unawaited(File(filePath).delete().catchError((_) => File(filePath)));
+    }
+  }
+
+  // ── W9：传感器上报（步数/电量，30 分钟一次） ─────────────────────────────────
+
+  Future<void> _pushSensorDataOnce() async {
+    if (!_hasAdminToken) return;
+    try {
+      final battery = await _settingsStore.readBatteryPercent();
+      int? steps;
+      final stepsGranted = await _settingsStore.hasActivityRecognitionPermission();
+      if (stepsGranted) {
+        steps = await _settingsStore.readTodaySteps();
+      } else {
+        // 首次静默申请一次；这次上报先不带步数，下次 tick 再补上。
+        await _settingsStore.requestActivityRecognitionPermission();
+      }
+      if (battery == null && steps == null) return;
+      await _backend.pushSensorData(
+        token: _requireAdminToken(),
+        battery: battery,
+        steps: steps,
+      );
+    } catch (_) {
+      // 传感器上报是低优先级后台任务，静默失败即可，不打扰用户。
+    }
   }
 
   Future<void> _pushScreenContextOnce({bool silent = false}) async {
@@ -2379,6 +2462,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           onOpenMeituan: () => unawaited(_openShoppingApp('meituan', '美团')),
           onOpenTaobao: () => unawaited(_openShoppingApp('taobao', '淘宝')),
           onShowOrderBubble: () => unawaited(_showOrderBubble('meituan', '美团')),
+          onVoiceRecordStart: _startVoiceRecording,
+          onVoiceRecordStop: _stopVoiceRecordingAndTranscribe,
+          onVoiceRecordCancel: () => unawaited(_settingsStore.cancelVoiceRecording()),
         );
       case AppRoute.dream:
         return DreamPage(
