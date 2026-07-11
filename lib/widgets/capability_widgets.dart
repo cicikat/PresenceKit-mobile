@@ -23,6 +23,7 @@ class CapabilitySheet extends StatefulWidget {
     required this.onLoadBehaviorStatus,
     required this.onFetchDiagnostics,
     required this.onEditBackend,
+    required this.onEditRelay,
   });
 
   final YxPalette c;
@@ -48,6 +49,7 @@ class CapabilitySheet extends StatefulWidget {
   final Future<BehaviorDecisionStatus> Function() onLoadBehaviorStatus;
   final Future<BackendDiagnostics> Function() onFetchDiagnostics;
   final VoidCallback onEditBackend;
+  final Future<void> Function() onEditRelay;
 
   @override
   State<CapabilitySheet> createState() => _CapabilitySheetState();
@@ -435,6 +437,15 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     enabled: status.relayConnectionStatus.connected,
                     actionLabel: _relayConnectionLabel(
                       status.relayConnectionStatus,
+                    ),
+                    trailing: YxIconButton(
+                      c: c,
+                      icon: Icons.edit_location_alt_rounded,
+                      onPressed: _acting
+                          ? () {}
+                          : () => _run(widget.onEditRelay),
+                      tooltip: '修改中继地址',
+                      size: 30,
                     ),
                   ),
                   CapabilityRow(

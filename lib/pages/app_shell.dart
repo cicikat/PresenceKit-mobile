@@ -861,6 +861,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         onFetchDiagnostics: () =>
             _backend.fetchDiagnostics(token: _requireAdminToken()),
         onEditBackend: _openBackendSettings,
+        onEditRelay: _openRelaySettings,
       ),
     );
   }
@@ -871,6 +872,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   static final RegExp _safeOwnerUserIdPattern = RegExp(r'^[A-Za-z0-9_-]+$');
+  static final RegExp _safeRelayTopicPattern = RegExp(r'^[a-z0-9/_-]+$');
 
   void _openBackendSettings() {
     final controller = TextEditingController(text: _backendBaseUrl);
@@ -958,6 +960,124 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     ).whenComplete(() {
       controller.dispose();
       ownerController.dispose();
+    });
+  }
+
+  Future<void> _openRelaySettings() async {
+    final currentBaseUrl = await _settingsStore.loadRelayBaseUrl() ?? '';
+    final currentTopic = await _settingsStore.loadRelayTopic() ?? '';
+    final currentToken = await _settingsStore.loadRelayToken() ?? '';
+    if (!mounted) return;
+
+    final baseUrlController = TextEditingController(text: currentBaseUrl);
+    final topicController = TextEditingController(text: currentTopic);
+    final tokenController = TextEditingController(text: currentToken);
+    String? baseUrlError;
+    String? topicError;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, dialogSetState) {
+            return AlertDialog(
+              backgroundColor: c.surface,
+              title: Text('推送中继（ntfy）', style: serif(c, 20)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: baseUrlController,
+                    autofocus: true,
+                    keyboardType: TextInputType.url,
+                    style: mono(c, 13),
+                    decoration: InputDecoration(
+                      labelText: '中继地址',
+                      hintText: 'https://ntfy.sh 或 http://192.168.x.x:8090',
+                      errorText: baseUrlError,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: topicController,
+                    keyboardType: TextInputType.text,
+                    style: mono(c, 13),
+                    decoration: InputDecoration(
+                      labelText: 'topic',
+                      hintText: '例：yexuan-wake-a1b2c3（当作密码，用随机串）',
+                      errorText: topicError,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: tokenController,
+                    keyboardType: TextInputType.text,
+                    style: mono(c, 13),
+                    decoration: const InputDecoration(
+                      labelText: 'token（可选）',
+                      hintText: '中继服务无鉴权时留空',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '需与后端 config.yaml 的 relay_base_url/relay_topic/relay_token 三项一致。'
+                    '留空 topic 会关闭中继实时唤醒，退化为周期补偿轮询。',
+                    style: serif(c, 12, color: c.ink3),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    final topicValue = topicController.text.trim();
+                    if (topicValue.isNotEmpty &&
+                        (!_safeRelayTopicPattern.hasMatch(topicValue) ||
+                            topicValue.length > 128)) {
+                      dialogSetState(
+                        () => topicError = '仅支持小写字母、数字、/ _ -，且不超过 128 字符',
+                      );
+                      return;
+                    }
+                    final rawBaseUrl = baseUrlController.text.trim();
+                    String normalized = '';
+                    if (rawBaseUrl.isNotEmpty) {
+                      final resolved = await _normalizeBackendBaseUrl(
+                        rawBaseUrl,
+                      );
+                      if (resolved == null) {
+                        dialogSetState(() => baseUrlError = '请输入有效地址');
+                        return;
+                      }
+                      if (!await _ensureTrustedBackendOrigin(resolved)) {
+                        dialogSetState(() => baseUrlError = '未信任该地址');
+                        return;
+                      }
+                      normalized = resolved;
+                    }
+                    if (!dialogContext.mounted) return;
+                    Navigator.pop(dialogContext);
+                    await _settingsStore.saveRelayBaseUrl(normalized);
+                    await _settingsStore.saveRelayTopic(topicValue);
+                    await _settingsStore.saveRelayToken(
+                      tokenController.text.trim(),
+                    );
+                  },
+                  child: const Text('保存'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      baseUrlController.dispose();
+      topicController.dispose();
+      tokenController.dispose();
     });
   }
 
