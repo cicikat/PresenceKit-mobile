@@ -2536,6 +2536,14 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           requireToken: _requireAdminToken,
           onBack: () => setState(() => _route = AppRoute.chat),
         );
+      case AppRoute.group:
+        return GroupListScreen(
+          key: const ValueKey('group'),
+          c: c,
+          backend: _backend,
+          requireToken: _requireAdminToken,
+          onBack: () => setState(() => _route = AppRoute.chat),
+        );
     }
   }
 }

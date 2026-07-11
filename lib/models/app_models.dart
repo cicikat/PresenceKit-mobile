@@ -118,7 +118,7 @@ class BehaviorDecisionStatus {
   }
 }
 
-enum AppRoute { chat, dream, profile, diary, garden, activity }
+enum AppRoute { chat, dream, profile, diary, garden, activity, group }
 
 extension AppRouteLabel on AppRoute {
   String get label {
@@ -135,6 +135,8 @@ extension AppRouteLabel on AppRoute {
         return '花园';
       case AppRoute.activity:
         return '活动';
+      case AppRoute.group:
+        return '群聊';
     }
   }
 }
@@ -1208,6 +1210,130 @@ class DreamSeedState {
   final String? sessionId;
   final bool hasSeed;
   final String seedPreview;
+}
+
+// ── W8：群聊 Stage ────────────────────────────────────────────────────────────
+
+class GroupRosterMember {
+  const GroupRosterMember({
+    required this.charId,
+    required this.label,
+    required this.avatarUrl,
+  });
+
+  factory GroupRosterMember.fromJson(Map<String, dynamic> json) {
+    return GroupRosterMember(
+      charId: (json['char_id'] ?? '').toString(),
+      label: (json['label'] ?? '').toString(),
+      avatarUrl: json['avatar_url']?.toString(),
+    );
+  }
+
+  final String charId;
+  final String label;
+  final String? avatarUrl;
+}
+
+class GroupSettings {
+  const GroupSettings({
+    required this.minResponders,
+    required this.maxResponders,
+  });
+
+  factory GroupSettings.fromJson(Map<String, dynamic> json) {
+    return GroupSettings(
+      minResponders: _actInt(json['min_responders']),
+      maxResponders: _actInt(json['max_responders']),
+    );
+  }
+
+  final int minResponders;
+  final int maxResponders;
+}
+
+class GroupMessage {
+  const GroupMessage({
+    required this.msgId,
+    required this.speakerId,
+    required this.content,
+    required this.timestamp,
+  });
+
+  factory GroupMessage.fromJson(Map<String, dynamic> json) {
+    final ts = json['timestamp'];
+    return GroupMessage(
+      msgId: (json['msg_id'] ?? '').toString(),
+      speakerId: (json['speaker_id'] ?? '').toString(),
+      content: (json['content'] ?? '').toString(),
+      timestamp: ts is num ? ts.toDouble() : double.tryParse((ts ?? '0').toString()) ?? 0,
+    );
+  }
+
+  final String msgId;
+  final String speakerId;
+  final String content;
+  final double timestamp;
+
+  bool get isOwner => speakerId == 'owner';
+}
+
+class GroupSummary {
+  const GroupSummary({
+    required this.groupId,
+    required this.domain,
+    required this.roster,
+    required this.title,
+  });
+
+  factory GroupSummary.fromJson(Map<String, dynamic> json) {
+    final rawRoster = json['roster'];
+    return GroupSummary(
+      groupId: (json['group_id'] ?? '').toString(),
+      domain: (json['domain'] ?? 'reality').toString(),
+      roster: rawRoster is List
+          ? rawRoster
+                .whereType<Map>()
+                .map((m) => GroupRosterMember.fromJson(Map<String, dynamic>.from(m)))
+                .toList(growable: false)
+          : const [],
+      title: (json['title'] ?? '').toString(),
+    );
+  }
+
+  final String groupId;
+  final String domain;
+  final List<GroupRosterMember> roster;
+  final String title;
+
+  String get displayTitle => title.isNotEmpty ? title : groupId;
+}
+
+class GroupDetail {
+  const GroupDetail({
+    required this.summary,
+    required this.settings,
+    required this.recent,
+  });
+
+  factory GroupDetail.fromJson(Map<String, dynamic> json) {
+    final rawRecent = json['recent'];
+    return GroupDetail(
+      summary: GroupSummary.fromJson(json),
+      settings: GroupSettings.fromJson(
+        json['settings'] is Map ? Map<String, dynamic>.from(json['settings']) : const {},
+      ),
+      recent: rawRecent is List
+          ? rawRecent
+                .whereType<Map>()
+                .map((m) => GroupMessage.fromJson(Map<String, dynamic>.from(m)))
+                .toList(growable: false)
+          : const [],
+    );
+  }
+
+  final GroupSummary summary;
+  final GroupSettings settings;
+  final List<GroupMessage> recent;
 }
 
 String _formatDateTime(DateTime date) {

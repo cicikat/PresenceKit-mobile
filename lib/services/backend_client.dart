@@ -25,6 +25,8 @@ import '../main.dart'
         DreamState,
         GardenState,
         GomokuState,
+        GroupDetail,
+        GroupSummary,
         MobilePollMessage,
         PromptAssets,
         ReadingLibraryBook,
@@ -69,6 +71,7 @@ class BackendClient {
       final request = switch (method) {
         'PATCH' => await client.patchUrl(endpoint),
         'POST' => await client.postUrl(endpoint),
+        'DELETE' => await client.deleteUrl(endpoint),
         _ => await client.getUrl(endpoint),
       };
       request.followRedirects = false;
@@ -891,6 +894,105 @@ class BackendClient {
       body: {'session_id': sessionId},
       expectJson: false,
     );
+  }
+
+  // ── W8：群聊 Stage ─────────────────────────────────────────────────────────
+
+  Future<List<GroupSummary>> groupList({required String token}) async {
+    final decoded = await _request('/group/list', token: token);
+    final groups = decoded['groups'];
+    if (groups is! List) return const [];
+    return groups
+        .whereType<Map>()
+        .map((g) => GroupSummary.fromJson(Map<String, dynamic>.from(g)))
+        .toList(growable: false);
+  }
+
+  Future<GroupDetail> groupCreate({
+    required List<String> roster,
+    required int minResponders,
+    required int maxResponders,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/group/create',
+      token: token,
+      method: 'POST',
+      body: {
+        'roster': roster,
+        'domain': 'reality',
+        'settings': {
+          'min_responders': minResponders,
+          'max_responders': maxResponders,
+        },
+      },
+    );
+    return GroupDetail.fromJson(decoded);
+  }
+
+  Future<GroupDetail> groupGet({
+    required String groupId,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/group/${Uri.encodeComponent(groupId)}',
+      token: token,
+    );
+    return GroupDetail.fromJson(decoded);
+  }
+
+  Future<void> groupSend({
+    required String groupId,
+    required String message,
+    required String token,
+  }) async {
+    await _request(
+      '/group/${Uri.encodeComponent(groupId)}/send',
+      token: token,
+      method: 'POST',
+      body: {'message': message},
+    );
+  }
+
+  Future<void> groupDelete({
+    required String groupId,
+    required String token,
+  }) async {
+    await _request(
+      '/group/${Uri.encodeComponent(groupId)}',
+      token: token,
+      method: 'DELETE',
+      expectJson: false,
+    );
+  }
+
+  Future<GroupDetail> groupPatchSettings({
+    required String groupId,
+    required int minResponders,
+    required int maxResponders,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/group/${Uri.encodeComponent(groupId)}/settings',
+      token: token,
+      method: 'PATCH',
+      body: {'min_responders': minResponders, 'max_responders': maxResponders},
+    );
+    return GroupDetail.fromJson(decoded);
+  }
+
+  Future<GroupDetail> groupPatchRoster({
+    required String groupId,
+    required List<String> roster,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/group/${Uri.encodeComponent(groupId)}/roster',
+      token: token,
+      method: 'PATCH',
+      body: {'roster': roster},
+    );
+    return GroupDetail.fromJson(decoded);
   }
 
   Future<void> pushScreenContext(

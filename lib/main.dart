@@ -24,6 +24,7 @@ part 'widgets/capability_widgets.dart';
 part 'widgets/chat_widgets.dart';
 part 'widgets/diary_widgets.dart';
 part 'widgets/gomoku_widgets.dart';
+part 'widgets/group_widgets.dart';
 part 'widgets/reading_widgets.dart';
 part 'widgets/dream_widgets.dart';
 part 'widgets/drawer_widgets.dart';
