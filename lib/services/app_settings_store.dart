@@ -259,6 +259,23 @@ class AppSettingsStore {
     }
   }
 
+  /// W7：活动系统 · 阅读书库 — 选一个 PDF 文件。
+  Future<PickedUploadFile?> pickPdfFile() async {
+    if (!_channelAvailable) return null;
+    try {
+      final raw = await _channel.invokeMethod<Map<dynamic, dynamic>>(
+        'pickPdfFile',
+      );
+      if (raw == null) return null;
+      final bytes = raw['bytes'];
+      if (bytes is! Uint8List || bytes.isEmpty) return null;
+      final name = (raw['name'] ?? 'book.pdf').toString().trim();
+      return PickedUploadFile(name: name.isEmpty ? 'book.pdf' : name, bytes: bytes);
+    } on PlatformException {
+      return null;
+    }
+  }
+
   Future<List<PickedUploadFile>> pickUploadImages() async {
     if (!_channelAvailable) return const [];
     try {

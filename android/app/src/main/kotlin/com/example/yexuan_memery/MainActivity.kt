@@ -32,9 +32,11 @@ class MainActivity : FlutterActivity() {
     private val pickProfileImageRequest = 9101
     private val pickUploadFileRequest = 9102
     private val pickUploadImagesRequest = 9103
+    private val pickPdfFileRequest = 9104
     private var pendingImagePickResult: MethodChannel.Result? = null
     private var pendingFilePickResult: MethodChannel.Result? = null
     private var pendingImagesPickResult: MethodChannel.Result? = null
+    private var pendingPdfPickResult: MethodChannel.Result? = null
     private val voiceRecorder by lazy { VoiceRecorder(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -177,6 +179,9 @@ class MainActivity : FlutterActivity() {
                     }
                     "pickUploadFile" -> {
                         pickUploadFile(result)
+                    }
+                    "pickPdfFile" -> {
+                        pickPdfFile(result)
                     }
                     "pickUploadImages" -> {
                         pickUploadImages(result)
@@ -573,6 +578,36 @@ class MainActivity : FlutterActivity() {
             )
             return
         }
+        if (requestCode == pickPdfFileRequest) {
+            val callback = pendingPdfPickResult
+            pendingPdfPickResult = null
+            if (callback == null) {
+                super.onActivityResult(requestCode, resultCode, data)
+                return
+            }
+            if (resultCode != RESULT_OK || data?.data == null) {
+                callback.success(null)
+                return
+            }
+            val uri = data.data ?: run {
+                callback.success(null)
+                return
+            }
+            val bytes = runCatching {
+                contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            }.getOrNull()
+            if (bytes == null) {
+                callback.success(null)
+                return
+            }
+            callback.success(
+                mapOf(
+                    "name" to displayNameFor(uri),
+                    "bytes" to bytes,
+                ),
+            )
+            return
+        }
         if (requestCode == pickUploadImagesRequest) {
             val callback = pendingImagesPickResult
             pendingImagesPickResult = null
@@ -800,6 +835,25 @@ class MainActivity : FlutterActivity() {
             startActivityForResult(intent, pickUploadFileRequest)
         }.onFailure {
             pendingFilePickResult = null
+            result.success(null)
+        }
+    }
+
+    // W7：活动系统 · 阅读 — 从书库挑一本 PDF 上传。
+    private fun pickPdfFile(result: MethodChannel.Result) {
+        if (pendingPdfPickResult != null) {
+            result.success(null)
+            return
+        }
+        pendingPdfPickResult = result
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/pdf"
+        }
+        runCatching {
+            startActivityForResult(intent, pickPdfFileRequest)
+        }.onFailure {
+            pendingPdfPickResult = null
             result.success(null)
         }
     }

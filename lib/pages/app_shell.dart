@@ -2528,6 +2528,14 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           onRefresh: _loadGarden,
           onBack: () => setState(() => _route = AppRoute.chat),
         );
+      case AppRoute.activity:
+        return ActivityHomePage(
+          key: const ValueKey('activity'),
+          c: c,
+          backend: _backend,
+          requireToken: _requireAdminToken,
+          onBack: () => setState(() => _route = AppRoute.chat),
+        );
     }
   }
 }

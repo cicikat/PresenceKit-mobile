@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../main.dart'
     show
+        ActivityChatResult,
         BackendActiveCharacter,
         BackendChatResponse,
         BackendDiagnostics,
@@ -15,14 +16,20 @@ import '../main.dart'
         BehaviorDecisionStatus,
         ChatLogDates,
         ChatLogDay,
+        ChessState,
         DiaryDetail,
         DiaryListItem,
         DreamChatResponse,
+        DreamSeedState,
         DreamSettings,
         DreamState,
         GardenState,
+        GomokuState,
         MobilePollMessage,
-        PromptAssets;
+        PromptAssets,
+        ReadingLibraryBook,
+        ReadingPageResult,
+        ReadingState;
 import '../models/screen_context.dart';
 import 'app_settings_store.dart';
 
@@ -489,6 +496,400 @@ class BackendClient {
         if (battery != null) 'battery': battery,
         if (screenSessions != null) 'screen_sessions': screenSessions,
       },
+    );
+  }
+
+  // ── W7：活动系统 — 阅读 ────────────────────────────────────────────────────
+
+  Future<ReadingLibraryBook> readingAddBook({
+    required List<int> bytes,
+    required String filename,
+    required String token,
+  }) async {
+    final client = _httpClientFactory()
+      ..connectionTimeout = const Duration(seconds: 8);
+    try {
+      final endpoint = await _endpoint(
+        '/activity/reading/library/add',
+        token: token,
+      );
+      final request = await client.postUrl(endpoint);
+      request.followRedirects = false;
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      final boundary =
+          '----presence-mobile-${DateTime.now().millisecondsSinceEpoch}';
+      request.headers.set(
+        HttpHeaders.contentTypeHeader,
+        'multipart/form-data; boundary=$boundary',
+      );
+      request.add(
+        utf8.encode(
+          '--$boundary\r\n'
+          'Content-Disposition: form-data; name="file"; filename="${_multipartEscape(filename)}"\r\n'
+          'Content-Type: application/pdf\r\n\r\n',
+        ),
+      );
+      request.add(bytes);
+      request.add(utf8.encode('\r\n--$boundary--\r\n'));
+      final response = await request.close().timeout(
+        const Duration(seconds: 60),
+      );
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw BackendException(
+          _extractError(body, response.statusCode),
+          statusCode: response.statusCode,
+        );
+      }
+      final decoded = jsonDecode(body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const BackendException('添加书籍返回格式不是 JSON object');
+      }
+      return ReadingLibraryBook.fromJson(decoded);
+    } on TimeoutException {
+      throw const BackendException('添加书籍响应超时');
+    } on SocketException {
+      throw const BackendException('连不上后端：请确认后端已启动，或 adb reverse 已生效');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<List<ReadingLibraryBook>> readingLibrary({required String token}) async {
+    final decoded = await _request('/activity/reading/library', token: token);
+    final books = decoded['books'];
+    if (books is! List) return const [];
+    return books
+        .whereType<Map>()
+        .map((b) => ReadingLibraryBook.fromJson(Map<String, dynamic>.from(b)))
+        .toList(growable: false);
+  }
+
+  Future<void> readingDeleteBook({
+    required String bookId,
+    required String token,
+  }) async {
+    await _request(
+      '/activity/reading/library/delete',
+      token: token,
+      method: 'POST',
+      body: {'book_id': bookId, 'with_insights': false},
+      expectJson: false,
+    );
+  }
+
+  Future<void> readingRenameBook({
+    required String bookId,
+    required String title,
+    required String token,
+  }) async {
+    await _request(
+      '/activity/reading/library/rename',
+      token: token,
+      method: 'POST',
+      body: {'book_id': bookId, 'title': title},
+      expectJson: false,
+    );
+  }
+
+  Future<ReadingState> readingStartFromLibrary({
+    required String bookId,
+    required String token,
+    int startPage = 1,
+  }) async {
+    final decoded = await _request(
+      '/activity/reading/start_from_library',
+      token: token,
+      method: 'POST',
+      body: {'book_id': bookId, 'start_page': startPage},
+    );
+    return ReadingState.fromJson(decoded);
+  }
+
+  Future<ReadingState> readingState({required String token}) async {
+    final decoded = await _request('/activity/reading/state', token: token);
+    return ReadingState.fromJson(decoded);
+  }
+
+  Future<ReadingPageResult> readingPage({
+    required String sessionId,
+    required int page,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/reading/page?session_id=${Uri.encodeQueryComponent(sessionId)}&page=$page',
+      token: token,
+    );
+    return ReadingPageResult.fromJson(decoded);
+  }
+
+  Future<ReadingPageResult> readingTurnPage({
+    required String sessionId,
+    required String direction,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/reading/turn_page',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId, 'direction': direction},
+    );
+    return ReadingPageResult.fromJson(decoded);
+  }
+
+  Future<void> readingClose({
+    required String sessionId,
+    required String token,
+  }) async {
+    await _request(
+      '/activity/reading/close',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId},
+      expectJson: false,
+    );
+  }
+
+  Future<ActivityChatResult> readingChat({
+    required String sessionId,
+    required String message,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/reading/chat',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId, 'message': message},
+    );
+    return ActivityChatResult.fromJson(decoded);
+  }
+
+  // ── W7：活动系统 — 五子棋 ───────────────────────────────────────────────────
+
+  Future<GomokuState> gomokuStart({required String token}) async {
+    final decoded = await _request(
+      '/activity/gomoku/start',
+      token: token,
+      method: 'POST',
+      body: const {'opponent': 'character_ai'},
+    );
+    return GomokuState.fromJson(decoded);
+  }
+
+  Future<GomokuState> gomokuState({required String token}) async {
+    final decoded = await _request('/activity/gomoku/state', token: token);
+    return GomokuState.fromJson(decoded);
+  }
+
+  Future<GomokuState> gomokuMove({
+    required String sessionId,
+    required int x,
+    required int y,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/gomoku/move',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId, 'x': x, 'y': y},
+    );
+    return GomokuState.fromJson(decoded);
+  }
+
+  Future<GomokuState> gomokuAiMove({
+    required String sessionId,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/gomoku/ai_move',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId},
+    );
+    return GomokuState.fromJson(decoded);
+  }
+
+  Future<void> gomokuClose({
+    required String sessionId,
+    required String token,
+  }) async {
+    await _request(
+      '/activity/gomoku/close',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId},
+      expectJson: false,
+    );
+  }
+
+  Future<ActivityChatResult> gomokuChat({
+    required String sessionId,
+    required String message,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/gomoku/chat',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId, 'message': message},
+    );
+    return ActivityChatResult.fromJson(decoded);
+  }
+
+  Future<String?> gomokuComment({
+    required String sessionId,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/gomoku/comment',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId},
+    );
+    return decoded['comment']?.toString();
+  }
+
+  // ── W7：活动系统 — 国际象棋 ─────────────────────────────────────────────────
+
+  Future<ChessState> chessStart({required String token}) async {
+    final decoded = await _request(
+      '/activity/chess/start',
+      token: token,
+      method: 'POST',
+      body: const {'opponent': 'character_ai'},
+    );
+    return ChessState.fromJson(decoded);
+  }
+
+  Future<ChessState> chessState({required String token}) async {
+    final decoded = await _request('/activity/chess/state', token: token);
+    return ChessState.fromJson(decoded);
+  }
+
+  Future<List<String>> chessLegalMoves({
+    required String sessionId,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/chess/legal_moves?session_id=${Uri.encodeQueryComponent(sessionId)}',
+      token: token,
+    );
+    final moves = decoded['legal_moves'];
+    if (moves is! List) return const [];
+    return moves.map((m) => m.toString()).toList(growable: false);
+  }
+
+  Future<ChessState> chessMove({
+    required String sessionId,
+    required String uci,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/chess/move',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId, 'move': uci},
+    );
+    return ChessState.fromJson(decoded);
+  }
+
+  Future<ChessState> chessAiMove({
+    required String sessionId,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/chess/ai_move',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId},
+    );
+    return ChessState.fromJson(decoded);
+  }
+
+  Future<void> chessClose({
+    required String sessionId,
+    required String token,
+  }) async {
+    await _request(
+      '/activity/chess/close',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId},
+      expectJson: false,
+    );
+  }
+
+  Future<ActivityChatResult> chessChat({
+    required String sessionId,
+    required String message,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/chess/chat',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId, 'message': message},
+    );
+    return ActivityChatResult.fromJson(decoded);
+  }
+
+  Future<String?> chessComment({
+    required String sessionId,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/chess/comment',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId},
+    );
+    return decoded['comment']?.toString();
+  }
+
+  // ── W7：活动系统 — 梦境预构 ─────────────────────────────────────────────────
+
+  Future<DreamSeedState> dreamSeedStart({required String token}) async {
+    final decoded = await _request(
+      '/activity/dream_seed/start',
+      token: token,
+      method: 'POST',
+      body: const {},
+    );
+    return DreamSeedState.fromJson(decoded);
+  }
+
+  Future<DreamSeedState> dreamSeedState({required String token}) async {
+    final decoded = await _request(
+      '/activity/dream_seed/state',
+      token: token,
+    );
+    return DreamSeedState.fromJson(decoded);
+  }
+
+  Future<ActivityChatResult> dreamSeedChat({
+    required String sessionId,
+    required String message,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/activity/dream_seed/chat',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId, 'message': message},
+    );
+    return ActivityChatResult.fromJson(decoded);
+  }
+
+  Future<void> dreamSeedClose({
+    required String sessionId,
+    required String token,
+  }) async {
+    await _request(
+      '/activity/dream_seed/close',
+      token: token,
+      method: 'POST',
+      body: {'session_id': sessionId},
+      expectJson: false,
     );
   }
 

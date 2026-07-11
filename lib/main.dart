@@ -17,10 +17,14 @@ import 'services/character_naming.dart';
 
 part 'models/app_models.dart';
 part 'pages/app_shell.dart';
+part 'widgets/activity_widgets.dart';
+part 'widgets/chess_widgets.dart';
 part 'widgets/common_widgets.dart';
 part 'widgets/capability_widgets.dart';
 part 'widgets/chat_widgets.dart';
 part 'widgets/diary_widgets.dart';
+part 'widgets/gomoku_widgets.dart';
+part 'widgets/reading_widgets.dart';
 part 'widgets/dream_widgets.dart';
 part 'widgets/drawer_widgets.dart';
 part 'widgets/garden_widgets.dart';

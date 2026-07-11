@@ -118,7 +118,7 @@ class BehaviorDecisionStatus {
   }
 }
 
-enum AppRoute { chat, dream, profile, diary, garden }
+enum AppRoute { chat, dream, profile, diary, garden, activity }
 
 extension AppRouteLabel on AppRoute {
   String get label {
@@ -133,6 +133,8 @@ extension AppRouteLabel on AppRoute {
         return '日记';
       case AppRoute.garden:
         return '花园';
+      case AppRoute.activity:
+        return '活动';
     }
   }
 }
@@ -1009,6 +1011,203 @@ class BackendDreamSettingsSummary {
   final bool? enableDreamLorebook;
   final String? worldLayer;
   final String? jailbreakPreset;
+}
+
+// ── W7：活动系统（阅读 / 五子棋 / 国际象棋 / 梦境预构） ──────────────────────────
+
+int _actInt(dynamic v) {
+  if (v is num) return v.toInt();
+  return int.tryParse((v ?? '0').toString()) ?? 0;
+}
+
+class ActivityChatResult {
+  const ActivityChatResult({required this.sessionId, required this.reply});
+
+  factory ActivityChatResult.fromJson(Map<String, dynamic> json) {
+    return ActivityChatResult(
+      sessionId: (json['session_id'] ?? '').toString(),
+      reply: (json['reply'] ?? '').toString(),
+    );
+  }
+
+  final String sessionId;
+  final String reply;
+}
+
+class ReadingState {
+  const ReadingState({
+    required this.sessionId,
+    required this.title,
+    required this.currentPage,
+    required this.totalPages,
+    required this.status,
+  });
+
+  factory ReadingState.fromJson(Map<String, dynamic> json) {
+    return ReadingState(
+      sessionId: json['session_id']?.toString(),
+      title: json['title']?.toString(),
+      currentPage: _actInt(json['current_page']),
+      totalPages: _actInt(json['total_pages']),
+      status: (json['status'] ?? 'idle').toString(),
+    );
+  }
+
+  final String? sessionId;
+  final String? title;
+  final int currentPage;
+  final int totalPages;
+  final String status;
+
+  bool get isActive => status == 'active' && sessionId != null;
+}
+
+class ReadingPageResult {
+  const ReadingPageResult({
+    required this.page,
+    required this.totalPages,
+    required this.text,
+  });
+
+  factory ReadingPageResult.fromJson(Map<String, dynamic> json) {
+    return ReadingPageResult(
+      page: _actInt(json['page']),
+      totalPages: _actInt(json['total_pages']),
+      text: (json['text'] ?? '').toString(),
+    );
+  }
+
+  final int page;
+  final int totalPages;
+  final String text;
+}
+
+class ReadingLibraryBook {
+  const ReadingLibraryBook({
+    required this.bookId,
+    required this.filename,
+    required this.title,
+    required this.category,
+    required this.totalPages,
+    required this.sizeBytes,
+  });
+
+  factory ReadingLibraryBook.fromJson(Map<String, dynamic> json) {
+    return ReadingLibraryBook(
+      bookId: (json['book_id'] ?? '').toString(),
+      filename: (json['filename'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      category: (json['category'] ?? '未分类').toString(),
+      totalPages: json['total_pages'] == null
+          ? null
+          : _actInt(json['total_pages']),
+      sizeBytes: _actInt(json['size_bytes']),
+    );
+  }
+
+  final String bookId;
+  final String filename;
+  final String title;
+  final String category;
+  final int? totalPages;
+  final int sizeBytes;
+}
+
+class GomokuState {
+  const GomokuState({
+    required this.sessionId,
+    required this.board,
+    required this.currentTurn,
+    required this.winner,
+    required this.status,
+    required this.pendingAiTurn,
+  });
+
+  factory GomokuState.fromJson(Map<String, dynamic> json) {
+    final rawBoard = json['board'];
+    var board = const <List<String?>>[];
+    if (rawBoard is List) {
+      board = rawBoard
+          .whereType<List>()
+          .map(
+            (row) => row.map((cell) => cell?.toString()).toList(
+              growable: false,
+            ),
+          )
+          .toList(growable: false);
+    }
+    return GomokuState(
+      sessionId: json['session_id']?.toString(),
+      board: board,
+      currentTurn: (json['current_turn'] ?? '').toString(),
+      winner: json['winner']?.toString(),
+      status: (json['status'] ?? 'idle').toString(),
+      pendingAiTurn: json['pending_ai_turn'] == true,
+    );
+  }
+
+  final String? sessionId;
+  final List<List<String?>> board;
+  final String currentTurn;
+  final String? winner;
+  final String status;
+  final bool pendingAiTurn;
+
+  bool get isActive => status == 'active' && sessionId != null;
+}
+
+class ChessState {
+  const ChessState({
+    required this.sessionId,
+    required this.fen,
+    required this.turn,
+    required this.result,
+    required this.status,
+    required this.pendingAiTurn,
+  });
+
+  factory ChessState.fromJson(Map<String, dynamic> json) {
+    return ChessState(
+      sessionId: json['session_id']?.toString(),
+      fen: (json['fen'] ?? '').toString(),
+      turn: (json['turn'] ?? 'white').toString(),
+      result: json['result']?.toString(),
+      status: (json['status'] ?? 'idle').toString(),
+      pendingAiTurn: json['pending_ai_turn'] == true,
+    );
+  }
+
+  final String? sessionId;
+  final String fen;
+  final String turn;
+  final String? result;
+  final String status;
+  final bool pendingAiTurn;
+
+  bool get isActive => status == 'active' && sessionId != null;
+}
+
+class DreamSeedState {
+  const DreamSeedState({
+    required this.active,
+    required this.sessionId,
+    required this.hasSeed,
+    required this.seedPreview,
+  });
+
+  factory DreamSeedState.fromJson(Map<String, dynamic> json) {
+    return DreamSeedState(
+      active: json['active'] == true,
+      sessionId: json['session_id']?.toString(),
+      hasSeed: json['has_seed'] == true,
+      seedPreview: (json['seed_preview'] ?? '').toString(),
+    );
+  }
+
+  final bool active;
+  final String? sessionId;
+  final bool hasSeed;
+  final String seedPreview;
 }
 
 String _formatDateTime(DateTime date) {
