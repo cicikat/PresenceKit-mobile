@@ -105,6 +105,7 @@ void main() {
               'status': 'DREAM_ACTIVE',
               'scene_label': '被花包裹的暖房',
             }),
+            stats: null,
             loadingState: false,
             entering: false,
             sending: false,

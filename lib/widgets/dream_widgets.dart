@@ -8,6 +8,7 @@ class DreamPage extends StatelessWidget {
     required this.profileDisplayName,
     required this.profileAvatarBytes,
     required this.state,
+    required this.stats,
     required this.loadingState,
     required this.entering,
     required this.sending,
@@ -25,6 +26,7 @@ class DreamPage extends StatelessWidget {
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
   final DreamState? state;
+  final DreamStats? stats;
   final bool loadingState;
   final bool entering;
   final bool sending;
@@ -150,6 +152,7 @@ class DreamPage extends StatelessWidget {
                   loading: loadingState,
                   entering: entering,
                   error: error,
+                  stats: stats,
                   onEnter: onEnter,
                 ),
         ),
@@ -203,6 +206,7 @@ class DreamEntrance extends StatelessWidget {
     required this.loading,
     required this.entering,
     required this.error,
+    required this.stats,
     required this.onEnter,
   });
 
@@ -210,6 +214,7 @@ class DreamEntrance extends StatelessWidget {
   final bool loading;
   final bool entering;
   final String? error;
+  final DreamStats? stats;
   final VoidCallback onEnter;
 
   @override
@@ -239,6 +244,13 @@ class DreamEntrance extends StatelessWidget {
                 error!,
                 textAlign: TextAlign.center,
                 style: mono(c, 10.5, color: c.danger),
+              ),
+            ],
+            if (stats != null && stats!.totalValid > 0) ...[
+              const SizedBox(height: 14),
+              YxTag(
+                c: c,
+                text: '已经做过 ${stats!.totalValid} 次有效的梦',
               ),
             ],
             const SizedBox(height: 20),

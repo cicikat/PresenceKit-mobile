@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import '../main.dart'
     show
         ActivityChatResult,
+        ActivityCurrentState,
         BackendActiveCharacter,
         BackendChatResponse,
         BackendDiagnostics,
@@ -23,11 +24,14 @@ import '../main.dart'
         DreamSeedState,
         DreamSettings,
         DreamState,
+        DreamStats,
+        DreamWakeResult,
         GardenState,
         GomokuState,
         GroupDetail,
         GroupSummary,
         MobilePollMessage,
+        MoodStateSnapshot,
         PromptAssets,
         ReadingLibraryBook,
         ReadingPageResult,
@@ -243,6 +247,43 @@ class BackendClient {
       method: 'POST',
       body: const {},
       expectJson: false,
+    );
+  }
+
+  Future<DreamStats> loadDreamStats({required String token}) async {
+    return DreamStats.fromJson(await _request('/dream/stats', token: token));
+  }
+
+  /// 软挽留闸门：不在梦中/已经挽留过一次/未达挽留门槛 → 直接硬退（exited=true）。
+  /// 否则返回 retained=true + 一句挽留台词，交给 UI 询问用户"留下"还是"还是要走"。
+  Future<DreamWakeResult> dreamWake({required String token}) async {
+    return DreamWakeResult.fromJson(
+      await _request('/dream/wake', token: token, method: 'POST', body: const {}),
+    );
+  }
+
+  /// 挽留后选择"留下"：status 回到 DREAM_ACTIVE，梦境继续。
+  Future<void> dreamResume({required String token}) async {
+    await _request(
+      '/dream/resume',
+      token: token,
+      method: 'POST',
+      body: const {},
+      expectJson: false,
+    );
+  }
+
+  // ── W6：状态感知 ──────────────────────────────────────────────────────────
+
+  Future<ActivityCurrentState> loadActivityCurrent({required String token}) async {
+    return ActivityCurrentState.fromJson(
+      await _request('/activity/current', token: token),
+    );
+  }
+
+  Future<MoodStateSnapshot> loadMoodState({required String token}) async {
+    return MoodStateSnapshot.fromJson(
+      await _request('/mood/state', token: token),
     );
   }
 

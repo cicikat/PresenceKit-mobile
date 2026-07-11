@@ -17,6 +17,10 @@ class ProfilePage extends StatelessWidget {
     required this.promptAssetsError,
     required this.onSelectCharacter,
     required this.onReloadPromptAssets,
+    required this.activityCurrent,
+    required this.moodState,
+    required this.loadingStatusSnapshot,
+    required this.onReloadStatusSnapshot,
   });
 
   final YxPalette c;
@@ -33,6 +37,10 @@ class ProfilePage extends StatelessWidget {
   final String? promptAssetsError;
   final ValueChanged<String> onSelectCharacter;
   final VoidCallback onReloadPromptAssets;
+  final ActivityCurrentState? activityCurrent;
+  final MoodStateSnapshot? moodState;
+  final bool loadingStatusSnapshot;
+  final VoidCallback onReloadStatusSnapshot;
 
   @override
   Widget build(BuildContext context) {
@@ -115,6 +123,50 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '此刻',
+                          style: serif(c, 16, weight: FontWeight.w500),
+                        ),
+                      ),
+                      YxIconButton(
+                        c: c,
+                        icon: Icons.refresh_rounded,
+                        onPressed: onReloadStatusSnapshot,
+                        tooltip: '刷新',
+                        size: 28,
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: loadingStatusSnapshot
+                      ? Text('正在读取…', style: mono(c, 10.5, color: c.ink3))
+                      : Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            YxTag(
+                              c: c,
+                              text: activityCurrent?.text.isNotEmpty == true
+                                  ? activityCurrent!.text
+                                  : '暂时没有特别的动向',
+                              variant: 'warm',
+                            ),
+                            if (moodState != null)
+                              YxTag(
+                                c: c,
+                                text:
+                                    '心情：${moodState!.label}（${(moodState!.intensity * 100).round()}%）',
+                              ),
+                          ],
+                        ),
                 ),
                 ProfileInfoRow(
                   c: c,

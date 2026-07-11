@@ -67,6 +67,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   String? _lastMobileContent;
   BackendChatResponse? _lastBackendReply;
   DreamState? _dreamState;
+  DreamStats? _dreamStats;
+  ActivityCurrentState? _activityCurrent;
+  MoodStateSnapshot? _moodState;
+  bool _loadingStatusSnapshot = false;
   PromptAssets? _promptAssets;
   DreamSettings? _dreamSettings;
   GardenState? _gardenState;
@@ -952,6 +956,28 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   void _openProfilePage() {
     Navigator.of(context).maybePop();
     setState(() => _route = AppRoute.profile);
+    unawaited(_loadStatusSnapshot());
+  }
+
+  // W6：状态感知——资料页"此刻"卡片，读一次当前动向 + 心情，不轮询（省电）。
+  Future<void> _loadStatusSnapshot() async {
+    if (_loadingStatusSnapshot || !_hasAdminToken) return;
+    setState(() => _loadingStatusSnapshot = true);
+    try {
+      final results = await Future.wait([
+        _backend.loadActivityCurrent(token: _requireAdminToken()),
+        _backend.loadMoodState(token: _requireAdminToken()),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _activityCurrent = results[0] as ActivityCurrentState;
+        _moodState = results[1] as MoodStateSnapshot;
+      });
+    } catch (_) {
+      // 只读展示，失败保留旧值即可，不打扰用户
+    } finally {
+      if (mounted) setState(() => _loadingStatusSnapshot = false);
+    }
   }
 
   static final RegExp _safeOwnerUserIdPattern = RegExp(r'^[A-Za-z0-9_-]+$');
@@ -1833,10 +1859,23 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   void _startDreamStatePolling() {
     _dreamStateTimer?.cancel();
     unawaited(_loadDreamState());
+    unawaited(_loadDreamStats());
     _dreamStateTimer = Timer.periodic(
       const Duration(seconds: 8),
       (_) => unawaited(_loadDreamState(silent: true)),
     );
+  }
+
+  // W6：Dream 补全——梦境次数统计，入口页读一次即可，不需要跟着轮询刷新。
+  Future<void> _loadDreamStats() async {
+    if (!_hasAdminToken) return;
+    try {
+      final stats = await _backend.loadDreamStats(token: _requireAdminToken());
+      if (!mounted) return;
+      setState(() => _dreamStats = stats);
+    } catch (_) {
+      // 只读展示，失败保留旧值即可
+    }
   }
 
   Future<void> _enterDream() async {
@@ -1919,12 +1958,67 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     }
   }
 
+  // W6：Dream 补全——"醒来"先走软挽留闸门 /dream/wake：未达挽留门槛/已挽留过一次时
+  // 后端直接硬退（exited=true），跟以前行为一样；否则弹一次挽留台词，用户选"留下"
+  // 就调 /dream/resume 继续梦，选"还是要走"再走一次硬退 /dream/exit。
   Future<void> _wakeFromDream() async {
-    await _exitDreamAndRoute(AppRoute.chat);
+    if (!_hasAdminToken) {
+      await _exitDreamAndRoute(AppRoute.chat);
+      return;
+    }
+    DreamWakeResult result;
+    try {
+      result = await _backend.dreamWake(token: _requireAdminToken());
+    } on BackendException {
+      // 闸门请求失败：不能把用户卡在梦里，退回旧的硬退行为。
+      await _exitDreamAndRoute(AppRoute.chat);
+      return;
+    }
+    if (!mounted) return;
+    if (result.exited || !result.retained) {
+      await _exitDreamAndRoute(AppRoute.chat, callBackendExit: false);
+      return;
+    }
+    final stay = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: c.surface,
+        title: Text('要走了吗', style: serif(c, 18, color: c.ink1)),
+        content: Text(
+          result.retentionText ?? '再待一会儿吧。',
+          style: serif(c, 14, color: c.ink2),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('还是要走'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('留下'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (stay == true) {
+      try {
+        await _backend.dreamResume(token: _requireAdminToken());
+      } catch (_) {
+        // resume 失败不阻塞——下次轮询会把真实状态同步回来
+      }
+      await _loadDreamState(silent: true);
+    } else {
+      await _exitDreamAndRoute(AppRoute.chat);
+    }
   }
 
-  Future<void> _exitDreamAndRoute(AppRoute route) async {
-    if (_hasAdminToken) {
+  Future<void> _exitDreamAndRoute(
+    AppRoute route, {
+    bool callBackendExit = true,
+  }) async {
+    if (callBackendExit && _hasAdminToken) {
       try {
         await _backend.exitDream(token: _requireAdminToken());
       } catch (_) {
@@ -1936,6 +2030,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     setState(() {
       _route = route;
       _dreamState = null;
+      _dreamStats = null;
       _dreamError = null;
       _dreamMessages.clear();
     });
@@ -2379,6 +2474,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       unawaited(_loadDiaryList(silent: true));
     } else if (route == AppRoute.profile) {
       unawaited(_loadPromptAssets());
+      unawaited(_loadStatusSnapshot());
     }
   }
 
@@ -2474,6 +2570,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           profileDisplayName: _profileDisplayName,
           profileAvatarBytes: _profileAvatarBytes,
           state: _dreamState,
+          stats: _dreamStats,
           loadingState: _loadingDreamState,
           entering: _enteringDream,
           sending: _sendingDream,
@@ -2503,6 +2600,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           onSelectCharacter: (value) =>
               unawaited(_updatePromptAssets(activeCharacter: value)),
           onReloadPromptAssets: () => unawaited(_loadPromptAssets()),
+          activityCurrent: _activityCurrent,
+          moodState: _moodState,
+          loadingStatusSnapshot: _loadingStatusSnapshot,
+          onReloadStatusSnapshot: () => unawaited(_loadStatusSnapshot()),
         );
       case AppRoute.diary:
         return DiaryPage(

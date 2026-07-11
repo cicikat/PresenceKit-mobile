@@ -1336,6 +1336,94 @@ class GroupDetail {
   final List<GroupMessage> recent;
 }
 
+// ── W6：状态感知 + Dream 补全 ──────────────────────────────────────────────────
+
+class ActivityCurrentState {
+  const ActivityCurrentState({required this.text, required this.arc});
+
+  factory ActivityCurrentState.fromJson(Map<String, dynamic> json) {
+    return ActivityCurrentState(
+      text: (json['text'] ?? '').toString(),
+      arc: json['arc']?.toString(),
+    );
+  }
+
+  final String text;
+  final String? arc;
+}
+
+const Map<String, String> _moodLabels = {
+  'neutral': '平静',
+  'gentle': '温柔',
+  'thinking': '在想事情',
+  'happy': '开心',
+  'sad': '有点难过',
+  'surprised': '有点惊讶',
+  'angry': '有点生气',
+  'sleepy': '困困的',
+  'yandere': '情绪很浓',
+};
+
+class MoodStateSnapshot {
+  const MoodStateSnapshot({required this.current, required this.intensity});
+
+  factory MoodStateSnapshot.fromJson(Map<String, dynamic> json) {
+    final intensity = json['intensity'];
+    return MoodStateSnapshot(
+      current: (json['current'] ?? 'neutral').toString(),
+      intensity: intensity is num
+          ? intensity.toDouble()
+          : double.tryParse((intensity ?? '0').toString()) ?? 0,
+    );
+  }
+
+  final String current;
+  final double intensity;
+
+  String get label => _moodLabels[current] ?? current;
+}
+
+class DreamStats {
+  const DreamStats({
+    required this.totalValid,
+    required this.totalArchived,
+    required this.lastDreamAt,
+  });
+
+  factory DreamStats.fromJson(Map<String, dynamic> json) {
+    final lastAt = json['last_dream_at'];
+    return DreamStats(
+      totalValid: _actInt(json['total_valid']),
+      totalArchived: _actInt(json['total_archived']),
+      lastDreamAt: lastAt is num ? lastAt.toDouble() : null,
+    );
+  }
+
+  final int totalValid;
+  final int totalArchived;
+  final double? lastDreamAt;
+}
+
+class DreamWakeResult {
+  const DreamWakeResult({
+    required this.retained,
+    required this.exited,
+    this.retentionText,
+  });
+
+  factory DreamWakeResult.fromJson(Map<String, dynamic> json) {
+    return DreamWakeResult(
+      retained: json['retained'] == true,
+      exited: json['exited'] == true,
+      retentionText: json['retention_text']?.toString(),
+    );
+  }
+
+  final bool retained;
+  final bool exited;
+  final String? retentionText;
+}
+
 String _formatDateTime(DateTime date) {
   final hour = date.hour.toString().padLeft(2, '0');
   final minute = date.minute.toString().padLeft(2, '0');
