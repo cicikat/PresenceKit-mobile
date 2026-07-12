@@ -1,12 +1,12 @@
 # ARCHITECTURE.md - Emerald-mobile 架构总览
 
-`Emerald-mobile` 是叶瑄系统的 Android 优先移动客户端。它连接 `qq-st-bot` 后端，提供手机聊天、后台主动消息、屏幕上下文上报、悬浮提醒和用户确认后的本机动作。
+`Emerald-mobile` 是叶瑄系统的 Android 优先移动客户端。它连接 Emerald-presence（旧名 qq-st-bot）后端，提供手机聊天、后台主动消息、屏幕上下文上报、悬浮提醒和用户确认后的本机动作。
 
 ## 系统边界
 
 ```text
 ┌──────────────────────────────┐
-│ qq-st-bot                    │
+│ Emerald-presence（旧名 qq-st-bot）│
 │ 人格 / 记忆 / 调度 / 行为裁决 │
 │ HTTP mobile + sensor APIs    │
 └──────────────┬───────────────┘

@@ -1,7 +1,8 @@
 # Push Relay Spike — 结论文档
 
-> **状态**: Spike 代码已就绪，实测数据待填入。本文档架构分析部分基于代码审阅和 Android 文档，
-> 实测章节留白供填写 `test_log_template.md` 观测结果后补全。
+> **状态：封存。** 不再补充实测数据；现行推送中继结论与发布约定以
+> `docs/protocols/relay-publish-contract.md` 为准。本文档保留 Spike 阶段的架构分析和未完成实测模板，
+> 仅供历史参考。
 
 ---
 

@@ -1,5 +1,7 @@
 # `lib/main.dart` 拆分计划
 
+> 仅历史参考，现行结构以 `docs/mobile/flutter-structure.md` 为准。
+
 > 清单快照：2026-06-12，基于当前工作区约 9.9k 行的 `lib/main.dart`。本文只建立目标结构和搬移顺序，不搬任何业务逻辑。
 
 ## 完成状态

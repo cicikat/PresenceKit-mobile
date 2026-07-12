@@ -132,3 +132,11 @@ flutter build apk --debug
 ```
 
 若 `flutter`/`adb` 不在 PATH：SDK 位置以 `android/local.properties` 里的 `flutter.sdk` 和 `sdk.dir` 为准（机器本地文件，不入库）。根目录的 `mobile_dev_control.bat` 和 `AA打包安装到手机.bat` 会自动按 local.properties → 环境变量 → PATH 的顺序探测，无需改脚本。
+
+## Codex 施工协作约定（与 `CLAUDE.md` 同步）
+
+1. **用中文回复。**
+2. **默认自主推进、替用户拍板**，不要逐项确认；只在不可逆决策（删数据、改契约、对外发布）时提问。
+3. **不要全仓 grep**，先按 AGENTS.md / 架构文档定位到具体文件再精准搜索。
+4. **交付物一次性批量输出**，多个工单/提示词要标注哪些可并行、哪些有前置依赖，减少一来一回。
+5. **小步 commit，无需确认**：每完成一个独立修复并验收通过（测试过/验证过）就直接 `git add` + `git commit`（信息一行即可），不必等我说"commit一下"、不要为此专门提问确认。当场固化，不留过夜、不攒大坨。这是预先授权，覆盖"仅在用户明确要求时才 commit"的默认行为。

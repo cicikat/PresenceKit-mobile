@@ -41,6 +41,8 @@
 - `AppRoute.profile`：资料页。
 - `AppRoute.diary`：日记页。
 - `AppRoute.garden`：花园页。
+- `AppRoute.activity`：活动入口（阅读、五子棋、国际象棋）。
+- `AppRoute.group`：独立群聊列表与会话。
 
 ## 生命周期
 
@@ -65,19 +67,20 @@
 
 ## UI 组件分布
 
-当前 UI 组件都在 `lib/main.dart` 中，包括：
+当前 UI 已按领域拆到 `lib/widgets/`，由 `lib/main.dart` 通过 Dart `part` 挂载，包括：
 
-- 主壳：`YexuanCompanionApp`、`YxDrawer`、`NavPill`、`PageHeader`。
+- 主壳：`YexuanCompanionApp` 位于 `lib/pages/app_shell.dart`；`YxDrawer`、`NavPill`、`PageHeader` 等位于对应 widgets 文件。
 - 聊天：`ChatScene`、`ChatTopBar`、`Composer`、`HimMessage`、`YouMessage`、`TypingHimMessage`。
 - Dream：`DreamPage`、`DreamStateStrip`、`DreamEntrance`、`DreamComposer`；复用聊天消息气泡布局。
 - 设置：`SettingsSheet`、`ThemePaletteSheet`、`CapabilitySheet`；`SettingsSheet` 通过后端接口分别编辑 Reality 和 Dream 的世界书/破限配置，`CapabilitySheet` 管理默认空的屏幕正文上传 App 白名单。
 - 资料：`ProfilePage`、`AvatarCropDialog`；`ProfilePage` 可通过 `/settings/prompt-assets` 切换 Reality 角色卡。
 - 日记：`DiaryPage`、`DiaryCard`、`DiaryDialog`。
 - 花园：`GardenPage`、`PlantCard`、`PlantPainter`。
+- 活动与群聊：`ActivityHomePage`、阅读/五子棋/国际象棋页面和群聊页面，分别位于 `activity_widgets.dart`、`reading_widgets.dart`、`gomoku_widgets.dart`、`chess_widgets.dart`、`group_widgets.dart`。
 
-## 拆分建议
+## 后续结构约定
 
-后续改动大时，优先按低风险顺序拆：
+当前拆分已完成；后续较大改动遵循现有目录职责，优先保持 `part` 内的状态所有权和安全闸门不变。若要改为独立 library/import，应单列重构并补足测试：
 
 1. `lib/models/`：纯数据模型和解析。
 2. `lib/services/backend_client.dart`：后端 HTTP。
@@ -85,4 +88,4 @@
 4. `lib/pages/`：chat/profile/diary/garden/capability。
 5. `lib/widgets/`：通用按钮、标签、头像、消息气泡、抽屉。
 
-拆分时保持行为不变，先移动代码再改功能。现有 `test/widget_test.dart` 只覆盖 smoke test，不足以保护大重构。
+现有测试除 widget smoke test 外，已覆盖 mobile poll 生命周期、MethodChannel 契约、后台投递契约、后端请求/错误和中继 signal 契约；仍应在大重构前补齐受影响领域的测试。
