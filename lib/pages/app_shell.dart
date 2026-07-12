@@ -6,13 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app_constants.dart';
+import '../controllers/dream_controller.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
 import '../models/capability_status.dart';
 import '../models/screen_context.dart';
 import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
-import '../services/character_naming.dart';import '../widgets/activity_widgets.dart';
+import '../services/character_naming.dart';
+import '../widgets/activity_widgets.dart';
 import '../widgets/capability_widgets.dart';
 import '../widgets/chat_widgets.dart';
 import '../widgets/common_widgets.dart';
@@ -24,6 +26,7 @@ import '../widgets/group_widgets.dart';
 import '../widgets/profile_widgets.dart';
 import '../widgets/settings_editor_widgets.dart';
 import '../widgets/settings_widgets.dart';
+
 class YexuanCompanionApp extends StatefulWidget {
   const YexuanCompanionApp({
     super.key,
@@ -45,11 +48,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _chatScrollController = ScrollController();
-  final ScrollController _dreamScrollController = ScrollController();
   Timer? _gardenRefreshTimer;
   Timer? _mobilePollTimer;
   Timer? _screenContextTimer;
-  Timer? _dreamStateTimer;
   Timer? _sensorPushTimer;
   AppRoute _route = AppRoute.chat;
   bool _dark = false;
@@ -69,13 +70,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   bool _backgroundNotifications = true;
   bool _screenContextUploadEnabled = false;
   bool _backendSyncStarted = false;
-  bool _loadingDreamState = false;
-  bool _enteringDream = false;
-  bool _sendingDream = false;
   bool _loadingPromptAssets = false;
   bool _savingPromptAssets = false;
-  bool _loadingDreamSettings = false;
-  bool _savingDreamSettings = false;
   bool _showJumpToLatest = false;
   int _chatVisibleMessageLimit = _initialVisibleChatMessages;
   String? _backendError;
@@ -83,20 +79,15 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   String? _gardenError;
   String? _diaryError;
   String? _mobileError;
-  String? _dreamError;
   String? _promptAssetsError;
-  String? _dreamSettingsError;
   int _mobileReceivedCount = 0;
   int? _lastAckedMobileSeq;
   String? _lastMobileContent;
   BackendChatResponse? _lastBackendReply;
-  DreamState? _dreamState;
-  DreamStats? _dreamStats;
   ActivityCurrentState? _activityCurrent;
   MoodStateSnapshot? _moodState;
   bool _loadingStatusSnapshot = false;
   PromptAssets? _promptAssets;
-  DreamSettings? _dreamSettings;
   GardenState? _gardenState;
   String _backendBaseUrl = defaultBackendBaseUrl;
   String? _profileNameOverride;
@@ -105,11 +96,11 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   String _adminToken = '';
   late final AppSettingsStore _settingsStore;
   late BackendClient _backend;
+  late final DreamController _dreamController;
   YxPrefs _prefs = const YxPrefs();
   YxPalette? _customPalette;
   final List<ChatMessage> _history = [];
   final List<ChatMessage> _sent = [];
-  final List<ChatMessage> _dreamMessages = [];
   final Map<String, DateTime> _recentAssistantReplies = {};
   final Map<String, String> _recentAssistantReplyIdsByFingerprint = {};
   final Set<String> _synchronousAssistantReplyIds = {};
@@ -159,11 +150,20 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _backend =
         widget.backendClient ??
         BackendClient(baseUrl: _backendBaseUrl, settingsStore: _settingsStore);
+    _dreamController = DreamController(
+      backend: () => _backend,
+      token: () => _adminToken,
+    );
+    _dreamController.addListener(_refreshFromDreamController);
     WidgetsBinding.instance.addObserver(this);
     _chatScrollController.addListener(_handleChatScroll);
     _applySystemUi();
     WidgetsBinding.instance.addPostFrameCallback((_) => _applySystemUi());
     unawaited(_restoreBackendAndStart());
+  }
+
+  void _refreshFromDreamController() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _restoreBackendAndStart() async {
@@ -275,7 +275,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _gardenRefreshTimer?.cancel();
     _stopMobilePollTimer();
     _screenContextTimer?.cancel();
-    _dreamStateTimer?.cancel();
+    _dreamController.removeListener(_refreshFromDreamController);
     _sensorPushTimer?.cancel();
     _chatScrollController.removeListener(_handleChatScroll);
     if (_hasAdminToken) {
@@ -284,7 +284,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       );
     }
     _chatScrollController.dispose();
-    _dreamScrollController.dispose();
+    _dreamController.dispose();
     super.dispose();
   }
 
@@ -1876,175 +1876,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     );
   }
 
-  void _scrollDreamToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_dreamScrollController.hasClients) return;
-      _dreamScrollController.animateTo(
-        _dreamScrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-      );
-    });
-  }
-
-  Future<void> _loadDreamState({bool silent = false}) async {
-    if (_loadingDreamState || !_hasAdminToken) return;
-    if (!silent && mounted) {
-      setState(() {
-        _loadingDreamState = true;
-        _dreamError = null;
-      });
-    } else {
-      _loadingDreamState = true;
-    }
-    try {
-      final state = await _backend.loadDreamState(token: _requireAdminToken());
-      if (!mounted) return;
-      setState(() {
-        _dreamState = state;
-        _dreamError = null;
-      });
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() => _dreamError = e.message);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _dreamError = e.toString());
-    } finally {
-      if (mounted) {
-        setState(() => _loadingDreamState = false);
-      } else {
-        _loadingDreamState = false;
-      }
-    }
-  }
-
-  void _startDreamStatePolling() {
-    _dreamStateTimer?.cancel();
-    unawaited(_loadDreamState());
-    unawaited(_loadDreamStats());
-    _dreamStateTimer = Timer.periodic(
-      const Duration(seconds: 8),
-      (_) => unawaited(_loadDreamState(silent: true)),
-    );
-  }
-
-  // W6：Dream 补全——梦境次数统计，入口页读一次即可，不需要跟着轮询刷新。
-  Future<void> _loadDreamStats() async {
-    if (!_hasAdminToken) return;
-    try {
-      final stats = await _backend.loadDreamStats(token: _requireAdminToken());
-      if (!mounted) return;
-      setState(() => _dreamStats = stats);
-    } catch (_) {
-      // 只读展示，失败保留旧值即可
-    }
-  }
-
-  Future<void> _enterDream() async {
-    if (_enteringDream || !_hasAdminToken) return;
-    setState(() {
-      _enteringDream = true;
-      _dreamError = null;
-    });
-    try {
-      final entered = await _backend.enterDream(token: _requireAdminToken());
-      if (!mounted) return;
-      if (!entered) {
-        setState(() => _dreamError = '后端没有允许这次入梦');
-        return;
-      }
-      setState(() {
-        _dreamMessages.add(
-          ChatMessage(role: 'system', text: '— 坠入梦中 —', time: _nowLabel()),
-        );
-      });
-      await _loadDreamState(silent: true);
-      _scrollDreamToBottom();
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() => _dreamError = e.message);
-    } finally {
-      if (mounted) setState(() => _enteringDream = false);
-    }
-  }
-
-  void _sendDreamMessage(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty || _sendingDream || _dreamState?.isActive != true) {
-      return;
-    }
-    setState(() {
-      _sendingDream = true;
-      _dreamError = null;
-      _dreamMessages.add(
-        ChatMessage(role: 'you', text: trimmed, time: _nowLabel()),
-      );
-    });
-    _scrollDreamToBottom();
-    unawaited(_sendDreamToBackend(trimmed));
-  }
-
-  Future<void> _sendDreamToBackend(String message) async {
-    try {
-      final response = await _backend.sendDreamChat(
-        message,
-        token: _requireAdminToken(),
-      );
-      if (!mounted) return;
-      setState(() {
-        if (response.error != null && response.error!.trim().isNotEmpty) {
-          _dreamMessages.add(
-            ChatMessage(
-              role: 'system',
-              text: '（${response.error}）',
-              time: _nowLabel(),
-            ),
-          );
-        } else {
-          for (final part in _splitReplySegments(response.reply)) {
-            _dreamMessages.add(
-              ChatMessage(
-                role: 'him',
-                text: part,
-                time: _nowLabel(),
-                animate: true,
-              ),
-            );
-          }
-        }
-      });
-      if (response.exitAccepted || response.forceExited) {
-        await _loadDreamState(silent: true);
-      }
-      _scrollDreamToBottom();
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() => _dreamError = e.message);
-    } finally {
-      if (mounted) setState(() => _sendingDream = false);
-    }
-  }
-
-  // W6：Dream 补全——"醒来"先走软挽留闸门 /dream/wake：未达挽留门槛/已挽留过一次时
-  // 后端直接硬退（exited=true），跟以前行为一样；否则弹一次挽留台词，用户选"留下"
-  // 就调 /dream/resume 继续梦，选"还是要走"再走一次硬退 /dream/exit。
   Future<void> _wakeFromDream() async {
-    if (!_hasAdminToken) {
-      await _exitDreamAndRoute(AppRoute.chat);
-      return;
-    }
-    DreamWakeResult result;
-    try {
-      result = await _backend.dreamWake(token: _requireAdminToken());
-    } on BackendException {
-      // 闸门请求失败：不能把用户卡在梦里，退回旧的硬退行为。
-      await _exitDreamAndRoute(AppRoute.chat);
-      return;
-    }
-    if (!mounted) return;
-    if (result.exited || !result.retained) {
-      await _exitDreamAndRoute(AppRoute.chat, callBackendExit: false);
+    final result = await _dreamController.wake();
+    if (!mounted || result == null || result.exited || !result.retained) {
+      await _exitDreamAndRoute(AppRoute.chat, callBackendExit: result == null);
       return;
     }
     final stay = await showDialog<bool>(
@@ -2072,12 +1907,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     );
     if (!mounted) return;
     if (stay == true) {
-      try {
-        await _backend.dreamResume(token: _requireAdminToken());
-      } catch (_) {
-        // resume 失败不阻塞——下次轮询会把真实状态同步回来
-      }
-      await _loadDreamState(silent: true);
+      await _dreamController.resume();
     } else {
       await _exitDreamAndRoute(AppRoute.chat);
     }
@@ -2087,22 +1917,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     AppRoute route, {
     bool callBackendExit = true,
   }) async {
-    if (callBackendExit && _hasAdminToken) {
-      try {
-        await _backend.exitDream(token: _requireAdminToken());
-      } catch (_) {
-        // Returning to Reality remains available even if the backend is offline.
-      }
-    }
-    if (!mounted) return;
-    _dreamStateTimer?.cancel();
-    setState(() {
-      _route = route;
-      _dreamState = null;
-      _dreamStats = null;
-      _dreamError = null;
-      _dreamMessages.clear();
-    });
+    await _dreamController.exit(callBackendExit: callBackendExit);
+    if (mounted) setState(() => _route = route);
   }
 
   Future<void> _loadPromptAssets() async {
@@ -2150,51 +1966,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     }
   }
 
-  Future<void> _loadDreamSettings() async {
-    if (_loadingDreamSettings || !_hasAdminToken) return;
-    setState(() {
-      _loadingDreamSettings = true;
-      _dreamSettingsError = null;
-    });
-    try {
-      final settings = await _backend.loadDreamSettings(
-        token: _requireAdminToken(),
-      );
-      if (!mounted) return;
-      setState(() => _dreamSettings = settings);
-    } on BackendException catch (e) {
-      if (mounted) setState(() => _dreamSettingsError = e.message);
-    } finally {
-      if (mounted) setState(() => _loadingDreamSettings = false);
-    }
-  }
-
-  Future<void> _updateDreamSettings({
-    bool? enableDreamLorebook,
-    String? worldLayer,
-    String? jailbreakPreset,
-  }) async {
-    if (_savingDreamSettings || !_hasAdminToken) return;
-    setState(() {
-      _savingDreamSettings = true;
-      _dreamSettingsError = null;
-    });
-    try {
-      final settings = await _backend.updateDreamSettings(
-        token: _requireAdminToken(),
-        enableDreamLorebook: enableDreamLorebook,
-        worldLayer: worldLayer,
-        jailbreakPreset: jailbreakPreset,
-      );
-      if (!mounted) return;
-      setState(() => _dreamSettings = settings);
-    } on BackendException catch (e) {
-      if (mounted) setState(() => _dreamSettingsError = e.message);
-    } finally {
-      if (mounted) setState(() => _savingDreamSettings = false);
-    }
-  }
-
   void _openSettings() {
     var requestedBackendSettings = false;
     var notificationTestMode = false;
@@ -2207,7 +1978,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
               unawaited(() async {
                 final results = await Future.wait<dynamic>([
                   _loadPromptAssets(),
-                  _loadDreamSettings(),
+                  _dreamController.loadSettings(),
                   _settingsStore.loadNotificationGateStatus(),
                 ]);
                 notificationTestMode =
@@ -2255,13 +2026,14 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
               profileDisplayName: _profileDisplayName,
               profileAvatarBytes: _profileAvatarBytes,
               promptAssets: _promptAssets,
-              dreamSettings: _dreamSettings,
+              dreamSettings: _dreamController.settings,
               settingsBusy:
                   _loadingPromptAssets ||
                   _savingPromptAssets ||
-                  _loadingDreamSettings ||
-                  _savingDreamSettings,
-              settingsError: _promptAssetsError ?? _dreamSettingsError,
+                  _dreamController.loadingSettings ||
+                  _dreamController.savingSettings,
+              settingsError:
+                  _promptAssetsError ?? _dreamController.settingsError,
               onTheme: updateTheme,
               onCustomTheme: enableCustomTheme,
               onEditCustomTheme: editCustomTheme,
@@ -2309,19 +2081,21 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
               },
               onDreamLorebook: (value) {
                 unawaited(() async {
-                  await _updateDreamSettings(enableDreamLorebook: value);
+                  await _dreamController.updateSettings(
+                    enableDreamLorebook: value,
+                  );
                   if (context.mounted) sheetSetState(() {});
                 }());
               },
               onDreamWorldLayer: (value) {
                 unawaited(() async {
-                  await _updateDreamSettings(worldLayer: value);
+                  await _dreamController.updateSettings(worldLayer: value);
                   if (context.mounted) sheetSetState(() {});
                 }());
               },
               onDreamJailbreak: (value) {
                 unawaited(() async {
-                  await _updateDreamSettings(jailbreakPreset: value);
+                  await _dreamController.updateSettings(jailbreakPreset: value);
                   if (context.mounted) sheetSetState(() {});
                 }());
               },
@@ -2512,9 +2286,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     setState(() => _route = route);
     _scaffoldKey.currentState?.closeDrawer();
     if (route == AppRoute.dream) {
-      _startDreamStatePolling();
+      _dreamController.startPolling();
     } else {
-      _dreamStateTimer?.cancel();
+      _dreamController.stopPolling();
     }
     if (route == AppRoute.garden) {
       unawaited(_loadGarden(silent: true));
@@ -2617,17 +2391,17 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           prefs: _prefs,
           profileDisplayName: _profileDisplayName,
           profileAvatarBytes: _profileAvatarBytes,
-          state: _dreamState,
-          stats: _dreamStats,
-          loadingState: _loadingDreamState,
-          entering: _enteringDream,
-          sending: _sendingDream,
-          error: _dreamError,
-          messages: _dreamMessages,
-          scrollController: _dreamScrollController,
+          state: _dreamController.state,
+          stats: _dreamController.stats,
+          loadingState: _dreamController.loadingState,
+          entering: _dreamController.entering,
+          sending: _dreamController.sending,
+          error: _dreamController.error,
+          messages: _dreamController.messages,
+          scrollController: _dreamController.scrollController,
           onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
-          onEnter: _enterDream,
-          onSend: _sendDreamMessage,
+          onEnter: _dreamController.enter,
+          onSend: _dreamController.send,
           onWake: _wakeFromDream,
         );
       case AppRoute.profile:
