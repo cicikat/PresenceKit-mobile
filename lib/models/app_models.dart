@@ -1,34 +1,38 @@
-part of '../main.dart';
+import 'dart:convert';
 
-class _BehaviorTestSpec {
-  const _BehaviorTestSpec({
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+
+class BehaviorTestSpec {
+  const BehaviorTestSpec({
     required this.kind,
     required this.delivery,
     required this.label,
     required this.content,
   });
 
-  factory _BehaviorTestSpec.forKind(String kind) {
+  factory BehaviorTestSpec.forKind(String kind) {
     return switch (kind) {
-      'overlay_message' => const _BehaviorTestSpec(
+      'overlay_message' => const BehaviorTestSpec(
         kind: 'overlay_message',
         delivery: 'overlay',
         label: '悬浮短句',
         content: '（测试）我在屏幕边等你一下。',
       ),
-      'lock_screen_confirm' => const _BehaviorTestSpec(
+      'lock_screen_confirm' => const BehaviorTestSpec(
         kind: 'lock_screen_confirm',
         delivery: 'overlay',
         label: '锁屏确认',
         content: '（测试）要我替你锁屏吗？点确认才会执行。',
       ),
-      'takeout_overlay' => const _BehaviorTestSpec(
+      'takeout_overlay' => const BehaviorTestSpec(
         kind: 'takeout_overlay',
         delivery: 'overlay',
         label: '外卖确认',
         content: '（测试）要不要打开外卖页看一眼？不会自动下单。',
       ),
-      _ => const _BehaviorTestSpec(
+      _ => const BehaviorTestSpec(
         kind: 'notify',
         delivery: 'notification',
         label: '普通通知',
@@ -1443,6 +1447,6 @@ String _weekdayLabel(int weekday) {
   return labels[(weekday - 1).clamp(0, labels.length - 1)];
 }
 
-String _formatTodayLine(DateTime date) {
+String formatTodayLine(DateTime date) {
   return '今日 · ${date.month}月${date.day}日 · 周${_weekdayLabel(date.weekday)} · ${_formatDateTime(date)}';
 }

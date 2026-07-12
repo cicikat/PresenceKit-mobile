@@ -1,5 +1,12 @@
-﻿part of '../main.dart';
+import 'dart:async';
+import 'dart:ui' as ui;
 
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import '../models/app_models.dart';
+import '../services/character_naming.dart';
+import '../widgets/common_widgets.dart';
 class AvatarCropDialog extends StatefulWidget {
   const AvatarCropDialog({super.key, required this.c, required this.bytes});
 

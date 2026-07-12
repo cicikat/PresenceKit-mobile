@@ -1,5 +1,10 @@
-part of '../main.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import '../models/app_models.dart';
+import '../services/backend_client.dart';
+import '../widgets/activity_widgets.dart';
+import '../widgets/common_widgets.dart';
 class GomokuScreen extends StatefulWidget {
   const GomokuScreen({
     super.key,

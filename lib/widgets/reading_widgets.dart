@@ -1,5 +1,11 @@
-part of '../main.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import '../models/app_models.dart';
+import '../services/app_settings_store.dart';
+import '../services/backend_client.dart';
+import '../widgets/activity_widgets.dart';
+import '../widgets/common_widgets.dart';
 class ReadingScreen extends StatefulWidget {
   const ReadingScreen({
     super.key,

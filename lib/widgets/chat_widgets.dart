@@ -1,5 +1,11 @@
-part of '../main.dart';
+import 'dart:async';
+import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/app_models.dart';
+import '../services/character_naming.dart';
+import '../widgets/common_widgets.dart';
 class ChatScene extends StatelessWidget {
   const ChatScene({
     super.key,
@@ -81,7 +87,7 @@ class ChatScene extends StatelessWidget {
       totalMessageCount - visibleMessageLimit,
     );
     final visibleMessageCount = totalMessageCount - hiddenMessageCount;
-    final todayLine = _formatTodayLine(DateTime.now());
+    final todayLine = formatTodayLine(DateTime.now());
     final topInset = MediaQuery.paddingOf(context).top;
     final metaItems = <Widget>[
       if (loadingMoreHistory) MetaLine(c: c, text: '正在加载更早的对话…'),

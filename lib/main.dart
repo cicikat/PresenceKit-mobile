@@ -1,48 +1,26 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:math' as math;
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
-import 'models/background_status.dart';
-import 'models/capability_status.dart';
-import 'models/screen_context.dart';
-import 'services/app_settings_store.dart';
-import 'services/backend_client.dart';
-import 'services/character_naming.dart';
+import 'pages/app_shell.dart';
 
-part 'models/app_models.dart';
-part 'pages/app_shell.dart';
-part 'widgets/activity_widgets.dart';
-part 'widgets/chess_widgets.dart';
-part 'widgets/common_widgets.dart';
-part 'widgets/capability_widgets.dart';
-part 'widgets/chat_widgets.dart';
-part 'widgets/diary_widgets.dart';
-part 'widgets/gomoku_widgets.dart';
-part 'widgets/group_widgets.dart';
-part 'widgets/reading_widgets.dart';
-part 'widgets/dream_widgets.dart';
-part 'widgets/drawer_widgets.dart';
-part 'widgets/garden_widgets.dart';
-part 'widgets/profile_widgets.dart';
-part 'widgets/settings_editor_widgets.dart';
-part 'widgets/settings_widgets.dart';
-
-const String _defaultBackendBaseUrl = String.fromEnvironment(
-  'BACKEND_BASE_URL',
-  defaultValue: 'http://127.0.0.1:8080',
-);
-
-/// The app's own label as registered with the OS (Android manifest / iOS
-/// Info.plist), used when guiding the user to find this app in system
-/// settings. Not runtime-configurable — keep it in sync with the native
-/// app label if that ever changes.
-const String _appDisplayName = '陪伴';
+export 'models/app_models.dart';
+export 'app_constants.dart';
+export 'pages/app_shell.dart';
+export 'widgets/activity_widgets.dart';
+export 'widgets/capability_widgets.dart';
+export 'widgets/chat_widgets.dart';
+export 'widgets/chess_widgets.dart';
+export 'widgets/common_widgets.dart';
+export 'widgets/diary_widgets.dart';
+export 'widgets/drawer_widgets.dart';
+export 'widgets/dream_widgets.dart';
+export 'widgets/garden_widgets.dart';
+export 'widgets/gomoku_widgets.dart';
+export 'widgets/group_widgets.dart';
+export 'widgets/profile_widgets.dart';
+export 'widgets/reading_widgets.dart';
+export 'widgets/settings_editor_widgets.dart';
+export 'widgets/settings_widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

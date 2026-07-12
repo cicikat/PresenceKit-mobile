@@ -1,5 +1,10 @@
-part of '../main.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/app_models.dart';
+
+import '../widgets/chat_widgets.dart';
+import '../widgets/common_widgets.dart';
 class DreamPage extends StatelessWidget {
   const DreamPage({
     super.key,

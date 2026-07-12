@@ -1,5 +1,11 @@
-part of '../main.dart';
+import 'dart:async';
+import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+import '../models/app_models.dart';
+import '../services/backend_client.dart';
+
+import '../widgets/common_widgets.dart';
 // W8：群聊 Stage。桌面端用 WebSocket 做逐字流式（message_stream_start/delta/end +
 // group_round_start/end）；手机端和其余功能一样走 HTTP 轮询（沿用 /mobile/poll 的
 // 既有节奏），发送后每 2 秒拉一次 GET /group/{id} 直到拿到新回复或超时，不做逐字

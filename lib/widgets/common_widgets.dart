@@ -1,4 +1,7 @@
-﻿part of '../main.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/app_models.dart';
 
 class PresenceSnapshot {
   const PresenceSnapshot({

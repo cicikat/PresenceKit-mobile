@@ -1,5 +1,15 @@
-part of '../main.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+
+import '../app_constants.dart';
+import '../models/app_models.dart';
+import '../models/background_status.dart';
+import '../models/capability_status.dart';
+import '../models/screen_context.dart';
+import '../services/backend_client.dart';
+
+import '../widgets/common_widgets.dart';
 class CapabilitySheet extends StatefulWidget {
   const CapabilitySheet({
     super.key,
@@ -329,7 +339,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                         : () =>
                               _run(widget.onRequestIgnoreBatteryOptimizations),
                   ),
-                  _OemBackgroundGuide(c: c, appDisplayName: _appDisplayName),
+                  _OemBackgroundGuide(c: c, appDisplayName: appDisplayName),
                   CapabilityRow(
                     c: c,
                     icon: Icons.picture_in_picture_alt_outlined,

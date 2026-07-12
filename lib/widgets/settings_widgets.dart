@@ -1,5 +1,11 @@
-part of '../main.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/app_models.dart';
+
+import '../widgets/common_widgets.dart';
+import '../widgets/settings_editor_widgets.dart';
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,

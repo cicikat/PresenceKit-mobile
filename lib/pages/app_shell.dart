@@ -1,5 +1,29 @@
-part of '../main.dart';
+import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../app_constants.dart';
+import '../models/app_models.dart';
+import '../models/background_status.dart';
+import '../models/capability_status.dart';
+import '../models/screen_context.dart';
+import '../services/app_settings_store.dart';
+import '../services/backend_client.dart';
+import '../services/character_naming.dart';import '../widgets/activity_widgets.dart';
+import '../widgets/capability_widgets.dart';
+import '../widgets/chat_widgets.dart';
+import '../widgets/common_widgets.dart';
+import '../widgets/diary_widgets.dart';
+import '../widgets/drawer_widgets.dart';
+import '../widgets/dream_widgets.dart';
+import '../widgets/garden_widgets.dart';
+import '../widgets/group_widgets.dart';
+import '../widgets/profile_widgets.dart';
+import '../widgets/settings_editor_widgets.dart';
+import '../widgets/settings_widgets.dart';
 class YexuanCompanionApp extends StatefulWidget {
   const YexuanCompanionApp({
     super.key,
@@ -74,7 +98,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   PromptAssets? _promptAssets;
   DreamSettings? _dreamSettings;
   GardenState? _gardenState;
-  String _backendBaseUrl = _defaultBackendBaseUrl;
+  String _backendBaseUrl = defaultBackendBaseUrl;
   String? _profileNameOverride;
   Uint8List? _profileAvatarBytes;
   String _ownerUserId = '';
@@ -746,7 +770,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _pushBehaviorTest(String kind) async {
-    final spec = _BehaviorTestSpec.forKind(kind);
+    final spec = BehaviorTestSpec.forKind(kind);
     try {
       await _backend.pushMobileBehaviorTest(
         token: _requireAdminToken(),

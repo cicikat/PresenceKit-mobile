@@ -1,5 +1,9 @@
-﻿part of '../main.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/app_models.dart';
+
+import '../widgets/common_widgets.dart';
 class YxDrawer extends StatelessWidget {
   const YxDrawer({
     super.key,

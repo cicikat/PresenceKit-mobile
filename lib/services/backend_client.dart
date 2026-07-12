@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
-import '../main.dart'
+import '../models/app_models.dart'
     show
         ActivityChatResult,
         ActivityCurrentState,

@@ -1,5 +1,13 @@
-part of '../main.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import '../models/app_models.dart';
+import '../services/backend_client.dart';
+
+import '../widgets/chess_widgets.dart';
+import '../widgets/common_widgets.dart';
+import '../widgets/gomoku_widgets.dart';
+import '../widgets/reading_widgets.dart';
 // W7：活动系统入口。每个子活动是自包含的 StatefulWidget，自己持有 backend/token
 // 并管理本地状态（而不是像其余页面那样把状态提到 app_shell.dart）——这几个活动
 // 涉及的动作太多（start/state/move/chat/close/ai_move/comment...），继续走"状态全提到

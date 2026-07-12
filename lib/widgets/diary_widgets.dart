@@ -1,5 +1,9 @@
-﻿part of '../main.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import '../models/app_models.dart';
+
+import '../widgets/common_widgets.dart';
 class DiaryPage extends StatefulWidget {
   const DiaryPage({
     super.key,
