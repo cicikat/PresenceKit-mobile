@@ -88,6 +88,34 @@ void main() {
     expect(credentialTapped, isTrue);
   });
 
+  testWidgets('drawer keeps navigation scrollable and local settings visible', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          drawer: YxDrawer(
+            c: YxPalette.light,
+            route: AppRoute.chat,
+            profileDisplayName: 'Nova',
+            profileAvatarBytes: null,
+            onRoute: (_) {},
+            onOpenSystemSettings: () {},
+            onOpenSettings: () {},
+          ),
+        ),
+      ),
+    );
+
+    final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));
+    scaffoldState.openDrawer();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SingleChildScrollView), findsWidgets);
+    expect(find.text('本机设置'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('dream page keeps a wake exit and independent composer', (
     WidgetTester tester,
   ) async {

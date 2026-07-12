@@ -128,6 +128,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          scrollable: true,
           title: const Text('屏幕正文上传白名单'),
           content: SizedBox(
             width: 520,

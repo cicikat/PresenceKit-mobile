@@ -51,7 +51,7 @@ class _AvatarCropDialogState extends State<AvatarCropDialog> {
     return Dialog(
       backgroundColor: c.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,

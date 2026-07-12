@@ -4,7 +4,9 @@ setlocal enabledelayedexpansion
 cd /d %~dp0
 
 set "PACKAGE=com.example.yexuan_memery"
-set "APK=build\app\outputs\flutter-apk\app-debug.apk"
+set "BUILD_MODE=release"
+if /I "%~1"=="debug" set "BUILD_MODE=debug"
+set "APK=build\app\outputs\flutter-apk\app-%BUILD_MODE%.apk"
 
 rem ---- Resolve flutter / adb: local.properties > env vars > PATH > legacy default ----
 set "FLUTTER="
@@ -50,8 +52,8 @@ if errorlevel 1 (
 "%ADB%" devices
 
 echo.
-echo [2/5] Building debug APK...
-call "%FLUTTER%" build apk --debug
+echo [2/5] Building %BUILD_MODE% APK...
+call "%FLUTTER%" build apk --%BUILD_MODE%
 if errorlevel 1 (
   echo [ERROR] Build failed.
   pause & exit /b 1
