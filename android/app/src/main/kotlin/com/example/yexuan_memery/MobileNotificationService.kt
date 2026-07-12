@@ -29,6 +29,12 @@ import java.util.Calendar
 import java.util.concurrent.atomic.AtomicInteger
 
 class MobileNotificationService : Service() {
+    companion object {
+        @Volatile
+        var isServiceRunning: Boolean = false
+            private set
+    }
+
     private val tag = "YexuanMobileService"
     private val legacyChannelId = "yexuan_mobile_channel"
     private val legacyServiceChannelId = "yexuan_mobile_service"
@@ -65,6 +71,7 @@ class MobileNotificationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isServiceRunning = true
         createNotificationChannel()
         notificationPermissionError()?.let(::recordBackgroundError)
     }
@@ -469,6 +476,7 @@ class MobileNotificationService : Service() {
 
     override fun onDestroy() {
         Log.d(tag, "service destroyed")
+        isServiceRunning = false
         running = false
         pollGeneration.incrementAndGet()   // 令所有在途轮次失效
         activeRelayConnection?.disconnect()

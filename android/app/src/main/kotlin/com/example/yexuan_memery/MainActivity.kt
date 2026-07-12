@@ -242,7 +242,7 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "isBackgroundNotificationServiceRunning" -> {
-                        result.success(prefs.getBoolean("backgroundNotificationServiceRunning", false))
+                        result.success(MobileNotificationService.isServiceRunning)
                     }
                     "getBackgroundNotificationServiceStartError" -> {
                         result.success(prefs.getString("backgroundNotificationServiceStartError", null))

@@ -162,14 +162,16 @@ Token 弹窗保存后已经通过父 State 更新 `_adminToken`，系统设置�
 
 手机主对话改用 `/desktop/chat` 后，后端同步响应与 mobile channel 可能携带同一条助手回复。手机前台此前会分别追加两次，而桌面客户端已有自己的同步响应 / WebSocket 去重逻辑，因此只有手机出现双发。现已为 Flutter 前台增加 45 秒短时回复指纹去重，同一回复无论先从同步响应还是 `/mobile/poll` 到达，都只显示一次。
 
-## P2：后台服务状态由 SharedPreferences 标记，可能与真实服务状态漂移
+## 已修复：后台服务状态由 SharedPreferences 标记，可能与真实服务状态漂移
 
 **位置**：`MainActivity.kt`、`MobileNotificationService.kt`
 
-能力检查页读取 `backgroundNotificationServiceRunning` 判断后台服务运行状态。这个值由服务启动/销毁和 Activity resume 写入，不是系统进程状态查询。
+能力检查页过去读取 `backgroundNotificationServiceRunning` 判断后台服务运行状态。这个值由服务启动/销毁和 Activity resume 写入，不是实时进程状态。
 
-**当前缓解**：保留运行标记作为近似状态，并在能力检查页展示服务单写的中继心跳、最近周期补偿
-和最近错误原因。服务被系统杀掉后，运行标记仍可能短暂漂移。
+**状态**：已修复。`MobileNotificationService` 现在以进程内 `isServiceRunning` 生命周期标记暴露
+实时真值，`MainActivity` 的 `isBackgroundNotificationServiceRunning` MethodChannel 调用直接查询
+该值，不再信任 SharedPreferences 的历史标记。原 SharedPreferences 键暂时保留，仅用于兼容旧版
+诊断数据，不再参与 Flutter 前台是否轮询的判定。
 
 ## P3：Android applicationId 仍是模板包名
 

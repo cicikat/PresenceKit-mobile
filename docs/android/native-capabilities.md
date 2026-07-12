@@ -19,6 +19,8 @@ Android 原生层位于 `android/app/src/main/kotlin/com/example/yexuan_memery/`
 - `onCreate()` 请求通知权限并进入沉浸式全屏。
 - `onResume()` 无条件停止原生服务和中继订阅，由 Flutter 前台每 5 秒轮询。
 - `onStop()` 只有在后台通知开关开启、访问凭证存在且后端 origin 可信时，才启动后台前台服务。
+- `isBackgroundNotificationServiceRunning` 直接读取 `MobileNotificationService.isServiceRunning`
+  的进程内生命周期真值，不再用 SharedPreferences 历史标记判断服务是否仍在运行。
 
 ## MobileNotificationService.kt
 
