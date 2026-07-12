@@ -2,7 +2,7 @@
 
 ## 入口和状态
 
-原 `lib/main.dart` 单文件已拆分完毕，现在只有约 64 行入口代码（`MyApp` + `main()`），通过 `part` 引入以下文件：
+原 `lib/main.dart` 单文件已按文件职责拆开；当前入口还包含全局错误兜底，并通过 `part` 引入以下文件。`part` 只是一段过渡结构，独立 library/import 与领域 controller 的施工路线见 `cc-tasks/07-app_shell结构债审计与拆分.md`。
 
 | 文件 | 职责 |
 |---|---|
@@ -80,7 +80,7 @@
 
 ## 后续结构约定
 
-当前拆分已完成；后续较大改动遵循现有目录职责，优先保持 `part` 内的状态所有权和安全闸门不变。若要改为独立 library/import，应单列重构并补足测试：
+当前文件拆分已完成，但模块边界拆分尚未完成。施工按工单 07 推进：先移除 `part`、建立独立 library/import，再把领域状态迁入 `ChangeNotifier` controller。任何新领域功能不得继续向 `app_shell.dart` 增加状态字段、Timer 或成组业务方法：
 
 1. `lib/models/`：纯数据模型和解析。
 2. `lib/services/backend_client.dart`：后端 HTTP。

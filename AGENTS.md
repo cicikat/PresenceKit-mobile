@@ -18,7 +18,7 @@
 
 - Flutter 主界面已经实现主对话、资料、日记、花园、能力检查、后端节点设置和主题编辑。
 - `lib/main.dart` 已完成重构，现在只有约 64 行入口代码；之前提到的 8k+ 行已拆分完毕。
-- 主体逻辑在 `lib/pages/app_shell.dart`（约 2185 行）；HTTP 封装在 `lib/services/backend_client.dart`（约 507 行）；数据模型在 `lib/models/app_models.dart`；UI 组件在 `lib/widgets/*.dart`。
+- 主体逻辑暂仍在 `lib/pages/app_shell.dart`（2026-07-12 实测约 2555 个逻辑行）；HTTP 封装在 `lib/services/backend_client.dart`；数据模型在 `lib/models/`；UI 组件在 `lib/widgets/*.dart`。结构债拆分路线见 `cc-tasks/07-app_shell结构债审计与拆分.md`。
 - `lib/pages/chat_page.dart`、`lib/widgets/api_service.dart`、`lib/services/message_bubble.dart` **已废弃/不再使用**，上述路径已不存在或为空壳。
 - 主对话发送消息与 Emerald-client 桌面端一致，走 `POST /desktop/chat`；聊天历史只读 `/chat-log/*`。
 - Dream 是独立页面和消息流，走 `GET /dream/state`、`POST /dream/enter|chat|exit`。
@@ -57,9 +57,9 @@
 
 ```text
 lib/
-  main.dart                         # 入口，约 64 行，part 引入下列文件
+  main.dart                         # 入口、根 MaterialApp，当前仍以 part 挂载 UI 文件
   models/app_models.dart            # 数据模型（BackendChatResponse 等）
-  pages/app_shell.dart              # 主状态容器与页面路由，约 2185 行
+  pages/app_shell.dart              # 待拆的组合根/主状态容器，禁止继续增加领域状态
   services/backend_client.dart      # 所有 HTTP 封装，约 507 行
   services/app_settings_store.dart  # 本地持久化
   widgets/capability_widgets.dart   # 能力检查页
@@ -114,6 +114,9 @@ docs/
 5. 改 mobile channel 字段时，同时更新 `docs/backend/integration.md` 和 `docs/protocols/mobile-channel.md`。
 6. 改 Android 权限、前台服务或无障碍行为时，同步更新 `docs/android/native-capabilities.md`。
 7. 发现未修问题先记到 `docs/known-issues.md`，标明影响、证据和建议方向。
+8. 新领域功能必须新建 `lib/controllers/<domain>_controller.dart` 和对应 widget 文件；禁止向
+   `lib/pages/app_shell.dart` 增加领域状态字段、Timer 或成组业务方法。跨域依赖通过构造注入，
+   `app_shell.dart` 最终只保留组合根、路由和生命周期协调。
 
 ## 启动与调试
 

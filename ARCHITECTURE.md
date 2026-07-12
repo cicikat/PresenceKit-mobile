@@ -34,13 +34,13 @@ Flutter 入口是 64 行的 `lib/main.dart`：
 
 - `main()` 设置沉浸式系统 UI 后挂载 `MyApp`。
 - `MyApp` 使用 Material 3 和 serif 风格主题，首页是 `YexuanCompanionApp`。
-- `main.dart` 只声明入口、根 MaterialApp 和各领域 `part` 挂载。
+- `main.dart` 声明入口、全局错误兜底、根 MaterialApp 和当前过渡期的各领域 `part` 挂载。
 - `pages/app_shell.dart` 中的 `YexuanCompanionApp` 维护路由、消息、后端节点、花园、日记、头像、主题、轮询和生命周期状态。
 - `services/app_settings_store.dart` 封装 Android legacy `MethodChannel('yexuan_memery/settings')`。
 - `services/backend_client.dart` 直接用 `dart:io` `HttpClient` 调后端 HTTP。
 - `models/` 保存数据/config 定义，`widgets/` 按聊天、能力、设置、日记、花园等领域保存 Flutter UI。
 
-本轮拆分为保持行为不变采用 Dart `part`，所有 part 仍属于 `main.dart` library；后续改成完全独立的 import 边界需要另行重构。
+当前 Dart `part` 结构仍使所有文件属于 `main.dart` library，尚未形成编译器可强制的模块边界。后续拆分的唯一施工入口是 `cc-tasks/07-app_shell结构债审计与拆分.md`；顺序为 import 边界、领域 controller、设备门面，期间保持安全闸门和接口行为不变。
 
 Android 原生入口是 `MainActivity.kt`：
 
