@@ -589,7 +589,10 @@ class _CapabilitySheetState extends State<CapabilitySheet>
         ? '最近中继心跳：暂无'
         : '最近中继心跳：${_formatCapabilityTime(relay.lastHeartbeatAt!)}';
     final error = relay.lastError == null ? '' : '\n最近中继错误：${relay.lastError}';
-    return '${_relayConnectionLabel(relay)}；$delivered / $heartbeat$error';
+    final configurationHint = relay.lastDeliveredAt == null
+        ? '\n已连接不等于后端已配置；请检查后端 relay_base_url / relay_topic 与此处完全一致。'
+        : '';
+    return '${_relayConnectionLabel(relay)}；$delivered / $heartbeat$error$configurationHint';
   }
 
   String _formatCapabilityTime(DateTime value) {

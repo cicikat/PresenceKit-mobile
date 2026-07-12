@@ -36,6 +36,13 @@
 4. 打开 App 后台通知开关、授予通知权限；测试时开 `notificationTestMode` 绕过静音/冷却。
 5. 能力检查页看"中继已连接"和最近信号时间即可验证。
 
+**本次复核（2026-07-12，工单 03）**：手机端的“中继已连接”只代表 SSE
+订阅成功，不能证明后端已经 publish；能力检查页现同时展示最近信号时间，并在该时间为空时
+直接提示核对后端 `relay_base_url` / `relay_topic`。通知闸门的累计抑制数和最近原因也已透出，
+可据此区分“信号未发出”与“消息被静音/冷却吞掉”。本仓无法读取用户实际后端
+`config.yaml` 或手机日志，因此根因仍以本节已实证的“后端 relay_* 尚未配置”为准；完成配置后，
+请按工单用测试模式下的手动 ntfy publish 做真机验收。
+
 ## 已收缩：手机端不再持有 admin 全权 token
 
 **位置**：`lib/services/backend_client.dart`、`android/app/src/main/kotlin/com/example/yexuan_memery/MobileNotificationService.kt`、
