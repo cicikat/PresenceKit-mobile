@@ -70,6 +70,19 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'serif',
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1F3A2E)),
+        dialogTheme: const DialogThemeData(
+          backgroundColor: Color(0xFFECE3D0),
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Color(0xFFF7F0E1),
+          border: OutlineInputBorder(),
+        ),
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Color(0xFF1F3A2E),
+          selectionColor: Color(0x553E705A),
+          selectionHandleColor: Color(0xFF1F3A2E),
+        ),
       ),
       home: const YexuanCompanionApp(),
     );

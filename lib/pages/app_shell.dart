@@ -308,6 +308,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: c.surface,
+        scrollable: true,
         title: const Text('Confirm trusted HTTP origin'),
         content: Text(
           'This origin uses cleartext HTTP:\n$origin\n\n'
@@ -385,122 +386,85 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     if (!mounted) return;
     final controller = TextEditingController();
     String? dialogError;
-    final savedToken = await showDialog<String>(
-      context: context,
+    final savedToken = await _showTextInputDialog<String>(
+      controllers: [controller],
       barrierDismissible: !required,
-      builder: (dialogContext) => Theme(
-        data: Theme.of(dialogContext).copyWith(
-          colorScheme: Theme.of(dialogContext).colorScheme.copyWith(
-            surface: c.surface,
-            onSurface: c.ink1,
-            primary: c.character,
-            error: c.danger,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, dialogSetState) => AlertDialog(
+          backgroundColor: c.surface,
+          scrollable: true,
+          title: Text(
+            required ? '设置访问 Token' : '设置 / 更换 Token',
+            style: TextStyle(color: c.ink1),
           ),
-          textSelectionTheme: TextSelectionThemeData(
-            cursorColor: c.character,
-            selectionColor: c.characterSoft,
-            selectionHandleColor: c.character,
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: c.surfaceSoft,
-            labelStyle: TextStyle(color: c.ink2),
-            hintStyle: TextStyle(color: c.ink3),
-            errorStyle: TextStyle(color: c.danger),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: c.surfaceEdge),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: c.character, width: 1.4),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: c.danger),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: c.danger, width: 1.4),
-            ),
-          ),
-        ),
-        child: StatefulBuilder(
-          builder: (dialogContext, dialogSetState) => AlertDialog(
-            backgroundColor: c.surface,
-            title: Text(
-              required ? '设置访问 Token' : '设置 / 更换 Token',
-              style: TextStyle(color: c.ink1),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '填后端签发的 mobile token（emt_ 开头）；旧 admin secret 仍可用但不建议。'
-                  'Token 只保存在 Android 本机私有存储中，不会打包进应用。',
-                  style: TextStyle(color: c.ink2),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '填后端签发的 mobile token（emt_ 开头）；旧 admin secret 仍可用但不建议。'
+                'Token 只保存在 Android 本机私有存储中，不会打包进应用。',
+                style: TextStyle(color: c.ink2),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                obscureText: false,
+                enableInteractiveSelection: true,
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                enableSuggestions: false,
+                style: TextStyle(color: c.ink1),
+                decoration: InputDecoration(
+                  labelText: '访问 Token',
+                  errorText: dialogError,
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller,
-                  autofocus: true,
-                  obscureText: false,
-                  enableInteractiveSelection: true,
-                  keyboardType: TextInputType.text,
-                  textInputAction: TextInputAction.done,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  style: TextStyle(color: c.ink1),
-                  decoration: InputDecoration(
-                    labelText: '访问 Token',
-                    errorText: dialogError,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              if (!required)
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('取消'),
-                ),
-              FilledButton(
-                onPressed: () async {
-                  final value = controller.text.trim();
-                  if (value.isEmpty) {
-                    dialogSetState(() => dialogError = '请填写访问 Token');
-                    return;
-                  }
-                  try {
-                    await _settingsStore.saveAdminToken(value);
-                  } catch (e) {
-                    if (!dialogContext.mounted) return;
-                    dialogSetState(() => dialogError = '保存失败：$e');
-                    return;
-                  }
-                  if (!dialogContext.mounted) return;
-                  Navigator.pop(dialogContext, value);
-                },
-                child: const Text('保存'),
               ),
             ],
           ),
+          actions: [
+            if (!required)
+              TextButton(
+                onPressed: () => _dismissTextInputDialog(dialogContext),
+                child: const Text('取消'),
+              ),
+            FilledButton(
+              onPressed: () async {
+                final value = controller.text.trim();
+                if (value.isEmpty) {
+                  dialogSetState(() => dialogError = '请填写访问 Token');
+                  return;
+                }
+                try {
+                  await _settingsStore.saveAdminToken(value);
+                } catch (e) {
+                  if (!dialogContext.mounted) return;
+                  dialogSetState(() => dialogError = '保存失败：$e');
+                  return;
+                }
+                if (!dialogContext.mounted) return;
+                _dismissTextInputDialog(dialogContext, result: value);
+              },
+              child: const Text('保存'),
+            ),
+          ],
         ),
       ),
     );
-    controller.dispose();
     if (savedToken == null || !mounted) return;
     final shouldStartSync = !_backendSyncStarted;
     _adminToken = savedToken;
     _backendError = null;
     _mobileError = null;
-    Navigator.maybeOf(context, rootNavigator: true)?.popUntil(
-      (route) => route.isFirst,
-    );
     unawaited(
       Future<void>.delayed(const Duration(milliseconds: 320), () {
         if (!mounted) return;
+        Navigator.maybeOf(
+          context,
+          rootNavigator: true,
+        )?.popUntil((route) => route.isFirst);
         if (shouldStartSync) {
           _startBackendSync();
         } else {
@@ -621,9 +585,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       granted = await _settingsStore.hasRecordAudioPermission();
       if (!granted) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('需要麦克风权限才能语音输入')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('需要麦克风权限才能语音输入')));
         }
         return false;
       }
@@ -666,7 +630,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     try {
       final battery = await _settingsStore.readBatteryPercent();
       int? steps;
-      final stepsGranted = await _settingsStore.hasActivityRecognitionPermission();
+      final stepsGranted = await _settingsStore
+          .hasActivityRecognitionPermission();
       if (stepsGranted) {
         steps = await _settingsStore.readTodaySteps();
       } else {
@@ -812,6 +777,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: c.surface,
+          scrollable: true,
           title: Text('本机备注名', style: serif(c, 20)),
           content: TextField(
             controller: controller,
@@ -983,93 +949,132 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   static final RegExp _safeOwnerUserIdPattern = RegExp(r'^[A-Za-z0-9_-]+$');
   static final RegExp _safeRelayTopicPattern = RegExp(r'^[a-z0-9/_-]+$');
 
+  Future<T?> _showTextInputDialog<T>({
+    required List<TextEditingController> controllers,
+    required WidgetBuilder builder,
+    bool barrierDismissible = true,
+  }) async {
+    try {
+      return await showDialog<T>(
+        context: context,
+        barrierDismissible: barrierDismissible,
+        builder: (dialogContext) => PopScope<T>(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _dismissTextInputDialog<T>(dialogContext);
+          },
+          child: builder(dialogContext),
+        ),
+      );
+    } finally {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(
+          Future<void>.delayed(const Duration(milliseconds: 320), () {
+            for (final controller in controllers) {
+              controller.dispose();
+            }
+          }),
+        );
+      });
+    }
+  }
+
+  void _dismissTextInputDialog<T>(BuildContext dialogContext, {T? result}) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (dialogContext.mounted) {
+        Navigator.of(dialogContext).pop<T>(result);
+      }
+    });
+  }
+
   void _openBackendSettings() {
     final controller = TextEditingController(text: _backendBaseUrl);
     final ownerController = TextEditingController(text: _ownerUserId);
     String? dialogError;
     String? ownerDialogError;
 
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (dialogContext, dialogSetState) {
-            return AlertDialog(
-              backgroundColor: c.surface,
-              title: Text('后端节点', style: serif(c, 20)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    keyboardType: TextInputType.url,
-                    style: mono(c, 13),
-                    decoration: InputDecoration(
-                      hintText: 'http://192.168.1.23:8080',
-                      errorText: dialogError,
+    unawaited(
+      _showTextInputDialog<void>(
+        controllers: [controller, ownerController],
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (dialogContext, dialogSetState) {
+              return AlertDialog(
+                backgroundColor: c.surface,
+                scrollable: true,
+                title: Text('后端节点', style: serif(c, 20)),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      keyboardType: TextInputType.url,
+                      style: mono(c, 13),
+                      decoration: InputDecoration(
+                        hintText: 'http://192.168.1.23:8080',
+                        errorText: dialogError,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '插线调试用 127.0.0.1；脱线使用电脑局域网 IP。',
-                    style: serif(c, 12, color: c.ink3),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: ownerController,
-                    keyboardType: TextInputType.text,
-                    style: mono(c, 13),
-                    decoration: InputDecoration(
-                      labelText: '用户 ID',
-                      hintText: 'QQ 号或后端约定的 uid，仅限字母数字下划线短横线',
-                      errorText: ownerDialogError,
+                    const SizedBox(height: 10),
+                    Text(
+                      '插线调试用 127.0.0.1；脱线使用电脑局域网 IP。',
+                      style: serif(c, 12, color: c.ink3),
                     ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: ownerController,
+                      keyboardType: TextInputType.text,
+                      style: mono(c, 13),
+                      decoration: InputDecoration(
+                        labelText: '用户 ID',
+                        hintText: 'QQ 号或后端约定的 uid，仅限字母数字下划线短横线',
+                        errorText: ownerDialogError,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => _dismissTextInputDialog(dialogContext),
+                    child: const Text('取消'),
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      final normalized = await _normalizeBackendBaseUrl(
+                        controller.text,
+                      );
+                      if (normalized == null) {
+                        dialogSetState(() => dialogError = '请输入有效地址');
+                        return;
+                      }
+                      final ownerValue = ownerController.text.trim();
+                      if (ownerValue.isNotEmpty &&
+                          !_safeOwnerUserIdPattern.hasMatch(ownerValue)) {
+                        dialogSetState(
+                          () => ownerDialogError = '仅支持字母、数字、下划线、短横线',
+                        );
+                        return;
+                      }
+                      if (!dialogContext.mounted) return;
+                      _dismissTextInputDialog(dialogContext);
+                      if (ownerValue != _ownerUserId) {
+                        await _settingsStore.saveOwnerUserId(ownerValue);
+                        if (mounted) setState(() => _ownerUserId = ownerValue);
+                      }
+                      unawaited(_changeBackendBaseUrl(normalized));
+                    },
+                    child: const Text('保存并重连'),
                   ),
                 ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('取消'),
-                ),
-                FilledButton(
-                  onPressed: () async {
-                    final normalized = await _normalizeBackendBaseUrl(
-                      controller.text,
-                    );
-                    if (normalized == null) {
-                      dialogSetState(() => dialogError = '请输入有效地址');
-                      return;
-                    }
-                    final ownerValue = ownerController.text.trim();
-                    if (ownerValue.isNotEmpty &&
-                        !_safeOwnerUserIdPattern.hasMatch(ownerValue)) {
-                      dialogSetState(
-                        () => ownerDialogError = '仅支持字母、数字、下划线、短横线',
-                      );
-                      return;
-                    }
-                    if (!dialogContext.mounted) return;
-                    Navigator.pop(dialogContext);
-                    if (ownerValue != _ownerUserId) {
-                      await _settingsStore.saveOwnerUserId(ownerValue);
-                      if (mounted) setState(() => _ownerUserId = ownerValue);
-                    }
-                    unawaited(_changeBackendBaseUrl(normalized));
-                  },
-                  child: const Text('保存并重连'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    ).whenComplete(() {
-      controller.dispose();
-      ownerController.dispose();
-    });
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _openRelaySettings() async {
@@ -1084,13 +1089,14 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     String? baseUrlError;
     String? topicError;
 
-    await showDialog<void>(
-      context: context,
+    await _showTextInputDialog<void>(
+      controllers: [baseUrlController, topicController, tokenController],
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (dialogContext, dialogSetState) {
             return AlertDialog(
               backgroundColor: c.surface,
+              scrollable: true,
               title: Text('推送中继（ntfy）', style: serif(c, 20)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1138,7 +1144,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
+                  onPressed: () => _dismissTextInputDialog(dialogContext),
                   child: const Text('取消'),
                 ),
                 FilledButton(
@@ -1169,7 +1175,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
                       normalized = resolved;
                     }
                     if (!dialogContext.mounted) return;
-                    Navigator.pop(dialogContext);
+                    _dismissTextInputDialog(dialogContext);
                     await _settingsStore.saveRelayBaseUrl(normalized);
                     await _settingsStore.saveRelayTopic(topicValue);
                     await _settingsStore.saveRelayToken(
@@ -1183,11 +1189,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           },
         );
       },
-    ).whenComplete(() {
-      baseUrlController.dispose();
-      topicController.dispose();
-      tokenController.dispose();
-    });
+    );
   }
 
   void _sendMessage(String text) {
@@ -1502,7 +1504,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
             incoming.add(base);
           } else {
             for (final part in parts) {
-              incoming.add(ChatMessage(role: base.role, text: part, time: base.time));
+              incoming.add(
+                ChatMessage(role: base.role, text: part, time: base.time),
+              );
             }
           }
         }
@@ -1984,6 +1988,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: c.surface,
+        scrollable: true,
         title: Text('要走了吗', style: serif(c, 18, color: c.ink1)),
         content: Text(
           result.retentionText ?? '再待一会儿吧。',
@@ -2560,7 +2565,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           onShowOrderBubble: () => unawaited(_showOrderBubble('meituan', '美团')),
           onVoiceRecordStart: _startVoiceRecording,
           onVoiceRecordStop: _stopVoiceRecordingAndTranscribe,
-          onVoiceRecordCancel: () => unawaited(_settingsStore.cancelVoiceRecording()),
+          onVoiceRecordCancel: () =>
+              unawaited(_settingsStore.cancelVoiceRecording()),
         );
       case AppRoute.dream:
         return DreamPage(
