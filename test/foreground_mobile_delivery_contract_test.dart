@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yexuan_memery/main.dart';
-import 'package:yexuan_memery/services/app_settings_store.dart';
-import 'package:yexuan_memery/services/backend_client.dart';
+import 'package:presencekit_mobile/main.dart';
+import 'package:presencekit_mobile/services/app_settings_store.dart';
+import 'package:presencekit_mobile/services/backend_client.dart';
 
 class _ForegroundSettingsStore extends AppSettingsStore {
   _ForegroundSettingsStore(this.baseUrl);

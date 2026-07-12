@@ -74,7 +74,7 @@ lib/
   widgets/settings_widgets.dart
 android/app/src/main/
   AndroidManifest.xml
-  kotlin/com/example/yexuan_memery/
+  kotlin/com/presencekit/mobile/
     MainActivity.kt                 # MethodChannel、权限、文件选择、服务入口
     MobileNotificationService.kt    # 后台长轮询和通知闸门
     FloatingBubbleService.kt        # 悬浮窗、锁屏确认、订单确认

@@ -1,13 +1,13 @@
 # Android 原生能力
 
-Android 原生层位于 `android/app/src/main/kotlin/com/example/yexuan_memery/`。
+Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 
 ## MainActivity.kt
 
 职责：
 
-- 注册 legacy `MethodChannel('yexuan_memery/settings')`。
-- 读写 legacy `SharedPreferences("yexuan_memery")`：后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、后台通知开关、头像。
+- 注册兼容旧安装契约的 legacy `MethodChannel('yexuan_memery/settings')`；该名称不是当前项目名，迁移 applicationId 时有意保留。
+- 读写兼容键 `SharedPreferences("yexuan_memery")`：后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、后台通知开关、头像。该存储名有意不随项目改名。
 - 请求和检查通知、悬浮窗、设备管理器、无障碍权限。
 - 检查并引导用户授予电池优化豁免；能力页同时提供常见 OEM 自启动/后台白名单路径。
 - 启动/停止 `MobileNotificationService` 和 `FloatingBubbleService`。

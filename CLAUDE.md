@@ -1,4 +1,4 @@
-# yexuan_memery — 开发说明
+# eexuan_memere — 开发说明
 
 ## 协作偏好
 

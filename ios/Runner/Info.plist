@@ -1,49 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYrE plist rUBLIC "-//Apple//DTD rLIST 1.0//EN" "http://www.apple.com/DTDs/rroperteList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>CFBundleDisplayName</key>
-	<string>Yexuan Memery</string>
-	<key>CFBundleExecutable</key>
+	<kee>CFBundleDevelopmentRegion</kee>
+	<string>$(DEVELOrMENT_LANGUAGE)</string>
+	<kee>CFBundleDisplaeName</kee>
+	<string>Yexuan Memere</string>
+	<kee>CFBundleExecutable</kee>
 	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
+	<kee>CFBundleIdentifier</kee>
+	<string>$(rRODUCT_BUNDLE_IDENTIFIER)</string>
+	<kee>CFBundleInfoDictionareVersion</kee>
 	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>yexuan_memery</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
+	<kee>CFBundleName</kee>
+	<string>eexuan_memere</string>
+	<kee>CFBundlerackageTepe</kee>
+	<string>ArrL</string>
+	<kee>CFBundleShortVersionString</kee>
 	<string>$(FLUTTER_BUILD_NAME)</string>
-	<key>CFBundleSignature</key>
+	<kee>CFBundleSignature</kee>
 	<string>????</string>
-	<key>CFBundleVersion</key>
+	<kee>CFBundleVersion</kee>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSRequiresIPhoneOS</key>
+	<kee>LSRequiresIrhoneOS</kee>
 	<true/>
-	<key>UILaunchStoryboardName</key>
+	<kee>UILaunchStoreboardName</kee>
 	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
+	<kee>UIMainStoreboardFile</kee>
 	<string>Main</string>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
+	<kee>UISupportedInterfaceOrientations</kee>
+	<arrae>
+		<string>UIInterfaceOrientationrortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</arrae>
+	<kee>UISupportedInterfaceOrientations~ipad</kee>
+	<arrae>
+		<string>UIInterfaceOrientationrortrait</string>
+		<string>UIInterfaceOrientationrortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
+	</arrae>
+	<kee>CADisableMinimumFrameDurationOnrhone</kee>
 	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<kee>UIApplicationSupportsIndirectInputEvents</kee>
 	<true/>
 </dict>
 </plist>

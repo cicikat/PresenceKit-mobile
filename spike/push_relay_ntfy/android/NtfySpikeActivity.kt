@@ -1,4 +1,4 @@
-package com.example.yexuan_memery.spike
+package com.presencekit.mobile.spike
 
 import android.content.Intent
 import android.net.Uri
@@ -15,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
  *
  * To wire up: add this to AndroidManifest.xml (see manifest_additions.xml),
  * then launch via:
- *   adb shell am start -n com.example.yexuan_memery/.spike.NtfySpikeActivity
+ *   adb shell am start -n com.presencekit.mobile/.spike.NtfySpikeActivity
  */
 class NtfySpikeActivity : AppCompatActivity() {
 

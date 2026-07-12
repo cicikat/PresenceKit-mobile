@@ -1,4 +1,4 @@
-package com.example.yexuan_memery
+package com.presencekit.mobile
 
 import android.Manifest
 import android.app.NotificationManager

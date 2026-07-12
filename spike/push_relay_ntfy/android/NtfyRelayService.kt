@@ -1,4 +1,4 @@
-package com.example.yexuan_memery.spike
+package com.presencekit.mobile.spike
 
 import android.app.*
 import android.content.Context

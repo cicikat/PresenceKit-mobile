@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:yexuan_memery/main.dart';
+import 'package:presencekit_mobile/main.dart';
 
 void main() {
   test('prompt assets parses the Emerald-client response shape', () {

@@ -6,10 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('background service status queries the live service lifecycle flag', () {
     final activitySource = File(
-      'android/app/src/main/kotlin/com/example/yexuan_memery/MainActivity.kt',
+      'android/app/src/main/kotlin/com/presencekit/mobile/MainActivity.kt',
     ).readAsStringSync();
     final serviceSource = File(
-      'android/app/src/main/kotlin/com/example/yexuan_memery/MobileNotificationService.kt',
+      'android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt',
     ).readAsStringSync();
 
     expect(
@@ -18,7 +18,12 @@ void main() {
     );
     expect(
       activitySource,
-      isNot(contains('result.success(prefs.getBoolean("backgroundNotificationServiceRunning"'))),
+      isNot(
+        contains(
+          'result.success(prefs.getBoolean('
+          '"backgroundNotificationServiceRunning"',
+        ),
+      ),
     );
     expect(serviceSource, contains('var isServiceRunning: Boolean = false'));
     expect(serviceSource, contains('isServiceRunning = true'));
@@ -26,7 +31,7 @@ void main() {
   });
 
   final serviceSource = File(
-    'android/app/src/main/kotlin/com/example/yexuan_memery/'
+    'android/app/src/main/kotlin/com/presencekit/mobile/'
     'MobileNotificationService.kt',
   ).readAsStringSync();
 

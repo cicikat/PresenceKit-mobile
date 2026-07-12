@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 cd /d %~dp0
 
-set "PACKAGE=com.example.yexuan_memery"
+set "PACKAGE=com.presencekit.mobile"
 set "BUILD_MODE=release"
 if /I "%~1"=="debug" set "BUILD_MODE=debug"
 set "APK=build\app\outputs\flutter-apk\app-%BUILD_MODE%.apk"

@@ -44,6 +44,11 @@ Flutter 入口是 64 行的 `lib/main.dart`：
 
 Android 原生入口是 `MainActivity.kt`：
 
+- 当前 Android namespace/applicationId 为 `com.presencekit.mobile`，Dart package 为
+  `presencekit_mobile`。Kotlin 源码位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
+- `yexuan_memery/settings` MethodChannel 与 `SharedPreferences("yexuan_memery")` 仅作为历史兼容
+  契约保留，不代表当前项目名；未经数据迁移不得改名。
+
 - 持久化后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、头像和后台通知开关到 legacy `SharedPreferences("yexuan_memery")`。
 - 提供通知、悬浮窗、设备管理器、无障碍权限检查和跳转。
 - 提供图片/文件选择、头像保存、屏幕上下文采集和打开购物 App。

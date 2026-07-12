@@ -1,4 +1,4 @@
-package com.example.yexuan_memery
+package com.presencekit.mobile
 
 import android.content.SharedPreferences
 import java.net.URL

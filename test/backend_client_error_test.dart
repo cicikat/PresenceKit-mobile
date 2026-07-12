@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yexuan_memery/services/backend_client.dart';
+import 'package:presencekit_mobile/services/backend_client.dart';
 
 void main() {
   group('BackendClient.debugExtractError', () {

@@ -660,7 +660,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     }
     final snapshot = await _settingsStore.captureScreenContextForUpload();
     if (snapshot == null) return;
-    if (snapshot.packageName == 'com.example.yexuan_memery') {
+    if (snapshot.packageName == 'com.presencekit.mobile') {
       // 前台是自己时只发焦点信号，不把聊天正文注入传感通道。
       try {
         await _backend.pushSelfFocusSignal(token: _requireAdminToken());

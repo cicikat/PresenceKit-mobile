@@ -1,4 +1,4 @@
-package com.example.yexuan_memery
+package com.presencekit.mobile
 
 import android.Manifest
 import android.app.AlarmManager
@@ -29,12 +29,6 @@ import java.util.Calendar
 import java.util.concurrent.atomic.AtomicInteger
 
 class MobileNotificationService : Service() {
-    companion object {
-        @Volatile
-        var isServiceRunning: Boolean = false
-            private set
-    }
-
     private val tag = "YexuanMobileService"
     private val legacyChannelId = "yexuan_mobile_channel"
     private val legacyServiceChannelId = "yexuan_mobile_service"
@@ -965,6 +959,10 @@ class MobileNotificationService : Service() {
     }
 
     companion object {
+        @Volatile
+        var isServiceRunning: Boolean = false
+            private set
+
         private const val scheduledOneShotExtra = "scheduledOneShotPoll"
         private const val supplementalPollRequestCode = 10435
 

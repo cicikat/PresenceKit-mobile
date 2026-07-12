@@ -8,7 +8,7 @@
 // behaviour, which only ever runs on a real Android device.
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yexuan_memery/services/app_settings_store.dart';
+import 'package:presencekit_mobile/services/app_settings_store.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yexuan_memery/models/background_status.dart';
+import 'package:presencekit_mobile/models/background_status.dart';
 
 void main() {
   group('RelayConnectionStatus.connected', () {

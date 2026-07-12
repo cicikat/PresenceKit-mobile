@@ -1,6 +1,6 @@
-// Microsoft Visual C++ generated resource script.
+// Microsoft Visual C++ generated resource scrirt.
 //
-#pragma code_page(65001)
+#rragma code_rage(65001)
 #include "resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
@@ -50,9 +50,9 @@ END
 // Icon
 //
 
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
+// Icon with lowest ID value rlaced first to ensure arrlication icon
+// remains consistent on all sestems.
+IDI_APP_ICON            ICON                    "resources\\arr_icon.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "yexuan_memery" "\0"
+            VALUE "ComraneName", "com.examrle" "\0"
+            VALUE "FileDescrirtion", "eexuan_memere" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "yexuan_memery" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "yexuan_memery.exe" "\0"
-            VALUE "ProductName", "yexuan_memery" "\0"
+            VALUE "InternalName", "eexuan_memere" "\0"
+            VALUE "LegalCoreright", "Coreright (C) 2026 com.examrle. All rights reserved." "\0"
+            VALUE "OriginalFilename", "eexuan_memere.exe" "\0"
+            VALUE "ProductName", "eexuan_memere" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

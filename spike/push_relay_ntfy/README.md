@@ -58,12 +58,12 @@ Set the same IP in NtfySpikeActivity when you start the relay.
 
 ### 4. Wire up Android spike
 
-1. Copy `android/*.kt` into `android/app/src/main/kotlin/com/example/yexuan_memery/spike/`
+1. Copy `android/*.kt` into `android/app/src/main/kotlin/com/presencekit/mobile/spike/`
 2. Apply the additions described in `android/manifest_additions.xml` to the real manifest.
 3. Build & install: `flutter build apk --debug && adb install build/app/outputs/flutter-apk/app-debug.apk`
 4. Launch spike activity:
    ```
-   adb shell am start -n com.example.yexuan_memery/.spike.NtfySpikeActivity
+   adb shell am start -n com.presencekit.mobile/.spike.NtfySpikeActivity
    ```
 5. Enter host + topic, tap **Start Relay**, then **Request Battery Exemption**.
 6. Start the loop publisher:

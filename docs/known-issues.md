@@ -45,7 +45,7 @@
 
 ## 已收缩：手机端不再持有 admin 全权 token
 
-**位置**：`lib/services/backend_client.dart`、`android/app/src/main/kotlin/com/example/yexuan_memery/MobileNotificationService.kt`、
+**位置**：`lib/services/backend_client.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt`、
 `docs/backend/integration.md`
 
 后端 SEC-AUTH-2（`Emerald-presence/cc-tasks/21-鉴权分层-scoped-tokens.md`）落地后，手机端应
@@ -59,7 +59,7 @@ MethodChannel、prefs 结构不变，只是填入的凭证值收敛为最小权�
 
 ## 已修复：Android 后台常驻长轮询
 
-**位置**：`android/app/src/main/kotlin/com/example/yexuan_memery/MobileNotificationService.kt`
+**位置**：`android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt`
 
 Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻长轮询。中继明确订阅失败
 或连续断开 15 分钟后，通过 `AlarmManager` 执行非阻塞补偿拉取，之后最多每 6 小时一次，
@@ -70,7 +70,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 ## 已修复：无障碍屏幕上下文本机敏感过滤
 
-**位置**：`lib/main.dart`、`android/app/src/main/kotlin/com/example/yexuan_memery/YexuanAccessibilityService.kt`、`MobileNotificationService.kt`
+**位置**：`lib/main.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/YexuanAccessibilityService.kt`、`MobileNotificationService.kt`
 
 原生采集层现在会过滤密码输入框，验证码、银行、支付、医疗类页级关键词，以及敏感 App/包名。屏幕上下文上传使用独立开关 `screenContextUploadEnabled`，默认关闭；正文上传另使用默认空的 App 白名单，未勾选 App 只上报包名/App 名。
 
@@ -80,7 +80,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 ## 已修复：公网 HTTP 和自动重定向可能绕过 origin 边界
 
-**位置**：`lib/main.dart`、`android/app/src/main/kotlin/com/example/yexuan_memery/BackendSecurityPolicy.kt`、`MobileNotificationService.kt`
+**位置**：`lib/main.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/BackendSecurityPolicy.kt`、`MobileNotificationService.kt`
 
 自定义明文 origin 现在只允许用户确认过的 RFC1918 私网精确 IPv4；公网 HTTP 即使曾保存过也不会放行。loopback、Tailscale `100.64.0.0/10` 和 HTTPS 仍可使用。
 
@@ -88,7 +88,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 ## 已修复：鉴权 token 硬编码
 
-**位置**：`lib/main.dart`、`android/app/src/main/kotlin/com/example/yexuan_memery/MobileNotificationService.kt`
+**位置**：`lib/main.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt`
 
 访问凭证已从 Flutter 和 Android 原生源码移除。首次启动时由用户手动填写，并保存到 legacy `SharedPreferences("yexuan_memery", MODE_PRIVATE)`；后台服务每轮重新读取。
 
@@ -106,7 +106,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 ## P2：外卖/购物悬浮窗仍显示硬编码示例订单
 
-**位置**：`android/app/src/main/kotlin/com/example/yexuan_memery/FloatingBubbleService.kt`
+**位置**：`android/app/src/main/kotlin/com/presencekit/mobile/FloatingBubbleService.kt`
 
 `addOrderContent()` 固定展示“香菇滑鸡饭、白灼时蔬、姜茶、红包、合计 39.00”等示例内容，没有消费后端 behavior 或 message 中的真实建议。
 
@@ -173,15 +173,15 @@ Token 弹窗保存后已经通过父 State 更新 `_adminToken`，系统设置�
 该值，不再信任 SharedPreferences 的历史标记。原 SharedPreferences 键暂时保留，仅用于兼容旧版
 诊断数据，不再参与 Flutter 前台是否轮询的判定。
 
-## P3：Android applicationId 仍是模板包名
+## 已修复：Android applicationId 仍是模板包名
 
 **位置**：`android/app/build.gradle.kts`
 
-当前 `namespace` 和 `applicationId` 是 `com.example.yexuan_memery`，文件里也保留 Flutter 模板 TODO。
+原 `namespace` 和 `applicationId` 是模板值 `com.example.yexuan_memery`。
 
-**影响**：仅适合本机内测；正式分发、权限说明、通知渠道和后续升级都应使用稳定包名。
-
-**建议**：正式打包前统一迁移 applicationId、namespace、签名和渠道名称。
+**状态**：已修复。Dart package 改为 `presencekit_mobile`，Android namespace/applicationId
+改为 `com.presencekit.mobile`，Kotlin 源码目录和安装脚本同步迁移。legacy MethodChannel 与
+SharedPreferences 名有意保留，避免把兼容契约误当成当前项目名继续扩散。
 
 ## P3：release 仍使用 debug signing
 
@@ -195,7 +195,7 @@ Token 弹窗保存后已经通过父 State 更新 `_adminToken`，系统设置�
 
 ## P3：通知权限在 Activity 创建时主动弹出
 
-**位置**：`android/app/src/main/kotlin/com/example/yexuan_memery/MainActivity.kt`
+**位置**：`android/app/src/main/kotlin/com/presencekit/mobile/MainActivity.kt`
 
 `onCreate()` 直接调用 `requestNotificationPermission()`。
 

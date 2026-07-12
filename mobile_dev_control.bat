@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 cd /d %~dp0
 
-set PACKAGE=com.example.yexuan_memery
+set PACKAGE=com.presencekit.mobile
 
 rem ---- Resolve adb: local.properties > env vars > PATH > legacy default ----
 set "ADB="

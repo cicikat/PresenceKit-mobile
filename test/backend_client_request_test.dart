@@ -9,8 +9,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yexuan_memery/services/app_settings_store.dart';
-import 'package:yexuan_memery/services/backend_client.dart';
+import 'package:presencekit_mobile/services/app_settings_store.dart';
+import 'package:presencekit_mobile/services/backend_client.dart';
 
 class _FakeHttpHeaders implements HttpHeaders {
   final Map<String, String> values = {};
