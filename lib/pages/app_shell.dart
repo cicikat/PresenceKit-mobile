@@ -840,7 +840,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<CapabilityStatus> _loadCapabilityStatus() async {
-    final results = await Future.wait<Object>([
+    final results = await Future.wait<dynamic>([
       _settingsStore.areNotificationsEnabled(),
       _settingsStore.canDrawOverlays(),
       _settingsStore.isAccessibilityServiceEnabled(),
@@ -893,7 +893,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         onRequestNotifications: _settingsStore.requestNotificationPermission,
         onRequestIgnoreBatteryOptimizations:
             _settingsStore.requestIgnoreBatteryOptimizations,
-        onToggleNotificationTestMode: _settingsStore.setNotificationTestMode,
         onRequestOverlay: _settingsStore.requestOverlayPermission,
         onRequestAccessibility: _settingsStore.requestAccessibilityPermission,
         onRequestDeviceAdmin: _settingsStore.requestDeviceAdmin,
@@ -914,7 +913,17 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         onFetchDiagnostics: () =>
             _backend.fetchDiagnostics(token: _requireAdminToken()),
         onEditBackend: _openBackendSettings,
-        onEditRelay: _openRelaySettings,
+        historyLoaded: _historyLoaded,
+        loadingHistory: _loadingHistory,
+        historyError: _historyError,
+        gardenLoaded: _gardenState != null,
+        loadingGarden: _loadingGarden,
+        gardenError: _gardenError,
+        mobileActive: _mobileActive,
+        pollingMobile: _pollingMobile,
+        mobileError: _mobileError,
+        mobileReceivedCount: _mobileReceivedCount,
+        lastMobileContent: _lastMobileContent,
       ),
     );
   }
@@ -2133,158 +2142,137 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   void _openSettings() {
     var requestedBackendSettings = false;
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, sheetSetState) {
-          if (!requestedBackendSettings) {
-            requestedBackendSettings = true;
-            unawaited(() async {
-              await Future.wait([_loadPromptAssets(), _loadDreamSettings()]);
-              if (context.mounted) sheetSetState(() {});
-            }());
-          }
+    var notificationTestMode = false;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => StatefulBuilder(
+          builder: (context, sheetSetState) {
+            if (!requestedBackendSettings) {
+              requestedBackendSettings = true;
+              unawaited(() async {
+                final results = await Future.wait<dynamic>([
+                  _loadPromptAssets(),
+                  _loadDreamSettings(),
+                  _settingsStore.loadNotificationGateStatus(),
+                ]);
+                notificationTestMode =
+                    (results[2] as NotificationGateStatus).testModeEnabled;
+                if (context.mounted) sheetSetState(() {});
+              }());
+            }
 
-          void updatePrefs(YxPrefs prefs) {
-            sheetSetState(() => _prefs = prefs);
-            setState(() {});
-          }
+            void updatePrefs(YxPrefs prefs) {
+              sheetSetState(() => _prefs = prefs);
+              setState(() {});
+            }
 
-          void updateTheme(bool dark) {
-            sheetSetState(() {
-              _dark = dark;
-              _customThemeEnabled = false;
-            });
-            setState(() {});
-            _applySystemUi();
-          }
+            void updateTheme(bool dark) {
+              sheetSetState(() {
+                _dark = dark;
+                _customThemeEnabled = false;
+              });
+              setState(() {});
+              _applySystemUi();
+            }
 
-          void enableCustomTheme() {
-            if (_customPalette == null) {
+            void enableCustomTheme() {
+              if (_customPalette == null) {
+                Navigator.pop(context);
+                unawaited(_openCustomThemeEditor());
+                return;
+              }
+              sheetSetState(() => _customThemeEnabled = true);
+              setState(() {});
+              _applySystemUi();
+            }
+
+            void editCustomTheme() {
               Navigator.pop(context);
               unawaited(_openCustomThemeEditor());
-              return;
             }
-            sheetSetState(() => _customThemeEnabled = true);
-            setState(() {});
-            _applySystemUi();
-          }
 
-          void editCustomTheme() {
-            Navigator.pop(context);
-            unawaited(_openCustomThemeEditor());
-          }
-
-          return SettingsSheet(
-            c: c,
-            dark: _dark,
-            customThemeEnabled: _customThemeEnabled,
-            hasCustomTheme: _customPalette != null,
-            prefs: _prefs,
-            profileDisplayName: _profileDisplayName,
-            profileAvatarBytes: _profileAvatarBytes,
-            promptAssets: _promptAssets,
-            dreamSettings: _dreamSettings,
-            settingsBusy:
-                _loadingPromptAssets ||
-                _savingPromptAssets ||
-                _loadingDreamSettings ||
-                _savingDreamSettings,
-            settingsError: _promptAssetsError ?? _dreamSettingsError,
-            onTheme: updateTheme,
-            onCustomTheme: enableCustomTheme,
-            onEditCustomTheme: editCustomTheme,
-            onPrefs: updatePrefs,
-            onEditProfileName: _editProfileName,
-            onImportProfileAvatar: _importProfileAvatar,
-            onResetProfileAvatar: _resetProfileAvatar,
-            onOpenProfile: _openProfilePage,
-            onToggleLorebook: (id) {
-              final current = Set<String>.from(
-                _promptAssets?.enabledLorebooks ?? const <String>{},
-              );
-              current.contains(id) ? current.remove(id) : current.add(id);
-              unawaited(() async {
-                await _updatePromptAssets(enabledLorebooks: current);
-                if (context.mounted) sheetSetState(() {});
-              }());
-            },
-            onToggleJailbreak: (id) {
-              final current = Set<String>.from(
-                _promptAssets?.enabledJailbreaks ?? const <String>{},
-              );
-              current.contains(id) ? current.remove(id) : current.add(id);
-              unawaited(() async {
-                await _updatePromptAssets(enabledJailbreaks: current);
-                if (context.mounted) sheetSetState(() {});
-              }());
-            },
-            onDreamLorebook: (value) {
-              unawaited(() async {
-                await _updateDreamSettings(enableDreamLorebook: value);
-                if (context.mounted) sheetSetState(() {});
-              }());
-            },
-            onDreamWorldLayer: (value) {
-              unawaited(() async {
-                await _updateDreamSettings(worldLayer: value);
-                if (context.mounted) sheetSetState(() {});
-              }());
-            },
-            onDreamJailbreak: (value) {
-              unawaited(() async {
-                await _updateDreamSettings(jailbreakPreset: value);
-                if (context.mounted) sheetSetState(() {});
-              }());
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  void _openSystemSettings() {
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, sheetSetState) {
-          void updateBackgroundNotifications(bool enabled) {
-            sheetSetState(() => _backgroundNotifications = enabled);
-            unawaited(_changeBackgroundNotifications(enabled));
-          }
-
-          return SystemSettingsSheet(
-            c: c,
-            hasAdminToken: _hasAdminToken,
-            backgroundNotifications: _backgroundNotifications,
-            backendBaseUrl: _backendBaseUrl,
-            ownerUserId: _ownerUserId,
-            historyLoaded: _historyLoaded,
-            loadingHistory: _loadingHistory,
-            historyError: _historyError,
-            gardenLoaded: _gardenState != null,
-            loadingGarden: _loadingGarden,
-            gardenError: _gardenError,
-            mobileActive: _mobileActive,
-            pollingMobile: _pollingMobile,
-            mobileError: _mobileError,
-            mobileReceivedCount: _mobileReceivedCount,
-            lastMobileContent: _lastMobileContent,
-            backendBusy: _sending,
-            backendError: _backendError,
-            lastBackendReply: _lastBackendReply,
-            onEditCredential: _openAdminTokenSettings,
-            onOpenCapabilities: _openCapabilityCheck,
-            onEditBackend: _openBackendSettings,
-            onBackgroundNotifications: updateBackgroundNotifications,
-          );
-        },
+            return SettingsPage(
+              c: c,
+              dark: _dark,
+              customThemeEnabled: _customThemeEnabled,
+              hasCustomTheme: _customPalette != null,
+              prefs: _prefs,
+              profileDisplayName: _profileDisplayName,
+              profileAvatarBytes: _profileAvatarBytes,
+              promptAssets: _promptAssets,
+              dreamSettings: _dreamSettings,
+              settingsBusy:
+                  _loadingPromptAssets ||
+                  _savingPromptAssets ||
+                  _loadingDreamSettings ||
+                  _savingDreamSettings,
+              settingsError: _promptAssetsError ?? _dreamSettingsError,
+              onTheme: updateTheme,
+              onCustomTheme: enableCustomTheme,
+              onEditCustomTheme: editCustomTheme,
+              onPrefs: updatePrefs,
+              onEditProfileName: _editProfileName,
+              onImportProfileAvatar: _importProfileAvatar,
+              onResetProfileAvatar: _resetProfileAvatar,
+              onOpenProfile: _openProfilePage,
+              hasAdminToken: _hasAdminToken,
+              backgroundNotifications: _backgroundNotifications,
+              backendBaseUrl: _backendBaseUrl,
+              ownerUserId: _ownerUserId,
+              notificationTestMode: notificationTestMode,
+              onEditCredential: _openAdminTokenSettings,
+              onEditBackend: _openBackendSettings,
+              onEditRelay: _openRelaySettings,
+              onBackgroundNotifications: (enabled) {
+                sheetSetState(() => _backgroundNotifications = enabled);
+                unawaited(_changeBackgroundNotifications(enabled));
+              },
+              onNotificationTestMode: (enabled) {
+                sheetSetState(() => notificationTestMode = enabled);
+                unawaited(_settingsStore.setNotificationTestMode(enabled));
+              },
+              onOpenCapabilities: _openCapabilityCheck,
+              onToggleLorebook: (id) {
+                final current = Set<String>.from(
+                  _promptAssets?.enabledLorebooks ?? const <String>{},
+                );
+                current.contains(id) ? current.remove(id) : current.add(id);
+                unawaited(() async {
+                  await _updatePromptAssets(enabledLorebooks: current);
+                  if (context.mounted) sheetSetState(() {});
+                }());
+              },
+              onToggleJailbreak: (id) {
+                final current = Set<String>.from(
+                  _promptAssets?.enabledJailbreaks ?? const <String>{},
+                );
+                current.contains(id) ? current.remove(id) : current.add(id);
+                unawaited(() async {
+                  await _updatePromptAssets(enabledJailbreaks: current);
+                  if (context.mounted) sheetSetState(() {});
+                }());
+              },
+              onDreamLorebook: (value) {
+                unawaited(() async {
+                  await _updateDreamSettings(enableDreamLorebook: value);
+                  if (context.mounted) sheetSetState(() {});
+                }());
+              },
+              onDreamWorldLayer: (value) {
+                unawaited(() async {
+                  await _updateDreamSettings(worldLayer: value);
+                  if (context.mounted) sheetSetState(() {});
+                }());
+              },
+              onDreamJailbreak: (value) {
+                unawaited(() async {
+                  await _updateDreamSettings(jailbreakPreset: value);
+                  if (context.mounted) sheetSetState(() {});
+                }());
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -2502,7 +2490,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           profileDisplayName: _profileDisplayName,
           profileAvatarBytes: _profileAvatarBytes,
           onRoute: _pickRoute,
-          onOpenSystemSettings: _openSystemSettings,
           onOpenSettings: _openSettings,
         ),
         body: AnimatedContainer(

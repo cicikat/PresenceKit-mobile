@@ -8,7 +8,6 @@ class YxDrawer extends StatelessWidget {
     required this.profileDisplayName,
     required this.profileAvatarBytes,
     required this.onRoute,
-    required this.onOpenSystemSettings,
     required this.onOpenSettings,
   });
 
@@ -17,7 +16,6 @@ class YxDrawer extends StatelessWidget {
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
   final ValueChanged<AppRoute> onRoute;
-  final VoidCallback onOpenSystemSettings;
   final VoidCallback onOpenSettings;
 
   @override
@@ -78,6 +76,7 @@ class YxDrawer extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Column(
                   children: [
+                    _DrawerSectionLabel(c: c, label: '页面'),
                     DrawerItem(
                       c: c,
                       icon: Icons.chat_bubble_outline_rounded,
@@ -104,14 +103,6 @@ class YxDrawer extends StatelessWidget {
                     ),
                     DrawerItem(
                       c: c,
-                      icon: Icons.local_florist_outlined,
-                      title: '状态花园',
-                      subtitle: '他今天的心境',
-                      active: route == AppRoute.garden,
-                      onTap: () => onRoute(AppRoute.garden),
-                    ),
-                    DrawerItem(
-                      c: c,
                       icon: Icons.menu_book_outlined,
                       title: '$profileDisplayName的日记',
                       subtitle: '他写给自己的',
@@ -134,6 +125,16 @@ class YxDrawer extends StatelessWidget {
                       active: route == AppRoute.group,
                       onTap: () => onRoute(AppRoute.group),
                     ),
+                    _DrawerSectionDivider(c: c),
+                    _DrawerSectionLabel(c: c, label: '养成'),
+                    DrawerItem(
+                      c: c,
+                      icon: Icons.local_florist_outlined,
+                      title: '状态花园',
+                      subtitle: '他今天的心境',
+                      active: route == AppRoute.garden,
+                      onTap: () => onRoute(AppRoute.garden),
+                    ),
                   ],
                 ),
               ),
@@ -146,7 +147,7 @@ class YxDrawer extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 10, 18, 2),
               child: Text(
-                '本机设置',
+                '设置',
                 style: mono(
                   c,
                   10,
@@ -161,16 +162,8 @@ class YxDrawer extends StatelessWidget {
                   DrawerItem(
                     c: c,
                     icon: Icons.settings_outlined,
-                    title: '系统设置',
-                    subtitle: 'Token / 后端 / 权限与通知',
-                    active: false,
-                    onTap: onOpenSystemSettings,
-                  ),
-                  DrawerItem(
-                    c: c,
-                    icon: Icons.tune_rounded,
-                    title: '偏好',
-                    subtitle: '主题 / 字号 / 主动频率',
+                    title: '设置',
+                    subtitle: '连接、通知、外观与对话配置',
                     active: false,
                     onTap: onOpenSettings,
                   ),
@@ -182,6 +175,39 @@ class YxDrawer extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DrawerSectionLabel extends StatelessWidget {
+  const _DrawerSectionLabel({required this.c, required this.label});
+
+  final YxPalette c;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        label,
+        style: mono(c, 10, color: c.characterOn.withValues(alpha: 0.55)),
+      ),
+    ),
+  );
+}
+
+class _DrawerSectionDivider extends StatelessWidget {
+  const _DrawerSectionDivider({required this.c});
+
+  final YxPalette c;
+
+  @override
+  Widget build(BuildContext context) => Divider(
+    color: c.characterOn.withValues(alpha: 0.18),
+    indent: 12,
+    endIndent: 12,
+    height: 24,
+  );
 }
 
 class DrawerItem extends StatelessWidget {

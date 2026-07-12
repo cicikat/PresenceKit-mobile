@@ -72,7 +72,7 @@
 - 主壳：`YexuanCompanionApp` 位于 `lib/pages/app_shell.dart`；`YxDrawer`、`NavPill`、`PageHeader` 等位于对应 widgets 文件。
 - 聊天：`ChatScene`、`ChatTopBar`、`Composer`、`HimMessage`、`YouMessage`、`TypingHimMessage`。
 - Dream：`DreamPage`、`DreamStateStrip`、`DreamEntrance`、`DreamComposer`；复用聊天消息气泡布局。
-- 设置：`SettingsSheet`、`ThemePaletteSheet`、`CapabilitySheet`；`SettingsSheet` 通过后端接口分别编辑 Reality 和 Dream 的世界书/破限配置，`CapabilitySheet` 管理默认空的屏幕正文上传 App 白名单。
+- 设置：`SettingsPage`、`ThemePaletteSheet`、`CapabilitySheet`；`SettingsPage` 是全屏单一入口，按连接与账户、通知与主动性、外观与显示、对话内容配置、诊断分区，并通过后端接口编辑 Reality 和 Dream 的世界书/破限配置。`CapabilitySheet` 管理默认空的屏幕正文上传 App 白名单，并展示同步状态。
 - 资料：`ProfilePage`、`AvatarCropDialog`；`ProfilePage` 可通过 `/settings/prompt-assets` 切换 Reality 角色卡。
 - 日记：`DiaryPage`、`DiaryCard`、`DiaryDialog`。
 - 花园：`GardenPage`、`PlantCard`、`PlantPainter`。

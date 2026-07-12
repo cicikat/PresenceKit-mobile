@@ -41,32 +41,44 @@ void main() {
     expect(find.text('对他说些什么…'), findsOneWidget);
   });
 
-  testWidgets('system settings puts token first', (WidgetTester tester) async {
+  testWidgets('settings page puts token first', (WidgetTester tester) async {
     var credentialTapped = false;
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: SystemSettingsSheet(
+          body: SettingsPage(
             c: YxPalette.light,
             hasAdminToken: true,
             backgroundNotifications: true,
             backendBaseUrl: 'http://127.0.0.1:8080',
             ownerUserId: '10001',
-            historyLoaded: false,
-            loadingHistory: false,
-            historyError: null,
-            gardenLoaded: false,
-            loadingGarden: false,
-            gardenError: null,
-            mobileActive: false,
-            pollingMobile: false,
-            mobileError: null,
-            mobileReceivedCount: 0,
-            lastMobileContent: null,
-            backendBusy: false,
-            backendError: null,
-            lastBackendReply: null,
+            dark: false,
+            customThemeEnabled: false,
+            hasCustomTheme: false,
+            prefs: const YxPrefs(),
+            profileDisplayName: 'Nova',
+            profileAvatarBytes: null,
+            promptAssets: null,
+            dreamSettings: null,
+            settingsBusy: false,
+            settingsError: null,
+            notificationTestMode: false,
+            onTheme: (_) {},
+            onCustomTheme: () {},
+            onEditCustomTheme: () {},
+            onPrefs: (_) {},
+            onEditProfileName: () {},
+            onImportProfileAvatar: () {},
+            onResetProfileAvatar: () {},
+            onOpenProfile: () {},
+            onEditRelay: () async {},
+            onNotificationTestMode: (_) {},
+            onToggleLorebook: (_) {},
+            onToggleJailbreak: (_) {},
+            onDreamLorebook: (_) {},
+            onDreamWorldLayer: (_) {},
+            onDreamJailbreak: (_) {},
             onEditCredential: () => credentialTapped = true,
             onOpenCapabilities: () {},
             onEditBackend: () {},
@@ -76,7 +88,7 @@ void main() {
       ),
     );
 
-    expect(find.text('系统设置'), findsOneWidget);
+    expect(find.text('设置'), findsOneWidget);
     expect(find.text('访问 Token'), findsOneWidget);
     expect(find.textContaining('中继只承载新消息信号'), findsOneWidget);
     expect(
@@ -100,7 +112,6 @@ void main() {
             profileDisplayName: 'Nova',
             profileAvatarBytes: null,
             onRoute: (_) {},
-            onOpenSystemSettings: () {},
             onOpenSettings: () {},
           ),
         ),
@@ -112,7 +123,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SingleChildScrollView), findsWidgets);
-    expect(find.text('本机设置'), findsOneWidget);
+    expect(find.text('设置'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 

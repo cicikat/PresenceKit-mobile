@@ -7,7 +7,6 @@ class CapabilitySheet extends StatefulWidget {
     required this.onLoadStatus,
     required this.onRequestNotifications,
     required this.onRequestIgnoreBatteryOptimizations,
-    required this.onToggleNotificationTestMode,
     required this.onRequestOverlay,
     required this.onRequestAccessibility,
     required this.onRequestDeviceAdmin,
@@ -23,14 +22,23 @@ class CapabilitySheet extends StatefulWidget {
     required this.onLoadBehaviorStatus,
     required this.onFetchDiagnostics,
     required this.onEditBackend,
-    required this.onEditRelay,
+    required this.historyLoaded,
+    required this.loadingHistory,
+    required this.historyError,
+    required this.gardenLoaded,
+    required this.loadingGarden,
+    required this.gardenError,
+    required this.mobileActive,
+    required this.pollingMobile,
+    required this.mobileError,
+    required this.mobileReceivedCount,
+    required this.lastMobileContent,
   });
 
   final YxPalette c;
   final Future<CapabilityStatus> Function() onLoadStatus;
   final Future<void> Function() onRequestNotifications;
   final Future<void> Function() onRequestIgnoreBatteryOptimizations;
-  final Future<void> Function(bool enabled) onToggleNotificationTestMode;
   final Future<void> Function() onRequestOverlay;
   final Future<void> Function() onRequestAccessibility;
   final Future<void> Function() onRequestDeviceAdmin;
@@ -49,7 +57,17 @@ class CapabilitySheet extends StatefulWidget {
   final Future<BehaviorDecisionStatus> Function() onLoadBehaviorStatus;
   final Future<BackendDiagnostics> Function() onFetchDiagnostics;
   final VoidCallback onEditBackend;
-  final Future<void> Function() onEditRelay;
+  final bool historyLoaded;
+  final bool loadingHistory;
+  final String? historyError;
+  final bool gardenLoaded;
+  final bool loadingGarden;
+  final String? gardenError;
+  final bool mobileActive;
+  final bool pollingMobile;
+  final String? mobileError;
+  final int mobileReceivedCount;
+  final String? lastMobileContent;
 
   @override
   State<CapabilitySheet> createState() => _CapabilitySheetState();
@@ -430,6 +448,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                             ),
                     ),
                   ),
+                  _SyncStatusSection(c: c, sheet: widget),
                   CapabilityRow(
                     c: c,
                     icon: Icons.cell_tower_outlined,
@@ -439,33 +458,16 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     actionLabel: _relayConnectionLabel(
                       status.relayConnectionStatus,
                     ),
-                    trailing: YxIconButton(
-                      c: c,
-                      icon: Icons.edit_location_alt_rounded,
-                      onPressed: _acting
-                          ? () {}
-                          : () => _run(widget.onEditRelay),
-                      tooltip: '修改中继地址',
-                      size: 30,
-                    ),
                   ),
                   CapabilityRow(
                     c: c,
-                    icon: Icons.science_outlined,
-                    title: '通知闸门测试模式（仅调试）',
+                    icon: Icons.notifications_paused_outlined,
+                    title: '通知闸门状态',
                     subtitle: _notificationGateSubtitle(status),
                     enabled: status.notificationGateStatus.testModeEnabled,
                     actionLabel: status.notificationGateStatus.testModeEnabled
                         ? '测试中'
                         : '正常',
-                    trailing: Switch(
-                      value: status.notificationGateStatus.testModeEnabled,
-                      onChanged: _acting
-                          ? null
-                          : (value) => _run(
-                              () => widget.onToggleNotificationTestMode(value),
-                            ),
-                    ),
                   ),
                   CapabilityRow(
                     c: c,
@@ -610,6 +612,67 @@ class _CapabilitySheetState extends State<CapabilitySheet>
       return '${status.backendBaseUrl} · 真机调试依赖 adb reverse tcp:8080 tcp:8080';
     }
     return '${status.backendBaseUrl} · 局域网/VPN/内网穿透需可达';
+  }
+}
+
+class _SyncStatusSection extends StatelessWidget {
+  const _SyncStatusSection({required this.c, required this.sheet});
+
+  final YxPalette c;
+  final CapabilitySheet sheet;
+
+  String _state({
+    required bool loading,
+    required bool ready,
+    required String? error,
+  }) {
+    if (loading) return '读取中';
+    if (error != null) return '失败：$error';
+    return ready ? '已同步' : '待同步';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mobileState = sheet.pollingMobile
+        ? '轮询中'
+        : sheet.mobileError != null
+        ? '失败：${sheet.mobileError}'
+        : sheet.mobileActive
+        ? '已激活'
+        : '待激活';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('同步状态', style: serif(c, 15, weight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Text(
+            '聊天记录：${_state(loading: sheet.loadingHistory, ready: sheet.historyLoaded, error: sheet.historyError)}',
+            style: mono(c, 11, color: c.ink2),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '花园状态：${_state(loading: sheet.loadingGarden, ready: sheet.gardenLoaded, error: sheet.gardenError)}',
+            style: mono(c, 11, color: c.ink2),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '主动消息：$mobileState${sheet.mobileReceivedCount > 0 ? ' · 已接收 ${sheet.mobileReceivedCount} 条' : ''}',
+            style: mono(c, 11, color: c.ink2),
+          ),
+          if (sheet.lastMobileContent != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              '最近一条：${sheet.lastMobileContent}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: mono(c, 11, color: c.ink2),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
