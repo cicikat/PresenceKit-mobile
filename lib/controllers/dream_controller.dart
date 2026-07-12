@@ -136,8 +136,9 @@ class DreamController extends ChangeNotifier {
           );
         }
       }
-      if (response.exitAccepted || response.forceExited)
+      if (response.exitAccepted || response.forceExited) {
         await loadState(silent: true);
+      }
       _scrollToBottom();
     } on BackendException catch (e) {
       error = e.message;

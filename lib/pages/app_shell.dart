@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 
 import '../app_constants.dart';
 import '../controllers/dream_controller.dart';
+import '../controllers/diary_controller.dart';
+import '../controllers/garden_controller.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
 import '../models/capability_status.dart';
@@ -48,7 +50,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _chatScrollController = ScrollController();
-  Timer? _gardenRefreshTimer;
   Timer? _mobilePollTimer;
   Timer? _screenContextTimer;
   Timer? _sensorPushTimer;
@@ -62,9 +63,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   bool _noMoreHistory = false;
   bool _usingChatLogHistory = false;
   bool _historyLoaded = false;
-  bool _loadingGarden = false;
-  bool _loadingDiary = false;
-  bool _diaryLoaded = false;
   bool _mobileActive = false;
   bool _pollingMobile = false;
   bool _backgroundNotifications = true;
@@ -76,8 +74,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   int _chatVisibleMessageLimit = _initialVisibleChatMessages;
   String? _backendError;
   String? _historyError;
-  String? _gardenError;
-  String? _diaryError;
   String? _mobileError;
   String? _promptAssetsError;
   int _mobileReceivedCount = 0;
@@ -88,7 +84,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   MoodStateSnapshot? _moodState;
   bool _loadingStatusSnapshot = false;
   PromptAssets? _promptAssets;
-  GardenState? _gardenState;
   String _backendBaseUrl = defaultBackendBaseUrl;
   String? _profileNameOverride;
   Uint8List? _profileAvatarBytes;
@@ -97,6 +92,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   late final AppSettingsStore _settingsStore;
   late BackendClient _backend;
   late final DreamController _dreamController;
+  late final GardenController _gardenController;
+  late final DiaryController _diaryController;
   YxPrefs _prefs = const YxPrefs();
   YxPalette? _customPalette;
   final List<ChatMessage> _history = [];
@@ -106,7 +103,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   final Set<String> _synchronousAssistantReplyIds = {};
   // message.id 去重：防止同一 id 在多次 poll 中重复展示；顺序维护以便 FIFO 淘汰。
   final List<String> _seenMobileMessageIds = [];
-  final List<DiaryListItem> _diaryEntries = [];
   final List<String> _availableChatLogDates = [];
   final List<String> _loadedChatLogDates = [];
 
@@ -154,7 +150,17 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       backend: () => _backend,
       token: () => _adminToken,
     );
+    _gardenController = GardenController(
+      backend: () => _backend,
+      token: () => _adminToken,
+    );
+    _diaryController = DiaryController(
+      backend: () => _backend,
+      token: () => _adminToken,
+    );
     _dreamController.addListener(_refreshFromDreamController);
+    _gardenController.addListener(_refreshFromDreamController);
+    _diaryController.addListener(_refreshFromDreamController);
     WidgetsBinding.instance.addObserver(this);
     _chatScrollController.addListener(_handleChatScroll);
     _applySystemUi();
@@ -217,13 +223,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     if (!_hasAdminToken) return;
     _backendSyncStarted = true;
     unawaited(_loadHistory());
-    unawaited(_loadGarden());
+    unawaited(_gardenController.start());
     unawaited(_activateMobile());
-    _gardenRefreshTimer?.cancel();
-    _gardenRefreshTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => unawaited(_loadGarden(silent: true)),
-    );
     _startMobilePollTimer();
     if (_screenContextUploadEnabled) {
       _pushScreenContextOnce(silent: true);
@@ -272,7 +273,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _gardenRefreshTimer?.cancel();
+    _gardenController
+      ..removeListener(_refreshFromDreamController)
+      ..dispose();
+    _diaryController
+      ..removeListener(_refreshFromDreamController)
+      ..dispose();
     _stopMobilePollTimer();
     _screenContextTimer?.cancel();
     _dreamController.removeListener(_refreshFromDreamController);
@@ -369,7 +375,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     }
     if (normalized == _backendBaseUrl) return;
 
-    _gardenRefreshTimer?.cancel();
+    _gardenController.stop();
     _mobilePollTimer?.cancel();
     final previousBackend = _backend;
     if (_hasAdminToken) {
@@ -385,21 +391,21 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       );
       _backendError = null;
       _historyError = null;
-      _gardenError = null;
-      _diaryError = null;
+      _gardenController.error = null;
+      _diaryController.error = null;
       _mobileError = null;
       _lastBackendReply = null;
-      _gardenState = null;
+      _gardenController.state = null;
       _mobileActive = false;
       _historyLoaded = false;
       _loadingMoreHistory = false;
       _noMoreHistory = false;
       _usingChatLogHistory = false;
-      _diaryLoaded = false;
+      _diaryController.loaded = false;
       _history.clear();
       _availableChatLogDates.clear();
       _loadedChatLogDates.clear();
-      _diaryEntries.clear();
+      _diaryController.entries.clear();
     });
     await _settingsStore.saveBackendBaseUrl(normalized);
     if (!mounted) return;
@@ -893,8 +899,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       screenTextUploadAppOptions:
           results[10] as List<ScreenTextUploadAppOption>,
       backendBaseUrl: _backendBaseUrl,
-      backendReachable: _mobileActive || _historyLoaded || _gardenState != null,
-      backendBusy: _pollingMobile || _loadingHistory || _loadingGarden,
+      backendReachable:
+          _mobileActive || _historyLoaded || _gardenController.state != null,
+      backendBusy:
+          _pollingMobile || _loadingHistory || _gardenController.loading,
       backendError: _mobileError ?? _backendError ?? _historyError,
     );
   }
@@ -902,7 +910,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   Future<void> _testBackendConnectivity() async {
     await _activateMobile();
     if (!mounted) return;
-    await Future.wait([_loadHistory(), _loadGarden()]);
+    await Future.wait([_loadHistory(), _gardenController.load()]);
   }
 
   void _openCapabilityCheck() {
@@ -940,9 +948,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         historyLoaded: _historyLoaded,
         loadingHistory: _loadingHistory,
         historyError: _historyError,
-        gardenLoaded: _gardenState != null,
-        loadingGarden: _loadingGarden,
-        gardenError: _gardenError,
+        gardenLoaded: _gardenController.state != null,
+        loadingGarden: _gardenController.loading,
+        gardenError: _gardenController.error,
         mobileActive: _mobileActive,
         pollingMobile: _pollingMobile,
         mobileError: _mobileError,
@@ -1377,77 +1385,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         setState(() => _loadingMoreHistory = false);
       }
     }
-  }
-
-  Future<void> _loadGarden({bool silent = false}) async {
-    if (_loadingGarden) return;
-    if (!silent) {
-      setState(() {
-        _loadingGarden = true;
-        _gardenError = null;
-      });
-    } else {
-      _loadingGarden = true;
-    }
-    try {
-      final state = await _backend.loadGardenState(token: _requireAdminToken());
-      if (!mounted) return;
-      setState(() {
-        _gardenState = state;
-        _gardenError = null;
-      });
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() => _gardenError = e.message);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _gardenError = e.toString());
-    } finally {
-      if (mounted) {
-        setState(() => _loadingGarden = false);
-      } else {
-        _loadingGarden = false;
-      }
-    }
-  }
-
-  Future<void> _loadDiaryList({bool silent = false}) async {
-    if (_loadingDiary) return;
-    if (!silent) {
-      setState(() {
-        _loadingDiary = true;
-        _diaryError = null;
-      });
-    } else {
-      _loadingDiary = true;
-    }
-    try {
-      final entries = await _backend.loadDiaryList(token: _requireAdminToken());
-      if (!mounted) return;
-      setState(() {
-        _diaryEntries
-          ..clear()
-          ..addAll(entries);
-        _diaryLoaded = true;
-        _diaryError = null;
-      });
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() => _diaryError = e.message);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _diaryError = e.toString());
-    } finally {
-      if (mounted) {
-        setState(() => _loadingDiary = false);
-      } else {
-        _loadingDiary = false;
-      }
-    }
-  }
-
-  Future<DiaryDetail> _loadDiaryEntry(String date) {
-    return _backend.loadDiaryEntry(date, token: _requireAdminToken());
   }
 
   Future<void> _activateMobile() async {
@@ -2291,9 +2228,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       _dreamController.stopPolling();
     }
     if (route == AppRoute.garden) {
-      unawaited(_loadGarden(silent: true));
+      unawaited(_gardenController.load(silent: true));
     } else if (route == AppRoute.diary) {
-      unawaited(_loadDiaryList(silent: true));
+      unawaited(_diaryController.load(silent: true));
     } else if (route == AppRoute.profile) {
       unawaited(_loadPromptAssets());
       unawaited(_loadStatusSnapshot());
@@ -2432,12 +2369,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           key: const ValueKey('diary'),
           c: c,
           profileDisplayName: _profileDisplayName,
-          entries: _diaryEntries,
-          loading: _loadingDiary,
-          loaded: _diaryLoaded,
-          error: _diaryError,
-          onRefresh: _loadDiaryList,
-          onLoadEntry: _loadDiaryEntry,
+          entries: _diaryController.entries,
+          loading: _diaryController.loading,
+          loaded: _diaryController.loaded,
+          error: _diaryController.error,
+          onRefresh: _diaryController.load,
+          onLoadEntry: _diaryController.loadEntry,
           onBack: () => setState(() => _route = AppRoute.chat),
         );
       case AppRoute.garden:
@@ -2445,10 +2382,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           key: const ValueKey('garden'),
           c: c,
           profileDisplayName: _profileDisplayName,
-          gardenState: _gardenState,
-          loading: _loadingGarden,
-          error: _gardenError,
-          onRefresh: _loadGarden,
+          gardenState: _gardenController.state,
+          loading: _gardenController.loading,
+          error: _gardenController.error,
+          onRefresh: _gardenController.load,
           onBack: () => setState(() => _route = AppRoute.chat),
         );
       case AppRoute.activity:
