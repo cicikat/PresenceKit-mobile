@@ -1,4 +1,4 @@
-﻿part of '../main.dart';
+part of '../main.dart';
 
 class ChatScene extends StatelessWidget {
   const ChatScene({
@@ -168,6 +168,7 @@ class ChatScene extends StatelessWidget {
                             profileDisplayName: profileDisplayName,
                             profileAvatarBytes: profileAvatarBytes,
                             text: m.text,
+                            animate: m.animate,
                           ),
                   );
                 },
@@ -458,6 +459,7 @@ class HimMessage extends StatelessWidget {
     this.tag,
     this.tagVariant = 'solid',
     this.highlight = false,
+    this.animate = false,
   });
 
   final YxPalette c;
@@ -469,6 +471,7 @@ class HimMessage extends StatelessWidget {
   final YxPrefs prefs;
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
+  final bool animate;
 
   @override
   Widget build(BuildContext context) {
@@ -526,7 +529,11 @@ class HimMessage extends StatelessWidget {
                         left: BorderSide(color: c.character, width: 3),
                       ),
                     ),
-                    child: Text(text, style: serif(c, prefs.fontSize)),
+                    child: AnimatedRevealText(
+                      text: text,
+                      animate: animate,
+                      style: serif(c, prefs.fontSize),
+                    ),
                   ),
                 ),
               ],
@@ -536,6 +543,74 @@ class HimMessage extends StatelessWidget {
       ),
     );
   }
+}
+
+class AnimatedRevealText extends StatefulWidget {
+  const AnimatedRevealText({
+    super.key,
+    required this.text,
+    required this.animate,
+    required this.style,
+  });
+
+  final String text;
+  final bool animate;
+  final TextStyle style;
+
+  @override
+  State<AnimatedRevealText> createState() => _AnimatedRevealTextState();
+}
+
+class _AnimatedRevealTextState extends State<AnimatedRevealText>
+    with SingleTickerProviderStateMixin {
+  // Mirrors Emerald-client/src/windows/room/useVnPresenter.ts (40 CPS).
+  static const _revealCps = 40.0;
+  late final AnimationController _controller;
+  bool _skipped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+    if (widget.animate) {
+      _controller.duration = Duration(
+        milliseconds: (widget.text.characters.length / _revealCps * 1000)
+            .round()
+            .clamp(1, 60000),
+      );
+      _controller.forward();
+    } else {
+      _controller.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => setState(() {
+      _skipped = true;
+      _controller.value = 1;
+    }),
+    child: AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final count = (_controller.value * widget.text.characters.length)
+            .floor();
+        final visible = _skipped || !widget.animate
+            ? widget.text
+            : widget.text.characters.take(count).toString();
+        final cursor = widget.animate && !_skipped && _controller.value < 1
+            ? '▍'
+            : '';
+        return Text('$visible$cursor', style: widget.style);
+      },
+    ),
+  );
 }
 
 class TypingHimMessage extends StatelessWidget {
@@ -881,8 +956,9 @@ class _ComposerState extends State<Composer> {
     setState(() => _transcribing = false);
     if (text != null && text.trim().isNotEmpty) {
       final trimmed = text.trim();
-      _controller.text =
-          _controller.text.isEmpty ? trimmed : '${_controller.text}$trimmed';
+      _controller.text = _controller.text.isEmpty
+          ? trimmed
+          : '${_controller.text}$trimmed';
       _controller.selection = TextSelection.collapsed(
         offset: _controller.text.length,
       );

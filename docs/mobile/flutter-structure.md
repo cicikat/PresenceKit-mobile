@@ -70,7 +70,7 @@
 当前 UI 已按领域拆到 `lib/widgets/`，由 `lib/main.dart` 通过 Dart `part` 挂载，包括：
 
 - 主壳：`YexuanCompanionApp` 位于 `lib/pages/app_shell.dart`；`YxDrawer`、`NavPill`、`PageHeader` 等位于对应 widgets 文件。
-- 聊天：`ChatScene`、`ChatTopBar`、`Composer`、`HimMessage`、`YouMessage`、`TypingHimMessage`。
+- 聊天：`ChatScene`、`ChatTopBar`、`Composer`、`HimMessage`、`AnimatedRevealText`、`YouMessage`、`TypingHimMessage`；新到达的助手消息以 40 字/秒逐字显示，点击气泡可立即显示全文，历史回填不播放动画。
 - Dream：`DreamPage`、`DreamStateStrip`、`DreamEntrance`、`DreamComposer`；复用聊天消息气泡布局。
 - 设置：`SettingsPage`、`ThemePaletteSheet`、`CapabilitySheet`；`SettingsPage` 是全屏单一入口，按连接与账户、通知与主动性、外观与显示、对话内容配置、诊断分区，并通过后端接口编辑 Reality 和 Dream 的世界书/破限配置。`CapabilitySheet` 管理默认空的屏幕正文上传 App 白名单，并展示同步状态。
 - 资料：`ProfilePage`、`AvatarCropDialog`；`ProfilePage` 可通过 `/settings/prompt-assets` 切换 Reality 角色卡。

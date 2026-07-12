@@ -1,4 +1,4 @@
-﻿part of '../main.dart';
+part of '../main.dart';
 
 class DreamPage extends StatelessWidget {
   const DreamPage({
@@ -136,6 +136,7 @@ class DreamPage extends StatelessWidget {
                           profileDisplayName: profileDisplayName,
                           profileAvatarBytes: profileAvatarBytes,
                           text: message.text,
+                          animate: message.animate,
                         ),
                     if (sending)
                       TypingHimMessage(
@@ -248,10 +249,7 @@ class DreamEntrance extends StatelessWidget {
             ],
             if (stats != null && stats!.totalValid > 0) ...[
               const SizedBox(height: 14),
-              YxTag(
-                c: c,
-                text: '已经做过 ${stats!.totalValid} 次有效的梦',
-              ),
+              YxTag(c: c, text: '已经做过 ${stats!.totalValid} 次有效的梦'),
             ],
             const SizedBox(height: 20),
             FilledButton.icon(

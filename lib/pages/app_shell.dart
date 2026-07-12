@@ -1506,15 +1506,34 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         // Behavior messages (lock-screen, takeout overlay, etc.) are single-line
         // by design — don't split them so their payload stays intact.
         if (message.behaviorKind.isNotEmpty) {
-          incoming.add(base);
+          incoming.add(
+            ChatMessage(
+              role: base.role,
+              text: base.text,
+              time: base.time,
+              animate: true,
+            ),
+          );
         } else {
           final parts = _splitReplySegments(message.content);
           if (parts.length <= 1) {
-            incoming.add(base);
+            incoming.add(
+              ChatMessage(
+                role: base.role,
+                text: base.text,
+                time: base.time,
+                animate: true,
+              ),
+            );
           } else {
             for (final part in parts) {
               incoming.add(
-                ChatMessage(role: base.role, text: part, time: base.time),
+                ChatMessage(
+                  role: base.role,
+                  text: part,
+                  time: base.time,
+                  animate: true,
+                ),
               );
             }
           }
@@ -1635,7 +1654,14 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       if (!mounted) return;
       setState(() {
         _himTyping = false;
-        _sent.add(ChatMessage(role: 'him', text: parts[i], time: _nowLabel()));
+        _sent.add(
+          ChatMessage(
+            role: 'him',
+            text: parts[i],
+            time: _nowLabel(),
+            animate: true,
+          ),
+        );
       });
       _scrollChatToBottom();
       if (i < parts.length - 1 && mounted) {
@@ -1954,7 +1980,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         } else {
           for (final part in _splitReplySegments(response.reply)) {
             _dreamMessages.add(
-              ChatMessage(role: 'him', text: part, time: _nowLabel()),
+              ChatMessage(
+                role: 'him',
+                text: part,
+                time: _nowLabel(),
+                animate: true,
+              ),
             );
           }
         }

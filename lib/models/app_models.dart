@@ -386,11 +386,13 @@ class ChatMessage {
     required this.role,
     required this.text,
     required this.time,
+    this.animate = false,
   });
 
   final String role;
   final String text;
   final String time;
+  final bool animate;
 }
 
 class DreamState {
@@ -1132,9 +1134,8 @@ class GomokuState {
       board = rawBoard
           .whereType<List>()
           .map(
-            (row) => row.map((cell) => cell?.toString()).toList(
-              growable: false,
-            ),
+            (row) =>
+                row.map((cell) => cell?.toString()).toList(growable: false),
           )
           .toList(growable: false);
     }
@@ -1265,7 +1266,9 @@ class GroupMessage {
       msgId: (json['msg_id'] ?? '').toString(),
       speakerId: (json['speaker_id'] ?? '').toString(),
       content: (json['content'] ?? '').toString(),
-      timestamp: ts is num ? ts.toDouble() : double.tryParse((ts ?? '0').toString()) ?? 0,
+      timestamp: ts is num
+          ? ts.toDouble()
+          : double.tryParse((ts ?? '0').toString()) ?? 0,
     );
   }
 
@@ -1293,7 +1296,10 @@ class GroupSummary {
       roster: rawRoster is List
           ? rawRoster
                 .whereType<Map>()
-                .map((m) => GroupRosterMember.fromJson(Map<String, dynamic>.from(m)))
+                .map(
+                  (m) =>
+                      GroupRosterMember.fromJson(Map<String, dynamic>.from(m)),
+                )
                 .toList(growable: false)
           : const [],
       title: (json['title'] ?? '').toString(),
@@ -1320,7 +1326,9 @@ class GroupDetail {
     return GroupDetail(
       summary: GroupSummary.fromJson(json),
       settings: GroupSettings.fromJson(
-        json['settings'] is Map ? Map<String, dynamic>.from(json['settings']) : const {},
+        json['settings'] is Map
+            ? Map<String, dynamic>.from(json['settings'])
+            : const {},
       ),
       recent: rawRecent is List
           ? rawRecent
