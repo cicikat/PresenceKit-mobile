@@ -40,10 +40,22 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/2] Starting Chrome preview...
+set "WEB_DEVICE="
+for /f "tokens=1" %%a in ('call "%FLUTTER%" devices 2^>nul') do (
+  if /i "%%a"=="Chrome" set "WEB_DEVICE=chrome"
+  if /i "%%a"=="Edge" if not defined WEB_DEVICE set "WEB_DEVICE=edge"
+)
+if not defined WEB_DEVICE (
+  echo [ERROR] No Chrome or Edge Web device was found.
+  echo Run flutter devices to check browser support.
+  pause
+  exit /b 1
+)
+echo Web device detected: !WEB_DEVICE!
+echo [2/2] Starting !WEB_DEVICE! preview...
 echo Close this window or press q in the Flutter terminal to stop the preview.
 echo.
-call "%FLUTTER%" run -d chrome --web-port 5353 %*
+call "%FLUTTER%" run -d !WEB_DEVICE! --web-port 5353 %*
 set "EXIT_CODE=%ERRORLEVEL%"
 echo.
 echo Browser preview stopped. Exit code: %EXIT_CODE%

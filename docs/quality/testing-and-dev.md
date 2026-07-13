@@ -38,7 +38,7 @@ mobile_dev_control.bat
 
 ## 电脑浏览器预览
 
-Flutter Web 已可编译。双击仓库根目录的 `电脑浏览器预览.bat`，脚本会探测 Flutter SDK、执行 `flutter pub get`，然后启动 Chrome 开发预览（默认端口 `5353`）。也可以在命令行附加 Flutter 参数；脚本会把参数原样传给 `flutter run`。
+Flutter Web 已可编译。双击仓库根目录的 `电脑浏览器预览.bat`，脚本会探测 Flutter SDK、执行 `flutter pub get`，然后启动 Chrome 开发预览；如果 Chrome 不在 Flutter 设备列表中，则自动回退到 Edge（默认端口 `5353`）。也可以在命令行附加 Flutter 参数；脚本会把参数原样传给 `flutter run`。
 
 浏览器预览覆盖 Flutter 页面布局和交互；通知、悬浮窗、无障碍、设备管理器、录音、文件选择等 Android 原生能力在电脑浏览器中没有真实实现。若要加载后端数据，浏览器还需要后端允许来自 `http://localhost:5353` 的 CORS 请求；否则仍可预览静态页面，但网络请求会被浏览器拦截。
 
