@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../app_constants.dart';
 import '../controllers/chat_controller.dart';
+import '../controllers/connection_controller.dart';
 import '../controllers/device_controller.dart';
 import '../controllers/dream_controller.dart';
 import '../controllers/diary_controller.dart';
@@ -61,13 +61,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   MoodStateSnapshot? _moodState;
   bool _loadingStatusSnapshot = false;
   PromptAssets? _promptAssets;
-  String _backendBaseUrl = defaultBackendBaseUrl;
   String? _profileNameOverride;
   Uint8List? _profileAvatarBytes;
-  String _ownerUserId = '';
-  String _adminToken = '';
   late final AppSettingsStore _settingsStore;
-  late BackendClient _backend;
+  late final ConnectionController _connectionController;
   late final DeviceController _deviceController;
   late final ChatController _chatController;
   late final DreamController _dreamController;
@@ -76,6 +73,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   YxPrefs _prefs = const YxPrefs();
   YxPalette? _customPalette;
 
+  BackendClient get _backend => _connectionController.backend;
+  String get _backendBaseUrl => _connectionController.baseUrl;
+  String get _adminToken => _connectionController.token;
+  String get _ownerUserId => _connectionController.ownerUserId;
   YxPalette get c {
     final custom = _customPalette;
     if (_customThemeEnabled && custom != null) return custom;
@@ -113,9 +114,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   void initState() {
     super.initState();
     _settingsStore = widget.settingsStore;
-    _backend =
-        widget.backendClient ??
-        BackendClient(baseUrl: _backendBaseUrl, settingsStore: _settingsStore);
+    _connectionController = ConnectionController(
+      settingsStore: _settingsStore,
+      backendClient: widget.backendClient,
+    );
     _deviceController = DeviceController(
       device: DeviceControlService(_settingsStore),
       voice: VoiceService(_settingsStore),
@@ -156,7 +158,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   Future<void> _restoreBackendAndStart() async {
     await _deviceController.restore();
-    final stored = await _settingsStore.loadBackendBaseUrl();
     final storedName = await _settingsStore.loadProfileDisplayName();
     final storedAvatar = await _settingsStore.loadProfileAvatar();
     final storedPalette = YxPalette.fromJsonString(
@@ -164,27 +165,13 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     );
     final backgroundNotifications = await _settingsStore
         .loadBackgroundNotificationsEnabled();
-    final adminToken = await _settingsStore.loadAdminToken();
-    final ownerUserId = await _settingsStore.loadOwnerUserId();
-    final normalized = await _normalizeBackendBaseUrl(stored ?? '');
     if (mounted) {
       setState(() {
         _backgroundNotifications = backgroundNotifications;
-        _adminToken = adminToken?.trim() ?? '';
-        _ownerUserId = ownerUserId?.trim() ?? '';
         _profileNameOverride = storedName;
         _profileAvatarBytes = storedAvatar;
         _customPalette = storedPalette;
         _customThemeEnabled = storedPalette != null;
-        if (normalized != null) {
-          _backendBaseUrl = normalized;
-        }
-        _backend =
-            widget.backendClient ??
-            BackendClient(
-              baseUrl: _backendBaseUrl,
-              settingsStore: _settingsStore,
-            );
       });
     }
     if (!mounted) return;
@@ -257,21 +244,14 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     );
   }
 
-  Future<String?> _normalizeBackendBaseUrl(String raw) async {
-    final trimmed = raw.trim();
-    if (trimmed.isEmpty) return null;
-    final withScheme =
-        RegExp(r'^https?://', caseSensitive: false).hasMatch(trimmed)
-        ? trimmed
-        : 'http://$trimmed';
-    return _settingsStore.normalizeOrigin(withScheme);
-  }
+  Future<String?> _normalizeBackendBaseUrl(String raw) =>
+      _connectionController.normalizeBaseUrl(raw);
 
   Future<bool> _ensureTrustedBackendOrigin(String normalized) async {
-    if (await _settingsStore.isAllowedBaseUrl(normalized)) return true;
-    final origin = await _settingsStore.normalizeOrigin(normalized);
+    if (await _connectionController.isAllowedBaseUrl(normalized)) return true;
+    final origin = await _connectionController.normalizeBaseUrl(normalized);
     if (origin == null ||
-        !await _settingsStore.isConfirmablePrivateCleartextOrigin(origin)) {
+        !await _connectionController.canConfirmPrivateCleartextOrigin(origin)) {
       return false;
     }
     if (!mounted) return false;
@@ -299,7 +279,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       ),
     );
     if (confirmed != true) return false;
-    return await _settingsStore.addTrustedCleartextOrigin(origin) && mounted;
+    return await _connectionController.trustCleartextOrigin(origin) && mounted;
   }
 
   Future<void> _changeBackendBaseUrl(String raw) async {
@@ -325,11 +305,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       );
     }
     setState(() {
-      _backendBaseUrl = normalized;
-      _backend = BackendClient(
-        baseUrl: _backendBaseUrl,
-        settingsStore: _settingsStore,
-      );
       _backendError = null;
       _gardenController.error = null;
       _diaryController.error = null;
@@ -337,7 +312,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       _diaryController.loaded = false;
       _diaryController.entries.clear();
     });
-    await _settingsStore.saveBackendBaseUrl(normalized);
+    await _connectionController.saveBaseUrl(normalized);
     await _chatController.resetForConnectionChange();
     if (!mounted) return;
     if (_hasAdminToken) _startBackendSync();
@@ -399,7 +374,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
                   return;
                 }
                 try {
-                  await _settingsStore.saveAdminToken(value);
+                  await _connectionController.saveToken(value);
                 } catch (e) {
                   if (!dialogContext.mounted) return;
                   dialogSetState(() => dialogError = '保存失败：$e');
@@ -416,7 +391,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     );
     if (savedToken == null || !mounted) return;
     final shouldStartSync = !_backendSyncStarted;
-    _adminToken = savedToken;
     _backendError = null;
     unawaited(
       Future<void>.delayed(const Duration(milliseconds: 320), () {
@@ -912,8 +886,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
                       if (!dialogContext.mounted) return;
                       _dismissTextInputDialog(dialogContext);
                       if (ownerValue != _ownerUserId) {
-                        await _settingsStore.saveOwnerUserId(ownerValue);
-                        if (mounted) setState(() => _ownerUserId = ownerValue);
+                        await _connectionController.saveOwnerUserId(ownerValue);
+                        if (mounted) setState(() {});
                       }
                       unawaited(_changeBackendBaseUrl(normalized));
                     },
@@ -929,9 +903,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _openRelaySettings() async {
-    final currentBaseUrl = await _settingsStore.loadRelayBaseUrl() ?? '';
-    final currentTopic = await _settingsStore.loadRelayTopic() ?? '';
-    final currentToken = await _settingsStore.loadRelayToken() ?? '';
+    final currentBaseUrl = _connectionController.relayBaseUrl;
+    final currentTopic = _connectionController.relayTopic;
+    final currentToken = _connectionController.relayToken;
     if (!mounted) return;
 
     final baseUrlController = TextEditingController(text: currentBaseUrl);
@@ -1027,10 +1001,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
                     }
                     if (!dialogContext.mounted) return;
                     _dismissTextInputDialog(dialogContext);
-                    await _settingsStore.saveRelayBaseUrl(normalized);
-                    await _settingsStore.saveRelayTopic(topicValue);
-                    await _settingsStore.saveRelayToken(
-                      tokenController.text.trim(),
+                    await _connectionController.saveRelay(
+                      baseUrl: normalized,
+                      topic: topicValue,
+                      token: tokenController.text.trim(),
                     );
                   },
                   child: const Text('保存'),
