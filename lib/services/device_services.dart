@@ -22,8 +22,11 @@ class SettingsStore {
   Future<Uint8List?> loadAvatar() => _store.loadProfileAvatar();
   Future<bool> saveAvatar(Uint8List value) => _store.saveProfileAvatar(value);
   Future<void> deleteAvatar() => _store.deleteProfileAvatar();
+
   Future<bool> loadBackgroundNotificationsEnabled() =>
       _store.loadBackgroundNotificationsEnabled();
+  Future<void> saveBackgroundNotificationsEnabled(bool value) =>
+      _store.saveBackgroundNotificationsEnabled(value);
 
   Future<List<String>> loadSeenMobileMessageIds() =>
       _store.loadSeenMobileMessageIds();
@@ -32,6 +35,14 @@ class SettingsStore {
   Future<int?> loadLastAckedMobileSeq() => _store.loadLastAckedMobileSeq();
   Future<void> saveLastAckedMobileSeq(int value) =>
       _store.saveLastAckedMobileSeq(value);
+  Future<String?> loadCustomThemePalette() => _store.loadCustomThemePalette();
+  Future<void> saveCustomThemePalette(String value) =>
+      _store.saveCustomThemePalette(value);
+  Future<void> deleteCustomThemePalette() => _store.deleteCustomThemePalette();
+  Future<Uint8List?> pickProfileImage() => _store.pickProfileImage();
+  Future<PickedUploadFile?> pickUploadFile() => _store.pickUploadFile();
+  Future<List<PickedUploadFile>> pickUploadImages() =>
+      _store.pickUploadImages();
 }
 
 class VoiceService {
@@ -58,6 +69,24 @@ class DeviceControlService {
       _store.requestAccessibilityPermission();
   Future<bool> openShoppingApp(String target) => _store.openShoppingApp(target);
   Future<bool> showOrderBubble(String target) => _store.showOrderBubble(target);
+  Future<bool> areNotificationsEnabled() => _store.areNotificationsEnabled();
+  Future<void> requestNotificationPermission() =>
+      _store.requestNotificationPermission();
+  Future<bool> isIgnoringBatteryOptimizations() =>
+      _store.isIgnoringBatteryOptimizations();
+  Future<void> requestIgnoreBatteryOptimizations() =>
+      _store.requestIgnoreBatteryOptimizations();
+  Future<void> stopBackgroundNotifications() =>
+      _store.stopBackgroundNotifications();
+  Future<bool> debugBackgroundDelivery({
+    required String content,
+    String? behaviorJson,
+  }) => _store.debugBackgroundDelivery(
+    content: content,
+    behaviorJson: behaviorJson,
+  );
+  Future<void> setNotificationTestMode(bool value) =>
+      _store.setNotificationTestMode(value);
 }
 
 class ScreenSensorService {
@@ -72,8 +101,11 @@ class ScreenSensorService {
       _store.captureScreenContext();
   Future<Set<String>> loadAllowedPackages() =>
       _store.loadScreenTextUploadAllowedPackages();
+
   Future<void> saveAllowedPackages(Set<String> values) =>
       _store.saveScreenTextUploadAllowedPackages(values);
+  Future<List<ScreenTextUploadAppOption>> loadAppOptions() =>
+      _store.loadScreenTextUploadAppOptions();
 
   Future<int?> readBatteryPercent() => _store.readBatteryPercent();
   Future<bool> hasActivityPermission() =>

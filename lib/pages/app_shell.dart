@@ -63,7 +63,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   PromptAssets? _promptAssets;
   String? _profileNameOverride;
   Uint8List? _profileAvatarBytes;
-  late final AppSettingsStore _settingsStore;
+  late final SettingsStore _settings;
+  late final DeviceControlService _deviceService;
+  late final ScreenSensorService _screenService;
+  late final RelayStatusService _relayService;
   late final ConnectionController _connectionController;
   late final DeviceController _deviceController;
   late final ChatController _chatController;
@@ -113,23 +116,27 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   @override
   void initState() {
     super.initState();
-    _settingsStore = widget.settingsStore;
+    final settingsStore = widget.settingsStore;
+    _settings = SettingsStore(settingsStore);
+    _deviceService = DeviceControlService(settingsStore);
+    _screenService = ScreenSensorService(settingsStore);
+    _relayService = RelayStatusService(settingsStore);
     _connectionController = ConnectionController(
-      settingsStore: _settingsStore,
+      settingsStore: settingsStore,
       backendClient: widget.backendClient,
     );
     _deviceController = DeviceController(
-      device: DeviceControlService(_settingsStore),
-      voice: VoiceService(_settingsStore),
-      screen: ScreenSensorService(_settingsStore),
+      device: _deviceService,
+      voice: VoiceService(settingsStore),
+      screen: _screenService,
       backend: () => _backend,
       token: () => _adminToken,
     );
     _chatController = ChatController(
       backend: () => _backend,
       token: () => _adminToken,
-      settings: SettingsStore(_settingsStore),
-      relay: RelayStatusService(_settingsStore),
+      settings: _settings,
+      relay: _relayService,
     );
     _dreamController = DreamController(
       backend: () => _backend,
@@ -150,13 +157,16 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _restoreBackendAndStart() async {
-    await _deviceController.restore();
-    final storedName = await _settingsStore.loadProfileDisplayName();
-    final storedAvatar = await _settingsStore.loadProfileAvatar();
+    await Future.wait([
+      _connectionController.restore(),
+      _deviceController.restore(),
+    ]);
+    final storedName = await _settings.loadProfileName();
+    final storedAvatar = await _settings.loadAvatar();
     final storedPalette = YxPalette.fromJsonString(
-      await _settingsStore.loadCustomThemePalette(),
+      await _settings.loadCustomThemePalette(),
     );
-    final backgroundNotifications = await _settingsStore
+    final backgroundNotifications = await _settings
         .loadBackgroundNotificationsEnabled();
     if (mounted) {
       setState(() {
@@ -398,10 +408,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   Future<void> _changeBackgroundNotifications(bool enabled) async {
     setState(() => _backgroundNotifications = enabled);
-    await _settingsStore.saveBackgroundNotificationsEnabled(enabled);
+    await _settings.saveBackgroundNotificationsEnabled(enabled);
     if (!mounted) return;
     if (!enabled) {
-      await _settingsStore.stopBackgroundNotifications();
+      await _deviceService.stopBackgroundNotifications();
     }
   }
 
@@ -418,7 +428,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       _customThemeEnabled = true;
     });
     _applySystemUi();
-    await _settingsStore.saveCustomThemePalette(palette.toJsonString());
+    await _settings.saveCustomThemePalette(palette.toJsonString());
   }
 
   Future<void> _deleteCustomPalette() async {
@@ -427,7 +437,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       _customThemeEnabled = false;
     });
     _applySystemUi();
-    await _settingsStore.deleteCustomThemePalette();
+    await _settings.deleteCustomThemePalette();
   }
 
   Future<void> _openCustomThemeEditor() async {
@@ -600,13 +610,13 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     );
     if (value == null) return;
     final cleaned = cleanCharacterDisplayName(value);
-    await _settingsStore.saveProfileDisplayName(cleaned ?? '');
+    await _settings.saveProfileName(cleaned ?? '');
     if (!mounted) return;
     setState(() => _profileNameOverride = cleaned);
   }
 
   Future<void> _importProfileAvatar() async {
-    final sourceBytes = await _settingsStore.pickProfileImage();
+    final sourceBytes = await _settings.pickProfileImage();
     if (!mounted || sourceBytes == null) return;
     final cropped = await showDialog<Uint8List>(
       context: context,
@@ -614,7 +624,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       builder: (context) => AvatarCropDialog(c: c, bytes: sourceBytes),
     );
     if (!mounted || cropped == null) return;
-    final saved = await _settingsStore.saveProfileAvatar(cropped);
+    final saved = await _settings.saveAvatar(cropped);
     if (!mounted) return;
     if (saved) {
       setState(() => _profileAvatarBytes = cropped);
@@ -626,24 +636,24 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _resetProfileAvatar() async {
-    await _settingsStore.deleteProfileAvatar();
+    await _settings.deleteAvatar();
     if (!mounted) return;
     setState(() => _profileAvatarBytes = null);
   }
 
   Future<CapabilityStatus> _loadCapabilityStatus() async {
     final results = await Future.wait<dynamic>([
-      _settingsStore.areNotificationsEnabled(),
-      _settingsStore.canDrawOverlays(),
+      _deviceService.areNotificationsEnabled(),
+      _deviceService.canDrawOverlays(),
       _deviceController.isAccessibilityEnabled(),
-      _settingsStore.isDeviceAdminActive(),
-      _settingsStore.isBackgroundNotificationServiceRunning(),
-      _settingsStore.loadBackgroundPollStatus(),
-      _settingsStore.loadRelayConnectionStatus(),
-      _settingsStore.loadNotificationGateStatus(),
-      _settingsStore.isIgnoringBatteryOptimizations(),
-      _settingsStore.loadScreenTextUploadAllowedPackages(),
-      _settingsStore.loadScreenTextUploadAppOptions(),
+      _deviceService.isDeviceAdminActive(),
+      _relayService.isBackgroundServiceRunning(),
+      _relayService.loadBackgroundPollStatus(),
+      _relayService.loadConnectionStatus(),
+      _relayService.loadNotificationGateStatus(),
+      _deviceService.isIgnoringBatteryOptimizations(),
+      _screenService.loadAllowedPackages(),
+      _screenService.loadAppOptions(),
     ]);
     return CapabilityStatus(
       notificationsEnabled: results[0] as bool,
@@ -694,12 +704,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       builder: (context) => CapabilitySheet(
         c: c,
         onLoadStatus: _loadCapabilityStatus,
-        onRequestNotifications: _settingsStore.requestNotificationPermission,
+        onRequestNotifications: _deviceService.requestNotificationPermission,
         onRequestIgnoreBatteryOptimizations:
-            _settingsStore.requestIgnoreBatteryOptimizations,
-        onRequestOverlay: _settingsStore.requestOverlayPermission,
-        onRequestAccessibility: _settingsStore.requestAccessibilityPermission,
-        onRequestDeviceAdmin: _settingsStore.requestDeviceAdmin,
+            _deviceService.requestIgnoreBatteryOptimizations,
+        onRequestOverlay: _deviceService.requestOverlayPermission,
+        onRequestAccessibility: _deviceService.requestAccessibilityPermission,
+        onRequestDeviceAdmin: _deviceService.requestDeviceAdmin,
         onToggleBackgroundNotifications: _changeBackgroundNotifications,
         onToggleScreenContextUpload: _changeScreenContextUploadEnabled,
         onChangeScreenTextUploadAllowedPackages:
@@ -711,7 +721,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         onPushCapturedScreenContext: (snapshot) =>
             _pushScreenContextSnapshot(snapshot, silent: false),
         onPushBehaviorTest: _pushBehaviorTest,
-        onDebugBackgroundDelivery: _settingsStore.debugBackgroundDelivery,
+        onDebugBackgroundDelivery: _deviceService.debugBackgroundDelivery,
         onLoadBehaviorStatus: () =>
             _backend.loadBehaviorDecisionStatus(token: _requireAdminToken()),
         onFetchDiagnostics: () =>
@@ -1108,7 +1118,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
                 final results = await Future.wait<dynamic>([
                   _loadPromptAssets(),
                   _dreamController.loadSettings(),
-                  _settingsStore.loadNotificationGateStatus(),
+                  _relayService.loadNotificationGateStatus(),
                 ]);
                 notificationTestMode =
                     (results[2] as NotificationGateStatus).testModeEnabled;
@@ -1185,7 +1195,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
               },
               onNotificationTestMode: (enabled) {
                 sheetSetState(() => notificationTestMode = enabled);
-                unawaited(_settingsStore.setNotificationTestMode(enabled));
+                unawaited(_deviceService.setNotificationTestMode(enabled));
               },
               onOpenCapabilities: _openCapabilityCheck,
               onToggleLorebook: (id) {
@@ -1260,7 +1270,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   Future<void> _pickAndUploadFile() async {
     if (_chatController.sending) return;
-    final picked = await _settingsStore.pickUploadFile();
+    final picked = await _settings.pickUploadFile();
     if (!mounted || picked == null) return;
     final lowerName = picked.name.toLowerCase();
     const supported = ['.txt', '.md', '.docx'];
@@ -1285,7 +1295,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   Future<void> _pickAndUploadImages() async {
     if (_chatController.sending) return;
-    final picked = await _settingsStore.pickUploadImages();
+    final picked = await _settings.pickUploadImages();
     if (!mounted || picked.isEmpty) return;
     const supported = [
       '.jpg',
