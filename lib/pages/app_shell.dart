@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app_constants.dart';
 import '../controllers/chat_controller.dart';
+import '../controllers/device_controller.dart';
 import '../controllers/dream_controller.dart';
 import '../controllers/diary_controller.dart';
 import '../controllers/garden_controller.dart';
@@ -47,13 +47,11 @@ class YexuanCompanionApp extends StatefulWidget {
 class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  Timer? _screenContextTimer;
   Timer? _sensorPushTimer;
   AppRoute _route = AppRoute.chat;
   bool _dark = false;
   bool _customThemeEnabled = false;
   bool _backgroundNotifications = true;
-  bool _screenContextUploadEnabled = false;
   bool _backendSyncStarted = false;
   bool _loadingPromptAssets = false;
   bool _savingPromptAssets = false;
@@ -70,6 +68,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   String _adminToken = '';
   late final AppSettingsStore _settingsStore;
   late BackendClient _backend;
+  late final DeviceController _deviceController;
   late final ChatController _chatController;
   late final DreamController _dreamController;
   late final GardenController _gardenController;
@@ -117,6 +116,13 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _backend =
         widget.backendClient ??
         BackendClient(baseUrl: _backendBaseUrl, settingsStore: _settingsStore);
+    _deviceController = DeviceController(
+      device: DeviceControlService(_settingsStore),
+      voice: VoiceService(_settingsStore),
+      screen: ScreenSensorService(_settingsStore),
+      backend: () => _backend,
+      token: () => _adminToken,
+    );
     _chatController = ChatController(
       backend: () => _backend,
       token: () => _adminToken,
@@ -149,6 +155,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _restoreBackendAndStart() async {
+    await _deviceController.restore();
     final stored = await _settingsStore.loadBackendBaseUrl();
     final storedName = await _settingsStore.loadProfileDisplayName();
     final storedAvatar = await _settingsStore.loadProfileAvatar();
@@ -159,15 +166,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         .loadBackgroundNotificationsEnabled();
     final adminToken = await _settingsStore.loadAdminToken();
     final ownerUserId = await _settingsStore.loadOwnerUserId();
-    final screenContextUploadEnabled = await _settingsStore
-        .loadScreenContextUploadEnabled();
     final normalized = await _normalizeBackendBaseUrl(stored ?? '');
     if (mounted) {
       setState(() {
         _backgroundNotifications = backgroundNotifications;
         _adminToken = adminToken?.trim() ?? '';
         _ownerUserId = ownerUserId?.trim() ?? '';
-        _screenContextUploadEnabled = screenContextUploadEnabled;
         _profileNameOverride = storedName;
         _profileAvatarBytes = storedAvatar;
         _customPalette = storedPalette;
@@ -198,20 +202,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _backendSyncStarted = true;
     unawaited(_chatController.start());
     unawaited(_gardenController.start());
-    if (_screenContextUploadEnabled) {
-      _pushScreenContextOnce(silent: true);
-    }
-    _screenContextTimer?.cancel();
-    _screenContextTimer = Timer.periodic(const Duration(seconds: 45), (_) {
-      if (_screenContextUploadEnabled) {
-        unawaited(_pushScreenContextOnce(silent: true));
-      }
-    });
-    unawaited(_pushSensorDataOnce());
-    _sensorPushTimer?.cancel();
-    _sensorPushTimer = Timer.periodic(
-      const Duration(minutes: 30),
-      (_) => unawaited(_pushSensorDataOnce()),
+    unawaited(
+      _deviceController.restore().then((_) => _deviceController.start()),
     );
   }
 
@@ -235,9 +227,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _diaryController
       ..removeListener(_refreshFromDreamController)
       ..dispose();
-    _screenContextTimer?.cancel();
     _dreamController.removeListener(_refreshFromDreamController);
     _sensorPushTimer?.cancel();
+    _deviceController.dispose();
     _chatController.dispose();
     _dreamController.dispose();
     super.dispose();
@@ -452,17 +444,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _changeScreenContextUploadEnabled(bool enabled) async {
-    await _settingsStore.saveScreenContextUploadEnabled(enabled);
-    if (!mounted) return;
-    setState(() => _screenContextUploadEnabled = enabled);
+    await _deviceController.setScreenUploadEnabled(enabled);
+    if (enabled) unawaited(_deviceController.pushScreenContext(silent: true));
   }
 
-  Future<void> _changeScreenTextUploadAllowedPackages(
-    Set<String> values,
-  ) async {
-    await _settingsStore.saveScreenTextUploadAllowedPackages(values);
-  }
-
+  Future<void> _changeScreenTextUploadAllowedPackages(Set<String> values) =>
+      _deviceController.saveAllowedPackages(values);
   Future<void> _saveCustomPalette(YxPalette palette) async {
     setState(() {
       _customPalette = palette;
@@ -498,7 +485,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _lockScreenNow() async {
-    final locked = await _settingsStore.lockScreen();
+    final locked = await _deviceController.lockScreen();
     if (!mounted) return;
     if (!locked) {
       ScaffoldMessenger.of(
@@ -508,7 +495,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _requestOrderAssistantPermission() async {
-    final enabled = await _settingsStore.isAccessibilityServiceEnabled();
+    final enabled = await _deviceController.isAccessibilityEnabled();
     if (!mounted) return;
     if (enabled) {
       ScaffoldMessenger.of(
@@ -516,11 +503,11 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       ).showSnackBar(const SnackBar(content: Text('陪伴操作助手已授权')));
       return;
     }
-    await _settingsStore.requestAccessibilityPermission();
+    await _deviceController.requestAccessibilityPermission();
   }
 
   Future<void> _openShoppingApp(String target, String label) async {
-    final opened = await _settingsStore.openShoppingApp(target);
+    final opened = await _deviceController.openShoppingApp(target);
     if (!mounted) return;
     if (!opened) {
       ScaffoldMessenger.of(
@@ -530,7 +517,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _showOrderBubble(String target, String label) async {
-    final shown = await _settingsStore.showOrderBubble(target);
+    final shown = await _deviceController.showOrderBubble(target);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -543,108 +530,23 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   // ── W9：语音输入 ──────────────────────────────────────────────────────────
 
-  Future<bool> _startVoiceRecording() async {
-    var granted = await _settingsStore.hasRecordAudioPermission();
-    if (!granted) {
-      await _settingsStore.requestRecordAudioPermission();
-      // 系统权限弹窗是异步的，这里给用户一点交互时间后再查一次；
-      // 拒绝的话下面 startVoiceRecording 会失败，composer 侧会回退到未录音态。
-      await Future<void>.delayed(const Duration(milliseconds: 400));
-      granted = await _settingsStore.hasRecordAudioPermission();
-      if (!granted) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('需要麦克风权限才能语音输入')));
-        }
-        return false;
-      }
-    }
-    return _settingsStore.startVoiceRecording();
-  }
-
-  Future<String?> _stopVoiceRecordingAndTranscribe() async {
-    final filePath = await _settingsStore.stopVoiceRecording();
-    if (filePath == null) return null;
-    try {
-      final text = await _backend.transcribeAudio(
-        filePath: filePath,
-        token: _requireAdminToken(),
-      );
-      return text;
-    } on BackendException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('语音转写失败：${e.message}')));
-      }
-      return null;
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('语音转写失败：$e')));
-      }
-      return null;
-    } finally {
-      unawaited(File(filePath).delete().catchError((_) => File(filePath)));
-    }
-  }
-
-  // ── W9：传感器上报（步数/电量，30 分钟一次） ─────────────────────────────────
-
-  Future<void> _pushSensorDataOnce() async {
-    if (!_hasAdminToken) return;
-    try {
-      final battery = await _settingsStore.readBatteryPercent();
-      int? steps;
-      final stepsGranted = await _settingsStore
-          .hasActivityRecognitionPermission();
-      if (stepsGranted) {
-        steps = await _settingsStore.readTodaySteps();
-      } else {
-        // 首次静默申请一次；这次上报先不带步数，下次 tick 再补上。
-        await _settingsStore.requestActivityRecognitionPermission();
-      }
-      if (battery == null && steps == null) return;
-      await _backend.pushSensorData(
-        token: _requireAdminToken(),
-        battery: battery,
-        steps: steps,
-      );
-    } catch (_) {
-      // 传感器上报是低优先级后台任务，静默失败即可，不打扰用户。
-    }
-  }
-
+  Future<bool> _startVoiceRecording() =>
+      _deviceController.startVoiceRecording();
+  Future<String?> _stopVoiceRecordingAndTranscribe() =>
+      _deviceController.stopVoiceRecordingAndTranscribe();
   Future<void> _pushScreenContextOnce({bool silent = false}) async {
-    if (!_screenContextUploadEnabled) {
-      if (!silent && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Screen context upload is disabled')),
-        );
-      }
-      return;
+    await _deviceController.pushScreenContext(silent: silent);
+    if (!silent && mounted && _deviceController.lastError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('屏幕上下文推送失败：${_deviceController.lastError}')),
+      );
     }
-    final snapshot = await _settingsStore.captureScreenContextForUpload();
-    if (snapshot == null) return;
-    if (snapshot.packageName == 'com.presencekit.mobile') {
-      // 前台是自己时只发焦点信号，不把聊天正文注入传感通道。
-      try {
-        await _backend.pushSelfFocusSignal(token: _requireAdminToken());
-      } on BackendException {
-        // 静默失败，与普通上下文推送行为一致。
-      }
-      return;
-    }
-    await _pushScreenContextSnapshot(snapshot, silent: silent);
   }
 
   Future<ScreenContextSnapshot?> _captureScreenContextForDebug({
     bool silent = false,
   }) async {
-    final enabled = await _settingsStore.isAccessibilityServiceEnabled();
-    if (!enabled) {
+    if (!await _deviceController.isAccessibilityEnabled()) {
       if (!silent && mounted) {
         ScaffoldMessenger.of(
           context,
@@ -652,14 +554,11 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       }
       return null;
     }
-    final snapshot = await _settingsStore.captureScreenContext();
-    if (snapshot == null || snapshot.isEmpty) {
-      if (!silent && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('暂时没有可读的屏幕上下文')));
-      }
-      return null;
+    final snapshot = await _deviceController.captureForDebug();
+    if ((snapshot == null || snapshot.isEmpty) && !silent && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('暂时没有可读的屏幕上下文')));
     }
     return snapshot;
   }
@@ -668,48 +567,11 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     ScreenContextSnapshot snapshot, {
     bool silent = false,
   }) async {
-    if (!_screenContextUploadEnabled) {
-      if (!silent && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Screen context upload is disabled')),
-        );
-      }
-      return;
-    }
-    if (snapshot.isBlocked) {
-      if (!silent && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Sensitive screen filtered: ${snapshot.blockedReason}',
-            ),
-          ),
-        );
-      }
-      return;
-    }
-    try {
-      final allowedPackages = await _settingsStore
-          .loadScreenTextUploadAllowedPackages();
-      await _backend.pushScreenContext(
-        snapshot,
-        token: _requireAdminToken(),
-        allowTextUpload: allowedPackages.contains(snapshot.packageName),
+    await _deviceController.pushSnapshot(snapshot, silent: silent);
+    if (!silent && mounted && _deviceController.lastError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('屏幕上下文推送失败：${_deviceController.lastError}')),
       );
-      if (!silent && mounted) {
-        final label = snapshot.appLabel.isNotEmpty
-            ? snapshot.appLabel
-            : snapshot.packageName;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('已推送屏幕上下文：$label')));
-      }
-    } on BackendException catch (e) {
-      if (!silent && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('屏幕上下文推送失败：${e.message}')));
-      }
     }
   }
 
@@ -811,7 +673,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     final results = await Future.wait<dynamic>([
       _settingsStore.areNotificationsEnabled(),
       _settingsStore.canDrawOverlays(),
-      _settingsStore.isAccessibilityServiceEnabled(),
+      _deviceController.isAccessibilityEnabled(),
       _settingsStore.isDeviceAdminActive(),
       _settingsStore.isBackgroundNotificationServiceRunning(),
       _settingsStore.loadBackgroundPollStatus(),
@@ -832,7 +694,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       relayConnectionStatus: results[6] as RelayConnectionStatus,
       notificationGateStatus: results[7] as NotificationGateStatus,
       ignoringBatteryOptimizations: results[8] as bool,
-      screenContextUploadEnabled: _screenContextUploadEnabled,
+      screenContextUploadEnabled: _deviceController.screenUploadEnabled,
       screenTextUploadAllowedPackages: results[9] as Set<String>,
       screenTextUploadAppOptions:
           results[10] as List<ScreenTextUploadAppOption>,
@@ -1592,7 +1454,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           onVoiceRecordStart: _startVoiceRecording,
           onVoiceRecordStop: _stopVoiceRecordingAndTranscribe,
           onVoiceRecordCancel: () =>
-              unawaited(_settingsStore.cancelVoiceRecording()),
+              unawaited(_deviceController.cancelVoiceRecording()),
         );
       case AppRoute.dream:
         return DreamPage(
