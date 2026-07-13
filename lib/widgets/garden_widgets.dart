@@ -1,31 +1,38 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../controllers/garden_controller.dart';
 import '../models/app_models.dart';
 
 import '../widgets/common_widgets.dart';
+
 class GardenPage extends StatelessWidget {
   const GardenPage({
     super.key,
     required this.c,
     required this.profileDisplayName,
     required this.onBack,
-    required this.gardenState,
-    required this.loading,
-    required this.error,
-    required this.onRefresh,
+    required this.controller,
   });
 
   final YxPalette c;
   final String profileDisplayName;
   final VoidCallback onBack;
-  final GardenState? gardenState;
-  final bool loading;
-  final String? error;
-  final Future<void> Function({bool silent}) onRefresh;
-
+  final GardenController controller;
+  GardenState? get gardenState => controller.state;
+  bool get loading => controller.loading;
+  String? get error => controller.error;
+  Future<void> onRefresh({bool silent = false}) =>
+      controller.load(silent: silent);
   @override
   Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
     final realPlants = gardenState?.slots
         .map((slot) => Plant.fromSlot(slot, c))
         .toList(growable: false);

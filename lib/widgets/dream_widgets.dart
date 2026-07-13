@@ -1,10 +1,11 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../controllers/dream_controller.dart';
 import '../models/app_models.dart';
 
 import '../widgets/chat_widgets.dart';
 import '../widgets/common_widgets.dart';
+
 class DreamPage extends StatelessWidget {
   const DreamPage({
     super.key,
@@ -12,17 +13,8 @@ class DreamPage extends StatelessWidget {
     required this.prefs,
     required this.profileDisplayName,
     required this.profileAvatarBytes,
-    required this.state,
-    required this.stats,
-    required this.loadingState,
-    required this.entering,
-    required this.sending,
-    required this.error,
-    required this.messages,
-    required this.scrollController,
+    required this.controller,
     required this.onOpenDrawer,
-    required this.onEnter,
-    required this.onSend,
     required this.onWake,
   });
 
@@ -30,21 +22,27 @@ class DreamPage extends StatelessWidget {
   final YxPrefs prefs;
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
-  final DreamState? state;
-  final DreamStats? stats;
-  final bool loadingState;
-  final bool entering;
-  final bool sending;
-  final String? error;
-  final List<ChatMessage> messages;
-  final ScrollController scrollController;
+  final DreamController controller;
   final VoidCallback onOpenDrawer;
-  final VoidCallback onEnter;
-  final ValueChanged<String> onSend;
   final VoidCallback onWake;
 
   @override
   Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    final state = controller.state;
+    final stats = controller.stats;
+    final loadingState = controller.loadingState;
+    final entering = controller.entering;
+    final sending = controller.sending;
+    final error = controller.error;
+    final messages = controller.messages;
+    final scrollController = controller.scrollController;
     final active = state?.isActive == true;
     return Column(
       children: [
@@ -159,10 +157,15 @@ class DreamPage extends StatelessWidget {
                   entering: entering,
                   error: error,
                   stats: stats,
-                  onEnter: onEnter,
+                  onEnter: controller.enter,
                 ),
         ),
-        DreamComposer(c: c, sending: sending, enabled: active, onSend: onSend),
+        DreamComposer(
+          c: c,
+          sending: sending,
+          enabled: active,
+          onSend: controller.send,
+        ),
       ],
     );
   }

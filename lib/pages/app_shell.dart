@@ -143,17 +143,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       backend: () => _backend,
       token: () => _adminToken,
     );
-    _dreamController.addListener(_refreshFromDreamController);
-    _gardenController.addListener(_refreshFromDreamController);
-    _diaryController.addListener(_refreshFromDreamController);
     WidgetsBinding.instance.addObserver(this);
     _applySystemUi();
     WidgetsBinding.instance.addPostFrameCallback((_) => _applySystemUi());
     unawaited(_restoreBackendAndStart());
-  }
-
-  void _refreshFromDreamController() {
-    if (mounted) setState(() {});
   }
 
   Future<void> _restoreBackendAndStart() async {
@@ -208,13 +201,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _gardenController
-      ..removeListener(_refreshFromDreamController)
-      ..dispose();
-    _diaryController
-      ..removeListener(_refreshFromDreamController)
-      ..dispose();
-    _dreamController.removeListener(_refreshFromDreamController);
+    _gardenController.dispose();
+    _diaryController.dispose();
     _sensorPushTimer?.cancel();
     _deviceController.dispose();
     _chatController.dispose();
@@ -1437,17 +1425,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           prefs: _prefs,
           profileDisplayName: _profileDisplayName,
           profileAvatarBytes: _profileAvatarBytes,
-          state: _dreamController.state,
-          stats: _dreamController.stats,
-          loadingState: _dreamController.loadingState,
-          entering: _dreamController.entering,
-          sending: _dreamController.sending,
-          error: _dreamController.error,
-          messages: _dreamController.messages,
-          scrollController: _dreamController.scrollController,
+          controller: _dreamController,
           onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
-          onEnter: _dreamController.enter,
-          onSend: _dreamController.send,
           onWake: _wakeFromDream,
         );
       case AppRoute.profile:
@@ -1478,12 +1457,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           key: const ValueKey('diary'),
           c: c,
           profileDisplayName: _profileDisplayName,
-          entries: _diaryController.entries,
-          loading: _diaryController.loading,
-          loaded: _diaryController.loaded,
-          error: _diaryController.error,
-          onRefresh: _diaryController.load,
-          onLoadEntry: _diaryController.loadEntry,
+          controller: _diaryController,
           onBack: () => setState(() => _route = AppRoute.chat),
         );
       case AppRoute.garden:
@@ -1491,10 +1465,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           key: const ValueKey('garden'),
           c: c,
           profileDisplayName: _profileDisplayName,
-          gardenState: _gardenController.state,
-          loading: _gardenController.loading,
-          error: _gardenController.error,
-          onRefresh: _gardenController.load,
+          controller: _gardenController,
           onBack: () => setState(() => _route = AppRoute.chat),
         );
       case AppRoute.activity:

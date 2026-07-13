@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:presencekit_mobile/main.dart';
+import 'package:presencekit_mobile/controllers/dream_controller.dart';
+import 'package:presencekit_mobile/services/app_settings_store.dart';
+import 'package:presencekit_mobile/services/backend_client.dart';
 
 void main() {
   test('prompt assets parses the Emerald-client response shape', () {
@@ -131,7 +134,19 @@ void main() {
     WidgetTester tester,
   ) async {
     var woke = false;
-
+    final controller =
+        DreamController(
+            backend: () => BackendClient(
+              baseUrl: 'http://127.0.0.1:8080',
+              settingsStore: const AppSettingsStore(),
+            ),
+            token: () => 'test-token',
+          )
+          ..state = DreamState.fromJson({
+            'status': 'DREAM_ACTIVE',
+            'scene_label': '被花包裹的暖房',
+          });
+    addTearDown(controller.dispose);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -140,20 +155,8 @@ void main() {
             prefs: const YxPrefs(),
             profileDisplayName: 'Nova',
             profileAvatarBytes: null,
-            state: DreamState.fromJson({
-              'status': 'DREAM_ACTIVE',
-              'scene_label': '被花包裹的暖房',
-            }),
-            stats: null,
-            loadingState: false,
-            entering: false,
-            sending: false,
-            error: null,
-            messages: const [],
-            scrollController: ScrollController(),
+            controller: controller,
             onOpenDrawer: () {},
-            onEnter: () {},
-            onSend: (_) {},
             onWake: () => woke = true,
           ),
         ),

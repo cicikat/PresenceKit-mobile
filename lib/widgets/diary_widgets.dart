@@ -1,31 +1,30 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../controllers/diary_controller.dart';
 import '../models/app_models.dart';
 
 import '../widgets/common_widgets.dart';
+
 class DiaryPage extends StatefulWidget {
   const DiaryPage({
     super.key,
     required this.c,
     required this.profileDisplayName,
-    required this.entries,
-    required this.loading,
-    required this.loaded,
-    required this.error,
-    required this.onRefresh,
-    required this.onLoadEntry,
+    required this.controller,
     required this.onBack,
   });
 
   final YxPalette c;
   final String profileDisplayName;
-  final List<DiaryListItem> entries;
-  final bool loading;
-  final bool loaded;
-  final String? error;
-  final Future<void> Function({bool silent}) onRefresh;
-  final Future<DiaryDetail> Function(String date) onLoadEntry;
+  final DiaryController controller;
+  List<DiaryListItem> get entries => controller.entries;
+  bool get loading => controller.loading;
+  bool get loaded => controller.loaded;
+  String? get error => controller.error;
+  Future<void> onRefresh({bool silent = false}) =>
+      controller.load(silent: silent);
+  Future<DiaryDetail> onLoadEntry(String date) => controller.loadEntry(date);
   final VoidCallback onBack;
 
   @override
@@ -46,6 +45,13 @@ class _DiaryPageState extends State<DiaryPage> {
 
   @override
   Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: widget.controller,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
     final emotions = [
       '全部',
       ...{
