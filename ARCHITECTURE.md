@@ -34,13 +34,13 @@ Flutter 入口是 64 行的 `lib/main.dart`：
 
 - `main()` 设置沉浸式系统 UI 后挂载 `MyApp`。
 - `MyApp` 使用 Material 3 和 serif 风格主题，首页是 `YexuanCompanionApp`。
-- `main.dart` 声明入口、全局错误兜底、根 MaterialApp 和当前过渡期的各领域 `part` 挂载。
-- `pages/app_shell.dart` 中的 `YexuanCompanionApp` 维护路由、消息、后端节点、花园、日记、头像、主题、轮询和生命周期状态。
+- `main.dart` 是薄入口，声明全局错误兜底和根 MaterialApp；历史 `part` 挂载已移除。
+- `pages/app_shell.dart` 中的 `YexuanCompanionApp` 负责组合根、路由和生命周期；连接、聊天、设备、Dream、花园、日记状态由 `controllers/` 持有。
 - `services/app_settings_store.dart` 封装 Android legacy `MethodChannel('yexuan_memery/settings')`。
 - `services/backend_client.dart` 直接用 `dart:io` `HttpClient` 调后端 HTTP。
 - `models/` 保存数据/config 定义，`widgets/` 按聊天、能力、设置、日记、花园等领域保存 Flutter UI。
 
-当前 Dart `part` 结构仍使所有文件属于 `main.dart` library，尚未形成编译器可强制的模块边界。后续拆分的唯一施工入口是 `cc-tasks/07-app_shell结构债审计与拆分.md`；顺序为 import 边界、领域 controller、设备门面，期间保持安全闸门和接口行为不变。
+Dart `part` 结构已移除，models/services/controllers/pages/widgets 通过普通 import 建立独立 library 边界。controller 与设备门面已接入，剩余 UI 协调结构债见工单 07。
 
 Android 原生入口是 `MainActivity.kt`：
 
@@ -142,8 +142,8 @@ YexuanAccessibilityService
 
 | 路径 | 职责 |
 |---|---|
-| `lib/main.dart` | Flutter 薄入口、根 MaterialApp、领域 part 挂载 |
-| `lib/pages/app_shell.dart` | 顶层路由、状态所有权、前台主动消息轮询和生命周期挂载 |
+| `lib/main.dart` | Flutter 薄入口、根 MaterialApp |
+| `lib/pages/app_shell.dart` | 组合根、顶层路由、生命周期和跨域 UI 协调 |
 | `lib/models/` | App 数据/config、能力状态和屏幕上下文模型 |
 | `lib/services/app_settings_store.dart` | Android MethodChannel、本机设置、权限和原生能力封装 |
 | `lib/services/backend_client.dart` | 后端 HTTP、上传、mobile channel 和 sensor API |
@@ -157,8 +157,8 @@ YexuanAccessibilityService
 
 ## 当前主要风险
 
-- Flutter 已按 models/services/pages/widgets 拆分，但当前使用 Dart `part`，尚未形成完全独立的 library/import 边界。
-- owner/user id 仍是自用固定配置；访问凭证已改为 legacy `SharedPreferences("yexuan_memery")` 本机存储，尚未接入 Android Keystore。
+- Flutter 已形成独立 library/import 边界；连接、聊天、设备、Dream、Garden、Diary controller 已落地。app shell 仍有 profile/theme/capability/settings UI 协调待继续下沉。
+- owner/user id 已可在连接设置中配置；访问凭证和 owner id 仍由 legacy `SharedPreferences("yexuan_memery")` 本机存储，尚未接入 Android Keystore。
 - 无障碍敏感过滤已接入，但仍需结合实际安装应用持续扩充包名和页级关键词，并补自动化测试。
 - 中继与补偿队列仍依赖后端落实 A1 同 id、补偿 TTL/容量上限和发布失败告警。
 - HTTP origin 已限制为 HTTPS、loopback、Tailscale 或用户确认过的 RFC1918 精确 IPv4 origin；前后台请求拒绝自动重定向。

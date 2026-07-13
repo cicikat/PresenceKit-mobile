@@ -1,91 +1,47 @@
 # Flutter 结构
 
-## 入口和状态
+## 当前入口与模块边界
 
-原 `lib/main.dart` 单文件已按文件职责拆开；当前入口还包含全局错误兜底，并通过 `part` 引入以下文件。`part` 只是一段过渡结构，独立 library/import 与领域 controller 的施工路线见 `cc-tasks/07-app_shell结构债审计与拆分.md`。
+`lib/main.dart` 是薄入口，负责全局错误兜底、根 `MaterialApp` 和 `YexuanCompanionApp` 挂载。历史 `part` / `part of` 结构已全部移除；`lib/` 下的 models、services、controllers、pages、widgets 现在都是独立 library，通过普通 `import` 建立编译器可检查的依赖边界。
 
-| 文件 | 职责 |
+主要目录职责：
+
+| 路径 | 职责 |
 |---|---|
-| `lib/models/app_models.dart` | 数据模型（`BackendChatResponse`、`GardenState`、`BackendDiagnostics` 等） |
-| `lib/pages/app_shell.dart` | 主状态容器 `YexuanCompanionApp`，管理路由、轮询、消息、花园、日记等 |
-| `lib/widgets/capability_widgets.dart` | 能力检查页及后端/资产诊断卡片 |
-| `lib/widgets/chat_widgets.dart` | 聊天相关 UI 组件 |
-| `lib/widgets/common_widgets.dart` | 公共组件（`YxPalette`、`YxPrefs`、`YxTag` 等） |
-| `lib/widgets/diary_widgets.dart` | 日记页面组件 |
-| `lib/widgets/dream_widgets.dart` | Dream 页面组件 |
-| `lib/widgets/drawer_widgets.dart` | 侧边栏组件 |
-| `lib/widgets/garden_widgets.dart` | 花园页面组件 |
-| `lib/widgets/profile_widgets.dart` | 资料页面组件 |
-| `lib/widgets/settings_editor_widgets.dart` | 提示词资产编辑组件 |
-| `lib/widgets/settings_widgets.dart` | 通用设置组件 |
+| `lib/main.dart` | Flutter 入口、根主题、全局错误兜底 |
+| `lib/pages/app_shell.dart` | 组合根、路由、应用生命周期和少量跨域 UI 协调 |
+| `lib/controllers/connection_controller.dart` | 节点、token、owner、可信 origin、中继配置与 BackendClient 重建 |
+| `lib/controllers/chat_controller.dart` | 历史加载/分页、发送、附件回复、去重、前台 mobile poll、ack 与聊天滚动 |
+| `lib/controllers/device_controller.dart` | 锁屏、购物/悬浮窗、语音、屏幕上下文和传感器 Timer |
+| `lib/controllers/dream_controller.dart` | Dream state/settings/stats/messages 与轮询 |
+| `lib/controllers/garden_controller.dart` | 花园状态与刷新 Timer |
+| `lib/controllers/diary_controller.dart` | 日记列表和详情加载 |
+| `lib/services/backend_client.dart` | 后端 HTTP 请求 |
+| `lib/services/device_services.dart` | 五个设备域门面 |
+| `lib/services/app_settings_store.dart` | legacy MethodChannel 兼容实现；由域门面包装，不再由 app shell 直接调用 |
+| `lib/widgets/` | 场景页面和复用 UI |
 
-独立服务文件（不参与 `part`，普通 import）：
+## 状态所有权
 
-- `lib/services/backend_client.dart`：封装所有后端 HTTP 请求（约 507 行）。
-- `lib/services/app_settings_store.dart`：封装 Android MethodChannel 和本地持久化。
-
-主要对象：
-
-- `MyApp`：MaterialApp、主题和首页。
-- `AppSettingsStore`：封装 Android MethodChannel。
-- `BackendClient`：封装后端 HTTP。
-- `YexuanCompanionApp`：主状态容器，管理路由、轮询、消息、花园、日记、后端节点、主题和头像。
-- `YxPalette` / `YxPrefs`：主题和偏好。
-- `ChatMessage`、`HistoryEntry`、`ChatLogDay`、`GardenState`、`DiaryListItem`、`MobilePollMessage` 等：后端数据模型。
-- `BackendDiagnostics` 及子类：能力检查页"后端/资产诊断"卡片所用的只读后端状态快照。
-
-当前路由：
-
-- `AppRoute.chat`：主对话。
-- `AppRoute.dream`：Dream 独立对话；使用 `/dream/*`，不与主对话消息列表混合。
-- `AppRoute.profile`：资料页。
-- `AppRoute.diary`：日记页。
-- `AppRoute.garden`：花园页。
-- `AppRoute.activity`：活动入口（阅读、五子棋、国际象棋）。
-- `AppRoute.group`：独立群聊列表与会话。
+- `ChatScene` 直接通过 `AnimatedBuilder` 监听 `ChatController`。
+- `DreamPage`、`GardenPage`、`DiaryPage` 直接监听各自 controller；app shell 不再展开传递领域状态、加载标记和刷新回调。
+- controller 通过构造注入获取 BackendClient、token getter 和设备门面，不反向依赖 app shell。
+- `AppSettingsStore` 保留 `presence_mobile/settings` channel 兼容契约；Dart 侧由 `SettingsStore`、`VoiceService`、`DeviceControlService`、`ScreenSensorService`、`RelayStatusService` 分域使用。
 
 ## 生命周期
 
 启动后：
 
-1. 读取本机后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、备注名、头像、主题和后台通知开关。
-2. 仅在访问凭证存在时加载聊天历史、花园状态。
-3. 仅在访问凭证存在时调 `/mobile/activate`。
-4. 仅在访问凭证存在时开启 5 秒 mobile poll；原生后台服务仍在退出过程中时暂时跳过。
-5. 仅在访问凭证存在时开启 30 秒花园刷新。
-6. 仅在独立上传开关开启时，每 45 秒上报经过本机过滤的非敏感屏幕上下文。
+1. 并行恢复 ConnectionController 与 DeviceController。
+2. token 存在时启动 ChatController、GardenController 和 mobile channel 激活。
+3. ChatController 每 5 秒触发前台检查；原生后台服务运行时跳过，实际 poll 使用 25 秒长轮询并防重入。
+4. DeviceController 每 45 秒推送一次允许的屏幕上下文，每 30 分钟上报一次电量/步数传感器快照。
+5. app 暂停/隐藏时停止前台 chat poll；恢复时重新激活。
 
-退后台：
+## 当前结构债
 
-- Flutter 停止前台 mobile poll。
-- Android `MainActivity.onStop()` 仅在后台通知开启、访问凭证存在且 origin 可信时启动后台前台服务。
+`app_shell.dart` 已从本轮开始时约 2406 行降至约 1499 行，连接、聊天、设备、Dream、Garden、Diary 的领域状态和 Timer 已迁出。它仍包含 profile、theme、capability/settings 页面编排、附件选择和部分弹窗协调，尚未达到工单最初提出的 `<=600` 行愿景。后续新增领域功能仍必须新建 controller 和 widget，不得把领域字段、Timer 或成组业务方法加回 app shell。
 
-回前台：
+## 验证
 
-- Android 无条件停止原生后台服务和中继订阅。
-- Flutter 重新激活 mobile channel，并恢复 5 秒 mobile poll；主动消息直接进入会话流，不触发系统通知或悬浮窗。
-
-## UI 组件分布
-
-当前 UI 已按领域拆到 `lib/widgets/`，由 `lib/main.dart` 通过 Dart `part` 挂载，包括：
-
-- 主壳：`YexuanCompanionApp` 位于 `lib/pages/app_shell.dart`；`YxDrawer`、`NavPill`、`PageHeader` 等位于对应 widgets 文件。
-- 聊天：`ChatScene`、`ChatTopBar`、`Composer`、`HimMessage`、`AnimatedRevealText`、`YouMessage`、`TypingHimMessage`；新到达的助手消息以 40 字/秒逐字显示，点击气泡可立即显示全文，历史回填不播放动画。
-- Dream：`DreamPage`、`DreamStateStrip`、`DreamEntrance`、`DreamComposer`；复用聊天消息气泡布局。
-- 设置：`SettingsPage`、`ThemePaletteSheet`、`CapabilitySheet`；`SettingsPage` 是全屏单一入口，按连接与账户、通知与主动性、外观与显示、对话内容配置、诊断分区，并通过后端接口编辑 Reality 和 Dream 的世界书/破限配置。`CapabilitySheet` 管理默认空的屏幕正文上传 App 白名单，并展示同步状态。
-- 资料：`ProfilePage`、`AvatarCropDialog`；`ProfilePage` 可通过 `/settings/prompt-assets` 切换 Reality 角色卡。
-- 日记：`DiaryPage`、`DiaryCard`、`DiaryDialog`。
-- 花园：`GardenPage`、`PlantCard`、`PlantPainter`。
-- 活动与群聊：`ActivityHomePage`、阅读/五子棋/国际象棋页面和群聊页面，分别位于 `activity_widgets.dart`、`reading_widgets.dart`、`gomoku_widgets.dart`、`chess_widgets.dart`、`group_widgets.dart`。
-
-## 后续结构约定
-
-当前文件拆分已完成，但模块边界拆分尚未完成。施工按工单 07 推进：先移除 `part`、建立独立 library/import，再把领域状态迁入 `ChangeNotifier` controller。任何新领域功能不得继续向 `app_shell.dart` 增加状态字段、Timer 或成组业务方法：
-
-1. `lib/models/`：纯数据模型和解析。
-2. `lib/services/backend_client.dart`：后端 HTTP。
-3. `lib/services/app_settings_store.dart`：MethodChannel。
-4. `lib/pages/`：chat/profile/diary/garden/capability。
-5. `lib/widgets/`：通用按钮、标签、头像、消息气泡、抽屉。
-
-现有测试除 widget smoke test 外，已覆盖 mobile poll 生命周期、MethodChannel 契约、后台投递契约、后端请求/错误和中继 signal 契约；仍应在大重构前补齐受影响领域的测试。
+常用门禁为 `flutter analyze`、`flutter test`、`flutter build apk --debug`。本机若在测试套件启动前出现 `HttpException: Connection closed before full header was received` 且目标为随机 `127.0.0.1` 端口，应记录为 Flutter tester 回环环境故障；不能据此把断言标成通过。

@@ -92,9 +92,9 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 访问凭证已从 Flutter 和 Android 原生源码移除。首次启动时由用户手动填写，并保存到 legacy `SharedPreferences("yexuan_memery", MODE_PRIVATE)`；后台服务每轮重新读取。
 
-**状态**：已修复访问凭证硬编码。owner/user id 仍固定为自用配置，未纳入本次最小补丁。
+**状态**：已修复访问凭证硬编码；owner/user id 已可在连接设置中配置，并由 ConnectionController 管理。
 
-**后续建议**：如需分发，继续把 owner/user id 改成用户配置，并评估 Android Keystore 加密存储。当前尚未接入 Keystore。
+**后续建议**：评估 Android Keystore 加密存储。当前 token 与 owner id 仍使用 legacy 私有 SharedPreferences。
 
 ## 已修复：`/upload/ingest` 请求未附带 `Authorization` header
 
@@ -122,7 +122,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 **状态**：已修复。
 
-## P2：`foreground_mobile_delivery_contract_test.dart` 编译失败（与本次鉴权改动无关）
+## 已修复：`foreground_mobile_delivery_contract_test.dart` 覆写签名
 
 **位置**：`test/foreground_mobile_delivery_contract_test.dart:94`、
 `lib/services/backend_client.dart` `BackendClient.pollMobile()`
@@ -146,7 +146,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 **影响**：新增 widget test 可以通过静态分析编译，但当前无法在这台机器上实际执行断言。
 
-**建议**：排查本机回环连接、防火墙、安全软件与 Flutter SDK tester 进程；修复后重新运行完整测试。
+**2026-07-13 复验**：10 个测试文件均在断言执行前失败，示例随机端口为 `127.0.0.1:57419`、`52702`、`57430`；错误仍为 `Connection closed before full header was received`。`flutter analyze` 通过，Debug APK 构建成功。`r`n`r`n**建议**：排查本机回环连接、防火墙、安全软件与 Flutter SDK tester 进程；修复后重新运行完整测试。
 
 ## 已修复：系统设置内更换 Token 触发 Flutter 路由断言
 
@@ -234,3 +234,9 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 其中正文并强制通过已鉴权 `/mobile/poll` 回源，不再存在 relay 正文直投路径。
 
 **状态**：已修复。中继仍能看到 topic 和信号元数据，但看不到由手机端消费的消息正文或 behavior。
+
+## 部分修复：`app_shell.dart` 结构债
+
+**状态（2026-07-13）**：`part` 已移除；Connection、Chat、Device、Dream、Garden、Diary controller 已建立并接线，Chat/Dream/Garden/Diary 页面直接监听 controller；app shell 不再持有这些领域的 Timer 和成组业务状态。`AppSettingsStore` 已由五个域门面包装，app shell 无直接方法调用。
+
+**剩余**：app shell 约 1499 行，仍包含 profile、theme、capability/settings、附件选择和弹窗协调，尚未达到工单 07 的 `<=600` 行长期目标。影响主要是可维护性，不改变当前接口和安全闸门。
