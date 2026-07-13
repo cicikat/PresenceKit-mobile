@@ -3,9 +3,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../controllers/chat_controller.dart';
 import '../models/app_models.dart';
 import '../services/character_naming.dart';
 import '../widgets/common_widgets.dart';
+
 class ChatScene extends StatelessWidget {
   const ChatScene({
     super.key,
@@ -14,22 +16,7 @@ class ChatScene extends StatelessWidget {
     required this.prefs,
     required this.profileDisplayName,
     required this.profileAvatarBytes,
-    required this.backendBusy,
-    required this.himTyping,
-    required this.backendError,
-    required this.loadingHistory,
-    required this.loadingMoreHistory,
-    required this.historyLoaded,
-    required this.historyError,
-    required this.lastBackendReply,
-    required this.mobileReceivedCount,
-    required this.historyMessages,
-    required this.sentMessages,
-    required this.visibleMessageLimit,
-    required this.scrollController,
-    required this.showJumpToLatest,
-    required this.onSend,
-    required this.onJumpToLatest,
+    required this.controller,
     required this.onOpenDrawer,
     required this.onOpenSettings,
     required this.onOpenAttach,
@@ -49,22 +36,7 @@ class ChatScene extends StatelessWidget {
   final YxPrefs prefs;
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
-  final bool backendBusy;
-  final bool himTyping;
-  final String? backendError;
-  final bool loadingHistory;
-  final bool loadingMoreHistory;
-  final bool historyLoaded;
-  final String? historyError;
-  final BackendChatResponse? lastBackendReply;
-  final int mobileReceivedCount;
-  final List<ChatMessage> historyMessages;
-  final List<ChatMessage> sentMessages;
-  final int visibleMessageLimit;
-  final ScrollController scrollController;
-  final bool showJumpToLatest;
-  final ValueChanged<String> onSend;
-  final VoidCallback onJumpToLatest;
+  final ChatController controller;
   final VoidCallback onOpenDrawer;
   final VoidCallback onOpenSettings;
   final VoidCallback onOpenAttach;
@@ -80,6 +52,27 @@ class ChatScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    final backendBusy = controller.sending;
+    final himTyping = controller.himTyping;
+    final backendError = controller.backendError;
+    final loadingHistory = controller.loadingHistory;
+    final loadingMoreHistory = controller.loadingMoreHistory;
+    final historyLoaded = controller.historyLoaded;
+    final historyError = controller.historyError;
+    final lastBackendReply = controller.lastBackendReply;
+    final mobileReceivedCount = controller.mobileReceivedCount;
+    final historyMessages = controller.history;
+    final sentMessages = controller.sent;
+    final visibleMessageLimit = controller.visibleMessageLimit;
+    final scrollController = controller.scrollController;
+    final showJumpToLatest = controller.showJumpToLatest;
     final presence = PresenceSnapshot.current(c);
     final totalMessageCount = historyMessages.length + sentMessages.length;
     final hiddenMessageCount = math.max(
@@ -104,7 +97,7 @@ class ChatScene extends StatelessWidget {
         MetaLine(
           c: c,
           text:
-              '后端已接入 · ${lastBackendReply!.emotion} · 好感 ${lastBackendReply!.affection}',
+              '后端已接入 · ${lastBackendReply.emotion} · 好感 ${lastBackendReply.affection}',
         ),
       if (mobileReceivedCount > 0)
         MetaLine(c: c, text: '已接收 $mobileReceivedCount 条主动消息'),
@@ -184,7 +177,7 @@ class ChatScene extends StatelessWidget {
               c: c,
               sending: backendBusy,
               onOpenAttach: onOpenAttach,
-              onSend: onSend,
+              onSend: controller.send,
               onVoiceRecordStart: onVoiceRecordStart,
               onVoiceRecordStop: onVoiceRecordStop,
               onVoiceRecordCancel: onVoiceRecordCancel,
@@ -203,7 +196,10 @@ class ChatScene extends StatelessWidget {
             right: 0,
             bottom: 92,
             child: Center(
-              child: JumpToLatestButton(c: c, onPressed: onJumpToLatest),
+              child: JumpToLatestButton(
+                c: c,
+                onPressed: controller.scrollToBottom,
+              ),
             ),
           ),
       ],

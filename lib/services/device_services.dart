@@ -24,8 +24,14 @@ class SettingsStore {
   Future<void> deleteAvatar() => _store.deleteProfileAvatar();
   Future<bool> loadBackgroundNotificationsEnabled() =>
       _store.loadBackgroundNotificationsEnabled();
-  Future<void> saveBackgroundNotificationsEnabled(bool value) =>
-      _store.saveBackgroundNotificationsEnabled(value);
+
+  Future<List<String>> loadSeenMobileMessageIds() =>
+      _store.loadSeenMobileMessageIds();
+  Future<void> saveSeenMobileMessageIds(List<String> ids) =>
+      _store.saveSeenMobileMessageIds(ids);
+  Future<int?> loadLastAckedMobileSeq() => _store.loadLastAckedMobileSeq();
+  Future<void> saveLastAckedMobileSeq(int value) =>
+      _store.saveLastAckedMobileSeq(value);
 }
 
 class VoiceService {
@@ -51,6 +57,7 @@ class DeviceControlService {
   Future<void> requestAccessibilityPermission() =>
       _store.requestAccessibilityPermission();
   Future<bool> openShoppingApp(String target) => _store.openShoppingApp(target);
+  Future<bool> showOrderBubble(String target) => _store.showOrderBubble(target);
 }
 
 class ScreenSensorService {
@@ -67,8 +74,13 @@ class ScreenSensorService {
       _store.loadScreenTextUploadAllowedPackages();
   Future<void> saveAllowedPackages(Set<String> values) =>
       _store.saveScreenTextUploadAllowedPackages(values);
-  Future<List<ScreenTextUploadAppOption>> loadAppOptions() =>
-      _store.loadScreenTextUploadAppOptions();
+
+  Future<int?> readBatteryPercent() => _store.readBatteryPercent();
+  Future<bool> hasActivityPermission() =>
+      _store.hasActivityRecognitionPermission();
+  Future<void> requestActivityPermission() =>
+      _store.requestActivityRecognitionPermission();
+  Future<int?> readTodaySteps() => _store.readTodaySteps();
 }
 
 class RelayStatusService {

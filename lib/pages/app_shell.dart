@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app_constants.dart';
+import '../controllers/chat_controller.dart';
 import '../controllers/dream_controller.dart';
 import '../controllers/diary_controller.dart';
 import '../controllers/garden_controller.dart';
@@ -16,6 +16,7 @@ import '../models/screen_context.dart';
 import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/character_naming.dart';
+import '../services/device_services.dart';
 import '../widgets/activity_widgets.dart';
 import '../widgets/capability_widgets.dart';
 import '../widgets/chat_widgets.dart';
@@ -45,41 +46,19 @@ class YexuanCompanionApp extends StatefulWidget {
 
 class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     with WidgetsBindingObserver {
-  static const int _initialVisibleChatMessages = 80;
-  static const int _visibleChatMessageStep = 50;
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final ScrollController _chatScrollController = ScrollController();
-  Timer? _mobilePollTimer;
   Timer? _screenContextTimer;
   Timer? _sensorPushTimer;
   AppRoute _route = AppRoute.chat;
   bool _dark = false;
   bool _customThemeEnabled = false;
-  bool _sending = false;
-  bool _himTyping = false;
-  bool _loadingHistory = false;
-  bool _loadingMoreHistory = false;
-  bool _noMoreHistory = false;
-  bool _usingChatLogHistory = false;
-  bool _historyLoaded = false;
-  bool _mobileActive = false;
-  bool _pollingMobile = false;
   bool _backgroundNotifications = true;
   bool _screenContextUploadEnabled = false;
   bool _backendSyncStarted = false;
   bool _loadingPromptAssets = false;
   bool _savingPromptAssets = false;
-  bool _showJumpToLatest = false;
-  int _chatVisibleMessageLimit = _initialVisibleChatMessages;
   String? _backendError;
-  String? _historyError;
-  String? _mobileError;
   String? _promptAssetsError;
-  int _mobileReceivedCount = 0;
-  int? _lastAckedMobileSeq;
-  String? _lastMobileContent;
-  BackendChatResponse? _lastBackendReply;
   ActivityCurrentState? _activityCurrent;
   MoodStateSnapshot? _moodState;
   bool _loadingStatusSnapshot = false;
@@ -91,20 +70,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   String _adminToken = '';
   late final AppSettingsStore _settingsStore;
   late BackendClient _backend;
+  late final ChatController _chatController;
   late final DreamController _dreamController;
   late final GardenController _gardenController;
   late final DiaryController _diaryController;
   YxPrefs _prefs = const YxPrefs();
   YxPalette? _customPalette;
-  final List<ChatMessage> _history = [];
-  final List<ChatMessage> _sent = [];
-  final Map<String, DateTime> _recentAssistantReplies = {};
-  final Map<String, String> _recentAssistantReplyIdsByFingerprint = {};
-  final Set<String> _synchronousAssistantReplyIds = {};
-  // message.id 去重：防止同一 id 在多次 poll 中重复展示；顺序维护以便 FIFO 淘汰。
-  final List<String> _seenMobileMessageIds = [];
-  final List<String> _availableChatLogDates = [];
-  final List<String> _loadedChatLogDates = [];
 
   YxPalette get c {
     final custom = _customPalette;
@@ -146,6 +117,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _backend =
         widget.backendClient ??
         BackendClient(baseUrl: _backendBaseUrl, settingsStore: _settingsStore);
+    _chatController = ChatController(
+      backend: () => _backend,
+      token: () => _adminToken,
+      settings: SettingsStore(_settingsStore),
+      relay: RelayStatusService(_settingsStore),
+    );
     _dreamController = DreamController(
       backend: () => _backend,
       token: () => _adminToken,
@@ -162,7 +139,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _gardenController.addListener(_refreshFromDreamController);
     _diaryController.addListener(_refreshFromDreamController);
     WidgetsBinding.instance.addObserver(this);
-    _chatScrollController.addListener(_handleChatScroll);
     _applySystemUi();
     WidgetsBinding.instance.addPostFrameCallback((_) => _applySystemUi());
     unawaited(_restoreBackendAndStart());
@@ -185,7 +161,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     final ownerUserId = await _settingsStore.loadOwnerUserId();
     final screenContextUploadEnabled = await _settingsStore
         .loadScreenContextUploadEnabled();
-    final lastAckedMobileSeq = await _settingsStore.loadLastAckedMobileSeq();
     final normalized = await _normalizeBackendBaseUrl(stored ?? '');
     if (mounted) {
       setState(() {
@@ -193,7 +168,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         _adminToken = adminToken?.trim() ?? '';
         _ownerUserId = ownerUserId?.trim() ?? '';
         _screenContextUploadEnabled = screenContextUploadEnabled;
-        _lastAckedMobileSeq = lastAckedMobileSeq;
         _profileNameOverride = storedName;
         _profileAvatarBytes = storedAvatar;
         _customPalette = storedPalette;
@@ -222,10 +196,8 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   void _startBackendSync() {
     if (!_hasAdminToken) return;
     _backendSyncStarted = true;
-    unawaited(_loadHistory());
+    unawaited(_chatController.start());
     unawaited(_gardenController.start());
-    unawaited(_activateMobile());
-    _startMobilePollTimer();
     if (_screenContextUploadEnabled) {
       _pushScreenContextOnce(silent: true);
     }
@@ -243,30 +215,14 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     );
   }
 
-  void _startMobilePollTimer() {
-    _stopMobilePollTimer();
-    _mobilePollTimer = Timer.periodic(
-      const Duration(seconds: 5),
-      (_) => unawaited(_pollMobileIfRelayUnavailable()),
-    );
-  }
-
-  void _stopMobilePollTimer() {
-    _mobilePollTimer?.cancel();
-    _mobilePollTimer = null;
-  }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _applySystemUi();
-      if (_hasAdminToken && _mobilePollTimer == null) {
-        unawaited(_activateMobile());
-        _startMobilePollTimer();
-      }
+      if (_hasAdminToken) _chatController.resumePolling();
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
-      _stopMobilePollTimer();
+      _chatController.pausePolling();
     }
   }
 
@@ -279,17 +235,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _diaryController
       ..removeListener(_refreshFromDreamController)
       ..dispose();
-    _stopMobilePollTimer();
     _screenContextTimer?.cancel();
     _dreamController.removeListener(_refreshFromDreamController);
     _sensorPushTimer?.cancel();
-    _chatScrollController.removeListener(_handleChatScroll);
-    if (_hasAdminToken) {
-      unawaited(
-        _backend.deactivateMobile(token: _adminToken).catchError((_) {}),
-      );
-    }
-    _chatScrollController.dispose();
+    _chatController.dispose();
     _dreamController.dispose();
     super.dispose();
   }
@@ -376,7 +325,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     if (normalized == _backendBaseUrl) return;
 
     _gardenController.stop();
-    _mobilePollTimer?.cancel();
+    _chatController.pausePolling();
     final previousBackend = _backend;
     if (_hasAdminToken) {
       unawaited(
@@ -390,24 +339,14 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         settingsStore: _settingsStore,
       );
       _backendError = null;
-      _historyError = null;
       _gardenController.error = null;
       _diaryController.error = null;
-      _mobileError = null;
-      _lastBackendReply = null;
       _gardenController.state = null;
-      _mobileActive = false;
-      _historyLoaded = false;
-      _loadingMoreHistory = false;
-      _noMoreHistory = false;
-      _usingChatLogHistory = false;
       _diaryController.loaded = false;
-      _history.clear();
-      _availableChatLogDates.clear();
-      _loadedChatLogDates.clear();
       _diaryController.entries.clear();
     });
     await _settingsStore.saveBackendBaseUrl(normalized);
+    await _chatController.resetForConnectionChange();
     if (!mounted) return;
     if (_hasAdminToken) _startBackendSync();
   }
@@ -487,7 +426,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     final shouldStartSync = !_backendSyncStarted;
     _adminToken = savedToken;
     _backendError = null;
-    _mobileError = null;
     unawaited(
       Future<void>.delayed(const Duration(milliseconds: 320), () {
         if (!mounted) return;
@@ -789,7 +727,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('已写入主动行为测试：${spec.label}')));
-      await _pollMobileIfRelayUnavailable();
+      await _chatController.pollIfBackgroundUnavailable();
     } on BackendException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -900,17 +838,27 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           results[10] as List<ScreenTextUploadAppOption>,
       backendBaseUrl: _backendBaseUrl,
       backendReachable:
-          _mobileActive || _historyLoaded || _gardenController.state != null,
+          _chatController.mobileActive ||
+          _chatController.historyLoaded ||
+          _gardenController.state != null,
       backendBusy:
-          _pollingMobile || _loadingHistory || _gardenController.loading,
-      backendError: _mobileError ?? _backendError ?? _historyError,
+          _chatController.pollingMobile ||
+          _chatController.loadingHistory ||
+          _gardenController.loading,
+      backendError:
+          _chatController.mobileError ??
+          _backendError ??
+          _chatController.historyError,
     );
   }
 
   Future<void> _testBackendConnectivity() async {
-    await _activateMobile();
+    await _chatController.activateMobile();
     if (!mounted) return;
-    await Future.wait([_loadHistory(), _gardenController.load()]);
+    await Future.wait([
+      _chatController.loadHistory(),
+      _gardenController.load(),
+    ]);
   }
 
   void _openCapabilityCheck() {
@@ -945,17 +893,17 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         onFetchDiagnostics: () =>
             _backend.fetchDiagnostics(token: _requireAdminToken()),
         onEditBackend: _openBackendSettings,
-        historyLoaded: _historyLoaded,
-        loadingHistory: _loadingHistory,
-        historyError: _historyError,
+        historyLoaded: _chatController.historyLoaded,
+        loadingHistory: _chatController.loadingHistory,
+        historyError: _chatController.historyError,
         gardenLoaded: _gardenController.state != null,
         loadingGarden: _gardenController.loading,
         gardenError: _gardenController.error,
-        mobileActive: _mobileActive,
-        pollingMobile: _pollingMobile,
-        mobileError: _mobileError,
-        mobileReceivedCount: _mobileReceivedCount,
-        lastMobileContent: _lastMobileContent,
+        mobileActive: _chatController.mobileActive,
+        pollingMobile: _chatController.pollingMobile,
+        mobileError: _chatController.mobileError,
+        mobileReceivedCount: _chatController.mobileReceivedCount,
+        lastMobileContent: _chatController.lastMobileContent,
       ),
     );
   }
@@ -1233,586 +1181,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     );
   }
 
-  void _sendMessage(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty || _sending) return;
-    if (!_hasAdminToken) {
-      unawaited(_openAdminTokenSettings(required: true));
-      return;
-    }
-    setState(() {
-      _sending = true;
-      _himTyping = true;
-      _backendError = null;
-      _sent.add(ChatMessage(role: 'you', text: trimmed, time: '现在'));
-    });
-    _scrollChatToBottom();
-    unawaited(_sendToBackend(trimmed));
-  }
-
-  Future<void> _loadHistory() async {
-    if (_loadingHistory) return;
-    setState(() {
-      _loadingHistory = true;
-      _historyError = null;
-    });
-    try {
-      final datesResponse = await _backend.loadChatLogDates(
-        token: _requireAdminToken(),
-      );
-      final dates = datesResponse.dates;
-      final loadedDates = <String>[];
-      var messages = <ChatMessage>[];
-      var noMoreHistory = dates.isEmpty;
-
-      if (dates.isNotEmpty) {
-        final today = _dateKey(DateTime.now());
-        var firstDate = dates.contains(today) ? today : dates.first;
-        var day = await _backend.loadChatLogDay(
-          firstDate,
-          token: _requireAdminToken(),
-        );
-        messages = _messagesFromChatLogDay(day);
-        loadedDates.add(firstDate);
-
-        final firstIdx = dates.indexOf(firstDate);
-        final previousDate = firstIdx >= 0 && firstIdx + 1 < dates.length
-            ? dates[firstIdx + 1]
-            : null;
-        if (_conversationMessageCount(messages) < 10 && previousDate != null) {
-          day = await _backend.loadChatLogDay(
-            previousDate,
-            token: _requireAdminToken(),
-          );
-          messages = [..._messagesFromChatLogDay(day), ...messages];
-          loadedDates.insert(0, previousDate);
-          firstDate = previousDate;
-        }
-
-        final earliestIdx = dates.indexOf(firstDate);
-        noMoreHistory = earliestIdx < 0 || earliestIdx >= dates.length - 1;
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _history
-          ..clear()
-          ..addAll(messages);
-        _availableChatLogDates
-          ..clear()
-          ..addAll(dates);
-        _loadedChatLogDates
-          ..clear()
-          ..addAll(loadedDates);
-        _noMoreHistory = noMoreHistory;
-        _usingChatLogHistory = true;
-        _historyLoaded = true;
-        _chatVisibleMessageLimit = _initialVisibleChatMessages;
-      });
-      _scrollChatToBottom();
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() => _historyError = e.message);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _historyError = e.toString());
-    } finally {
-      if (mounted) {
-        setState(() => _loadingHistory = false);
-      }
-    }
-  }
-
-  Future<void> _loadOlderHistory() async {
-    if (_loadingHistory ||
-        _loadingMoreHistory ||
-        _noMoreHistory ||
-        !_usingChatLogHistory ||
-        _loadedChatLogDates.isEmpty ||
-        _availableChatLogDates.isEmpty) {
-      return;
-    }
-    final earliestLoaded = _loadedChatLogDates.first;
-    final earliestIdx = _availableChatLogDates.indexOf(earliestLoaded);
-    final targetIdx = earliestIdx + 1;
-    if (earliestIdx < 0 || targetIdx >= _availableChatLogDates.length) {
-      setState(() => _noMoreHistory = true);
-      return;
-    }
-
-    final position = _chatScrollController.hasClients
-        ? _chatScrollController.position
-        : null;
-    final oldMaxExtent = position?.maxScrollExtent ?? 0;
-    final oldPixels = position?.pixels ?? 0;
-    final targetDate = _availableChatLogDates[targetIdx];
-
-    setState(() {
-      _loadingMoreHistory = true;
-      _historyError = null;
-    });
-    try {
-      final day = await _backend.loadChatLogDay(
-        targetDate,
-        token: _requireAdminToken(),
-      );
-      final olderMessages = _messagesFromChatLogDay(day);
-      if (!mounted) return;
-      setState(() {
-        _history.insertAll(0, olderMessages);
-        _loadedChatLogDates.insert(0, targetDate);
-        _noMoreHistory = targetIdx >= _availableChatLogDates.length - 1;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_chatScrollController.hasClients) return;
-        final newMaxExtent = _chatScrollController.position.maxScrollExtent;
-        final compensated = newMaxExtent - oldMaxExtent + oldPixels;
-        _chatScrollController.jumpTo(
-          compensated.clamp(
-            _chatScrollController.position.minScrollExtent,
-            _chatScrollController.position.maxScrollExtent,
-          ),
-        );
-      });
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() => _historyError = e.message);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _historyError = e.toString());
-    } finally {
-      if (mounted) {
-        setState(() => _loadingMoreHistory = false);
-      }
-    }
-  }
-
-  Future<void> _activateMobile() async {
-    try {
-      await _backend.activateMobile(token: _requireAdminToken());
-      if (!mounted) return;
-      setState(() {
-        _mobileActive = true;
-        _mobileError = null;
-      });
-      await _pollMobileIfRelayUnavailable();
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _mobileActive = false;
-        _mobileError = e.message;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _mobileActive = false;
-        _mobileError = e.toString();
-      });
-    }
-  }
-
-  Future<void> _pollMobileIfRelayUnavailable() async {
-    final nativeServiceRunning = await _settingsStore
-        .isBackgroundNotificationServiceRunning();
-    if (!mounted || nativeServiceRunning) return;
-    await _pollMobile();
-  }
-
-  Future<void> _pollMobile() async {
-    if (_pollingMobile) return;
-    _pollingMobile = true;
-    try {
-      final persistedSeq = await _settingsStore.loadLastAckedMobileSeq();
-      if (persistedSeq != null &&
-          (_lastAckedMobileSeq == null ||
-              persistedSeq > _lastAckedMobileSeq!)) {
-        _lastAckedMobileSeq = persistedSeq;
-      }
-      final persistedSeenIds = await _settingsStore.loadSeenMobileMessageIds();
-      for (final id in persistedSeenIds) {
-        if (id.isEmpty || _seenMobileMessageIds.contains(id)) continue;
-        _seenMobileMessageIds.add(id);
-      }
-      while (_seenMobileMessageIds.length > 200) {
-        _seenMobileMessageIds.removeAt(0);
-      }
-      final token = _requireAdminToken();
-      final messages = await _backend.pollMobile(
-        token: token,
-        after: _lastAckedMobileSeq,
-        waitSeconds: 25,
-      );
-      if (!mounted) return;
-      // 有 id 时只按 id 对账；内容指纹仅兜底旧后端/无 id 消息。
-      final freshMessages = <MobilePollMessage>[];
-      for (final msg in messages) {
-        if (msg.id.isNotEmpty) {
-          if (_seenMobileMessageIds.contains(msg.id)) continue;
-          _seenMobileMessageIds.add(msg.id);
-          if (_seenMobileMessageIds.length > 200) {
-            _seenMobileMessageIds.removeAt(0);
-          }
-          if (_synchronousAssistantReplyIds.contains(msg.id)) continue;
-          if (_isRecentAssistantReply(msg.content, msgId: msg.id)) continue;
-          _rememberAssistantReply(msg.content, msgId: msg.id);
-        } else {
-          if (_isRecentAssistantReply(msg.content)) continue;
-          _rememberAssistantReply(msg.content);
-        }
-        freshMessages.add(msg);
-      }
-      final incoming = <ChatMessage>[];
-      for (final message in freshMessages) {
-        final base = message.toChatMessage();
-        // Behavior messages (lock-screen, takeout overlay, etc.) are single-line
-        // by design — don't split them so their payload stays intact.
-        if (message.behaviorKind.isNotEmpty) {
-          incoming.add(
-            ChatMessage(
-              role: base.role,
-              text: base.text,
-              time: base.time,
-              animate: true,
-            ),
-          );
-        } else {
-          final parts = _splitReplySegments(message.content);
-          if (parts.length <= 1) {
-            incoming.add(
-              ChatMessage(
-                role: base.role,
-                text: base.text,
-                time: base.time,
-                animate: true,
-              ),
-            );
-          } else {
-            for (final part in parts) {
-              incoming.add(
-                ChatMessage(
-                  role: base.role,
-                  text: part,
-                  time: base.time,
-                  animate: true,
-                ),
-              );
-            }
-          }
-        }
-      }
-      final statusChanged = !_mobileActive || _mobileError != null;
-      if (incoming.isNotEmpty || statusChanged) {
-        setState(() {
-          _mobileActive = true;
-          _mobileError = null;
-          _sent.addAll(incoming);
-          if (freshMessages.isNotEmpty) {
-            _mobileReceivedCount += freshMessages.length;
-            _lastMobileContent = freshMessages.last.content;
-          }
-        });
-      }
-      if (freshMessages.isNotEmpty) {
-        _scrollChatToBottom();
-      }
-      if (_seenMobileMessageIds.isNotEmpty) {
-        // Intentional dual write with MobileNotificationService, guarded by
-        // foreground/background handoff timing. Persist before ack so an ack
-        // failure can be retried without displaying the message twice.
-        await _settingsStore.saveSeenMobileMessageIds(
-          List<String>.unmodifiable(_seenMobileMessageIds),
-        );
-      }
-      int? batchMaxSeq;
-      for (final message in messages) {
-        final seq = message.seq;
-        if (seq != null && (batchMaxSeq == null || seq > batchMaxSeq)) {
-          batchMaxSeq = seq;
-        }
-      }
-      if (batchMaxSeq != null) {
-        await _backend.ackMobile(token: token, ackSeq: batchMaxSeq);
-        await _settingsStore.saveLastAckedMobileSeq(batchMaxSeq);
-        if (_lastAckedMobileSeq == null || batchMaxSeq > _lastAckedMobileSeq!) {
-          _lastAckedMobileSeq = batchMaxSeq;
-        }
-      }
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _mobileActive = false;
-        _mobileError = e.message;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _mobileActive = false;
-        _mobileError = e.toString();
-      });
-    } finally {
-      _pollingMobile = false;
-    }
-  }
-
-  Future<void> _sendToBackend(String message) async {
-    try {
-      final response = await _backend.sendChat(
-        message,
-        token: _requireAdminToken(),
-      );
-      if (!mounted) return;
-      setState(() => _lastBackendReply = response);
-      if (_shouldAppendSynchronousReply(response)) {
-        await _appendHimReplySegments(response.reply);
-      }
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _himTyping = false;
-        _backendError = e.message;
-        _sent.add(
-          ChatMessage(
-            role: 'him',
-            text: '（手机端暂时连不上后端：${e.message}）',
-            time: _nowLabel(),
-          ),
-        );
-      });
-      _scrollChatToBottom();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _himTyping = false;
-        _backendError = e.toString();
-        _sent.add(
-          ChatMessage(
-            role: 'him',
-            text: '（手机端遇到一个未预期错误：$e）',
-            time: _nowLabel(),
-          ),
-        );
-      });
-      _scrollChatToBottom();
-    } finally {
-      if (mounted) {
-        setState(() {
-          _sending = false;
-          _himTyping = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _appendHimReplySegments(String reply) async {
-    final parts = _splitReplySegments(reply);
-    final rng = math.Random();
-    for (var i = 0; i < parts.length; i++) {
-      if (i > 0) {
-        await Future<void>.delayed(
-          Duration(milliseconds: 100 + rng.nextInt(901)),
-        );
-      }
-      if (!mounted) return;
-      setState(() {
-        _himTyping = false;
-        _sent.add(
-          ChatMessage(
-            role: 'him',
-            text: parts[i],
-            time: _nowLabel(),
-            animate: true,
-          ),
-        );
-      });
-      _scrollChatToBottom();
-      if (i < parts.length - 1 && mounted) {
-        setState(() => _himTyping = true);
-        _scrollChatToBottom();
-      }
-    }
-  }
-
-  List<String> _splitReplySegments(String reply) {
-    final normalized = reply.trim();
-    if (normalized.isEmpty) return const ['……'];
-    final parts = normalized
-        .split(RegExp(r'\r?\n+'))
-        .map((part) => part.trim())
-        .where((part) => part.isNotEmpty)
-        .toList(growable: false);
-    return parts.isEmpty ? const ['……'] : parts;
-  }
-
-  String _replyFingerprint(String text) =>
-      text.replaceAll(RegExp(r'\s+'), ' ').trim();
-
-  bool _isRecentAssistantReply(String text, {String? msgId}) {
-    final now = DateTime.now();
-    _recentAssistantReplies.removeWhere(
-      (_, seenAt) => now.difference(seenAt) > const Duration(seconds: 45),
-    );
-    _recentAssistantReplyIdsByFingerprint.removeWhere(
-      (fingerprint, _) => !_recentAssistantReplies.containsKey(fingerprint),
-    );
-    final fingerprint = _replyFingerprint(text);
-    if (!_recentAssistantReplies.containsKey(fingerprint)) return false;
-    if (msgId == null) return true;
-    return !_recentAssistantReplyIdsByFingerprint.containsKey(fingerprint);
-  }
-
-  void _rememberAssistantReply(String text, {String? msgId}) {
-    final fingerprint = _replyFingerprint(text);
-    if (fingerprint.isNotEmpty) {
-      _recentAssistantReplies[fingerprint] = DateTime.now();
-      if (msgId == null) {
-        _recentAssistantReplyIdsByFingerprint.remove(fingerprint);
-      } else {
-        _recentAssistantReplyIdsByFingerprint[fingerprint] = msgId;
-      }
-    }
-  }
-
-  bool _shouldAppendSynchronousReply(BackendChatResponse response) {
-    final msgId = response.msgId;
-    final turnId = response.turnId;
-
-    // Register both ids so poll dedup catches the turn_id the backend uses
-    // when fanning out to the mobile channel (see task round-移动端状态页).
-    void registerId(String id) {
-      _synchronousAssistantReplyIds.add(id);
-      while (_synchronousAssistantReplyIds.length > 200) {
-        _synchronousAssistantReplyIds.remove(
-          _synchronousAssistantReplyIds.first,
-        );
-      }
-    }
-
-    if (msgId != null) registerId(msgId);
-    if (turnId != null) registerId(turnId);
-
-    if (msgId != null || turnId != null) {
-      final alreadyReceivedFromPoll =
-          (msgId != null && _seenMobileMessageIds.contains(msgId)) ||
-          (turnId != null && _seenMobileMessageIds.contains(turnId));
-      final effectiveId = msgId ?? turnId!;
-      if (alreadyReceivedFromPoll ||
-          _isRecentAssistantReply(response.reply, msgId: effectiveId)) {
-        return false;
-      }
-      _rememberAssistantReply(response.reply, msgId: effectiveId);
-      return true;
-    }
-    if (_isRecentAssistantReply(response.reply)) return false;
-    _rememberAssistantReply(response.reply);
-    return true;
-  }
-
-  List<ChatMessage> _messagesFromChatLogDay(ChatLogDay day) {
-    return [
-      for (final entry in day.entries) ...[
-        for (final part in _splitHistorySegments(entry.user))
-          ChatMessage(role: 'you', text: part, time: entry.time),
-        for (final part in _splitHistorySegments(entry.assistant))
-          ChatMessage(role: 'him', text: part, time: entry.time),
-      ],
-    ];
-  }
-
-  List<String> _splitHistorySegments(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return const [];
-    if (AttachmentPlaceholder.parse(trimmed) != null) return [trimmed];
-    return _splitReplySegments(trimmed);
-  }
-
-  int _conversationMessageCount(List<ChatMessage> messages) {
-    return messages
-        .where((message) => message.role == 'you' || message.role == 'him')
-        .length;
-  }
-
-  String _dateKey(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '${date.year}-$month-$day';
-  }
-
-  void _handleChatScroll() {
-    if (_route != AppRoute.chat) return;
-    if (!_chatScrollController.hasClients) return;
-    final position = _chatScrollController.position;
-    final shouldShowJump = position.maxScrollExtent - position.pixels > 260;
-    if (shouldShowJump != _showJumpToLatest && mounted) {
-      setState(() => _showJumpToLatest = shouldShowJump);
-    }
-    if (_chatScrollController.position.pixels < 200) {
-      final totalMessages = _history.length + _sent.length;
-      if (!_revealOlderLocalMessages(totalMessages)) {
-        unawaited(_loadOlderHistory());
-      }
-    }
-  }
-
-  bool _revealOlderLocalMessages(int totalMessages) {
-    if (_chatVisibleMessageLimit >= totalMessages) return false;
-    final position = _chatScrollController.hasClients
-        ? _chatScrollController.position
-        : null;
-    final oldMaxExtent = position?.maxScrollExtent ?? 0;
-    final oldPixels = position?.pixels ?? 0;
-    setState(() {
-      _chatVisibleMessageLimit = math.min(
-        totalMessages,
-        _chatVisibleMessageLimit + _visibleChatMessageStep,
-      );
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_chatScrollController.hasClients) return;
-      final newMaxExtent = _chatScrollController.position.maxScrollExtent;
-      final compensated = newMaxExtent - oldMaxExtent + oldPixels;
-      _chatScrollController.jumpTo(
-        compensated.clamp(
-          _chatScrollController.position.minScrollExtent,
-          _chatScrollController.position.maxScrollExtent,
-        ),
-      );
-    });
-    return true;
-  }
-
-  String _nowLabel() {
-    final now = DateTime.now();
-    final hour = now.hour.toString().padLeft(2, '0');
-    final minute = now.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
-  void _scrollChatToBottom() {
-    if (_showJumpToLatest && mounted) {
-      setState(() => _showJumpToLatest = false);
-    }
-    void scroll({bool animate = true}) {
-      if (!mounted) return;
-      if (!_chatScrollController.hasClients) return;
-      final target = _chatScrollController.position.maxScrollExtent;
-      if (animate) {
-        _chatScrollController.animateTo(
-          target,
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
-        );
-      } else {
-        _chatScrollController.jumpTo(target);
-      }
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => scroll());
-    Future<void>.delayed(
-      const Duration(milliseconds: 360),
-      () => scroll(animate: false),
-    );
-  }
-
   Future<void> _wakeFromDream() async {
     final result = await _dreamController.wake();
     if (!mounted || result == null || result.exited || !result.retained) {
@@ -2067,7 +1435,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   }
 
   Future<void> _pickAndUploadFile() async {
-    if (_sending) return;
+    if (_chatController.sending) return;
     final picked = await _settingsStore.pickUploadFile();
     if (!mounted || picked == null) return;
     final lowerName = picked.name.toLowerCase();
@@ -2084,24 +1452,15 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       ).showSnackBar(const SnackBar(content: Text('后端文件上限是 5MB')));
       return;
     }
-    setState(() {
-      _sending = true;
-      _himTyping = true;
-      _backendError = null;
-      _sent.add(
-        ChatMessage(role: 'you', text: '📎 ${picked.name}', time: '现在'),
-      );
-    });
-    _scrollChatToBottom();
-    await _uploadFilesToBackend(
+    await _chatController.uploadFiles(
       [picked],
-      failurePrefix: '文件',
-      unexpectedPrefix: '文件上传',
+      preview: '📎 ${picked.name}',
+      failureLabel: '文件',
     );
   }
 
   Future<void> _pickAndUploadImages() async {
-    if (_sending) return;
+    if (_chatController.sending) return;
     final picked = await _settingsStore.pickUploadImages();
     if (!mounted || picked.isEmpty) return;
     const supported = [
@@ -2114,14 +1473,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       '.heif',
       '.bmp',
     ];
-    final unsupported = picked
-        .where(
-          (file) => !supported.any(
-            (suffix) => file.name.toLowerCase().endsWith(suffix),
-          ),
-        )
-        .toList(growable: false);
-    if (unsupported.isNotEmpty) {
+    if (picked.any(
+      (file) => !supported.any(file.name.toLowerCase().endsWith),
+    )) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('后端当前只支持 jpg / png / gif / webp / heic / bmp'),
@@ -2135,83 +1489,17 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
       ).showSnackBar(const SnackBar(content: Text('后端图片上限是单张 10MB')));
       return;
     }
-    final preview = picked.length == 1
+    final names = picked.length == 1
         ? picked.first.name
         : picked.take(3).map((file) => file.name).join('、');
-    setState(() {
-      _sending = true;
-      _himTyping = true;
-      _backendError = null;
-      _sent.add(
-        ChatMessage(
-          role: 'you',
-          text: picked.length == 1
-              ? '📎 $preview'
-              : '📎 ${picked.length}张图片：$preview${picked.length > 3 ? '…' : ''}',
-          time: '现在',
-        ),
-      );
-    });
-    _scrollChatToBottom();
-    await _uploadFilesToBackend(
+    final preview = picked.length == 1
+        ? '📎 $names'
+        : '📎 ${picked.length}张图片：$names${picked.length > 3 ? '…' : ''}';
+    await _chatController.uploadFiles(
       picked,
-      failurePrefix: '图片',
-      unexpectedPrefix: '图片上传',
+      preview: preview,
+      failureLabel: '图片',
     );
-  }
-
-  Future<void> _uploadFilesToBackend(
-    List<PickedUploadFile> picked, {
-    required String failurePrefix,
-    required String unexpectedPrefix,
-  }) async {
-    try {
-      final response = await _backend.uploadFiles(
-        files: picked,
-        token: _requireAdminToken(),
-        channel: 'mobile',
-      );
-      if (!mounted) return;
-      setState(() => _lastBackendReply = response);
-      if (_shouldAppendSynchronousReply(response)) {
-        await _appendHimReplySegments(response.reply);
-      }
-    } on BackendException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _himTyping = false;
-        _backendError = e.message;
-        _sent.add(
-          ChatMessage(
-            role: 'him',
-            text: '（$failurePrefix没有送过去：${e.message}）',
-            time: _nowLabel(),
-          ),
-        );
-      });
-      _scrollChatToBottom();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _himTyping = false;
-        _backendError = e.toString();
-        _sent.add(
-          ChatMessage(
-            role: 'him',
-            text: '（$unexpectedPrefix遇到一个未预期错误：$e）',
-            time: _nowLabel(),
-          ),
-        );
-      });
-      _scrollChatToBottom();
-    } finally {
-      if (mounted) {
-        setState(() {
-          _sending = false;
-          _himTyping = false;
-        });
-      }
-    }
   }
 
   void _pickRoute(AppRoute route) {
@@ -2290,22 +1578,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
           prefs: _prefs,
           profileDisplayName: _profileDisplayName,
           profileAvatarBytes: _profileAvatarBytes,
-          backendBusy: _sending,
-          himTyping: _himTyping,
-          backendError: _backendError,
-          loadingHistory: _loadingHistory,
-          loadingMoreHistory: _loadingMoreHistory,
-          historyLoaded: _historyLoaded,
-          historyError: _historyError,
-          lastBackendReply: _lastBackendReply,
-          mobileReceivedCount: _mobileReceivedCount,
-          historyMessages: _history,
-          sentMessages: _sent,
-          visibleMessageLimit: _chatVisibleMessageLimit,
-          scrollController: _chatScrollController,
-          showJumpToLatest: _showJumpToLatest,
-          onSend: _sendMessage,
-          onJumpToLatest: _scrollChatToBottom,
+          controller: _chatController,
           onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
           onOpenSettings: _openSettings,
           onOpenAttach: _openAttach,
