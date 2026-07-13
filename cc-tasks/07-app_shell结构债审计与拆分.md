@@ -76,7 +76,7 @@
 
 - 更新 AGENTS.md / ARCHITECTURE.md / docs/mobile/flutter-structure.md 中过期的
   「2185 行」及 part 结构描述(T1/T2 落地后各同步一次)。
-- 加轻量闸门:CI 或 pre-commit 检查 `app_shell.dart` 行数只减不增(基线 2674)。
+- 加轻量闸门:CI 或 pre-commit 检查 `app_shell.dart` 行数只减不增（当前基线 1499；本轮仅保留测试断言，尚未接入 CI）。
 - 新增守则写入 AGENTS.md:新领域功能一律新建 controller + widget 文件,
   禁止向 app_shell 添加新状态字段。
 
@@ -85,7 +85,7 @@
 ```
 T1 ──┬── T2(Dream pilot → 其余域并行)
      └── T3(与 T2 并行)
-T4 独立,随 T1/T2 各同步一次文档
+T4 独立；随 T1/T2 各同步一次文档
 ```
 
 ## 施工状态（2026-07-13）
@@ -95,4 +95,4 @@ T4 独立,随 T1/T2 各同步一次文档
 - UI 收口已完成：Chat/Dream/Garden/Diary 页面直接监听 controller，不再展开传领域状态。
 - T3 已完成当前阶段：五个域门面已接入；`AppSettingsStore` 仅作为 legacy MethodChannel 兼容实现注入，app shell 无直接方法调用。
 - 当前 app shell 约 1499 行。profile、theme、capability/settings、附件选择和弹窗协调仍是后续结构债，因此最初 <=600 行愿景尚未完成。
-- 验证：lutter analyze 通过；lutter test 因本机 tester 随机 127.0.0.1 回环断连，在断言执行前失败；lutter build apk --debug 成功。
+- 验证：`flutter analyze` 通过；`flutter test` 因本机 tester 随机 127.0.0.1 回环断连，在断言执行前失败；`flutter build apk --debug` 成功。

@@ -33,3 +33,21 @@
 - 改 Android 权限、服务、悬浮窗、无障碍或锁屏逻辑时，同步更新 `android/native-capabilities.md`。
 - 改 Flutter 页面结构或准备拆分 `lib/main.dart` 时，同步更新 `mobile/flutter-structure.md`。
 - 发现未修问题，先记到 `known-issues.md`。
+
+## 当前工单与实施状态（2026-07-13）
+
+| 工单 | 当前仓库状态 | 现状依据 |
+|---|---|---|
+| `cc-tasks/07-app_shell结构债审计与拆分.md` | T1、T2、T3 当前阶段已完成；T4 文档与守则已同步；app shell 仍有 profile/theme/capability/settings/附件协调结构债 | `lib/controllers/`、`lib/services/device_services.dart`、`docs/mobile/flutter-structure.md` |
+| 其他编号工单 | 当前工作树未提供可审计的工单正文，不推断为已完成 | 先查 `git log -- cc-tasks` 或外部仓库对应工单，再补实现状态 |
+
+当前 `cc-tasks/` 目录只保留工单 07；历史工单文件若在工作树中显示为用户删除，文档审计不会擅自恢复。新增领域施工必须先建立对应工单或在现有工单追加“目标、代码落点、验证、遗留问题”四项，避免只改代码不留接力记录。
+
+## 文档维护闭环
+
+- Flutter 状态/页面边界：同步 `mobile/flutter-structure.md` 与工单状态。
+- Android 权限、原生服务、MethodChannel：同步 `android/native-capabilities.md`；当前通道名是 `presence_mobile/settings`，`yexuan_memery` 仅为历史 prefs 名。
+- HTTP、鉴权、轮询、owner/token/origin：同步 `backend/integration.md` 与 `protocols/mobile-channel.md`。
+- relay signal-only 与补偿：同步 `protocols/relay-publish-contract.md` 和 `mobile/background-notification-design.md`。
+- sensor 字段与隐私边界：同步 `protocols/sensor-event-protocol.md` 与 Android 能力文档。
+- 验证命令与环境故障：同步 `quality/testing-and-dev.md` 和 `known-issues.md`。

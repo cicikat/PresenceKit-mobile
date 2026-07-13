@@ -37,7 +37,7 @@ mobile_dev_control.bat
 
 ## 当前测试覆盖
 
-`test/` 下共 9 个文件，按覆盖内容分组如下（逐文件列出实际断言范围，而不是笼统的"能不能覆盖某个大类"）：
+`test/` 下共 10 个文件，按覆盖内容分组如下（逐文件列出实际断言范围，而不是笼统的"能不能覆盖某个大类"）：
 
 ### UI / 模型基础
 
@@ -78,12 +78,19 @@ mobile_dev_control.bat
   - 无障碍：`isAccessibilityServiceEnabled`、`requestAccessibilityPermission`、`captureScreenContext`（ForUpload）；
   - 悬浮窗：`canDrawOverlays`、`showFloatingBubble`/`showOrderBubble`、`hideFloatingBubble`、`isDeviceAdminActive`、`requestDeviceAdmin`、`lockScreen`、`openShoppingApp`。
   - 每个方法验证：调用的方法名、参数形状（如 `{'target': ...}`）、返回值如何被 `AppSettingsStore` 解析成 Dart 模型、以及平台侧抛 `PlatformException` 时的兜底值。
-  - `AppSettingsStore` 为此增加了 `@visibleForTesting static bool debugForceChannelAvailable`：`flutter test` 始终以宿主 OS（如 Windows）运行，`Platform.isAndroid` 恒为 `false`，不加这个测试钩子的话所有方法在测试里都会被早退守卫直接短路，永远走不到 channel 调用。生产环境该值恒为 `false`，不影响真机行为。
+  - `PlatformSettingsChannel` 为此保留了 `debugForceChannelAvailable` 测试钩子：`flutter test` 始终以宿主 OS（如 Windows）运行，`Platform.isAndroid` 恒为 `false`，不加这个测试钩子的话所有方法在测试里都会被早退守卫直接短路，永远走不到 channel 调用。生产环境该值恒为 `false`，不影响真机行为。
 - `no_hardcoded_qq_number_test.dart`：扫描 `lib/`、`android/`、`docs/`、`test/` 下的文本文件，确保真实 QQ 号不会被提交进仓库（与 `Emerald-presence` 后端仓库的同名测试各自独立，是镜像关系，不是重复）。
+- `app_shell_structure_test.dart`：守住 `app_shell.dart` 当前 1499 行基线，并断言历史 `part` 结构不再回到入口。
 
 ### 仍未覆盖（真实缺口，不是文档没写）
 
 - `presence_mobile/settings` 通道里除上述三类之外的方法（`Backend`/`RelayBaseUrl`/`RelayToken`/`RelayTopic`/`OwnerUserId`、自定义主题、头像与文件选取、可信明文域名等）暂无契约测试。
 - `BackendClient.uploadFiles`（multipart 上传）、`fetchDiagnostics`（并发聚合多个只读端点）、`updatePromptAssets`/`updateDreamSettings`（PATCH 分支）没有针对请求层的专门测试，只在别处被间接调用。
 - Android 原生代码（Kotlin）本身的运行时行为（通知闸门、无障碍采集、悬浮窗确认、设备管理器锁屏）完全没有测试；`android_relay_signal_contract_test.dart` 只是对源码文本做字符串断言，不是真实运行 Kotlin 代码。这类覆盖需要 Android instrumented test，`flutter test` 覆盖不到。
-- 后台原生长轮询与前台 `_pollMobile` 的交接时机（`isBackgroundNotificationServiceRunning() == true` 时前台跳过 poll）目前只在 Dart 侧假设为真，没有场景化测试验证切换瞬间的行为。
+- 后台原生 poll 与前台 `_pollMobile` 的交接时机（`isBackgroundNotificationServiceRunning() == true` 时前台跳过 poll）目前只在 Dart 侧假设为真，没有场景化测试验证切换瞬间的行为。
+
+## 最近一次本机验证（2026-07-13）
+
+- `flutter analyze`：通过，0 issues。
+- `flutter test`：未进入任何断言即因本机 Flutter tester 回环连接 `HttpException: Connection closed before full header was received` 失败；这是环境故障，不能记为测试通过。
+- `flutter build apk --debug`：通过，产物为 `build/app/outputs/flutter-apk/app-debug.apk`。

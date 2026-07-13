@@ -6,7 +6,7 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 
 职责：
 
-- 注册兼容旧安装契约的 legacy `MethodChannel('yexuan_memery/settings')`；该名称不是当前项目名，迁移 applicationId 时有意保留。
+- 注册兼容旧安装契约的 `MethodChannel('presence_mobile/settings')`；Dart 侧通过 `PlatformSettingsChannel` 共享该通道。`yexuan_memery` 仅是历史 `SharedPreferences` 存储名，不是当前 channel 名。
 - 读写兼容键 `SharedPreferences("yexuan_memery")`：后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、后台通知开关、头像。该存储名有意不随项目改名。
 - 请求和检查通知、悬浮窗、设备管理器、无障碍权限。
 - 检查并引导用户授予电池优化豁免；能力页同时提供常见 OEM 自启动/后台白名单路径。
@@ -22,6 +22,15 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 - `isBackgroundNotificationServiceRunning` 直接读取 `MobileNotificationService.isServiceRunning`
   的进程内生命周期真值，不再用 SharedPreferences 历史标记判断服务是否仍在运行。
 
+## Dart 设备门面与 MethodChannel 边界
+
+Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceService`、`DeviceControlService`、`ScreenSensorService`、`RelayStatusService` 五个门面统一包装 `AppSettingsStore`，由 `ConnectionController` 和 `DeviceController` 注入使用。`AppSettingsStore` 仍保留全部 legacy 方法作为兼容实现，后续新增能力应先落到对应门面。
+
+## BackendSecurityPolicy.kt 与 SensorAccess.kt
+
+- `BackendSecurityPolicy` 负责 HTTPS/loopback/Tailscale/RFC1918 origin 与 relay URL 校验，拒绝公网明文和自动重定向绕过。
+- `SensorAccess` 负责电量、步数和录音能力的 Android 读取；Flutter `DeviceController` 以 30 分钟周期上报电量/步数，不把屏幕正文写入长期记忆。
+
 ## MobileNotificationService.kt
 
 职责：
@@ -32,8 +41,8 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 - 中继收到 signal-only payload 时立即请求 `/mobile/poll?limit=20&after=<lastAckedSeq>` 拉取正文；
   旧式含 `content` payload 也会忽略正文并强制回源。连续 signal 会合并为串行 poll，不直接投递空消息。
 - 屏幕上下文上传开关开启时，每次周期补偿前将原生层过滤后的快照推送到 `/sensor/realtime`。
-- 周期补偿调用 `/mobile/activate` 后请求 `/mobile/poll?limit=20&after=<lastAckedSeq>`，不再使用
-  `wait=55`；消费并持久化 `seenMobileMessageIds` 后调用 `/mobile/ack`，ack 成功后才推进共享游标。
+- 周期补偿调用 `/mobile/activate` 后请求 `/mobile/poll?limit=20&after=<lastAckedSeq>`，不使用
+  `wait=55` 常驻长轮询；消费并持久化 `seenMobileMessageIds` 后调用 `/mobile/ack`，ack 成功后才推进共享游标。
 - 中继与轮询共用 generation 裁决和同一条 `message.id` 去重、behavior、通知闸门消费管线；
   中继接管时会打断在途轮询并丢弃旧 generation 结果，避免双重弹出。
 - 根据 behavior metadata 决定悬浮窗或普通通知。

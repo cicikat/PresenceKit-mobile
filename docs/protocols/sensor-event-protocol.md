@@ -208,3 +208,11 @@ Android 手机不能直接读取 Apple Watch 的健康数据。
 - 麦克风常开录音。
 - 自动上传截图识别。
 - 与支付/下单强绑定的自动点击硬件。
+
+## Emerald-mobile 当前实现（2026-07-13）
+
+- Android 无障碍层按需采集 `packageName`、`appLabel`、`className`、`windowTitle`、`visibleText`、`clickableText`，先过滤密码、验证码、支付/银行/医疗页面和敏感应用。
+- `DeviceController` 前台每 45 秒推送一次允许的屏幕上下文；独立上传开关默认关闭，正文只有在 `screenTextUploadAllowedPackages` 白名单内才上传。
+- `DeviceController` 每 30 分钟读取电量/步数并通过 `POST /sensor/realtime` 上报；权限未授予时不伪造步数。
+- 屏幕上下文属于 `ephemeral` 实时客观事实，手机端不把正文直接写入长期记忆；能力页调试采集与自动上传是两条独立路径。
+- Android 后台 `MobileNotificationService` 只在补偿 poll 前尝试上传过滤后的快照，上传失败不阻塞主动消息消费。

@@ -53,8 +53,7 @@ POST /auth/tokens {"label": "mobile-main", "profile": "mobile"}
 
 `mobile` profile 的 scope 集合：`chat`、`state.read`、`memory.read`、`activity`、`persona`、
 `sensor.write`（不含 `hardware` / `admin` / `ws.*`）。手机是最易丢失的设备，丢机不泄露危险模式
-开关、settings 写权限、硬件控制；对应端点全集与 scope 见本仓
-`cc-tasks/round-鉴权分层-scoped-tokens-移动端.md` §0。旧的 admin secret（legacy-admin）仍等价
+开关、settings 写权限、硬件控制；端点与 scope 的完整定义以同级 `Emerald-presence/docs/security.md` 为准，本仓不复制后端工单。旧的 admin secret（legacy-admin）仍等价
 `admin` scope，可以继续使用，但不建议——系统设置里的 token 输入弹窗已提示优先使用
 `emt_` 开头的 mobile profile token。
 

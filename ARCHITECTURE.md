@@ -17,7 +17,8 @@
 │ 主对话 / 资料 / 日记 / 花园    │
 │ 前台主动消息轮询 / 能力检查 / 设置 │
 └──────────────┬───────────────┘
-               │ legacy MethodChannel yexuan_memery/settings
+               │ MethodChannel presence_mobile/settings
+               │ SharedPreferences yexuan_memery (legacy storage)
                ▼
 ┌──────────────────────────────┐
 │ Android native layer          │
@@ -30,13 +31,13 @@
 
 ## 当前实现快照
 
-Flutter 入口是 64 行的 `lib/main.dart`：
+Flutter 入口 `lib/main.dart` 约 164 行：
 
 - `main()` 设置沉浸式系统 UI 后挂载 `MyApp`。
 - `MyApp` 使用 Material 3 和 serif 风格主题，首页是 `YexuanCompanionApp`。
 - `main.dart` 是薄入口，声明全局错误兜底和根 MaterialApp；历史 `part` 挂载已移除。
 - `pages/app_shell.dart` 中的 `YexuanCompanionApp` 负责组合根、路由和生命周期；连接、聊天、设备、Dream、花园、日记状态由 `controllers/` 持有。
-- `services/app_settings_store.dart` 封装 Android legacy `MethodChannel('yexuan_memery/settings')`。
+- `services/platform_settings_channel.dart` 持有 `MethodChannel('presence_mobile/settings')`；`services/app_settings_store.dart` 是兼容实现，五个设备门面负责按域调用。
 - `services/backend_client.dart` 直接用 `dart:io` `HttpClient` 调后端 HTTP。
 - `models/` 保存数据/config 定义，`widgets/` 按聊天、能力、设置、日记、花园等领域保存 Flutter UI。
 
@@ -46,7 +47,7 @@ Android 原生入口是 `MainActivity.kt`：
 
 - 当前 Android namespace/applicationId 为 `com.presencekit.mobile`，Dart package 为
   `presencekit_mobile`。Kotlin 源码位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
-- `yexuan_memery/settings` MethodChannel 与 `SharedPreferences("yexuan_memery")` 仅作为历史兼容
+- `presence_mobile/settings` MethodChannel 与 `SharedPreferences("yexuan_memery")` 仅作为历史兼容契约；前者是当前 channel 名，后者是历史存储名
   契约保留，不代表当前项目名；未经数据迁移不得改名。
 
 - 持久化后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、头像和后台通知开关到 legacy `SharedPreferences("yexuan_memery")`。
@@ -145,7 +146,9 @@ YexuanAccessibilityService
 | `lib/main.dart` | Flutter 薄入口、根 MaterialApp |
 | `lib/pages/app_shell.dart` | 组合根、顶层路由、生命周期和跨域 UI 协调 |
 | `lib/models/` | App 数据/config、能力状态和屏幕上下文模型 |
-| `lib/services/app_settings_store.dart` | Android MethodChannel、本机设置、权限和原生能力封装 |
+| `lib/services/platform_settings_channel.dart` | 共享 Android `presence_mobile/settings` 通道 |
+| `lib/services/app_settings_store.dart` | legacy MethodChannel 方法的兼容实现 |
+| `lib/services/device_services.dart` | Settings/Voice/Device/Screen/Relay 五个域门面 |
 | `lib/services/backend_client.dart` | 后端 HTTP、上传、mobile channel 和 sensor API |
 | `lib/widgets/` | 按领域拆分的页面展示和可复用 Flutter 组件 |
 | `android/app/src/main/AndroidManifest.xml` | 权限、Activity、Service、Accessibility、DeviceAdmin 声明 |
@@ -165,3 +168,14 @@ YexuanAccessibilityService
 - 外卖/购物悬浮窗仍有硬编码示例订单内容，容易误导真实行为。
 
 完整列表见 `docs/known-issues.md`。
+
+## Controller 与页面状态边界
+
+| Controller | 当前拥有的状态/副作用 | 页面入口 |
+|---|---|---|
+| `ConnectionController` | backend URL、token、owner id、可信 origin、中继配置、BackendClient 重建 | 节点设置/能力检查 |
+| `ChatController` | 历史双源、分页、发送、附件、去重、mobile poll/ack、聊天滚动 | `ChatScene` 直接监听 |
+| `DeviceController` | 锁屏/悬浮窗/购物、语音、屏幕上下文、45 秒屏幕与 30 分钟传感器 Timer | 能力检查/输入框 |
+| `DreamController` / `GardenController` / `DiaryController` | 各自页面状态与刷新/轮询 | 对应页面直接监听 |
+
+`app_shell.dart` 仍是组合根，不得新增领域字段、Timer 或成组业务方法；当前未下沉的 profile、theme、capability/settings、附件和弹窗协调列为工单 07 后续结构债。

@@ -48,14 +48,14 @@
 **位置**：`lib/services/backend_client.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt`、
 `docs/backend/integration.md`
 
-后端 SEC-AUTH-2（`Emerald-presence/cc-tasks/21-鉴权分层-scoped-tokens.md`）落地后，手机端应
+后端 SEC-AUTH-2 落地后，手机端应
 换装 `mobile` profile scoped token（`emt_` 开头；scope：chat/state.read/memory.read/activity/
 persona/sensor.write，不含 hardware/admin），不再需要旧的全权 admin secret。存储键、
 MethodChannel、prefs 结构不变，只是填入的凭证值收敛为最小权限 token；旧 admin secret 仍可用
 但不建议。`GET /system/data-path` 需要 admin scope，mobile token 下预期 403，能力检查页已识别
 为中性状态而非故障。
 
-**状态**：已修复（手机端侧）。见 `cc-tasks/round-鉴权分层-scoped-tokens-移动端.md`。
+**状态**：已修复（手机端侧）。现行 token、scope 和错误码说明见 `docs/backend/integration.md`；后端完整契约在同级 `Emerald-presence/docs/security.md`。
 
 ## 已修复：Android 后台常驻长轮询
 
@@ -70,7 +70,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 ## 已修复：无障碍屏幕上下文本机敏感过滤
 
-**位置**：`lib/main.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/YexuanAccessibilityService.kt`、`MobileNotificationService.kt`
+**位置**：`lib/controllers/device_controller.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/YexuanAccessibilityService.kt`、`MobileNotificationService.kt`
 
 原生采集层现在会过滤密码输入框，验证码、银行、支付、医疗类页级关键词，以及敏感 App/包名。屏幕上下文上传使用独立开关 `screenContextUploadEnabled`，默认关闭；正文上传另使用默认空的 App 白名单，未勾选 App 只上报包名/App 名。
 
@@ -80,7 +80,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 ## 已修复：公网 HTTP 和自动重定向可能绕过 origin 边界
 
-**位置**：`lib/main.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/BackendSecurityPolicy.kt`、`MobileNotificationService.kt`
+**位置**：`lib/controllers/connection_controller.dart`、`lib/services/backend_client.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/BackendSecurityPolicy.kt`、`MobileNotificationService.kt`
 
 自定义明文 origin 现在只允许用户确认过的 RFC1918 私网精确 IPv4；公网 HTTP 即使曾保存过也不会放行。loopback、Tailscale `100.64.0.0/10` 和 HTTPS 仍可使用。
 
@@ -88,7 +88,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 ## 已修复：鉴权 token 硬编码
 
-**位置**：`lib/main.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt`
+**位置**：`lib/controllers/connection_controller.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt`
 
 访问凭证已从 Flutter 和 Android 原生源码移除。首次启动时由用户手动填写，并保存到 legacy `SharedPreferences("yexuan_memery", MODE_PRIVATE)`；后台服务每轮重新读取。
 
@@ -98,7 +98,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 ## 已修复：`/upload/ingest` 请求未附带 `Authorization` header
 
-**位置**：`lib/main.dart` `BackendClient.uploadFiles()`
+**位置**：`lib/services/backend_client.dart` `BackendClient.uploadFiles()`
 
 `BackendClient.uploadFile(s)` 已增加 token 参数，`/upload/ingest` 请求会设置 `Authorization: Bearer <token>`。
 
@@ -118,23 +118,17 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 **位置**：`lib/main.dart` → 已拆分
 
-原 8k+ 行 `main.dart` 已完成拆分：`lib/pages/app_shell.dart`（主状态/页面）、`lib/services/backend_client.dart`（HTTP 封装）、`lib/models/app_models.dart`（数据模型）、`lib/widgets/*.dart`（UI 组件）。现 `main.dart` 仅约 64 行入口。
+原 8k+ 行 `main.dart` 已完成拆分：`lib/pages/app_shell.dart`（主状态/页面）、`lib/services/backend_client.dart`（HTTP 封装）、`lib/models/app_models.dart`（数据模型）、`lib/widgets/*.dart`（UI 组件）。现 `main.dart` 仅约 164 行入口。
 
 **状态**：已修复。
 
 ## 已修复：`foreground_mobile_delivery_contract_test.dart` 覆写签名
 
-**位置**：`test/foreground_mobile_delivery_contract_test.dart:94`、
-`lib/services/backend_client.dart` `BackendClient.pollMobile()`
+**位置**：`test/foreground_mobile_delivery_contract_test.dart`、`lib/services/backend_client.dart`
 
-`pollMobile()` 已带 `waitSeconds` 具名参数，但该测试文件里的 `_ForegroundBackendClient`
-覆写签名缺少这个参数，导致 `invalid_override` 编译错误，使这个测试文件整体加载失败
-（`flutter analyze` / `flutter test` 均可见）。发现于施工
-`cc-tasks/round-鉴权分层-scoped-tokens-移动端.md` 时跑 `flutter test` 全量回归，与本轮鉴权改动
-无关，本轮未修复。
+`BackendClient.pollMobile()` 的 `waitSeconds` 具名参数已同步到测试替身 `_ForegroundBackendClient`，不再产生 `invalid_override`，该问题不会再阻塞测试套件加载。
 
-**建议**：给 `_ForegroundBackendClient.pollMobile` 补上 `int waitSeconds = 0` 参数（可忽略取值）
-使其匹配基类签名。
+**状态**：已修复。当前全量 `flutter test` 的阻塞原因是下方独立的 tester 回环连接故障。
 
 ## P2：本机 Flutter tester 在加载测试套件前断开
 
@@ -146,11 +140,13 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 **影响**：新增 widget test 可以通过静态分析编译，但当前无法在这台机器上实际执行断言。
 
-**2026-07-13 复验**：10 个测试文件均在断言执行前失败，示例随机端口为 `127.0.0.1:57419`、`52702`、`57430`；错误仍为 `Connection closed before full header was received`。`flutter analyze` 通过，Debug APK 构建成功。`r`n`r`n**建议**：排查本机回环连接、防火墙、安全软件与 Flutter SDK tester 进程；修复后重新运行完整测试。
+**2026-07-13 复验**：10 个测试文件均在断言执行前失败，示例随机端口为 `127.0.0.1:57419`、`52702`、`57430`；错误仍为 `Connection closed before full header was received`。`flutter analyze` 通过，Debug APK 构建成功。
+
+**建议**：排查本机回环连接、防火墙、安全软件与 Flutter SDK tester 进程；修复后重新运行完整测试。
 
 ## 已修复：系统设置内更换 Token 触发 Flutter 路由断言
 
-**位置**：`lib/main.dart` `_openSystemSettings()` / `_openAdminTokenSettings()`
+**位置**：`lib/pages/app_shell.dart` 系统设置路由与 token 弹窗
 
 Token 弹窗保存后已经通过父 State 更新 `_adminToken`，系统设置底部页仍额外调用
 `sheetSetState()`，导致弹窗关闭与底部页重建叠在同一帧，触发
@@ -158,7 +154,7 @@ Token 弹窗保存后已经通过父 State 更新 `_adminToken`，系统设置�
 
 ## 已修复：手机主对话回复双发
 
-**位置**：`lib/main.dart` `_sendToBackend()` / `_pollMobile()`
+**位置**：`lib/controllers/chat_controller.dart` `sendMessage()` / `pollMobile()`
 
 手机主对话改用 `/desktop/chat` 后，后端同步响应与 mobile channel 可能携带同一条助手回复。手机前台此前会分别追加两次，而桌面客户端已有自己的同步响应 / WebSocket 去重逻辑，因此只有手机出现双发。现已为 Flutter 前台增加 45 秒短时回复指纹去重，同一回复无论先从同步响应还是 `/mobile/poll` 到达，都只显示一次。
 

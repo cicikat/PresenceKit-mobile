@@ -17,12 +17,12 @@
 当前实际状态：
 
 - Flutter 主界面已经实现主对话、资料、日记、花园、能力检查、后端节点设置和主题编辑。
-- `lib/main.dart` 已完成重构，现在只有约 64 行入口代码；之前提到的 8k+ 行已拆分完毕。
+- `lib/main.dart` 已完成重构，现在只有约 164 行入口代码；之前提到的 8k+ 行已拆分完毕。
 - `lib/pages/app_shell.dart` 当前约 1499 行，已迁出连接、聊天、设备、Dream、Garden、Diary 的领域状态与 Timer；仍保留组合根、路由以及 profile/theme/capability/settings 等 UI 协调。结构债状态见 `cc-tasks/07-app_shell结构债审计与拆分.md`。
 - `lib/pages/chat_page.dart`、`lib/widgets/api_service.dart`、`lib/services/message_bubble.dart` **已废弃/不再使用**，上述路径已不存在或为空壳。
 - 主对话发送消息与 Emerald-client 桌面端一致，走 `POST /desktop/chat`；聊天历史只读 `/chat-log/*`。
 - Dream 是独立页面和消息流，走 `GET /dream/state`、`POST /dream/enter|chat|exit`。
-- 主动消息前台走 `GET /mobile/poll` 每 5 秒轮询；后台走 Android `MobileNotificationService` 长轮询。
+- 主动消息前台走 `GET /mobile/poll` 每 5 秒轮询；后台由 Android `MobileNotificationService` 订阅 ntfy SSE signal，并在中继断线时用 `AlarmManager` 做非阻塞 poll 补偿。
 - Android 原生侧负责通知、前台服务、悬浮窗、无障碍屏幕上下文、设备管理器锁屏和文件/图片选择。
 - 多端 sensor 协议草案已归档到 `docs/protocols/sensor-event-protocol.md`。
 - 鉴权已从单一 admin secret 升级为 scoped token（SEC-AUTH-2）：本 app 应使用后端签发的
@@ -62,7 +62,9 @@ lib/
   controllers/                      # connection/chat/device/dream/garden/diary 领域控制器
   pages/app_shell.dart              # 组合根/路由/生命周期协调，禁止继续增加领域状态
   services/backend_client.dart      # 所有 HTTP 封装，约 507 行
-  services/app_settings_store.dart  # 本地持久化
+  services/app_settings_store.dart  # legacy MethodChannel 兼容实现
+  services/platform_settings_channel.dart # 共享 presence_mobile/settings 通道
+  services/device_services.dart      # 五个设备域门面
   widgets/capability_widgets.dart   # 能力检查页
   widgets/chat_widgets.dart
   widgets/common_widgets.dart
@@ -77,7 +79,9 @@ android/app/src/main/
   AndroidManifest.xml
   kotlin/com/presencekit/mobile/
     MainActivity.kt                 # MethodChannel、权限、文件选择、服务入口
-    MobileNotificationService.kt    # 后台长轮询和通知闸门
+    BackendSecurityPolicy.kt       # 后端/中继 origin 安全校验
+    SensorAccess.kt                 # 电量、步数和录音能力
+    MobileNotificationService.kt    # 后台中继 signal/poll 补偿和通知闸门
     FloatingBubbleService.kt        # 悬浮窗、锁屏确认、订单确认
     YexuanAccessibilityService.kt   # 屏幕上下文采集、购物车辅助点击
     YexuanDeviceAdminReceiver.kt    # 设备管理器锁屏 receiver
@@ -111,7 +115,7 @@ docs/
 1. 后端仍是业务真值。手机端只展示、输入、上报客观上下文和执行用户确认后的本机动作。
 2. 涉及锁屏、悬浮窗、无障碍辅助点击、截图/OCR/支付等高风险能力时，必须保留明确授权和确认。
 3. 屏幕上下文默认按实时/短期上下文处理，不要在手机端主动写长期记忆。
-4. 改 legacy `MethodChannel('yexuan_memery/settings')` 时，Dart 的 `AppSettingsStore` 和 Android `MainActivity.kt` 必须同步。
+4. 改 `MethodChannel('presence_mobile/settings')` 或 legacy `SharedPreferences('yexuan_memery')` 时，Dart 的 `AppSettingsStore`、`PlatformSettingsChannel` 和 Android `MainActivity.kt` 必须同步；`yexuan_memery` 是历史存储名，不是当前 channel 名。
 5. 改 mobile channel 字段时，同时更新 `docs/backend/integration.md` 和 `docs/protocols/mobile-channel.md`。
 6. 改 Android 权限、前台服务或无障碍行为时，同步更新 `docs/android/native-capabilities.md`。
 7. 发现未修问题先记到 `docs/known-issues.md`，标明影响、证据和建议方向。
