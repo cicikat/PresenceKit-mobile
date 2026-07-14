@@ -168,6 +168,9 @@ class ChatScene extends StatelessWidget {
                             profileAvatarBytes: profileAvatarBytes,
                             text: m.text,
                             animate: m.animate,
+                            onRevealStarted: m.animate
+                                ? () => controller.markRevealStarted(m)
+                                : null,
                           ),
                   );
                 },
@@ -462,6 +465,7 @@ class HimMessage extends StatelessWidget {
     this.tagVariant = 'solid',
     this.highlight = false,
     this.animate = false,
+    this.onRevealStarted,
   });
 
   final YxPalette c;
@@ -474,6 +478,7 @@ class HimMessage extends StatelessWidget {
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
   final bool animate;
+  final VoidCallback? onRevealStarted;
 
   @override
   Widget build(BuildContext context) {
@@ -535,6 +540,7 @@ class HimMessage extends StatelessWidget {
                       text: text,
                       animate: animate,
                       style: serif(c, prefs.fontSize),
+                      onRevealStarted: onRevealStarted,
                     ),
                   ),
                 ),
@@ -553,11 +559,13 @@ class AnimatedRevealText extends StatefulWidget {
     required this.text,
     required this.animate,
     required this.style,
+    this.onRevealStarted,
   });
 
   final String text;
   final bool animate;
   final TextStyle style;
+  final VoidCallback? onRevealStarted;
 
   @override
   State<AnimatedRevealText> createState() => _AnimatedRevealTextState();
@@ -568,19 +576,24 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
   // Mirrors Emerald-client/src/windows/room/useVnPresenter.ts (40 CPS).
   static const _revealCps = 40.0;
   late final AnimationController _controller;
+  late final bool _animate;
   bool _skipped = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this);
-    if (widget.animate) {
+    _animate = widget.animate;
+    if (_animate) {
       _controller.duration = Duration(
         milliseconds: (widget.text.characters.length / _revealCps * 1000)
             .round()
             .clamp(1, 60000),
       );
       _controller.forward();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onRevealStarted?.call();
+      });
     } else {
       _controller.value = 1;
     }
@@ -603,10 +616,10 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
       builder: (context, _) {
         final count = (_controller.value * widget.text.characters.length)
             .floor();
-        final visible = _skipped || !widget.animate
+        final visible = _skipped || !_animate
             ? widget.text
             : widget.text.characters.take(count).toString();
-        final cursor = widget.animate && !_skipped && _controller.value < 1
+        final cursor = _animate && !_skipped && _controller.value < 1
             ? '▍'
             : '';
         return Text('$visible$cursor', style: widget.style);

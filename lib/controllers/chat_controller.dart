@@ -108,6 +108,16 @@ class ChatController extends ChangeNotifier {
     unawaited(_send(value));
   }
 
+  void markRevealStarted(ChatMessage message) {
+    final index = sent.indexOf(message);
+    if (index < 0 || !sent[index].animate) return;
+    sent[index] = ChatMessage(
+      role: message.role,
+      text: message.text,
+      time: message.time,
+    );
+  }
+
   Future<void> _send(String text) async {
     try {
       final response = await _backend().sendChat(text, token: _accessToken!);
