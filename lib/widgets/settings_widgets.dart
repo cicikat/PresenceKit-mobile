@@ -6,13 +6,14 @@ import '../models/app_models.dart';
 
 import '../widgets/common_widgets.dart';
 import '../widgets/settings_editor_widgets.dart';
+
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
     required this.c,
     required this.dark,
-    required this.customThemeEnabled,
-    required this.hasCustomTheme,
+    required this.activeThemePresetName,
+    required this.themePresetCount,
     required this.prefs,
     required this.profileDisplayName,
     required this.profileAvatarBytes,
@@ -21,8 +22,7 @@ class SettingsPage extends StatelessWidget {
     required this.settingsBusy,
     required this.settingsError,
     required this.onTheme,
-    required this.onCustomTheme,
-    required this.onEditCustomTheme,
+    required this.onManageThemes,
     required this.onPrefs,
     required this.onEditProfileName,
     required this.onImportProfileAvatar,
@@ -48,8 +48,8 @@ class SettingsPage extends StatelessWidget {
 
   final YxPalette c;
   final bool dark;
-  final bool customThemeEnabled;
-  final bool hasCustomTheme;
+  final String? activeThemePresetName;
+  final int themePresetCount;
   final YxPrefs prefs;
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
@@ -58,8 +58,7 @@ class SettingsPage extends StatelessWidget {
   final bool settingsBusy;
   final String? settingsError;
   final ValueChanged<bool> onTheme;
-  final VoidCallback onCustomTheme;
-  final VoidCallback onEditCustomTheme;
+  final VoidCallback onManageThemes;
   final ValueChanged<YxPrefs> onPrefs;
   final VoidCallback onEditProfileName;
   final VoidCallback onImportProfileAvatar;
@@ -208,9 +207,9 @@ class SettingsPage extends StatelessWidget {
               SettingsRow(
                 c: c,
                 title: '外观主题',
-                subtitle: hasCustomTheme
-                    ? 'paper · dark · 自定义色盘'
-                    : 'paper · dark · 可新建自定义色盘',
+                subtitle: activeThemePresetName == null
+                    ? '信纸 · 夜间 · $themePresetCount 个颜色预设'
+                    : '当前：$activeThemePresetName · 共 $themePresetCount 个预设',
                 child: Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -218,30 +217,20 @@ class SettingsPage extends StatelessWidget {
                   children: [
                     ChoiceChip(
                       label: const Text('信纸'),
-                      selected: !dark && !customThemeEnabled,
+                      selected: !dark && activeThemePresetName == null,
                       onSelected: (_) => onTheme(false),
                     ),
                     ChoiceChip(
                       label: const Text('夜间'),
-                      selected: dark && !customThemeEnabled,
+                      selected: dark && activeThemePresetName == null,
                       onSelected: (_) => onTheme(true),
                     ),
-                    ChoiceChip(
-                      avatar: Icon(
-                        Icons.palette_outlined,
-                        size: 16,
-                        color: customThemeEnabled ? c.characterOn : c.ink2,
+                    OutlinedButton.icon(
+                      onPressed: onManageThemes,
+                      icon: const Icon(Icons.palette_outlined, size: 17),
+                      label: Text(
+                        activeThemePresetName ?? '颜色预设 ($themePresetCount)',
                       ),
-                      label: Text(hasCustomTheme ? '自定义' : '新建自定义'),
-                      selected: customThemeEnabled,
-                      onSelected: (_) => onCustomTheme(),
-                    ),
-                    YxIconButton(
-                      c: c,
-                      icon: Icons.tune_rounded,
-                      onPressed: onEditCustomTheme,
-                      tooltip: hasCustomTheme ? '编辑自定义色盘' : '创建自定义色盘',
-                      size: 30,
                     ),
                   ],
                 ),

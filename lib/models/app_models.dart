@@ -178,6 +178,28 @@ class YxPrefs {
 }
 
 class YxPalette {
+  static const colorKeys = <String>[
+    'surface',
+    'surfaceSoft',
+    'surfaceDeep',
+    'surfaceEdge',
+    'ink1',
+    'ink2',
+    'ink3',
+    'ink4',
+    'character',
+    'characterDeep',
+    'characterSoft',
+    'characterOn',
+    'danger',
+    'warn',
+    'ok',
+    'send',
+    'userBubble',
+    'userBubbleText',
+    'scrim',
+  ];
+
   const YxPalette({
     required this.surface,
     required this.surfaceSoft,
@@ -265,7 +287,11 @@ class YxPalette {
   }
 
   String toJsonString() {
-    return jsonEncode({
+    return jsonEncode(toArgbMap());
+  }
+
+  Map<String, int> toArgbMap() {
+    return {
       'surface': surface.toARGB32(),
       'surfaceSoft': surfaceSoft.toARGB32(),
       'surfaceDeep': surfaceDeep.toARGB32(),
@@ -285,7 +311,16 @@ class YxPalette {
       'userBubble': userBubble.toARGB32(),
       'userBubbleText': userBubbleText.toARGB32(),
       'scrim': scrim.toARGB32(),
-    });
+    };
+  }
+
+  Map<String, String> toHexMap() {
+    return toArgbMap().map(
+      (key, value) => MapEntry(
+        key,
+        '#${value.toRadixString(16).padLeft(8, '0').toUpperCase()}',
+      ),
+    );
   }
 
   static YxPalette? fromJsonString(String? raw, {YxPalette? fallback}) {
@@ -293,6 +328,21 @@ class YxPalette {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) return null;
+      return fromColorMap(decoded, fallback: fallback);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static YxPalette? fromColorMap(
+    Map<String, dynamic> decoded, {
+    YxPalette? fallback,
+    bool requireAll = false,
+  }) {
+    try {
+      if (requireAll && colorKeys.any((key) => !decoded.containsKey(key))) {
+        return null;
+      }
       final base = fallback ?? YxPalette.light;
       return base.copyWith(
         surface: _colorFromJson(decoded['surface'], base.surface),
@@ -330,6 +380,15 @@ class YxPalette {
   }
 
   static Color _colorFromJson(Object? raw, Color fallback) {
+    if (raw is String) {
+      final normalized = raw.trim().replaceFirst('#', '');
+      if (RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(normalized)) {
+        return Color(int.parse('FF$normalized', radix: 16));
+      }
+      if (RegExp(r'^[0-9a-fA-F]{8}$').hasMatch(normalized)) {
+        return Color(int.parse(normalized, radix: 16));
+      }
+    }
     final value = raw is int ? raw : int.tryParse(raw?.toString() ?? '');
     if (value == null) return fallback;
     return Color.fromARGB(

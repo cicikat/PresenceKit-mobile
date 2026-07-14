@@ -9,6 +9,7 @@ import '../controllers/device_controller.dart';
 import '../controllers/dream_controller.dart';
 import '../controllers/diary_controller.dart';
 import '../controllers/garden_controller.dart';
+import '../controllers/theme_controller.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
 import '../models/capability_status.dart';
@@ -29,6 +30,7 @@ import '../widgets/group_widgets.dart';
 import '../widgets/profile_widgets.dart';
 import '../widgets/settings_editor_widgets.dart';
 import '../widgets/settings_widgets.dart';
+import '../widgets/theme_widgets.dart';
 
 class YexuanCompanionApp extends StatefulWidget {
   const YexuanCompanionApp({
@@ -50,7 +52,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   Timer? _sensorPushTimer;
   AppRoute _route = AppRoute.chat;
   bool _dark = false;
-  bool _customThemeEnabled = false;
   bool _backgroundNotifications = true;
   bool _backendSyncStarted = false;
   bool _loadingPromptAssets = false;
@@ -74,15 +75,15 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
   late final GardenController _gardenController;
   late final DiaryController _diaryController;
   YxPrefs _prefs = const YxPrefs();
-  YxPalette? _customPalette;
+  late final ThemeController _themeController;
 
   BackendClient get _backend => _connectionController.backend;
   String get _backendBaseUrl => _connectionController.baseUrl;
   String get _adminToken => _connectionController.token;
   String get _ownerUserId => _connectionController.ownerUserId;
   YxPalette get c {
-    final custom = _customPalette;
-    if (_customThemeEnabled && custom != null) return custom;
+    final custom = _themeController.activePalette;
+    if (custom != null) return custom;
     return _dark ? YxPalette.dark : YxPalette.light;
   }
 
@@ -118,6 +119,12 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     super.initState();
     final settingsStore = widget.settingsStore;
     _settings = SettingsStore(settingsStore);
+    _themeController = ThemeController(
+      loadPersisted: _settings.loadCustomThemePalette,
+      savePersisted: _settings.saveCustomThemePalette,
+    );
+    _themeController.addListener(_handleThemeChanged);
+
     _deviceService = DeviceControlService(settingsStore);
     _screenService = ScreenSensorService(settingsStore);
     _relayService = RelayStatusService(settingsStore);
@@ -160,12 +167,10 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     await Future.wait([
       _connectionController.restore(),
       _deviceController.restore(),
+      _themeController.restore(),
     ]);
     final storedName = await _settings.loadProfileName();
     final storedAvatar = await _settings.loadAvatar();
-    final storedPalette = YxPalette.fromJsonString(
-      await _settings.loadCustomThemePalette(),
-    );
     final backgroundNotifications = await _settings
         .loadBackgroundNotificationsEnabled();
     if (mounted) {
@@ -173,8 +178,6 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
         _backgroundNotifications = backgroundNotifications;
         _profileNameOverride = storedName;
         _profileAvatarBytes = storedAvatar;
-        _customPalette = storedPalette;
-        _customThemeEnabled = storedPalette != null;
       });
     }
     if (!mounted) return;
@@ -217,7 +220,15 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     _deviceController.dispose();
     _chatController.dispose();
     _dreamController.dispose();
+    _themeController.removeListener(_handleThemeChanged);
+    _themeController.dispose();
     super.dispose();
+  }
+
+  void _handleThemeChanged() {
+    if (!mounted) return;
+    setState(() {});
+    _applySystemUi();
   }
 
   void _applySystemUi() {
@@ -422,37 +433,14 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
 
   Future<void> _changeScreenTextUploadAllowedPackages(Set<String> values) =>
       _deviceController.saveAllowedPackages(values);
-  Future<void> _saveCustomPalette(YxPalette palette) async {
-    setState(() {
-      _customPalette = palette;
-      _customThemeEnabled = true;
-    });
-    _applySystemUi();
-    await _settings.saveCustomThemePalette(palette.toJsonString());
-  }
-
-  Future<void> _deleteCustomPalette() async {
-    setState(() {
-      _customPalette = null;
-      _customThemeEnabled = false;
-    });
-    _applySystemUi();
-    await _settings.deleteCustomThemePalette();
-  }
-
-  Future<void> _openCustomThemeEditor() async {
+  Future<void> _openThemePresetManager() async {
     await showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => ThemePaletteSheet(
-        c: c,
-        initial: _customPalette ?? c,
-        canDelete: _customPalette != null,
-        onSave: _saveCustomPalette,
-        onDelete: _deleteCustomPalette,
-      ),
+      builder: (context) =>
+          ThemePresetManagerSheet(c: c, controller: _themeController),
     );
   }
 
@@ -1132,35 +1120,22 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
             }
 
             void updateTheme(bool dark) {
-              sheetSetState(() {
-                _dark = dark;
-                _customThemeEnabled = false;
-              });
+              sheetSetState(() => _dark = dark);
+              unawaited(_themeController.select(null));
               setState(() {});
               _applySystemUi();
             }
 
-            void enableCustomTheme() {
-              if (_customPalette == null) {
-                Navigator.pop(context);
-                unawaited(_openCustomThemeEditor());
-                return;
-              }
-              sheetSetState(() => _customThemeEnabled = true);
-              setState(() {});
-              _applySystemUi();
-            }
-
-            void editCustomTheme() {
+            void manageThemes() {
               Navigator.pop(context);
-              unawaited(_openCustomThemeEditor());
+              unawaited(_openThemePresetManager());
             }
 
             return SettingsPage(
               c: c,
               dark: _dark,
-              customThemeEnabled: _customThemeEnabled,
-              hasCustomTheme: _customPalette != null,
+              activeThemePresetName: _themeController.activePreset?.name,
+              themePresetCount: _themeController.presets.length,
               prefs: _prefs,
               profileDisplayName: _profileDisplayName,
               profileAvatarBytes: _profileAvatarBytes,
@@ -1174,8 +1149,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
               settingsError:
                   _promptAssetsError ?? _dreamController.settingsError,
               onTheme: updateTheme,
-              onCustomTheme: enableCustomTheme,
-              onEditCustomTheme: editCustomTheme,
+              onManageThemes: manageThemes,
               onPrefs: updatePrefs,
               onEditProfileName: _editProfileName,
               onImportProfileAvatar: _importProfileAvatar,
