@@ -7,6 +7,7 @@
 | `overview/project-snapshot.md` | 当前项目状态、目录和功能边界 |
 | `roadmap-notes.md` | 待梳理的路线与后续议题 |
 | `mobile/flutter-structure.md` | Flutter 单页应用、状态、UI 组件和拆分建议 |
+| `mobile/color-mods.md` | 多颜色预设、浏览器导出和 `mods/` 打包契约 |
 | `mobile/background-notification-design.md` | 后台通知与前台服务的设计说明 |
 | `android/native-capabilities.md` | Android 原生权限、MethodChannel、服务和安全边界 |
 | `backend/integration.md` | 后端接口、鉴权、轮询、数据流 |

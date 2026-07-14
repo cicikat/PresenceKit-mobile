@@ -16,6 +16,7 @@
 | `lib/controllers/dream_controller.dart` | Dream state/settings/stats/messages 与轮询 |
 | `lib/controllers/garden_controller.dart` | 花园状态与刷新 Timer |
 | `lib/controllers/diary_controller.dart` | 日记列表和详情加载 |
+| `lib/controllers/theme_controller.dart` | 多颜色预设、旧数据迁移、`mods/` 资产加载、Web localStorage 与导出 |
 | `lib/services/backend_client.dart` | 后端 HTTP 请求 |
 | `lib/services/device_services.dart` | 五个设备域门面 |
 | `lib/services/app_settings_store.dart` | legacy MethodChannel 兼容实现；由域门面包装，不再由 app shell 直接调用 |

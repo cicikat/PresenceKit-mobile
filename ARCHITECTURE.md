@@ -177,5 +177,6 @@ YexuanAccessibilityService
 | `ChatController` | 历史双源、分页、发送、附件、去重、mobile poll/ack、聊天滚动 | `ChatScene` 直接监听 |
 | `DeviceController` | 锁屏/悬浮窗/购物、语音、屏幕上下文、45 秒屏幕与 30 分钟传感器 Timer | 能力检查/输入框 |
 | `DreamController` / `GardenController` / `DiaryController` | 各自页面状态与刷新/轮询 | 对应页面直接监听 |
+| `ThemeController` | 多颜色预设、旧单色盘迁移、内置 mod、Web 持久化与导出 | 设置页颜色预设管理器 |
 
 `app_shell.dart` 仍是组合根，不得新增领域字段、Timer 或成组业务方法；当前未下沉的 profile、theme、capability/settings、附件和弹窗协调列为工单 07 后续结构债。
