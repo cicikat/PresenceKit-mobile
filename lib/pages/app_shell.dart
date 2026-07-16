@@ -421,7 +421,9 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
     setState(() => _backgroundNotifications = enabled);
     await _settings.saveBackgroundNotificationsEnabled(enabled);
     if (!mounted) return;
-    if (!enabled) {
+    if (enabled) {
+      await _deviceService.requestNotificationPermission();
+    } else {
       await _deviceService.stopBackgroundNotifications();
     }
   }

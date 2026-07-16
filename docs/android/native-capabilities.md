@@ -8,7 +8,7 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 
 - 注册兼容旧安装契约的 `MethodChannel('presence_mobile/settings')`；Dart 侧通过 `PlatformSettingsChannel` 共享该通道。`yexuan_memery` 仅是历史 `SharedPreferences` 存储名，不是当前 channel 名。
 - 读写兼容键 `SharedPreferences("yexuan_memery")`：后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、后台通知开关、头像。该存储名有意不随项目改名。
-- 请求和检查通知、悬浮窗、设备管理器、无障碍权限。
+- 检查通知、悬浮窗、设备管理器、无障碍权限；通知权限只在能力检查页显式请求，或用户首次开启后台通知时请求。
 - 检查并引导用户授予电池优化豁免；能力页同时提供常见 OEM 自启动/后台白名单路径。
 - 启动/停止 `MobileNotificationService` 和 `FloatingBubbleService`。
 - 处理图片、单文件、多图片选择。
@@ -16,7 +16,7 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 
 生命周期：
 
-- `onCreate()` 请求通知权限并进入沉浸式全屏。
+- `onCreate()` 只进入沉浸式全屏，不主动弹通知权限；权限请求由能力检查页或后台通知开关触发。
 - `onResume()` 无条件停止原生服务和中继订阅，由 Flutter 前台每 5 秒轮询。
 - `onStop()` 只有在后台通知开关开启、访问凭证存在且后端 origin 可信时，才启动后台前台服务。
 - `isBackgroundNotificationServiceRunning` 直接读取 `MobileNotificationService.isServiceRunning`
