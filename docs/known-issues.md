@@ -2,6 +2,21 @@
 
 > 修复前请先对照代码确认问题仍存在；修复后在本文件改状态或移到已修复区。
 
+## 当前仍存在（2026-07-16 清盘后权威清单）
+
+- **ntfy 中继未配置** — `open`（用户动作）。起 ntfy，后端填写 `relay_*`，App 填同组地址，再用真机手动 publish 验收；代码侧无可替代动作。
+- **release keystore** — `post-v0.1`（用户动作）。只在准备对外发布时建立私有 keystore，本工单不生成或落盘密钥。
+- **设备重启后后台通道不自恢复** — `observe`。自用阶段接受，能力页能看见失活；要根治时另开 boot receiver 工单。
+- **`app_shell.dart` 剩余结构债** — `open`。下一步按 profile、theme、capability/settings、附件与弹窗协调继续拆分，保持领域状态不回流。
+- **Flutter tester 回环故障** — `open`（本机用户动作）。排查防火墙/安全软件后再跑全量 `flutter test`；当前只把 `flutter analyze` 作为本工单静态验收。
+
+本轮已关闭：外卖/购物悬浮窗硬编码示例订单已改为中性确认且不展示虚构商品/金额；通知权限不再在 `onCreate()` 弹出，改由能力检查页或首次开启后台通知触发。
+
+## 历史快照（已由上方权威清单覆盖）
+
+<details>
+<summary>展开查看清盘前原始条目与修复背景</summary>
+
 ## P0：后台弹窗通知从未触发 — 根因是后端中继（ntfy）从未配置
 
 **位置**：后端 `Emerald-presence/config.yaml`（缺 `relay_base_url/relay_topic`）、
@@ -236,3 +251,5 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 **状态（2026-07-13）**：`part` 已移除；Connection、Chat、Device、Dream、Garden、Diary controller 已建立并接线，Chat/Dream/Garden/Diary 页面直接监听 controller；app shell 不再持有这些领域的 Timer 和成组业务状态。`AppSettingsStore` 已由五个域门面包装，app shell 无直接方法调用。
 
 **剩余**：app shell 约 1499 行，仍包含 profile、theme、capability/settings、附件选择和弹窗协调，尚未达到工单 07 的 `<=600` 行长期目标。影响主要是可维护性，不改变当前接口和安全闸门。
+
+</details>
