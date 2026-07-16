@@ -264,19 +264,12 @@ class FloatingBubbleService : Service() {
 
     private fun addOrderContent(root: LinearLayout, target: String) {
         val label = if (target == "taobao") "\u6dd8\u5b9d" else "\u7f8e\u56e2"
-        addTagRow(root, "ACTION \u00b7 \u5e2e\u4f60\u4e0b\u5355", warn)
-        addTitle(root, "\u4ed6\u5df2\u66ff\u4f60\u9009\u597d\u8fd9\u4e00\u5355 \u00b7 $label")
-        addVoice(root, "\u770b\u4f60\u5237\u4e86\u516b\u5206\u949f\u8fd8\u6ca1\u70b9\u3002\n\u6211\u66ff\u4f60\u9009\u4e86\u8fd9\u51e0\u6837\uff0c\u4f60\u770b\u4e00\u4e0b\uff0c\u4e0d\u5bf9\u5c31\u6539\u3002")
-        addSection(root, "\u8d2d\u7269\u8f66")
-        addLedgerRow(root, "\u9999\u83c7\u6ed1\u9e21\u996d \u00b7 \u5355", "\u00a5 26.00", false)
-        addLedgerRow(root, "\u767d\u707c\u65f6\u852c", "\u00a5 9.00", false)
-        addLedgerRow(root, "\u59dc\u8336 \u00b7 \u70ed", "\u00a5 6.00", false)
-        addLedgerRow(root, "\u7ea2\u5305", "\u2212 \u00a5 5.00", false)
-        addDivider(root)
-        addLedgerRow(root, "\u5408\u8ba1", "\u00a5 39.00", true)
+        addTagRow(root, "ACTION \u00b7 \u9700\u8981\u4f60\u786e\u8ba4", warn)
+        addTitle(root, "\u662f\u5426\u6253\u5f00 $label \u67e5\u770b\u8d2d\u7269\u8f66\uff1f")
+        addVoice(root, "\u5f53\u524d\u6ca1\u6709\u53ef\u4fe1\u7684\u5546\u54c1\u6216\u91d1\u989d\u6570\u636e\u3002\u6253\u5f00\u540e\u8bf7\u4f60\u81ea\u884c\u6838\u5bf9\uff0c\u5e94\u7528\u4e0d\u4f1a\u81ea\u52a8\u4e0b\u5355\u6216\u652f\u4ed8\u3002")
         root.addView(
             TextView(this).apply {
-                text = "\u203b \u4e0d\u4f1a\u81ea\u52a8\u652f\u4ed8\u3002\u70b9\u8fdb\u53bb\u540e\uff0c\u6700\u540e\u4e00\u6b65\u4f60\u81ea\u5df1\u786e\u8ba4\u3002"
+                text = "\u203b \u4e0d\u4f1a\u81ea\u52a8\u52a0\u8d2d\u3001\u63d0\u4ea4\u8ba2\u5355\u6216\u652f\u4ed8\u3002"
                 setTextColor(characterGhost)
                 textSize = 11f
                 typeface = Typeface.MONOSPACE
@@ -289,7 +282,7 @@ class FloatingBubbleService : Service() {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(0, dp(8), 0, 0)
         }
-        actions.addView(actionText("\u53bb\u8d2d\u7269\u8f66", true) { openShoppingTarget(target) })
+        actions.addView(actionText("\u6253\u5f00 $label", true) { openShoppingTarget(target) })
         actions.addView(actionText("\u6253\u5f00\u804a\u5929", false) { openApp() })
         actions.addView(actionText("\u6682\u4e0d\u652f\u4ed8", false) { stopSelf() })
         root.addView(actions)
@@ -345,32 +338,6 @@ class FloatingBubbleService : Service() {
                 setPadding(0, dp(8), 0, dp(5))
             },
         )
-    }
-
-    private fun addLedgerRow(root: LinearLayout, label: String, value: String, strong: Boolean) {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, dp(2), 0, dp(2))
-        }
-        row.addView(
-            TextView(this).apply {
-                text = label
-                setTextColor(characterMuted)
-                textSize = if (strong) 14f else 12f
-                typeface = if (strong) Typeface.create(Typeface.SERIF, Typeface.NORMAL) else Typeface.MONOSPACE
-            },
-        )
-        row.addView(spacer())
-        row.addView(
-            TextView(this).apply {
-                text = value
-                setTextColor(if (value.startsWith("\u2212")) Color.rgb(136, 165, 137) else characterOn)
-                textSize = if (strong) 18f else 12f
-                typeface = if (strong) Typeface.create(Typeface.SERIF, Typeface.BOLD) else Typeface.MONOSPACE
-            },
-        )
-        root.addView(row)
     }
 
     private fun addDivider(root: LinearLayout) {
