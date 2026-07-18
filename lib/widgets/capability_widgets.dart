@@ -344,8 +344,12 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     c: c,
                     icon: Icons.picture_in_picture_alt_outlined,
                     title: '悬浮窗权限',
-                    subtitle: '显示在桌面和其他 App 上层，用于短句提醒和确认。',
-                    enabled: status.overlayEnabled,
+                    subtitle: _overlaySubtitle(status),
+                    // 权限已授予不等于弹窗一定成功：部分厂商 ROM 会在实际弹出时
+                    // 才拦截，因此这里同时看权限位和最近一次弹窗失败记录。
+                    enabled:
+                        status.overlayEnabled &&
+                        status.overlayErrorStatus.lastError == null,
                     actionLabel: status.overlayEnabled ? '已开启' : '去设置',
                     onPressed: status.overlayEnabled
                         ? null
@@ -464,10 +468,13 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     icon: Icons.cell_tower_outlined,
                     title: '中继连接状态',
                     subtitle: _relayConnectionSubtitle(status),
-                    enabled: status.relayConnectionStatus.connected,
+                    enabled:
+                        status.relayConnectionStatus.displayStatus ==
+                        RelayDisplayStatus.connected,
                     actionLabel: _relayConnectionLabel(
                       status.relayConnectionStatus,
                     ),
+                    trailing: _relayStatusPill(c, status.relayConnectionStatus),
                   ),
                   CapabilityRow(
                     c: c,
@@ -581,15 +588,38 @@ class _CapabilitySheetState extends State<CapabilitySheet>
     return '$mode。\n被吞计数：${gate.suppressedCount} / 最近原因：$reason';
   }
 
+  String _overlaySubtitle(CapabilityStatus status) {
+    const base = '显示在桌面和其他 App 上层，用于短句提醒和确认。';
+    final overlayError = status.overlayErrorStatus;
+    if (overlayError.lastError == null) return base;
+    final at = overlayError.lastErrorAt == null
+        ? ''
+        : '（${_formatCapabilityTime(overlayError.lastErrorAt!)}）';
+    return '$base\n权限已授予，但最近一次弹窗失败$at：${overlayError.lastError}';
+  }
+
   String _relayConnectionLabel(RelayConnectionStatus relay) {
-    return switch (relay.connectionStatus) {
-      'connected' => '已连接',
-      'connecting' || 'reconnecting' => '连接中',
-      'fallback_poll' => '周期补偿',
-      'timeout' => '已超时',
-      'stopped' => '已停止',
-      _ => '未配置',
+    return switch (relay.displayStatus) {
+      RelayDisplayStatus.connected => '已连接',
+      RelayDisplayStatus.connecting => '连接中',
+      RelayDisplayStatus.stopped => '已停止',
+      RelayDisplayStatus.error => '错误',
+      RelayDisplayStatus.unconfigured => '未配置',
     };
+  }
+
+  /// 与 [_relayConnectionLabel] 同源：状态指示灯必须显示同一个五态文案，
+  /// 不能各自从 connectionStatus/心跳时间独立派生，否则左右会互相矛盾。
+  Widget _relayStatusPill(YxPalette c, RelayConnectionStatus relay) {
+    final label = _relayConnectionLabel(relay);
+    return YxStatusPill(
+      c: c,
+      enabled: relay.displayStatus == RelayDisplayStatus.connected,
+      waiting: relay.displayStatus == RelayDisplayStatus.connecting,
+      enabledLabel: label,
+      disabledLabel: label,
+      waitingLabel: label,
+    );
   }
 
   String _relayConnectionSubtitle(CapabilityStatus status) {

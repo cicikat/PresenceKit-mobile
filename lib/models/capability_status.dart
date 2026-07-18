@@ -12,6 +12,7 @@ class CapabilityStatus {
     required this.backgroundPollStatus,
     required this.relayConnectionStatus,
     required this.notificationGateStatus,
+    required this.overlayErrorStatus,
     required this.ignoringBatteryOptimizations,
     required this.screenContextUploadEnabled,
     required this.screenTextUploadAllowedPackages,
@@ -31,6 +32,7 @@ class CapabilityStatus {
   final BackgroundPollStatus backgroundPollStatus;
   final RelayConnectionStatus relayConnectionStatus;
   final NotificationGateStatus notificationGateStatus;
+  final OverlayErrorStatus overlayErrorStatus;
   final bool ignoringBatteryOptimizations;
   final bool screenContextUploadEnabled;
   final Set<String> screenTextUploadAllowedPackages;

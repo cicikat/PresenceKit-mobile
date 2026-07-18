@@ -18,9 +18,11 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.text.TextUtils
+import android.util.Log
 import kotlin.math.abs
 
 class FloatingBubbleService : Service() {
+    private val tag = "FloatingBubbleService"
     private val prefsName = "yexuan_memery"
     private var windowManager: WindowManager? = null
     private var bubbleView: View? = null
@@ -150,7 +152,27 @@ class FloatingBubbleService : Service() {
 
         bubbleView = root
         bubbleParams = params
-        windowManager?.addView(root, params)
+        try {
+            windowManager?.addView(root, params)
+            getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+                .edit()
+                .remove("lastOverlayError")
+                .remove("lastOverlayErrorAt")
+                .apply()
+        } catch (error: Exception) {
+            // canDrawOverlays() 为 true 不等于 addView 一定成功——部分厂商 ROM
+            // 对 TYPE_APPLICATION_OVERLAY 有额外限制，会在此抛出而不是权限检查阶段。
+            // 不捕获会导致服务静默崩溃，悬浮窗表现为"从不触发"且没有任何线索。
+            Log.e(tag, "addView failed mode=${intent?.getStringExtra("mode")}", error)
+            getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+                .edit()
+                .putString("lastOverlayError", error.message ?: error.javaClass.simpleName)
+                .putLong("lastOverlayErrorAt", System.currentTimeMillis())
+                .apply()
+            bubbleView = null
+            bubbleParams = null
+            stopSelf()
+        }
     }
 
     private fun addFloatingHeader(root: LinearLayout, label: String) {

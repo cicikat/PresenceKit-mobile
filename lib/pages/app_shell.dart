@@ -644,6 +644,7 @@ class _CompanionAppState extends State<CompanionApp>
       _deviceService.isIgnoringBatteryOptimizations(),
       _screenService.loadAllowedPackages(),
       _screenService.loadAppOptions(),
+      _deviceService.loadLastOverlayError(),
     ]);
     return CapabilityStatus(
       notificationsEnabled: results[0] as bool,
@@ -655,6 +656,7 @@ class _CompanionAppState extends State<CompanionApp>
       backgroundPollStatus: results[5] as BackgroundPollStatus,
       relayConnectionStatus: results[6] as RelayConnectionStatus,
       notificationGateStatus: results[7] as NotificationGateStatus,
+      overlayErrorStatus: results[11] as OverlayErrorStatus,
       ignoringBatteryOptimizations: results[8] as bool,
       screenContextUploadEnabled: _deviceController.screenUploadEnabled,
       screenTextUploadAllowedPackages: results[9] as Set<String>,

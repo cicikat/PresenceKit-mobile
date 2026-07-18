@@ -511,6 +511,17 @@ class AppSettingsStore {
     }
   }
 
+  Future<OverlayErrorStatus> loadLastOverlayError() async {
+    if (!_channelAvailable) return const OverlayErrorStatus();
+    try {
+      final raw = await PlatformSettingsChannel.channel
+          .invokeMethod<Map<dynamic, dynamic>>('getLastOverlayError');
+      return OverlayErrorStatus.fromPlatform(raw);
+    } on PlatformException {
+      return const OverlayErrorStatus();
+    }
+  }
+
   Future<NotificationGateStatus> loadNotificationGateStatus() async {
     if (!_channelAvailable) return const NotificationGateStatus();
     try {

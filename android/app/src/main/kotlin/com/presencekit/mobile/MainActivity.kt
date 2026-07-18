@@ -266,6 +266,14 @@ class MainActivity : FlutterActivity() {
                             ),
                         )
                     }
+                    "getLastOverlayError" -> {
+                        result.success(
+                            mapOf(
+                                "lastOverlayError" to prefs.getString("lastOverlayError", null),
+                                "lastOverlayErrorAt" to prefs.getLong("lastOverlayErrorAt", 0L),
+                            ),
+                        )
+                    }
                     "getNotificationGateStatus" -> {
                         result.success(
                             mapOf(
@@ -931,7 +939,7 @@ class MainActivity : FlutterActivity() {
             putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent())
             putExtra(
                 DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                "\u53ea\u6709\u5728\u4f60\u786e\u8ba4\u540e\uff0c\u53f6\u7444\u624d\u4f1a\u8c03\u7528\u7cfb\u7edf\u9501\u5c4f\u3002",
+                "\u53ea\u6709\u5728\u4f60\u786e\u8ba4\u540e\uff0c\u624d\u4f1a\u8c03\u7528\u7cfb\u7edf\u9501\u5c4f\u3002",
             )
         }
         startActivity(intent)

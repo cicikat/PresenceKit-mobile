@@ -60,6 +60,8 @@ class DeviceControlService {
   final AppSettingsStore _store;
   Future<bool> canDrawOverlays() => _store.canDrawOverlays();
   Future<void> requestOverlayPermission() => _store.requestOverlayPermission();
+  Future<OverlayErrorStatus> loadLastOverlayError() =>
+      _store.loadLastOverlayError();
   Future<bool> isDeviceAdminActive() => _store.isDeviceAdminActive();
   Future<void> requestDeviceAdmin() => _store.requestDeviceAdmin();
   Future<bool> lockScreen() => _store.lockScreen();
