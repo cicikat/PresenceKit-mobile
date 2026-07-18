@@ -32,10 +32,12 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/dist/
 *.apk
 *.aab
 *.jks
 *.keystore
+android/key.properties
 .tool-home/
 tmp/
 docs/reference/desktop-jsx/
