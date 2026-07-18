@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 cd /d %~dp0
 
 rem ---- Produces a distributable release APK: dist\PresenceKit-mobile-vX.Y.Z.apk + .sha256 ----
-rem ---- For installing to a connected device during dev, use AA打包安装到手机.bat instead ----
+rem ---- For installing to a connected device during dev, use AA1打包安装到手机.bat instead ----
 
 rem ---- Resolve flutter: local.properties > env vars > PATH > legacy default ----
 set "FLUTTER="

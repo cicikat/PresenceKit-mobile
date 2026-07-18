@@ -31,7 +31,7 @@ You can also bake a default backend address into the build: `flutter build apk -
 
 ## Building / installing
 
-- **`AA打包安装到手机.bat`** — dev loop: builds a debug (or `debug`/`release`) APK and installs it to a connected device over adb. It hardcodes local `flutter`/`adb` paths at the top — edit those for your machine before running.
+- **`AA1打包安装到手机.bat`** — dev loop: builds a debug (or `debug`/`release`) APK and installs it to a connected device over adb. It hardcodes local `flutter`/`adb` paths at the top — edit those for your machine before running.
 - **`AA2打包发行包.bat`** — release packaging: builds a release APK and drops `dist/PresenceKit-mobile-vX.Y.Z.apk` (+ `.sha256`) for uploading to a GitHub Release. No device needed.
 
 By default the release build is signed with the debug key (fine for personal testing, not for distribution). To sign a real release: run `keytool -genkey -v -keystore presencekit-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias presencekit` from `android/`, then copy `android/key.properties.example` to `android/key.properties` and fill in the passwords/alias/`storeFile` path. Both `*.jks` and `key.properties` are gitignored — never commit them.
