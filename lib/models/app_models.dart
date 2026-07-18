@@ -445,17 +445,47 @@ class YxPalette {
 }
 
 class ChatMessage {
-  const ChatMessage({
+  ChatMessage({
     required this.role,
     required this.text,
     required this.time,
     this.animate = false,
-  });
+    this.segments,
+    int? id,
+  }) : id = id ?? _nextId++;
 
+  static int _nextId = 0;
+
+  final int id;
   final String role;
   final String text;
   final String time;
   final bool animate;
+  final List<NarrativeSegment>? segments;
+
+  /// 保留同一 id（key 稳定），仅关闭 animate；用于 reveal 完成后落定消息。
+  ChatMessage settled() => ChatMessage(
+    id: id,
+    role: role,
+    text: text,
+    time: time,
+    segments: segments,
+  );
+}
+
+/// 叙事分段：say/do/env/feel/narration，见 core/narrative_parser.py。
+class NarrativeSegment {
+  const NarrativeSegment({required this.type, required this.text});
+
+  final String type;
+  final String text;
+
+  factory NarrativeSegment.fromJson(Map<String, dynamic> json) {
+    return NarrativeSegment(
+      type: (json['type'] ?? 'narration').toString(),
+      text: (json['text'] ?? '').toString(),
+    );
+  }
 }
 
 class DreamState {
@@ -501,19 +531,32 @@ class DreamChatResponse {
     required this.exitAccepted,
     required this.forceExited,
     required this.error,
+    this.segments = const [],
+    this.segmentedContent,
   });
 
   final String reply;
   final bool exitAccepted;
   final bool forceExited;
   final String? error;
+  final List<NarrativeSegment> segments;
+  final String? segmentedContent;
 
   factory DreamChatResponse.fromJson(Map<String, dynamic> json) {
+    final rawSegments = json['segments'];
     return DreamChatResponse(
       reply: json['reply']?.toString() ?? '',
       exitAccepted: json['exit_accepted'] == true,
       forceExited: json['force_exited'] == true,
       error: json['error']?.toString(),
+      segments: rawSegments is List
+          ? [
+              for (final entry in rawSegments)
+                if (entry is Map)
+                  NarrativeSegment.fromJson(Map<String, dynamic>.from(entry)),
+            ]
+          : const [],
+      segmentedContent: json['segmented_content']?.toString(),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/dream_controller.dart';
 import '../models/app_models.dart';
+import '../services/character_naming.dart';
 
 import '../widgets/chat_widgets.dart';
 import '../widgets/common_widgets.dart';
@@ -130,6 +131,17 @@ class DreamPage extends StatelessWidget {
                           time: message.time,
                           prefs: prefs,
                           text: message.text,
+                        )
+                      else if (message.segments != null &&
+                          message.segments!.isNotEmpty)
+                        DreamSegmentedMessage(
+                          c: c,
+                          time: message.time,
+                          prefs: prefs,
+                          profileDisplayName: profileDisplayName,
+                          profileAvatarBytes: profileAvatarBytes,
+                          segments: message.segments!,
+                          animate: message.animate,
                         )
                       else
                         HimMessage(
@@ -296,6 +308,115 @@ class DreamSceneLine extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// 按 say/do/env/feel/narration 分段渲染一条梦境回复。
+/// 视觉分层参考 Emerald-client 的 DreamChatPanel.tsx，不做像素级对齐。
+class DreamSegmentedMessage extends StatelessWidget {
+  const DreamSegmentedMessage({
+    super.key,
+    required this.c,
+    required this.time,
+    required this.prefs,
+    required this.segments,
+    this.profileDisplayName = kFallbackCharacterDisplayName,
+    this.profileAvatarBytes,
+    this.animate = false,
+  });
+
+  final YxPalette c;
+  final String time;
+  final YxPrefs prefs;
+  final List<NarrativeSegment> segments;
+  final String profileDisplayName;
+  final Uint8List? profileAvatarBytes;
+  final bool animate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 36, bottom: 4),
+            child: Text('HIM · $time', style: mono(c, 9.5, color: c.ink3)),
+          ),
+          for (final segment in segments) _buildSegment(segment),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSegment(NarrativeSegment segment) {
+    switch (segment.type) {
+      case 'say':
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              YxAvatar(
+                c: c,
+                size: 28,
+                imageBytes: profileAvatarBytes,
+                text: profileDisplayName.characters.first,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 300),
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
+                  decoration: BoxDecoration(
+                    color: c.surfaceSoft,
+                    border: Border.all(color: c.surfaceEdge),
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(6),
+                      bottomRight: Radius.circular(6),
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.only(left: 10),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(color: c.character, width: 3),
+                      ),
+                    ),
+                    child: AnimatedRevealText(
+                      text: segment.text,
+                      animate: animate,
+                      style: serif(c, prefs.fontSize),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      case 'do':
+      case 'feel':
+        final weak = segment.type == 'feel';
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(36, 2, 12, 2),
+          child: Text(
+            segment.text,
+            style: serif(
+              c,
+              weak ? prefs.fontSize - 1 : prefs.fontSize,
+              color: weak ? c.ink3 : c.ink2,
+            ).copyWith(
+              fontStyle: FontStyle.italic,
+              letterSpacing: weak ? 0.4 : null,
+            ),
+          ),
+        );
+      case 'env':
+      case 'narration':
+      default:
+        return DreamSceneLine(c: c, text: segment.text);
+    }
   }
 }
 

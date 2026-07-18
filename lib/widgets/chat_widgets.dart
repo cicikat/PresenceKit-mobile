@@ -150,9 +150,7 @@ class ChatScene extends StatelessWidget {
                       : sentMessages[globalMessageIndex -
                             historyMessages.length];
                   return RepaintBoundary(
-                    key: ValueKey(
-                      'chat-$globalMessageIndex-${m.role}-${m.time}-${m.text.hashCode}',
-                    ),
+                    key: ValueKey('chat-${m.id}'),
                     child: m.role == 'you'
                         ? YouMessage(
                             c: c,
@@ -573,8 +571,9 @@ class AnimatedRevealText extends StatefulWidget {
 
 class _AnimatedRevealTextState extends State<AnimatedRevealText>
     with SingleTickerProviderStateMixin {
-  // Mirrors Emerald-client/src/windows/room/useVnPresenter.ts (40 CPS).
-  static const _revealCps = 40.0;
+  // Shared with ChatController.revealCps (mirrors
+  // Emerald-client/src/windows/room/useVnPresenter.ts, 40 CPS).
+  static const _revealCps = ChatController.revealCps;
   late final AnimationController _controller;
   late final bool _animate;
   bool _skipped = false;

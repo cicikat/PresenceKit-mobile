@@ -23,6 +23,9 @@ class ChatController extends ChangeNotifier {
 
   static const initialVisibleMessageCount = 80;
   static const visibleMessageStep = 50;
+  // Mirrors chat_widgets.dart AnimatedRevealText (kept in sync with
+  // Emerald-client/src/windows/room/useVnPresenter.ts, 40 CPS).
+  static const revealCps = 40.0;
   final BackendClient Function() _backend;
   final String? Function() _token;
   final SettingsStore _settings;
@@ -37,6 +40,9 @@ class ChatController extends ChangeNotifier {
   final Map<String, DateTime> _recentReplies = {};
   final Map<String, String> _recentIdsByFingerprint = {};
   Timer? _pollTimer;
+  final List<List<String>> _segmentQueue = [];
+  bool _playingSegments = false;
+  double? _lastScrollPixels;
   bool sending = false;
   bool himTyping = false;
   bool loadingHistory = false;
@@ -109,13 +115,9 @@ class ChatController extends ChangeNotifier {
   }
 
   void markRevealStarted(ChatMessage message) {
-    final index = sent.indexOf(message);
+    final index = sent.indexWhere((m) => m.id == message.id);
     if (index < 0 || !sent[index].animate) return;
-    sent[index] = ChatMessage(
-      role: message.role,
-      text: message.text,
-      time: message.time,
-    );
+    sent[index] = sent[index].settled();
   }
 
   Future<void> _send(String text) async {
@@ -325,16 +327,7 @@ class ChatController extends ChangeNotifier {
         final parts = message.behaviorKind.isNotEmpty
             ? [message.content]
             : _splitSegments(message.content);
-        for (final part in parts) {
-          sent.add(
-            ChatMessage(
-              role: base.role,
-              text: part,
-              time: base.time,
-              animate: true,
-            ),
-          );
-        }
+        unawaited(_appendSegments(parts, time: base.time));
       }
       mobileActive = true;
       mobileError = null;
@@ -421,29 +414,52 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> _appendReply(String reply) async {
-    final parts = _splitSegments(reply);
+    await _appendSegments(_splitSegments(reply));
+  }
+
+  /// 逐条追加分段气泡，供同步回复路径与 mobile poll 路径共用。
+  ///
+  /// 若前一批分段仍在播放，新分段追加到同一队列尾部顺序播放（不并行）；
+  /// 每条气泡等上一条 reveal 动画播完（按 [revealCps] 估算）再出现，
+  /// 期间维持 [himTyping] = true。
+  Future<void> _appendSegments(List<String> parts, {String? time}) async {
+    if (parts.isEmpty) return;
+    _segmentQueue.add(parts);
+    if (_playingSegments) return;
+    _playingSegments = true;
     final random = math.Random();
-    for (var i = 0; i < parts.length; i++) {
-      if (i > 0) {
-        await Future<void>.delayed(
-          Duration(milliseconds: 100 + random.nextInt(901)),
-        );
+    try {
+      while (_segmentQueue.isNotEmpty) {
+        final batch = _segmentQueue.removeAt(0);
+        for (var i = 0; i < batch.length; i++) {
+          himTyping = false;
+          sent.add(
+            ChatMessage(
+              role: 'him',
+              text: batch[i],
+              time: time ?? _nowLabel(),
+              animate: true,
+            ),
+          );
+          notifyListeners();
+          scrollToBottom();
+          final hasNext = i < batch.length - 1 || _segmentQueue.isNotEmpty;
+          if (hasNext) {
+            himTyping = true;
+            notifyListeners();
+            final revealMs = (batch[i].characters.length / revealCps * 1000)
+                .round()
+                .clamp(1, 60000);
+            await Future<void>.delayed(
+              Duration(milliseconds: revealMs + 100 + random.nextInt(901)),
+            );
+          }
+        }
       }
+    } finally {
       himTyping = false;
-      sent.add(
-        ChatMessage(
-          role: 'him',
-          text: parts[i],
-          time: _nowLabel(),
-          animate: true,
-        ),
-      );
+      _playingSegments = false;
       notifyListeners();
-      scrollToBottom();
-      if (i < parts.length - 1) {
-        himTyping = true;
-        notifyListeners();
-      }
     }
   }
 
@@ -538,7 +554,22 @@ class ChatController extends ChangeNotifier {
   void _handleScroll() {
     if (!scrollController.hasClients) return;
     final position = scrollController.position;
-    final show = position.maxScrollExtent - position.pixels > 260;
+    final pixels = position.pixels;
+    final distanceFromBottom = position.maxScrollExtent - pixels;
+    final previousPixels = _lastScrollPixels;
+    _lastScrollPixels = pixels;
+    var show = showJumpToLatest;
+    if (previousPixels != null) {
+      final delta = pixels - previousPixels;
+      if (delta > 0.5) {
+        // 向下滑（朝最新方向）：立即隐藏，即使距底仍 >260。
+        show = false;
+      } else if (delta < -0.5 && distanceFromBottom > 260) {
+        // 向上滑且距底 >260：显示。
+        show = true;
+      }
+    }
+    if (distanceFromBottom <= 260) show = false;
     if (show != showJumpToLatest) {
       showJumpToLatest = show;
       notifyListeners();

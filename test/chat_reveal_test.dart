@@ -20,7 +20,7 @@ void main() {
       settings: const SettingsStore(store),
       relay: const RelayStatusService(store),
     );
-    const message = ChatMessage(
+    final message = ChatMessage(
       role: 'him',
       text: '这是一条新回复',
       time: '现在',

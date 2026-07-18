@@ -124,6 +124,16 @@ class DreamController extends ChangeNotifier {
             time: _nowLabel(),
           ),
         );
+      } else if (response.segments.isNotEmpty) {
+        messages.add(
+          ChatMessage(
+            role: 'him',
+            text: response.segmentedContent ?? response.reply,
+            time: _nowLabel(),
+            animate: true,
+            segments: response.segments,
+          ),
+        );
       } else {
         for (final part in _splitReply(response.reply)) {
           messages.add(
