@@ -62,6 +62,8 @@ class _CompanionAppState extends State<CompanionApp>
   MoodStateSnapshot? _moodState;
   bool _loadingStatusSnapshot = false;
   PromptAssets? _promptAssets;
+  List<LoreEntry> _loreEntries = const [];
+  List<JailbreakEntry> _jailbreakEntries = const [];
   String? _profileNameOverride;
   Uint8List? _profileAvatarBytes;
   late final SettingsStore _settings;
@@ -1059,11 +1061,18 @@ class _CompanionAppState extends State<CompanionApp>
       _promptAssetsError = null;
     });
     try {
-      final assets = await _backend.loadPromptAssets(
-        token: _requireAdminToken(),
-      );
+      final token = _requireAdminToken();
+      final results = await Future.wait([
+        _backend.loadPromptAssets(token: token),
+        _backend.loadLoreEntries(token: token),
+        _backend.loadJailbreakEntries(token: token),
+      ]);
       if (!mounted) return;
-      setState(() => _promptAssets = assets);
+      setState(() {
+        _promptAssets = results[0] as PromptAssets;
+        _loreEntries = results[1] as List<LoreEntry>;
+        _jailbreakEntries = results[2] as List<JailbreakEntry>;
+      });
     } on BackendException catch (e) {
       if (mounted) setState(() => _promptAssetsError = e.message);
     } finally {
@@ -1071,11 +1080,7 @@ class _CompanionAppState extends State<CompanionApp>
     }
   }
 
-  Future<void> _updatePromptAssets({
-    String? activeCharacter,
-    Set<String>? enabledLorebooks,
-    Set<String>? enabledJailbreaks,
-  }) async {
+  Future<void> _updatePromptAssets({String? activeCharacter}) async {
     if (_savingPromptAssets || !_hasAdminToken) return;
     setState(() {
       _savingPromptAssets = true;
@@ -1085,11 +1090,59 @@ class _CompanionAppState extends State<CompanionApp>
       final assets = await _backend.updatePromptAssets(
         token: _requireAdminToken(),
         activeCharacter: activeCharacter,
-        enabledLorebooks: enabledLorebooks,
-        enabledJailbreaks: enabledJailbreaks,
       );
       if (!mounted) return;
       setState(() => _promptAssets = assets);
+    } on BackendException catch (e) {
+      if (mounted) setState(() => _promptAssetsError = e.message);
+    } finally {
+      if (mounted) setState(() => _savingPromptAssets = false);
+    }
+  }
+
+  Future<void> _toggleLoreEntry(String id) async {
+    if (_savingPromptAssets || !_hasAdminToken) return;
+    final entry = _loreEntries.where((item) => item.id == id).firstOrNull;
+    if (entry == null) return;
+    setState(() {
+      _savingPromptAssets = true;
+      _promptAssetsError = null;
+    });
+    try {
+      final token = _requireAdminToken();
+      await _backend.setLoreEntryEnabled(
+        token: token,
+        entry: entry,
+        enabled: !entry.enabled,
+      );
+      final entries = await _backend.loadLoreEntries(token: token);
+      if (!mounted) return;
+      setState(() => _loreEntries = entries);
+    } on BackendException catch (e) {
+      if (mounted) setState(() => _promptAssetsError = e.message);
+    } finally {
+      if (mounted) setState(() => _savingPromptAssets = false);
+    }
+  }
+
+  Future<void> _toggleJailbreakEntry(String id) async {
+    if (_savingPromptAssets || !_hasAdminToken) return;
+    final entry = _jailbreakEntries.where((item) => item.id == id).firstOrNull;
+    if (entry == null) return;
+    setState(() {
+      _savingPromptAssets = true;
+      _promptAssetsError = null;
+    });
+    try {
+      final token = _requireAdminToken();
+      await _backend.setJailbreakEntryEnabled(
+        token: token,
+        entry: entry,
+        enabled: !entry.enabled,
+      );
+      final entries = await _backend.loadJailbreakEntries(token: token);
+      if (!mounted) return;
+      setState(() => _jailbreakEntries = entries);
     } on BackendException catch (e) {
       if (mounted) setState(() => _promptAssetsError = e.message);
     } finally {
@@ -1144,6 +1197,8 @@ class _CompanionAppState extends State<CompanionApp>
               profileDisplayName: _profileDisplayName,
               profileAvatarBytes: _profileAvatarBytes,
               promptAssets: _promptAssets,
+              loreEntries: _loreEntries,
+              jailbreakEntries: _jailbreakEntries,
               dreamSettings: _dreamController.settings,
               settingsBusy:
                   _loadingPromptAssets ||
@@ -1177,22 +1232,14 @@ class _CompanionAppState extends State<CompanionApp>
               },
               onOpenCapabilities: _openCapabilityCheck,
               onToggleLorebook: (id) {
-                final current = Set<String>.from(
-                  _promptAssets?.enabledLorebooks ?? const <String>{},
-                );
-                current.contains(id) ? current.remove(id) : current.add(id);
                 unawaited(() async {
-                  await _updatePromptAssets(enabledLorebooks: current);
+                  await _toggleLoreEntry(id);
                   if (context.mounted) sheetSetState(() {});
                 }());
               },
               onToggleJailbreak: (id) {
-                final current = Set<String>.from(
-                  _promptAssets?.enabledJailbreaks ?? const <String>{},
-                );
-                current.contains(id) ? current.remove(id) : current.add(id);
                 unawaited(() async {
-                  await _updatePromptAssets(enabledJailbreaks: current);
+                  await _toggleJailbreakEntry(id);
                   if (context.mounted) sheetSetState(() {});
                 }());
               },

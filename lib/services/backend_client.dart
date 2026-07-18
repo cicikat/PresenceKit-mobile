@@ -30,6 +30,8 @@ import '../models/app_models.dart'
         GomokuState,
         GroupDetail,
         GroupSummary,
+        JailbreakEntry,
+        LoreEntry,
         MobilePollMessage,
         MoodStateSnapshot,
         PromptAssets,
@@ -296,8 +298,6 @@ class BackendClient {
   Future<PromptAssets> updatePromptAssets({
     required String token,
     String? activeCharacter,
-    Set<String>? enabledLorebooks,
-    Set<String>? enabledJailbreaks,
   }) async {
     final decoded = await _request(
       '/settings/prompt-assets',
@@ -305,10 +305,6 @@ class BackendClient {
       method: 'PATCH',
       body: {
         if (activeCharacter != null) 'active_character': activeCharacter,
-        if (enabledLorebooks != null)
-          'enabled_lorebooks': enabledLorebooks.toList(),
-        if (enabledJailbreaks != null)
-          'enabled_jailbreaks': enabledJailbreaks.toList(),
       },
     );
     final active = decoded['active'];
@@ -318,15 +314,64 @@ class BackendClient {
             'characters': current.characters
                 .map((item) => {'id': item.id, 'label': item.label})
                 .toList(),
-            'lorebooks': current.lorebooks
-                .map((item) => {'id': item.id, 'label': item.label})
-                .toList(),
-            'jailbreaks': current.jailbreaks
-                .map((item) => {'id': item.id, 'label': item.label})
-                .toList(),
             'active': Map<String, dynamic>.from(active),
           })
         : current;
+  }
+
+  /// 与 desktop EntryManager 同端点(全量 CRUD,含标签字段),取代旧的
+  /// /settings/prompt-assets 聚合 enabled_lorebooks——那套已经和 desktop 的
+  /// 单条目 enabled 字段脱节,数量和展示名都会跟 desktop 对不上。
+  Future<List<LoreEntry>> loadLoreEntries({required String token}) async {
+    final decoded = await _request('/lorebook', token: token);
+    final entries = decoded['entries'];
+    if (entries is! List) return const [];
+    return entries
+        .whereType<Map>()
+        .map((item) => LoreEntry.fromJson(Map<String, dynamic>.from(item)))
+        .where((item) => item.id.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<void> setLoreEntryEnabled({
+    required String token,
+    required LoreEntry entry,
+    required bool enabled,
+  }) async {
+    await _request(
+      '/lorebook/${entry.id}',
+      token: token,
+      method: 'PATCH',
+      body: entry.toJson(enabled: enabled),
+    );
+  }
+
+  Future<List<JailbreakEntry>> loadJailbreakEntries({
+    required String token,
+  }) async {
+    final decoded = await _request('/jailbreak-entries', token: token);
+    final entries = decoded['entries'];
+    if (entries is! List) return const [];
+    return entries
+        .whereType<Map>()
+        .map(
+          (item) => JailbreakEntry.fromJson(Map<String, dynamic>.from(item)),
+        )
+        .where((item) => item.id.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<void> setJailbreakEntryEnabled({
+    required String token,
+    required JailbreakEntry entry,
+    required bool enabled,
+  }) async {
+    await _request(
+      '/jailbreak-entries/${entry.id}',
+      token: token,
+      method: 'PATCH',
+      body: entry.toJson(enabled: enabled),
+    );
   }
 
   Future<DreamSettings> loadDreamSettings({required String token}) async {

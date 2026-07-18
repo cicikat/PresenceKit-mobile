@@ -576,21 +576,10 @@ class PromptAssetOption {
 }
 
 class PromptAssets {
-  const PromptAssets({
-    required this.characters,
-    required this.lorebooks,
-    required this.jailbreaks,
-    required this.activeCharacter,
-    required this.enabledLorebooks,
-    required this.enabledJailbreaks,
-  });
+  const PromptAssets({required this.characters, required this.activeCharacter});
 
   final List<PromptAssetOption> characters;
-  final List<PromptAssetOption> lorebooks;
-  final List<PromptAssetOption> jailbreaks;
   final String activeCharacter;
-  final Set<String> enabledLorebooks;
-  final Set<String> enabledJailbreaks;
 
   factory PromptAssets.fromJson(Map<String, dynamic> json) {
     List<PromptAssetOption> options(Object? value) => value is List
@@ -599,21 +588,95 @@ class PromptAssets {
               .where((item) => item.id.isNotEmpty)
               .toList(growable: false)
         : const [];
-    Set<String> ids(Object? value) => value is List
-        ? value.map((item) => item.toString()).toSet()
-        : <String>{};
     final active = json['active'] is Map
         ? Map<String, dynamic>.from(json['active'] as Map)
         : const <String, dynamic>{};
     return PromptAssets(
       characters: options(json['characters']),
-      lorebooks: options(json['lorebooks']),
-      jailbreaks: options(json['jailbreaks']),
       activeCharacter: active['active_character']?.toString() ?? '',
-      enabledLorebooks: ids(active['enabled_lorebooks']),
-      enabledJailbreaks: ids(active['enabled_jailbreaks']),
     );
   }
+}
+
+/// 与 desktop EntryManager 对齐的世界书条目：desktop 用 `keyword` 关键词组作为
+/// 展示名(而非独立的 label 字段),`enabled` 是条目自身的勾选状态。
+class LoreEntry {
+  const LoreEntry({
+    required this.id,
+    required this.keyword,
+    required this.content,
+    required this.enabled,
+    required this.regex,
+    required this.insertionOrder,
+  });
+
+  factory LoreEntry.fromJson(Map<String, dynamic> json) {
+    final keywordRaw = json['keyword'];
+    return LoreEntry(
+      id: json['id']?.toString() ?? '',
+      keyword: keywordRaw is List
+          ? keywordRaw.map((item) => item.toString()).toList(growable: false)
+          : const [],
+      content: json['content']?.toString() ?? '',
+      enabled: json['enabled'] != false,
+      regex: json['regex'] == true,
+      insertionOrder: (json['insertion_order'] as num?)?.toInt() ?? 100,
+    );
+  }
+
+  final String id;
+  final List<String> keyword;
+  final String content;
+  final bool enabled;
+  final bool regex;
+  final int insertionOrder;
+
+  String get displayLabel => keyword.isNotEmpty ? keyword.join(', ') : id;
+
+  Map<String, dynamic> toJson({bool? enabled}) => {
+    'keyword': keyword,
+    'content': content,
+    'enabled': enabled ?? this.enabled,
+    'regex': regex,
+    'insertion_order': insertionOrder,
+  };
+}
+
+/// 与 desktop EntryManager 对齐的破限条目：`title` 是展示名,`enabled` 是条目
+/// 自身的勾选状态(不是 /settings/prompt-assets 那套聚合 enabled_jailbreaks)。
+class JailbreakEntry {
+  const JailbreakEntry({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.enabled,
+    required this.layer,
+  });
+
+  factory JailbreakEntry.fromJson(Map<String, dynamic> json) {
+    return JailbreakEntry(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      enabled: json['enabled'] != false,
+      layer: (json['layer'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final String id;
+  final String title;
+  final String content;
+  final bool enabled;
+  final int layer;
+
+  String get displayLabel => title.isNotEmpty ? title : id;
+
+  Map<String, dynamic> toJson({bool? enabled}) => {
+    'title': title,
+    'content': content,
+    'enabled': enabled ?? this.enabled,
+    'layer': layer,
+  };
 }
 
 class DreamSettings {

@@ -18,6 +18,8 @@ class SettingsPage extends StatelessWidget {
     required this.profileDisplayName,
     required this.profileAvatarBytes,
     required this.promptAssets,
+    required this.loreEntries,
+    required this.jailbreakEntries,
     required this.dreamSettings,
     required this.settingsBusy,
     required this.settingsError,
@@ -54,6 +56,8 @@ class SettingsPage extends StatelessWidget {
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
   final PromptAssets? promptAssets;
+  final List<LoreEntry> loreEntries;
+  final List<JailbreakEntry> jailbreakEntries;
   final DreamSettings? dreamSettings;
   final bool settingsBusy;
   final String? settingsError;
@@ -304,8 +308,14 @@ class SettingsPage extends StatelessWidget {
                 subtitle: 'Reality 对话使用 · 多选',
                 child: PromptOptionChips(
                   c: c,
-                  options: promptAssets?.lorebooks ?? const [],
-                  selected: promptAssets?.enabledLorebooks ?? const {},
+                  options: [
+                    for (final entry in loreEntries)
+                      PromptAssetOption(id: entry.id, label: entry.displayLabel),
+                  ],
+                  selected: {
+                    for (final entry in loreEntries)
+                      if (entry.enabled) entry.id,
+                  },
                   disabled: settingsBusy,
                   onToggle: onToggleLorebook,
                 ),
@@ -316,8 +326,14 @@ class SettingsPage extends StatelessWidget {
                 subtitle: 'Reality 独立破限 · 多选',
                 child: PromptOptionChips(
                   c: c,
-                  options: promptAssets?.jailbreaks ?? const [],
-                  selected: promptAssets?.enabledJailbreaks ?? const {},
+                  options: [
+                    for (final entry in jailbreakEntries)
+                      PromptAssetOption(id: entry.id, label: entry.displayLabel),
+                  ],
+                  selected: {
+                    for (final entry in jailbreakEntries)
+                      if (entry.enabled) entry.id,
+                  },
                   disabled: settingsBusy,
                   onToggle: onToggleJailbreak,
                 ),

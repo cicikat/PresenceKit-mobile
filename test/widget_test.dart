@@ -12,20 +12,41 @@ void main() {
       'characters': [
         {'id': 'test-character', 'label': 'Nova'},
       ],
-      'lorebooks': ['base'],
-      'jailbreaks': [
-        {'id': 'gentle', 'label': '温和破限'},
-      ],
-      'active': {
-        'active_character': 'test-character',
-        'enabled_lorebooks': ['base'],
-        'enabled_jailbreaks': ['gentle'],
-      },
+      'active': {'active_character': 'test-character'},
     });
 
     expect(assets.activeCharacter, 'test-character');
-    expect(assets.lorebooks.single.label, 'base');
-    expect(assets.enabledJailbreaks, {'gentle'});
+    expect(assets.characters.single.label, 'Nova');
+  });
+
+  test(
+    'lore entries display the keyword group like the desktop EntryManager',
+    () {
+      final entry = LoreEntry.fromJson({
+        'id': 'e1',
+        'keyword': ['晨昏', '海边'],
+        'content': '…',
+        'enabled': true,
+        'regex': false,
+        'insertion_order': 100,
+      });
+
+      expect(entry.displayLabel, '晨昏, 海边');
+      expect(entry.enabled, isTrue);
+    },
+  );
+
+  test('jailbreak entries display the title like the desktop EntryManager', () {
+    final entry = JailbreakEntry.fromJson({
+      'id': 'e2',
+      'title': '温和破限',
+      'content': '…',
+      'enabled': false,
+      'layer': 2,
+    });
+
+    expect(entry.displayLabel, '温和破限');
+    expect(entry.enabled, isFalse);
   });
 
   test('dream settings keeps independent defaults', () {
@@ -63,6 +84,8 @@ void main() {
             profileDisplayName: 'Nova',
             profileAvatarBytes: null,
             promptAssets: null,
+            loreEntries: const [],
+            jailbreakEntries: const [],
             dreamSettings: null,
             settingsBusy: false,
             settingsError: null,
