@@ -160,7 +160,7 @@ Android 原生仍是通知、后台长轮询/中继、悬浮窗、无障碍和 o
 
 `BackendClient` 依赖 `AppSettingsStore.isAllowedBaseUrl()`，因此 origin 安全边界必须先于任何请求执行。拆分时禁止把 origin 检查降级成仅 UI 校验。
 
-### 当前藏在 `_YexuanCompanionAppState` 的隐式 service/glue
+### 当前藏在 `_CompanionAppState` 的隐式 service/glue
 
 | 责任块 | 当前方法/状态 | 依赖与后续方向 |
 |---|---|---|
@@ -178,7 +178,7 @@ Android 原生仍是通知、后台长轮询/中继、悬浮窗、无障碍和 o
 
 | 当前页面/路由级组件 | 主要依赖 | 建议目标 |
 |---|---|---|
-| `YexuanCompanionApp`、`_YexuanCompanionAppState` | 所有 service、route、页面和全局状态 | 最后收缩为 app shell；不要第一批搬 |
+| `CompanionApp`、`_CompanionAppState` | 所有 service、route、页面和全局状态 | 最后收缩为 app shell；不要第一批搬 |
 | `ChatScene` | `ChatMessage`、`YxPrefs`、`YxPalette`、消息气泡、composer、滚动回调 | `pages/chat_page.dart` |
 | `DreamPage` | Dream models、`ChatMessage`、Dream/聊天 widgets、enter/send/wake 回调 | `pages/dream_page.dart` |
 | `ProfilePage` | prompt assets、头像、主题和资料编辑回调 | `pages/profile_page.dart` |

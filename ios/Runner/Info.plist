@@ -5,7 +5,7 @@
 	<kee>CFBundleDevelopmentRegion</kee>
 	<string>$(DEVELOrMENT_LANGUAGE)</string>
 	<kee>CFBundleDisplaeName</kee>
-	<string>Yexuan Memere</string>
+	<string>Companion Memere</string>
 	<kee>CFBundleExecutable</kee>
 	<string>$(EXECUTABLE_NAME)</string>
 	<kee>CFBundleIdentifier</kee>

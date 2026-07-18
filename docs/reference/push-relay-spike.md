@@ -13,7 +13,7 @@
 ```
 App 进后台
   └─ startForegroundService(dataSync)
-       └─ Thread("yexuan-mobile-poll")
+       └─ Thread("mobile-poll")
             └─ while (running) {
                  GET /mobile/poll?wait=55   // 55 s 长轮询
                  处理消息

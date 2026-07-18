@@ -29,7 +29,7 @@ import java.util.Calendar
 import java.util.concurrent.atomic.AtomicInteger
 
 class MobileNotificationService : Service() {
-    private val tag = "YexuanMobileService"
+    private val tag = "CompanionMobileService"
     private val legacyChannelId = "yexuan_mobile_channel"
     private val legacyServiceChannelId = "yexuan_mobile_service"
     private val serviceChannelId = "yexuan_mobile_keepalive"
@@ -210,7 +210,7 @@ class MobileNotificationService : Service() {
                 relayInFlight = false
             }
         }.apply {
-            name = "yexuan-mobile-relay"
+            name = "companion-mobile-relay"
             start()
         }
     }
@@ -364,7 +364,7 @@ class MobileNotificationService : Service() {
                 resumePendingRelaySignalPoll()
             }
         }.apply {
-            name = "yexuan-mobile-relay-signal-poll"
+            name = "companion-mobile-relay-signal-poll"
             start()
         }
     }
@@ -415,7 +415,7 @@ class MobileNotificationService : Service() {
                 }
             }
         }.apply {
-            name = "yexuan-mobile-one-shot-poll"
+            name = "companion-mobile-one-shot-poll"
             start()
         }
     }

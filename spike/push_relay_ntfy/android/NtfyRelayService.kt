@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *   1. Add to AndroidManifest.xml — see manifest_additions.xml in this directory.
  *   2. Add OkHttp dependency — see build.gradle note below.
  *   3. Start with:
- *        NtfyRelayService.start(context, "http://192.168.x.x:8080", "yexuan-spike")
+ *        NtfyRelayService.start(context, "http://192.168.x.x:8080", "mychar-spike")
  *   4. Stop with:
  *        NtfyRelayService.stop(context)
  *

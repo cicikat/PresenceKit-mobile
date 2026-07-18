@@ -27,7 +27,7 @@ import java.io.File
 import org.json.JSONObject
 
 class MainActivity : FlutterActivity() {
-    private val tag = "YexuanMainActivity"
+    private val tag = "CompanionMainActivity"
     private val settingsChannel = "presence_mobile/settings"
     private val pickProfileImageRequest = 9101
     private val pickUploadFileRequest = 9102

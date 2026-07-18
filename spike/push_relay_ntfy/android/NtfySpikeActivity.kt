@@ -24,7 +24,7 @@ class NtfySpikeActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("ntfy_spike", MODE_PRIVATE)
         val savedHost  = prefs.getString("host",  "http://192.168.1.x:8080") ?: ""
-        val savedTopic = prefs.getString("topic", "yexuan-spike")            ?: ""
+        val savedTopic = prefs.getString("topic", "mychar-spike")            ?: ""
 
         // Build a trivial programmatic UI — no XML layout dependency
         val root    = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32,32,32,32) }

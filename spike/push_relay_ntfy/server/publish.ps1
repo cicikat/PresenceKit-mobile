@@ -1,10 +1,10 @@
 # publish.ps1 — PowerShell equivalent of publish.sh
 # Usage:
-#   .\publish.ps1 [-Host localhost:8080] [-Topic yexuan-spike] [-Msg "hello"]
+#   .\publish.ps1 [-Host localhost:8080] [-Topic mychar-spike] [-Msg "hello"]
 
 param(
     [string]$NtfyHost = "localhost:8080",
-    [string]$Topic    = "yexuan-spike",
+    [string]$Topic    = "mychar-spike",
     [string]$Msg      = "ping $(Get-Date -Format 'HH:mm:ss')"
 )
 
@@ -14,7 +14,7 @@ $url = "http://$NtfyHost/$Topic"
 Write-Host "[$ts] Publishing to $url  ->  `"$Msg`""
 
 $headers = @{
-    "Title"    = "yexuan-spike"
+    "Title"    = "mychar-spike"
     "Priority" = "default"
     "Tags"     = "bell"
 }

@@ -50,5 +50,5 @@ Fill in one row per observed publish → receive event.
 adb logcat -v time NtfyRelaySpike:V *:S 2>&1 | tee ntfy_spike_logcat.txt
 
 # Separate terminal — long-poll baseline:
-adb logcat -v time yexuan-mobile-poll:V *:S 2>&1 | tee longpoll_logcat.txt
+adb logcat -v time mobile-poll:V *:S 2>&1 | tee longpoll_logcat.txt
 ```

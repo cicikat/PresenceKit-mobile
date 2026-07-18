@@ -2,13 +2,13 @@
 # loop_publish.sh — Publish a message every N minutes, log to stdout
 # Usage:
 #   ./loop_publish.sh [HOST] [TOPIC] [INTERVAL_SECONDS]
-#   Default: localhost:8080  yexuan-spike  300 (5 min)
+#   Default: localhost:8080  mychar-spike  300 (5 min)
 #
 # Pipe to a log file for later comparison:
 #   ./loop_publish.sh 2>&1 | tee publish_log.txt
 
 HOST="${1:-localhost:8080}"
-TOPIC="${2:-yexuan-spike}"
+TOPIC="${2:-mychar-spike}"
 INTERVAL="${3:-300}"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] loop_publish started  interval=${INTERVAL}s  host=$HOST  topic=$TOPIC"

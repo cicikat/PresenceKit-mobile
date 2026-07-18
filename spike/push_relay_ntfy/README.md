@@ -25,7 +25,7 @@ ntfy serve --config server/ntfy.yml
 
 **Terminal A — subscribe (SSE):**
 ```bash
-curl -N "http://localhost:8080/yexuan-spike/sse"
+curl -N "http://localhost:8080/mychar-spike/sse"
 # Should print ": keepalive" every ~55 s when idle
 ```
 
@@ -43,7 +43,7 @@ curl --no-buffer -H "Upgrade: websocket" \
      -H "Connection: Upgrade" \
      -H "Sec-WebSocket-Version: 13" \
      -H "Sec-WebSocket-Key: $(openssl rand -base64 16)" \
-     http://localhost:8080/yexuan-spike/ws
+     http://localhost:8080/mychar-spike/ws
 ```
 *(ntfy supports both SSE and WS; the Android spike uses SSE for simplicity.)*
 
@@ -68,7 +68,7 @@ Set the same IP in NtfySpikeActivity when you start the relay.
 5. Enter host + topic, tap **Start Relay**, then **Request Battery Exemption**.
 6. Start the loop publisher:
    ```bash
-   cd server && ./loop_publish.sh 192.168.1.X:8080 yexuan-spike 300
+   cd server && ./loop_publish.sh 192.168.1.X:8080 mychar-spike 300
    ```
 
 ### 5. Record observations

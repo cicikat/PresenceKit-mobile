@@ -28,19 +28,19 @@
 ### 格式
 
 ```
-yexuan/<user_id>/<device_token>
+mychar/<user_id>/<device_token>
 ```
 
 | 段 | 值 | 说明 |
 |---|---|---|
-| `yexuan` | 固定前缀 | 隔离同一 ntfy 实例上的其他应用 |
+| `mychar` | 固定前缀 | 隔离同一 ntfy 实例上的其他应用 |
 | `<user_id>` | 当前 owner user id（示例，实际由用户在设置里配置） | 用户维度隔离，多设备共享 |
 | `<device_token>` | 客户端生成的 UUID v4，每次安装唯一 | 设备维度隔离，避免多设备串台 |
 
 ### 示例
 
 ```
-yexuan/<owner_user_id>/a3f2c1b0-8e4d-4f7a-9c3b-1d2e5f6a7b8c
+mychar/<owner_user_id>/a3f2c1b0-8e4d-4f7a-9c3b-1d2e5f6a7b8c
 ```
 
 ### 命名约束
@@ -93,7 +93,7 @@ ntfy 服务器会在转发时在外层包裹一个 SSE 事件：
 
 ```
 event: message
-data: {"id":"ntfy-id","time":1749686400,"event":"message","topic":"yexuan/…","message":"<payload>"}
+data: {"id":"ntfy-id","time":1749686400,"event":"message","topic":"mychar/…","message":"<payload>"}
 ```
 
 客户端从 `data.message` 字段取出原始 JSON payload，再按 3.1 格式解析并回源 poll。
@@ -199,7 +199,7 @@ data: {"id":"ntfy-id","time":1749686400,"event":"message","topic":"yexuan/…","
 
 ```
 relay_base_url  : String?   中继 base URL，e.g. https://ntfy.sh（无尾斜杠）
-relay_topic     : String?   完整 topic 路径，e.g. yexuan/<owner_user_id>/<device_token>
+relay_topic     : String?   完整 topic 路径，e.g. mychar/<owner_user_id>/<device_token>
 relay_token     : String?   订阅凭证，Bearer token，不混入后端 admin-token
 ```
 

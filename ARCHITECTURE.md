@@ -1,6 +1,6 @@
 # ARCHITECTURE.md - Emerald-mobile 架构总览
 
-`Emerald-mobile` 是叶瑄系统的 Android 优先移动客户端。它连接 Emerald-presence（旧名 qq-st-bot）后端，提供手机聊天、后台主动消息、屏幕上下文上报、悬浮提醒和用户确认后的本机动作。
+`Emerald-mobile` 是陪伴系统的 Android 优先移动客户端。它连接 Emerald-presence（旧名 qq-st-bot）后端，提供手机聊天、后台主动消息、屏幕上下文上报、悬浮提醒和用户确认后的本机动作。
 
 ## 系统边界
 
@@ -27,16 +27,16 @@
 └──────────────────────────────┘
 ```
 
-原则：后端做判断，手机端做展示和本机能力执行。手机端可以上报“当前 App、可见文字、可点文字”等客观事实，但不直接扮演叶瑄、不直接决定主动行为规则。
+原则：后端做判断，手机端做展示和本机能力执行。手机端可以上报“当前 App、可见文字、可点文字”等客观事实，但不直接扮演角色、不直接决定主动行为规则。
 
 ## 当前实现快照
 
 Flutter 入口 `lib/main.dart` 约 164 行：
 
 - `main()` 设置沉浸式系统 UI 后挂载 `MyApp`。
-- `MyApp` 使用 Material 3 和 serif 风格主题，首页是 `YexuanCompanionApp`。
+- `MyApp` 使用 Material 3 和 serif 风格主题，首页是 `CompanionApp`。
 - `main.dart` 是薄入口，声明全局错误兜底和根 MaterialApp；历史 `part` 挂载已移除。
-- `pages/app_shell.dart` 中的 `YexuanCompanionApp` 负责组合根、路由和生命周期；连接、聊天、设备、Dream、花园、日记状态由 `controllers/` 持有。
+- `pages/app_shell.dart` 中的 `CompanionApp` 负责组合根、路由和生命周期；连接、聊天、设备、Dream、花园、日记状态由 `controllers/` 持有。
 - `services/platform_settings_channel.dart` 持有 `MethodChannel('presence_mobile/settings')`；`services/app_settings_store.dart` 是兼容实现，五个设备门面负责按域调用。
 - `services/backend_client.dart` 直接用 `dart:io` `HttpClient` 调后端 HTTP。
 - `models/` 保存数据/config 定义，`widgets/` 按聊天、能力、设置、日记、花园等领域保存 Flutter UI。

@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
           selectionHandleColor: Color(0xFF1F3A2E),
         ),
       ),
-      home: const YexuanCompanionApp(),
+      home: const CompanionApp(),
     );
   }
 }

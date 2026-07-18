@@ -32,8 +32,8 @@ import '../widgets/settings_editor_widgets.dart';
 import '../widgets/settings_widgets.dart';
 import '../widgets/theme_widgets.dart';
 
-class YexuanCompanionApp extends StatefulWidget {
-  const YexuanCompanionApp({
+class CompanionApp extends StatefulWidget {
+  const CompanionApp({
     super.key,
     this.settingsStore = const AppSettingsStore(),
     this.backendClient,
@@ -43,10 +43,10 @@ class YexuanCompanionApp extends StatefulWidget {
   final BackendClient? backendClient;
 
   @override
-  State<YexuanCompanionApp> createState() => _YexuanCompanionAppState();
+  State<CompanionApp> createState() => _CompanionAppState();
 }
 
-class _YexuanCompanionAppState extends State<YexuanCompanionApp>
+class _CompanionAppState extends State<CompanionApp>
     with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _sensorPushTimer;
@@ -933,7 +933,7 @@ class _YexuanCompanionAppState extends State<YexuanCompanionApp>
                     style: mono(c, 13),
                     decoration: InputDecoration(
                       labelText: 'topic',
-                      hintText: '例：yexuan-wake-a1b2c3（当作密码，用随机串）',
+                      hintText: '例：mychar-wake-a1b2c3（当作密码，用随机串）',
                       errorText: topicError,
                     ),
                   ),

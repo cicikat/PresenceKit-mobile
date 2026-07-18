@@ -175,7 +175,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: YexuanCompanionApp(
+          home: CompanionApp(
             settingsStore: settings,
             backendClient: backend,
           ),
@@ -216,7 +216,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: YexuanCompanionApp(
+          home: CompanionApp(
             settingsStore: settings,
             backendClient: backend,
           ),
@@ -283,7 +283,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: YexuanCompanionApp(
+        home: CompanionApp(
           settingsStore: settings,
           backendClient: backend,
         ),
@@ -339,7 +339,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: YexuanCompanionApp(
+          home: CompanionApp(
             settingsStore: settings,
             backendClient: backend,
           ),

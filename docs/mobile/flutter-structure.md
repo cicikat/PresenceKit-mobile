@@ -2,7 +2,7 @@
 
 ## 当前入口与模块边界
 
-`lib/main.dart` 是薄入口，负责全局错误兜底、根 `MaterialApp` 和 `YexuanCompanionApp` 挂载。历史 `part` / `part of` 结构已全部移除；`lib/` 下的 models、services、controllers、pages、widgets 现在都是独立 library，通过普通 `import` 建立编译器可检查的依赖边界。
+`lib/main.dart` 是薄入口，负责全局错误兜底、根 `MaterialApp` 和 `CompanionApp` 挂载。历史 `part` / `part of` 结构已全部移除；`lib/` 下的 models、services、controllers、pages、widgets 现在都是独立 library，通过普通 `import` 建立编译器可检查的依赖边界。
 
 主要目录职责：
 

@@ -26,7 +26,7 @@ if not defined ADB (
 :menu
 cls
 echo ==========================================
-echo   Yexuan mobile dev control
+echo   Companion mobile dev control
 echo ==========================================
 echo.
 echo   1. Start phone connection

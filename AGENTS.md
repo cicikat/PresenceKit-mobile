@@ -12,7 +12,7 @@
 
 ## 项目定位
 
-`PresenceKit-mobile` 是叶瑄陪伴系统的 Flutter 手机薄客户端。核心人格、记忆、调度、主动触发、花园和日记数据仍在后端仓库 `Emerald-presence`（通常与本仓库同级）；本仓库负责移动端 UI、Android 原生能力和 mobile channel 消息收发。
+`PresenceKit-mobile` 是陪伴系统的 Flutter 手机薄客户端。核心人格、记忆、调度、主动触发、花园和日记数据仍在后端仓库 `Emerald-presence`（通常与本仓库同级）；本仓库负责移动端 UI、Android 原生能力和 mobile channel 消息收发。
 
 当前实际状态：
 
