@@ -60,6 +60,7 @@ class ChatController extends ChangeNotifier {
   String? mobileError;
   String? lastMobileContent;
   BackendChatResponse? lastBackendReply;
+  ChatMessage? replyTarget;
 
   String? get _accessToken {
     final value = _token()?.trim();
@@ -105,13 +106,28 @@ class ChatController extends ChangeNotifier {
   void send(String text) {
     final value = text.trim();
     if (value.isEmpty || sending || _accessToken == null) return;
+    final replyTo = replyTarget == null
+        ? null
+        : ReplyTarget.fromMessage(replyTarget!);
+    replyTarget = null;
     sending = true;
     himTyping = true;
     backendError = null;
     sent.add(ChatMessage(role: 'you', text: value, time: '现在'));
     notifyListeners();
     scrollToBottom();
-    unawaited(_send(value));
+    unawaited(_send(value, replyTo: replyTo));
+  }
+
+  void setReplyTarget(ChatMessage message) {
+    replyTarget = message;
+    notifyListeners();
+  }
+
+  void clearReplyTarget() {
+    if (replyTarget == null) return;
+    replyTarget = null;
+    notifyListeners();
   }
 
   void markRevealStarted(ChatMessage message) {
@@ -120,9 +136,13 @@ class ChatController extends ChangeNotifier {
     sent[index] = sent[index].settled();
   }
 
-  Future<void> _send(String text) async {
+  Future<void> _send(String text, {ReplyTarget? replyTo}) async {
     try {
-      final response = await _backend().sendChat(text, token: _accessToken!);
+      final response = await _backend().sendChat(
+        text,
+        token: _accessToken!,
+        replyTo: replyTo,
+      );
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
         await _appendReply(response.reply);

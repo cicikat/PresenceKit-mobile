@@ -169,11 +169,18 @@ class ChatScene extends StatelessWidget {
                             onRevealStarted: m.animate
                                 ? () => controller.markRevealStarted(m)
                                 : null,
+                            onReply: () => controller.setReplyTarget(m),
                           ),
                   );
                 },
               ),
             ),
+            if (controller.replyTarget != null)
+              ReplyPreviewBar(
+                c: c,
+                text: controller.replyTarget!.text,
+                onCancel: controller.clearReplyTarget,
+              ),
             Composer(
               c: c,
               sending: backendBusy,
@@ -450,7 +457,81 @@ class MetaLine extends StatelessWidget {
   }
 }
 
-class HimMessage extends StatelessWidget {
+enum ChatBubbleAction { copy, selectAll, reply }
+
+/// 长按气泡弹出的复制/全选/回复菜单；回复仅对角色气泡传 [showReply]=true。
+Future<ChatBubbleAction?> showChatBubbleMenu({
+  required BuildContext context,
+  required Offset position,
+  required bool showReply,
+}) {
+  final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+  return showMenu<ChatBubbleAction>(
+    context: context,
+    position: RelativeRect.fromRect(
+      position & const Size(1, 1),
+      Offset.zero & overlay.size,
+    ),
+    items: [
+      const PopupMenuItem(value: ChatBubbleAction.copy, child: Text('复制')),
+      const PopupMenuItem(
+        value: ChatBubbleAction.selectAll,
+        child: Text('全选'),
+      ),
+      if (showReply)
+        const PopupMenuItem(value: ChatBubbleAction.reply, child: Text('回复')),
+    ],
+  );
+}
+
+class ReplyPreviewBar extends StatelessWidget {
+  const ReplyPreviewBar({
+    super.key,
+    required this.c,
+    required this.text,
+    required this.onCancel,
+  });
+
+  final YxPalette c;
+  final String text;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: c.surfaceSoft,
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: c.surface,
+          border: Border(left: BorderSide(color: c.character, width: 3)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: mono(c, 11, color: c.ink3),
+              ),
+            ),
+            YxIconButton(
+              c: c,
+              icon: Icons.close_rounded,
+              size: 26,
+              onPressed: onCancel,
+              tooltip: '取消回复',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class HimMessage extends StatefulWidget {
   const HimMessage({
     super.key,
     required this.c,
@@ -464,6 +545,7 @@ class HimMessage extends StatelessWidget {
     this.highlight = false,
     this.animate = false,
     this.onRevealStarted,
+    this.onReply,
   });
 
   final YxPalette c;
@@ -478,8 +560,39 @@ class HimMessage extends StatelessWidget {
   final bool animate;
   final VoidCallback? onRevealStarted;
 
+  /// 长按菜单「回复」;仅角色气泡传入,气泡分段场景下引用目标是这一段本身。
+  final VoidCallback? onReply;
+
+  @override
+  State<HimMessage> createState() => _HimMessageState();
+}
+
+class _HimMessageState extends State<HimMessage> {
+  bool _selectable = false;
+
+  Future<void> _handleLongPress(Offset globalPosition) async {
+    final action = await showChatBubbleMenu(
+      context: context,
+      position: globalPosition,
+      showReply: widget.onReply != null,
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case ChatBubbleAction.copy:
+        await Clipboard.setData(ClipboardData(text: widget.text));
+        break;
+      case ChatBubbleAction.selectAll:
+        setState(() => _selectable = true);
+        break;
+      case ChatBubbleAction.reply:
+        widget.onReply?.call();
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final c = widget.c;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -490,8 +603,8 @@ class HimMessage extends StatelessWidget {
             child: YxAvatar(
               c: c,
               size: 28,
-              imageBytes: profileAvatarBytes,
-              text: profileDisplayName.characters.first,
+              imageBytes: widget.profileAvatarBytes,
+              text: widget.profileDisplayName.characters.first,
             ),
           ),
           const SizedBox(width: 8),
@@ -501,44 +614,60 @@ class HimMessage extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text('HIM · $time', style: mono(c, 9.5, color: c.ink3)),
-                    if (tag != null) ...[
+                    Text(
+                      'HIM · ${widget.time}',
+                      style: mono(c, 9.5, color: c.ink3),
+                    ),
+                    if (widget.tag != null) ...[
                       const SizedBox(width: 6),
                       Flexible(
-                        child: YxTag(c: c, text: tag!, variant: tagVariant),
+                        child: YxTag(
+                          c: c,
+                          text: widget.tag!,
+                          variant: widget.tagVariant,
+                        ),
                       ),
                     ],
                   ],
                 ),
                 const SizedBox(height: 4),
-                Container(
-                  constraints: const BoxConstraints(maxWidth: 300),
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
-                  decoration: BoxDecoration(
-                    color: c.surfaceSoft,
-                    border: Border.all(
-                      color: highlight ? c.warn : c.surfaceEdge,
-                      width: highlight ? 2 : 1,
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(6),
-                      bottomRight: Radius.circular(6),
-                      bottomLeft: Radius.circular(0),
-                      topLeft: Radius.circular(0),
-                    ),
-                  ),
+                GestureDetector(
+                  onLongPressStart: (details) =>
+                      unawaited(_handleLongPress(details.globalPosition)),
                   child: Container(
-                    padding: const EdgeInsets.only(left: 10),
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
                     decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: c.character, width: 3),
+                      color: c.surfaceSoft,
+                      border: Border.all(
+                        color: widget.highlight ? c.warn : c.surfaceEdge,
+                        width: widget.highlight ? 2 : 1,
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(6),
+                        bottomRight: Radius.circular(6),
+                        bottomLeft: Radius.circular(0),
+                        topLeft: Radius.circular(0),
                       ),
                     ),
-                    child: AnimatedRevealText(
-                      text: text,
-                      animate: animate,
-                      style: serif(c, prefs.fontSize),
-                      onRevealStarted: onRevealStarted,
+                    child: Container(
+                      padding: const EdgeInsets.only(left: 10),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(color: c.character, width: 3),
+                        ),
+                      ),
+                      child: _selectable
+                          ? SelectableText(
+                              widget.text,
+                              style: serif(c, widget.prefs.fontSize),
+                            )
+                          : AnimatedRevealText(
+                              text: widget.text,
+                              animate: widget.animate,
+                              style: serif(c, widget.prefs.fontSize),
+                              onRevealStarted: widget.onRevealStarted,
+                            ),
                     ),
                   ),
                 ),
@@ -761,7 +890,7 @@ class _JumpingDotsState extends State<JumpingDots>
   }
 }
 
-class YouMessage extends StatelessWidget {
+class YouMessage extends StatefulWidget {
   const YouMessage({
     super.key,
     required this.c,
@@ -776,7 +905,36 @@ class YouMessage extends StatelessWidget {
   final YxPrefs prefs;
 
   @override
+  State<YouMessage> createState() => _YouMessageState();
+}
+
+class _YouMessageState extends State<YouMessage> {
+  bool _selectable = false;
+
+  Future<void> _handleLongPress(Offset globalPosition) async {
+    final action = await showChatBubbleMenu(
+      context: context,
+      position: globalPosition,
+      showReply: false,
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case ChatBubbleAction.copy:
+        await Clipboard.setData(ClipboardData(text: widget.text));
+        break;
+      case ChatBubbleAction.selectAll:
+        setState(() => _selectable = true);
+        break;
+      case ChatBubbleAction.reply:
+        break;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final c = widget.c;
+    final text = widget.text;
+    final prefs = widget.prefs;
     final attachment = AttachmentPlaceholder.parse(text);
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -788,29 +946,47 @@ class YouMessage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('YOU · $time', style: mono(c, 9.5, color: c.ink3)),
+                Text(
+                  'YOU · ${widget.time}',
+                  style: mono(c, 9.5, color: c.ink3),
+                ),
                 const SizedBox(height: 4),
-                Container(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
-                  decoration: BoxDecoration(
-                    color: c.userBubble,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: attachment == null
-                      ? Text(
-                          text,
-                          style: serif(
-                            c,
-                            prefs.fontSize,
-                            color: c.userBubbleText,
+                GestureDetector(
+                  onLongPressStart: attachment == null
+                      ? (details) =>
+                            unawaited(_handleLongPress(details.globalPosition))
+                      : null,
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 280),
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
+                    decoration: BoxDecoration(
+                      color: c.userBubble,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: attachment != null
+                        ? UserAttachmentCard(
+                            c: c,
+                            attachment: attachment,
+                            fontSize: prefs.fontSize,
+                          )
+                        : _selectable
+                        ? SelectableText(
+                            text,
+                            style: serif(
+                              c,
+                              prefs.fontSize,
+                              color: c.userBubbleText,
+                            ),
+                          )
+                        : Text(
+                            text,
+                            style: serif(
+                              c,
+                              prefs.fontSize,
+                              color: c.userBubbleText,
+                            ),
                           ),
-                        )
-                      : UserAttachmentCard(
-                          c: c,
-                          attachment: attachment,
-                          fontSize: prefs.fontSize,
-                        ),
+                  ),
                 ),
               ],
             ),

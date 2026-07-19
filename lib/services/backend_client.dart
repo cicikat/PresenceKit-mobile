@@ -35,6 +35,7 @@ import '../models/app_models.dart'
         MobilePollMessage,
         MoodStateSnapshot,
         PromptAssets,
+        ReplyTarget,
         ReadingLibraryBook,
         ReadingPageResult,
         ReadingState;
@@ -201,13 +202,17 @@ class BackendClient {
   Future<BackendChatResponse> sendChat(
     String message, {
     required String token,
+    ReplyTarget? replyTo,
   }) async {
     return BackendChatResponse.fromJson(
       await _request(
         '/desktop/chat',
         token: token,
         method: 'POST',
-        body: {'message': message},
+        body: {
+          'message': message,
+          if (replyTo != null) 'reply_to': replyTo.toJson(),
+        },
         timeout: const Duration(seconds: 120),
       ),
     );

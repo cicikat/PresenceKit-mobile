@@ -451,8 +451,10 @@ class ChatMessage {
     required this.time,
     this.animate = false,
     this.segments,
+    DateTime? timestamp,
     int? id,
-  }) : id = id ?? _nextId++;
+  }) : id = id ?? _nextId++,
+       timestamp = timestamp ?? DateTime.now();
 
   static int _nextId = 0;
 
@@ -462,6 +464,9 @@ class ChatMessage {
   final String time;
   final bool animate;
   final List<NarrativeSegment>? segments;
+  /// 用于「回复」引用(reply_to.ts);历史消息没有真实 epoch,退化为加载时刻——
+  /// 只影响后端相对时间前缀的措辞("今天"而非准确日期),不影响功能正确性。
+  final DateTime timestamp;
 
   /// 保留同一 id（key 稳定），仅关闭 animate；用于 reveal 完成后落定消息。
   ChatMessage settled() => ChatMessage(
@@ -470,7 +475,28 @@ class ChatMessage {
     text: text,
     time: time,
     segments: segments,
+    timestamp: timestamp,
   );
+}
+
+/// 聊天气泡「回复」引用目标,对齐后端 Brief 98 §2 的 reply_to 契约。
+class ReplyTarget {
+  const ReplyTarget({required this.text, required this.timestamp});
+
+  factory ReplyTarget.fromMessage(ChatMessage message) =>
+      ReplyTarget(text: message.text, timestamp: message.timestamp);
+
+  final String text;
+  final DateTime timestamp;
+
+  static const _maxTextLength = 200;
+
+  Map<String, dynamic> toJson() => {
+    'text': text.length > _maxTextLength
+        ? text.substring(0, _maxTextLength)
+        : text,
+    'ts': timestamp.millisecondsSinceEpoch / 1000,
+  };
 }
 
 /// 叙事分段：say/do/env/feel/narration，见 core/narrative_parser.py。

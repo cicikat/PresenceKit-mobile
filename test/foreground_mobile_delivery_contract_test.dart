@@ -139,8 +139,10 @@ class _ForegroundBackendClient extends BackendClient {
   Future<BackendChatResponse> sendChat(
     String message, {
     required String token,
+    ReplyTarget? replyTo,
   }) async {
-    return chatResponse ?? super.sendChat(message, token: token);
+    return chatResponse ??
+        super.sendChat(message, token: token, replyTo: replyTo);
   }
 }
 

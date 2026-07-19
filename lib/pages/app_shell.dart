@@ -9,6 +9,7 @@ import '../controllers/device_controller.dart';
 import '../controllers/dream_controller.dart';
 import '../controllers/diary_controller.dart';
 import '../controllers/garden_controller.dart';
+import '../controllers/prompt_entries_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
@@ -62,8 +63,6 @@ class _CompanionAppState extends State<CompanionApp>
   MoodStateSnapshot? _moodState;
   bool _loadingStatusSnapshot = false;
   PromptAssets? _promptAssets;
-  List<LoreEntry> _loreEntries = const [];
-  List<JailbreakEntry> _jailbreakEntries = const [];
   String? _profileNameOverride;
   Uint8List? _profileAvatarBytes;
   late final SettingsStore _settings;
@@ -78,6 +77,7 @@ class _CompanionAppState extends State<CompanionApp>
   late final DiaryController _diaryController;
   YxPrefs _prefs = const YxPrefs();
   late final ThemeController _themeController;
+  late final PromptEntriesController _promptEntries;
 
   BackendClient get _backend => _connectionController.backend;
   String get _backendBaseUrl => _connectionController.baseUrl;
@@ -126,6 +126,11 @@ class _CompanionAppState extends State<CompanionApp>
       savePersisted: _settings.saveCustomThemePalette,
     );
     _themeController.addListener(_handleThemeChanged);
+    _promptEntries = PromptEntriesController(
+      backend: () => _backend,
+      token: () => _adminToken,
+    );
+    _promptEntries.addListener(_handlePromptEntriesChanged);
 
     _deviceService = DeviceControlService(settingsStore);
     _screenService = ScreenSensorService(settingsStore);
@@ -224,6 +229,8 @@ class _CompanionAppState extends State<CompanionApp>
     _dreamController.dispose();
     _themeController.removeListener(_handleThemeChanged);
     _themeController.dispose();
+    _promptEntries.removeListener(_handlePromptEntriesChanged);
+    _promptEntries.dispose();
     super.dispose();
   }
 
@@ -231,6 +238,11 @@ class _CompanionAppState extends State<CompanionApp>
     if (!mounted) return;
     setState(() {});
     _applySystemUi();
+  }
+
+  void _handlePromptEntriesChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _applySystemUi() {
@@ -1061,18 +1073,11 @@ class _CompanionAppState extends State<CompanionApp>
       _promptAssetsError = null;
     });
     try {
-      final token = _requireAdminToken();
-      final results = await Future.wait([
-        _backend.loadPromptAssets(token: token),
-        _backend.loadLoreEntries(token: token),
-        _backend.loadJailbreakEntries(token: token),
-      ]);
+      final assets = await _backend.loadPromptAssets(
+        token: _requireAdminToken(),
+      );
       if (!mounted) return;
-      setState(() {
-        _promptAssets = results[0] as PromptAssets;
-        _loreEntries = results[1] as List<LoreEntry>;
-        _jailbreakEntries = results[2] as List<JailbreakEntry>;
-      });
+      setState(() => _promptAssets = assets);
     } on BackendException catch (e) {
       if (mounted) setState(() => _promptAssetsError = e.message);
     } finally {
@@ -1100,56 +1105,6 @@ class _CompanionAppState extends State<CompanionApp>
     }
   }
 
-  Future<void> _toggleLoreEntry(String id) async {
-    if (_savingPromptAssets || !_hasAdminToken) return;
-    final entry = _loreEntries.where((item) => item.id == id).firstOrNull;
-    if (entry == null) return;
-    setState(() {
-      _savingPromptAssets = true;
-      _promptAssetsError = null;
-    });
-    try {
-      final token = _requireAdminToken();
-      await _backend.setLoreEntryEnabled(
-        token: token,
-        entry: entry,
-        enabled: !entry.enabled,
-      );
-      final entries = await _backend.loadLoreEntries(token: token);
-      if (!mounted) return;
-      setState(() => _loreEntries = entries);
-    } on BackendException catch (e) {
-      if (mounted) setState(() => _promptAssetsError = e.message);
-    } finally {
-      if (mounted) setState(() => _savingPromptAssets = false);
-    }
-  }
-
-  Future<void> _toggleJailbreakEntry(String id) async {
-    if (_savingPromptAssets || !_hasAdminToken) return;
-    final entry = _jailbreakEntries.where((item) => item.id == id).firstOrNull;
-    if (entry == null) return;
-    setState(() {
-      _savingPromptAssets = true;
-      _promptAssetsError = null;
-    });
-    try {
-      final token = _requireAdminToken();
-      await _backend.setJailbreakEntryEnabled(
-        token: token,
-        entry: entry,
-        enabled: !entry.enabled,
-      );
-      final entries = await _backend.loadJailbreakEntries(token: token);
-      if (!mounted) return;
-      setState(() => _jailbreakEntries = entries);
-    } on BackendException catch (e) {
-      if (mounted) setState(() => _promptAssetsError = e.message);
-    } finally {
-      if (mounted) setState(() => _savingPromptAssets = false);
-    }
-  }
-
   void _openSettings() {
     var requestedBackendSettings = false;
     var notificationTestMode = false;
@@ -1162,11 +1117,12 @@ class _CompanionAppState extends State<CompanionApp>
               unawaited(() async {
                 final results = await Future.wait<dynamic>([
                   _loadPromptAssets(),
+                  _promptEntries.load(),
                   _dreamController.loadSettings(),
                   _relayService.loadNotificationGateStatus(),
                 ]);
                 notificationTestMode =
-                    (results[2] as NotificationGateStatus).testModeEnabled;
+                    (results[3] as NotificationGateStatus).testModeEnabled;
                 if (context.mounted) sheetSetState(() {});
               }());
             }
@@ -1197,8 +1153,8 @@ class _CompanionAppState extends State<CompanionApp>
               profileDisplayName: _profileDisplayName,
               profileAvatarBytes: _profileAvatarBytes,
               promptAssets: _promptAssets,
-              loreEntries: _loreEntries,
-              jailbreakEntries: _jailbreakEntries,
+              loreEntries: _promptEntries.loreEntries,
+              jailbreakEntries: _promptEntries.jailbreakEntries,
               dreamSettings: _dreamController.settings,
               settingsBusy:
                   _loadingPromptAssets ||
@@ -1233,13 +1189,13 @@ class _CompanionAppState extends State<CompanionApp>
               onOpenCapabilities: _openCapabilityCheck,
               onToggleLorebook: (id) {
                 unawaited(() async {
-                  await _toggleLoreEntry(id);
+                  await _promptEntries.toggleLore(id);
                   if (context.mounted) sheetSetState(() {});
                 }());
               },
               onToggleJailbreak: (id) {
                 unawaited(() async {
-                  await _toggleJailbreakEntry(id);
+                  await _promptEntries.toggleJailbreak(id);
                   if (context.mounted) sheetSetState(() {});
                 }());
               },
