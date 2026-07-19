@@ -46,6 +46,15 @@ void main() {
 
     await saving;
     expect(store.value, 'zh-CN');
+
+    await controller.setLanguage(AppLanguage.english);
+    expect(controller.locale?.languageCode, 'en');
+    expect(store.value, 'en-US');
+
+    await controller.setLanguage(AppLanguage.simplifiedChinese);
+    expect(controller.locale?.languageCode, 'zh');
+    expect(store.value, 'zh-CN');
+    expect(notifications, 3);
   });
 
   test('unknown persisted values safely fall back to system', () async {

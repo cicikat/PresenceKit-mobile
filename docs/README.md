@@ -7,6 +7,7 @@
 | `overview/project-snapshot.md` | 当前项目状态、目录和功能边界 |
 | `roadmap-notes.md` | 待梳理的路线与后续议题 |
 | `mobile/flutter-structure.md` | Flutter 单页应用、状态、UI 组件和拆分建议 |
+| `mobile/localization.md` | Flutter 中英文、本地化键和语言偏好持久化契约 |
 | `mobile/color-mods.md` | 多颜色预设、浏览器导出和 `mods/` 打包契约 |
 | `mobile/background-notification-design.md` | 后台通知与前台服务的设计说明 |
 | `android/native-capabilities.md` | Android 原生权限、MethodChannel、服务和安全边界 |
@@ -33,6 +34,7 @@
 - 改接口、字段、鉴权或轮询路径时，同步更新 `backend/integration.md` 和 `protocols/mobile-channel.md`。
 - 改 Android 权限、服务、悬浮窗、无障碍或锁屏逻辑时，同步更新 `android/native-capabilities.md`。
 - 改 Flutter 页面结构或准备拆分 `lib/main.dart` 时，同步更新 `mobile/flutter-structure.md`。
+- 新增或修改 Flutter 可见文案时，同步维护中英文 ARB；改变语言持久化契约时同步更新 `mobile/localization.md`。
 - 发现未修问题，先记到 `known-issues.md`。
 
 ## 当前工单与实施状态（2026-07-13）

@@ -17,7 +17,9 @@
 | `lib/controllers/garden_controller.dart` | 花园状态与刷新 Timer |
 | `lib/controllers/diary_controller.dart` | 日记列表和详情加载 |
 | `lib/controllers/theme_controller.dart` | 多颜色预设、旧数据迁移、`mods/` 资产加载、Web localStorage 与导出 |
+| `lib/controllers/locale_controller.dart` | 跟随系统/中文/英文选择、即时切换与语言偏好持久化 |
 | `lib/services/backend_client.dart` | 后端 HTTP 请求 |
+| `lib/l10n/` | 中英文 ARB、生成的 `AppLocalizations` 和稳定值展示映射 |
 | `lib/services/device_services.dart` | 五个设备域门面 |
 | `lib/services/app_settings_store.dart` | legacy MethodChannel 兼容实现；由域门面包装，不再由 app shell 直接调用 |
 | `lib/widgets/` | 场景页面和复用 UI |
@@ -28,6 +30,7 @@
 - `DreamPage`、`GardenPage`、`DiaryPage` 直接监听各自 controller；app shell 不再展开传递领域状态、加载标记和刷新回调。
 - controller 通过构造注入获取 BackendClient、token getter 和设备门面，不反向依赖 app shell。
 - `AppSettingsStore` 保留 `presence_mobile/settings` channel 兼容契约；Dart 侧由 `SettingsStore`、`VoiceService`、`DeviceControlService`、`ScreenSensorService`、`RelayStatusService` 分域使用。
+- 根 `MaterialApp` 监听 `LocaleController`；设置页语言项位于第一行，切换后整棵 Flutter UI 即时按新 locale 重建。完整契约见 `localization.md`。
 
 ## 生命周期
 

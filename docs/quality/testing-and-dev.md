@@ -48,7 +48,7 @@ Flutter Web 已可编译。双击仓库根目录的 `电脑浏览器预览.bat`�
 
 ## 当前测试覆盖
 
-`test/` 下共 11 个文件，按覆盖内容分组如下（逐文件列出实际断言范围，而不是笼统的"能不能覆盖某个大类"）：
+`test/` 下共 14 个文件，按覆盖内容分组如下（逐文件列出实际断言范围，而不是笼统的"能不能覆盖某个大类"）：
 
 ### UI / 模型基础
 
@@ -58,6 +58,8 @@ Flutter Web 已可编译。双击仓库根目录的 `电脑浏览器预览.bat`�
   - `SystemSettingsSheet`：访问 Token 入口排在能力检查之前，点击"更换"触发回调。
   - `DreamPage`：保留独立作曲框和"醒来"退出按钮。
 - `theme_controller_test.dart`：多预设保存/恢复、旧单色盘迁移、重置/删除和颜色 mod 往返解析。
+- `locale_controller_test.dart`：默认跟随系统、持久化恢复、未知值回退，以及 `中文 → English → 中文` 即时切换和存储往返。
+- `localization_contract_test.dart`：中英文 ARB 消息 key 完全一致、所有翻译非空，以及 `l10n.yaml` 保持生成输出与未翻译报告配置。
 
 
 ### 后端请求层
@@ -91,6 +93,7 @@ Flutter Web 已可编译。双击仓库根目录的 `电脑浏览器预览.bat`�
   - 无障碍：`isAccessibilityServiceEnabled`、`requestAccessibilityPermission`、`captureScreenContext`（ForUpload）；
   - 悬浮窗：`canDrawOverlays`、`showFloatingBubble`/`showOrderBubble`、`hideFloatingBubble`、`isDeviceAdminActive`、`requestDeviceAdmin`、`lockScreen`、`openShoppingApp`。
   - 每个方法验证：调用的方法名、参数形状（如 `{'target': ...}`）、返回值如何被 `AppSettingsStore` 解析成 Dart 模型、以及平台侧抛 `PlatformException` 时的兜底值。
+  - 语言偏好：`getAppLanguage` / `setAppLanguage` 的通道方法名和 `value` 参数。
   - `PlatformSettingsChannel` 为此保留了 `debugForceChannelAvailable` 测试钩子：`flutter test` 始终以宿主 OS（如 Windows）运行，`Platform.isAndroid` 恒为 `false`，不加这个测试钩子的话所有方法在测试里都会被早退守卫直接短路，永远走不到 channel 调用。生产环境该值恒为 `false`，不影响真机行为。
 - `no_hardcoded_qq_number_test.dart`：扫描 `lib/`、`android/`、`docs/`、`test/` 下的文本文件，确保真实 QQ 号不会被提交进仓库（与 `Emerald-presence` 后端仓库的同名测试各自独立，是镜像关系，不是重复）。
 - `app_shell_structure_test.dart`：守住 `app_shell.dart` 当前 1499 行基线，并断言历史 `part` 结构不再回到入口。
@@ -102,8 +105,9 @@ Flutter Web 已可编译。双击仓库根目录的 `电脑浏览器预览.bat`�
 - Android 原生代码（Kotlin）本身的运行时行为（通知闸门、无障碍采集、悬浮窗确认、设备管理器锁屏）完全没有测试；`android_relay_signal_contract_test.dart` 只是对源码文本做字符串断言，不是真实运行 Kotlin 代码。这类覆盖需要 Android instrumented test，`flutter test` 覆盖不到。
 - 后台原生 poll 与前台 `_pollMobile` 的交接时机（`isBackgroundNotificationServiceRunning() == true` 时前台跳过 poll）目前只在 Dart 侧假设为真，没有场景化测试验证切换瞬间的行为。
 
-## 最近一次本机验证（2026-07-13）
+## 最近一次本机验证（2026-07-19）
 
 - `flutter analyze`：通过，0 issues。
-- `flutter test`：未进入任何断言即因本机 Flutter tester 回环连接 `HttpException: Connection closed before full header was received` 失败；这是环境故障，不能记为测试通过。
+- `flutter test test/localization_contract_test.dart test/locale_controller_test.dart test/method_channel_contract_test.dart test/widget_test.dart`：Flutter tester 启动阶段持续无输出，未进入任何断言后人工终止；与本机既有 tester 回环环境故障属于同一测试器不可用边界，不能记为测试通过或断言失败。
+- `flutter build web --no-pub`：通过，产物为 `build/web`。
 - `flutter build apk --debug`：通过，产物为 `build/app/outputs/flutter-apk/app-debug.apk`。

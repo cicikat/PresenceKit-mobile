@@ -7,7 +7,7 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 职责：
 
 - 注册兼容旧安装契约的 `MethodChannel('presence_mobile/settings')`；Dart 侧通过 `PlatformSettingsChannel` 共享该通道。`yexuan_memery` 仅是历史 `SharedPreferences` 存储名，不是当前 channel 名。
-- 读写兼容键 `SharedPreferences("yexuan_memery")`：后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、后台通知开关、头像。该存储名有意不随项目改名。
+- 读写兼容键 `SharedPreferences("yexuan_memery")`：后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、后台通知开关、头像和 Flutter 语言偏好。语言通过 `getAppLanguage` / `setAppLanguage` 读写 `appLanguage`，只接受 `system`、`zh-CN`、`en-US`。该存储名有意不随项目改名。
 - 检查通知、悬浮窗、设备管理器、无障碍权限；通知权限只在能力检查页显式请求，或用户首次开启后台通知时请求。
 - 检查并引导用户授予电池优化豁免；能力页同时提供常见 OEM 自启动/后台白名单路径。
 - 启动/停止 `MobileNotificationService` 和 `FloatingBubbleService`。
