@@ -517,6 +517,372 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'{count} 字'**
   String characterCount(int count);
+
+  /// No description provided for @settingsBackendNodeTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端节点与用户 ID'**
+  String get settingsBackendNodeTitle;
+
+  /// No description provided for @settingsBackendNodeSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'{baseUrl} · 用户 {userId}'**
+  String settingsBackendNodeSubtitle(String baseUrl, String userId);
+
+  /// No description provided for @settingsEditBackendTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'修改后端地址'**
+  String get settingsEditBackendTooltip;
+
+  /// No description provided for @settingsRelayTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'推送中继 ntfy'**
+  String get settingsRelayTitle;
+
+  /// No description provided for @settingsRelaySubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'中继只承载新消息信号，正文会从已鉴权后端回源读取。'**
+  String get settingsRelaySubtitle;
+
+  /// No description provided for @settingsEditRelayTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'修改中继地址'**
+  String get settingsEditRelayTooltip;
+
+  /// No description provided for @settingsNotificationsSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知与主动性'**
+  String get settingsNotificationsSection;
+
+  /// No description provided for @settingsBackgroundNotificationsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'后台通知'**
+  String get settingsBackgroundNotificationsTitle;
+
+  /// No description provided for @settingsBackgroundNotificationsSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'中继实时订阅 · 长时间断线周期补偿 · 静音/冷却'**
+  String get settingsBackgroundNotificationsSubtitle;
+
+  /// No description provided for @settingsNotificationTestTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知闸门测试模式（仅调试）'**
+  String get settingsNotificationTestTitle;
+
+  /// No description provided for @settingsNotificationTestSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅绕过静音时段和 30 分钟冷却，不改变消息消费逻辑。'**
+  String get settingsNotificationTestSubtitle;
+
+  /// No description provided for @settingsAppearanceSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'外观与显示'**
+  String get settingsAppearanceSection;
+
+  /// No description provided for @settingsProfileTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'角色资料'**
+  String get settingsProfileTitle;
+
+  /// No description provided for @settingsProfileSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'本机备注和头像 · 资料页有完整说明'**
+  String get settingsProfileSubtitle;
+
+  /// No description provided for @settingsOpenProfileTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开角色资料页'**
+  String get settingsOpenProfileTooltip;
+
+  /// No description provided for @settingsEditProfileNameTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'设置本机备注名'**
+  String get settingsEditProfileNameTooltip;
+
+  /// No description provided for @settingsImportAvatarTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入并裁切头像'**
+  String get settingsImportAvatarTooltip;
+
+  /// No description provided for @settingsResetAvatarTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复默认头像'**
+  String get settingsResetAvatarTooltip;
+
+  /// No description provided for @settingsThemeTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'外观主题'**
+  String get settingsThemeTitle;
+
+  /// No description provided for @settingsThemeBuiltInSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'信纸 · 夜间 · {count} 个颜色预设'**
+  String settingsThemeBuiltInSubtitle(int count);
+
+  /// No description provided for @settingsThemePresetSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前：{name} · 共 {count} 个预设'**
+  String settingsThemePresetSubtitle(String name, int count);
+
+  /// No description provided for @themePaper.
+  ///
+  /// In zh, this message translates to:
+  /// **'信纸'**
+  String get themePaper;
+
+  /// No description provided for @themeNight.
+  ///
+  /// In zh, this message translates to:
+  /// **'夜间'**
+  String get themeNight;
+
+  /// No description provided for @settingsColorPresets.
+  ///
+  /// In zh, this message translates to:
+  /// **'颜色预设 ({count})'**
+  String settingsColorPresets(int count);
+
+  /// No description provided for @settingsInfoStripTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'对话信息栏'**
+  String get settingsInfoStripTitle;
+
+  /// No description provided for @settingsInfoStripSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'控制主页整块深绿色状态区'**
+  String get settingsInfoStripSubtitle;
+
+  /// No description provided for @settingsFontSizeTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'正文字号'**
+  String get settingsFontSizeTitle;
+
+  /// No description provided for @settingsFontSizeSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'{size}px · 影响气泡和正文段落'**
+  String settingsFontSizeSubtitle(int size);
+
+  /// No description provided for @settingsShowAvatarTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示我的头像'**
+  String get settingsShowAvatarTitle;
+
+  /// No description provided for @settingsShowAvatarSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'对话气泡右侧也放小头像'**
+  String get settingsShowAvatarSubtitle;
+
+  /// No description provided for @settingsProactiveRateTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'主动消息频率'**
+  String get settingsProactiveRateTitle;
+
+  /// No description provided for @settingsProactiveRateSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'控制后台主动提醒的大致密度'**
+  String get settingsProactiveRateSubtitle;
+
+  /// No description provided for @rateLow.
+  ///
+  /// In zh, this message translates to:
+  /// **'少'**
+  String get rateLow;
+
+  /// No description provided for @rateMedium.
+  ///
+  /// In zh, this message translates to:
+  /// **'适中'**
+  String get rateMedium;
+
+  /// No description provided for @rateHigh.
+  ///
+  /// In zh, this message translates to:
+  /// **'多'**
+  String get rateHigh;
+
+  /// No description provided for @settingsNightSilentTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'夜深时段静音'**
+  String get settingsNightSilentTitle;
+
+  /// No description provided for @settingsNightSilentSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'他在 23:30 到 06:30 不主动找你'**
+  String get settingsNightSilentSubtitle;
+
+  /// No description provided for @settingsChatContentSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'对话内容配置'**
+  String get settingsChatContentSection;
+
+  /// No description provided for @settingsChatLorebookTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Chat 世界书'**
+  String get settingsChatLorebookTitle;
+
+  /// No description provided for @settingsChatLorebookSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Reality 对话使用 · 多选'**
+  String get settingsChatLorebookSubtitle;
+
+  /// No description provided for @settingsChatJailbreakTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Chat 破限'**
+  String get settingsChatJailbreakTitle;
+
+  /// No description provided for @settingsChatJailbreakSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Reality 独立破限 · 多选'**
+  String get settingsChatJailbreakSubtitle;
+
+  /// No description provided for @settingsDreamLorebookTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Dream 世界书'**
+  String get settingsDreamLorebookTitle;
+
+  /// No description provided for @settingsDreamLorebookSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Dream 独立 Lorebook 开关'**
+  String get settingsDreamLorebookSubtitle;
+
+  /// No description provided for @settingsDreamWorldTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Dream 世界层'**
+  String get settingsDreamWorldTitle;
+
+  /// No description provided for @settingsDreamWorldSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'下一次入梦时使用'**
+  String get settingsDreamWorldSubtitle;
+
+  /// No description provided for @dreamWorldRealityDerived.
+  ///
+  /// In zh, this message translates to:
+  /// **'现实派生'**
+  String get dreamWorldRealityDerived;
+
+  /// No description provided for @dreamWorldAbo.
+  ///
+  /// In zh, this message translates to:
+  /// **'ABO'**
+  String get dreamWorldAbo;
+
+  /// No description provided for @dreamWorldVampire.
+  ///
+  /// In zh, this message translates to:
+  /// **'吸血鬼'**
+  String get dreamWorldVampire;
+
+  /// No description provided for @dreamWorldCat.
+  ///
+  /// In zh, this message translates to:
+  /// **'猫'**
+  String get dreamWorldCat;
+
+  /// No description provided for @dreamWorldFlowerBud.
+  ///
+  /// In zh, this message translates to:
+  /// **'花苞'**
+  String get dreamWorldFlowerBud;
+
+  /// No description provided for @customOption.
+  ///
+  /// In zh, this message translates to:
+  /// **'自定义'**
+  String get customOption;
+
+  /// No description provided for @settingsDreamJailbreakTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Dream 破限'**
+  String get settingsDreamJailbreakTitle;
+
+  /// No description provided for @settingsDreamJailbreakSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Dream 独立 D0 预设'**
+  String get settingsDreamJailbreakSubtitle;
+
+  /// No description provided for @defaultOption.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认'**
+  String get defaultOption;
+
+  /// No description provided for @settingsBackendSaveError.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端设置读取/保存失败：{error}'**
+  String settingsBackendSaveError(String error);
+
+  /// No description provided for @settingsDiagnosticsSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'诊断'**
+  String get settingsDiagnosticsSection;
+
+  /// No description provided for @settingsCapabilitiesTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'能力检查'**
+  String get settingsCapabilitiesTitle;
+
+  /// No description provided for @settingsCapabilitiesSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'权限状态、后端连通、中继与同步状态'**
+  String get settingsCapabilitiesSubtitle;
+
+  /// No description provided for @openAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开'**
+  String get openAction;
+
+  /// No description provided for @settingsThinClientNotice.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机端负责聊天、通知、悬浮窗和本机显示；人格、记忆与调度仍由后端维护。'**
+  String get settingsThinClientNotice;
 }
 
 class _AppLocalizationsDelegate

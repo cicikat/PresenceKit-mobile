@@ -235,4 +235,214 @@ class AppLocalizationsEn extends AppLocalizations {
   String characterCount(int count) {
     return '$count characters';
   }
+
+  @override
+  String get settingsBackendNodeTitle => 'Backend node & user ID';
+
+  @override
+  String settingsBackendNodeSubtitle(String baseUrl, String userId) {
+    return '$baseUrl · User $userId';
+  }
+
+  @override
+  String get settingsEditBackendTooltip => 'Edit backend address';
+
+  @override
+  String get settingsRelayTitle => 'ntfy push relay';
+
+  @override
+  String get settingsRelaySubtitle =>
+      'The relay only carries new-message signals; content is fetched from the authenticated backend.';
+
+  @override
+  String get settingsEditRelayTooltip => 'Edit relay address';
+
+  @override
+  String get settingsNotificationsSection => 'Notifications & proactivity';
+
+  @override
+  String get settingsBackgroundNotificationsTitle => 'Background notifications';
+
+  @override
+  String get settingsBackgroundNotificationsSubtitle =>
+      'Live relay · Long-disconnect fallback · Quiet hours/cooldown';
+
+  @override
+  String get settingsNotificationTestTitle =>
+      'Notification gate test mode (debug only)';
+
+  @override
+  String get settingsNotificationTestSubtitle =>
+      'Only bypasses quiet hours and the 30-minute cooldown; message consumption is unchanged.';
+
+  @override
+  String get settingsAppearanceSection => 'Appearance & display';
+
+  @override
+  String get settingsProfileTitle => 'Character profile';
+
+  @override
+  String get settingsProfileSubtitle =>
+      'Local name and avatar · Full details on the profile page';
+
+  @override
+  String get settingsOpenProfileTooltip => 'Open character profile';
+
+  @override
+  String get settingsEditProfileNameTooltip => 'Edit local display name';
+
+  @override
+  String get settingsImportAvatarTooltip => 'Import and crop avatar';
+
+  @override
+  String get settingsResetAvatarTooltip => 'Restore default avatar';
+
+  @override
+  String get settingsThemeTitle => 'Appearance theme';
+
+  @override
+  String settingsThemeBuiltInSubtitle(int count) {
+    return 'Paper · Night · $count color presets';
+  }
+
+  @override
+  String settingsThemePresetSubtitle(String name, int count) {
+    return 'Current: $name · $count presets total';
+  }
+
+  @override
+  String get themePaper => 'Paper';
+
+  @override
+  String get themeNight => 'Night';
+
+  @override
+  String settingsColorPresets(int count) {
+    return 'Color presets ($count)';
+  }
+
+  @override
+  String get settingsInfoStripTitle => 'Conversation info bar';
+
+  @override
+  String get settingsInfoStripSubtitle =>
+      'Controls the dark green status area on the home screen';
+
+  @override
+  String get settingsFontSizeTitle => 'Text size';
+
+  @override
+  String settingsFontSizeSubtitle(int size) {
+    return '${size}px · Affects bubbles and body text';
+  }
+
+  @override
+  String get settingsShowAvatarTitle => 'Show my avatar';
+
+  @override
+  String get settingsShowAvatarSubtitle =>
+      'Display a small avatar beside my chat bubbles';
+
+  @override
+  String get settingsProactiveRateTitle => 'Proactive message frequency';
+
+  @override
+  String get settingsProactiveRateSubtitle =>
+      'Controls the approximate density of proactive reminders';
+
+  @override
+  String get rateLow => 'Low';
+
+  @override
+  String get rateMedium => 'Medium';
+
+  @override
+  String get rateHigh => 'High';
+
+  @override
+  String get settingsNightSilentTitle => 'Quiet hours at night';
+
+  @override
+  String get settingsNightSilentSubtitle =>
+      'He will not proactively contact you from 23:30 to 06:30';
+
+  @override
+  String get settingsChatContentSection => 'Conversation content';
+
+  @override
+  String get settingsChatLorebookTitle => 'Chat lorebook';
+
+  @override
+  String get settingsChatLorebookSubtitle =>
+      'Used by Reality chat · Multiple selection';
+
+  @override
+  String get settingsChatJailbreakTitle => 'Chat jailbreak';
+
+  @override
+  String get settingsChatJailbreakSubtitle =>
+      'Independent Reality jailbreak · Multiple selection';
+
+  @override
+  String get settingsDreamLorebookTitle => 'Dream lorebook';
+
+  @override
+  String get settingsDreamLorebookSubtitle =>
+      'Independent Dream lorebook switch';
+
+  @override
+  String get settingsDreamWorldTitle => 'Dream world layer';
+
+  @override
+  String get settingsDreamWorldSubtitle =>
+      'Used the next time you enter a dream';
+
+  @override
+  String get dreamWorldRealityDerived => 'Derived from reality';
+
+  @override
+  String get dreamWorldAbo => 'ABO';
+
+  @override
+  String get dreamWorldVampire => 'Vampire';
+
+  @override
+  String get dreamWorldCat => 'Cat';
+
+  @override
+  String get dreamWorldFlowerBud => 'Flower bud';
+
+  @override
+  String get customOption => 'Custom';
+
+  @override
+  String get settingsDreamJailbreakTitle => 'Dream jailbreak';
+
+  @override
+  String get settingsDreamJailbreakSubtitle => 'Independent Dream D0 preset';
+
+  @override
+  String get defaultOption => 'Default';
+
+  @override
+  String settingsBackendSaveError(String error) {
+    return 'Could not load/save backend settings: $error';
+  }
+
+  @override
+  String get settingsDiagnosticsSection => 'Diagnostics';
+
+  @override
+  String get settingsCapabilitiesTitle => 'Capability check';
+
+  @override
+  String get settingsCapabilitiesSubtitle =>
+      'Permissions, backend, relay and sync status';
+
+  @override
+  String get openAction => 'Open';
+
+  @override
+  String get settingsThinClientNotice =>
+      'The mobile client handles chat, notifications, overlays and local display; personality, memory and scheduling remain on the backend.';
 }

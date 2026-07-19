@@ -169,31 +169,34 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: '后端节点与用户 ID',
-                subtitle: '$backendBaseUrl · 用户 $ownerUserId',
+                title: l10n.settingsBackendNodeTitle,
+                subtitle: l10n.settingsBackendNodeSubtitle(
+                  backendBaseUrl,
+                  ownerUserId,
+                ),
                 child: YxIconButton(
                   c: c,
                   icon: Icons.edit_location_alt_rounded,
                   onPressed: onEditBackend,
-                  tooltip: '修改后端地址',
+                  tooltip: l10n.settingsEditBackendTooltip,
                 ),
               ),
               SettingsRow(
                 c: c,
-                title: '推送中继 ntfy',
-                subtitle: '中继只承载新消息信号，正文会从已鉴权后端回源读取。',
+                title: l10n.settingsRelayTitle,
+                subtitle: l10n.settingsRelaySubtitle,
                 child: YxIconButton(
                   c: c,
                   icon: Icons.cell_tower_outlined,
                   onPressed: () => onEditRelay(),
-                  tooltip: '修改中继地址',
+                  tooltip: l10n.settingsEditRelayTooltip,
                 ),
               ),
-              const _SettingsSection(title: '通知与主动性'),
+              _SettingsSection(title: l10n.settingsNotificationsSection),
               SettingsRow(
                 c: c,
-                title: '后台通知',
-                subtitle: '中继实时订阅 · 长时间断线周期补偿 · 静音/冷却',
+                title: l10n.settingsBackgroundNotificationsTitle,
+                subtitle: l10n.settingsBackgroundNotificationsSubtitle,
                 child: Switch(
                   value: backgroundNotifications,
                   onChanged: onBackgroundNotifications,
@@ -201,18 +204,18 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: '通知闸门测试模式（仅调试）',
-                subtitle: '仅绕过静音时段和 30 分钟冷却，不改变消息消费逻辑。',
+                title: l10n.settingsNotificationTestTitle,
+                subtitle: l10n.settingsNotificationTestSubtitle,
                 child: Switch(
                   value: notificationTestMode,
                   onChanged: onNotificationTestMode,
                 ),
               ),
-              const _SettingsSection(title: '外观与显示'),
+              _SettingsSection(title: l10n.settingsAppearanceSection),
               SettingsRow(
                 c: c,
-                title: '角色资料',
-                subtitle: '本机备注和头像 · 资料页有完整说明',
+                title: l10n.settingsProfileTitle,
+                subtitle: l10n.settingsProfileSubtitle,
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -233,21 +236,21 @@ class SettingsPage extends StatelessWidget {
                       c: c,
                       icon: Icons.open_in_new_rounded,
                       onPressed: onOpenProfile,
-                      tooltip: '打开角色资料页',
+                      tooltip: l10n.settingsOpenProfileTooltip,
                       size: 30,
                     ),
                     YxIconButton(
                       c: c,
                       icon: Icons.badge_outlined,
                       onPressed: onEditProfileName,
-                      tooltip: '设置本机备注名',
+                      tooltip: l10n.settingsEditProfileNameTooltip,
                       size: 30,
                     ),
                     YxIconButton(
                       c: c,
                       icon: Icons.add_photo_alternate_outlined,
                       onPressed: onImportProfileAvatar,
-                      tooltip: '导入并裁切头像',
+                      tooltip: l10n.settingsImportAvatarTooltip,
                       size: 30,
                     ),
                     if (profileAvatarBytes != null)
@@ -255,7 +258,7 @@ class SettingsPage extends StatelessWidget {
                         c: c,
                         icon: Icons.restore_rounded,
                         onPressed: onResetProfileAvatar,
-                        tooltip: '恢复默认头像',
+                        tooltip: l10n.settingsResetAvatarTooltip,
                         size: 30,
                       ),
                   ],
@@ -263,22 +266,25 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: '外观主题',
+                title: l10n.settingsThemeTitle,
                 subtitle: activeThemePresetName == null
-                    ? '信纸 · 夜间 · $themePresetCount 个颜色预设'
-                    : '当前：$activeThemePresetName · 共 $themePresetCount 个预设',
+                    ? l10n.settingsThemeBuiltInSubtitle(themePresetCount)
+                    : l10n.settingsThemePresetSubtitle(
+                        activeThemePresetName!,
+                        themePresetCount,
+                      ),
                 child: Wrap(
                   spacing: 6,
                   runSpacing: 6,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     ChoiceChip(
-                      label: const Text('信纸'),
+                      label: Text(l10n.themePaper),
                       selected: !dark && activeThemePresetName == null,
                       onSelected: (_) => onTheme(false),
                     ),
                     ChoiceChip(
-                      label: const Text('夜间'),
+                      label: Text(l10n.themeNight),
                       selected: dark && activeThemePresetName == null,
                       onSelected: (_) => onTheme(true),
                     ),
@@ -286,7 +292,8 @@ class SettingsPage extends StatelessWidget {
                       onPressed: onManageThemes,
                       icon: const Icon(Icons.palette_outlined, size: 17),
                       label: Text(
-                        activeThemePresetName ?? '颜色预设 ($themePresetCount)',
+                        activeThemePresetName ??
+                            l10n.settingsColorPresets(themePresetCount),
                       ),
                     ),
                   ],
@@ -294,8 +301,8 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: '对话信息栏',
-                subtitle: '控制主页整块深绿色状态区',
+                title: l10n.settingsInfoStripTitle,
+                subtitle: l10n.settingsInfoStripSubtitle,
                 child: Switch(
                   value: prefs.infoStrip,
                   onChanged: (value) =>
@@ -304,8 +311,8 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: '正文字号',
-                subtitle: '${prefs.fontSize.round()}px · 影响气泡和正文段落',
+                title: l10n.settingsFontSizeTitle,
+                subtitle: l10n.settingsFontSizeSubtitle(prefs.fontSize.round()),
                 child: SizedBox(
                   width: 130,
                   child: Slider(
@@ -321,8 +328,8 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: '显示我的头像',
-                subtitle: '对话气泡右侧也放小头像',
+                title: l10n.settingsShowAvatarTitle,
+                subtitle: l10n.settingsShowAvatarSubtitle,
                 child: Switch(
                   value: prefs.showYouAvatar,
                   onChanged: (value) =>
@@ -331,13 +338,13 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: '主动消息频率',
-                subtitle: '控制后台主动提醒的大致密度',
+                title: l10n.settingsProactiveRateTitle,
+                subtitle: l10n.settingsProactiveRateSubtitle,
                 child: SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'low', label: Text('少')),
-                    ButtonSegment(value: 'mid', label: Text('适中')),
-                    ButtonSegment(value: 'high', label: Text('多')),
+                  segments: [
+                    ButtonSegment(value: 'low', label: Text(l10n.rateLow)),
+                    ButtonSegment(value: 'mid', label: Text(l10n.rateMedium)),
+                    ButtonSegment(value: 'high', label: Text(l10n.rateHigh)),
                   ],
                   selected: {prefs.proactiveRate},
                   onSelectionChanged: (value) =>
@@ -346,19 +353,19 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: '夜深时段静音',
-                subtitle: '他在 23:30 到 06:30 不主动找你',
+                title: l10n.settingsNightSilentTitle,
+                subtitle: l10n.settingsNightSilentSubtitle,
                 child: Switch(
                   value: prefs.nightSilent,
                   onChanged: (value) =>
                       onPrefs(prefs.copyWith(nightSilent: value)),
                 ),
               ),
-              const _SettingsSection(title: '对话内容配置'),
+              _SettingsSection(title: l10n.settingsChatContentSection),
               SettingsRow(
                 c: c,
-                title: 'Chat 世界书',
-                subtitle: 'Reality 对话使用 · 多选',
+                title: l10n.settingsChatLorebookTitle,
+                subtitle: l10n.settingsChatLorebookSubtitle,
                 child: PromptOptionChips(
                   c: c,
                   options: [
@@ -378,8 +385,8 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: 'Chat 破限',
-                subtitle: 'Reality 独立破限 · 多选',
+                title: l10n.settingsChatJailbreakTitle,
+                subtitle: l10n.settingsChatJailbreakSubtitle,
                 child: PromptOptionChips(
                   c: c,
                   options: [
@@ -399,8 +406,8 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: 'Dream 世界书',
-                subtitle: 'Dream 独立 Lorebook 开关',
+                title: l10n.settingsDreamLorebookTitle,
+                subtitle: l10n.settingsDreamLorebookSubtitle,
                 child: Switch(
                   value: dreamSettings?.enableDreamLorebook ?? true,
                   onChanged: settingsBusy ? null : onDreamLorebook,
@@ -408,8 +415,8 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: 'Dream 世界层',
-                subtitle: '下一次入梦时使用',
+                title: l10n.settingsDreamWorldTitle,
+                subtitle: l10n.settingsDreamWorldSubtitle,
                 child: DropdownButton<String>(
                   value: dreamSettings?.worldLayer ?? 'reality_derived',
                   onChanged: settingsBusy
@@ -417,23 +424,38 @@ class SettingsPage extends StatelessWidget {
                       : (value) {
                           if (value != null) onDreamWorldLayer(value);
                         },
-                  items: const [
+                  items: [
                     DropdownMenuItem(
                       value: 'reality_derived',
-                      child: Text('现实派生'),
+                      child: Text(l10n.dreamWorldRealityDerived),
                     ),
-                    DropdownMenuItem(value: 'abo', child: Text('ABO')),
-                    DropdownMenuItem(value: 'vampire', child: Text('吸血鬼')),
-                    DropdownMenuItem(value: 'cat', child: Text('猫')),
-                    DropdownMenuItem(value: 'flower_bud', child: Text('花苞')),
-                    DropdownMenuItem(value: 'custom', child: Text('自定义')),
+                    DropdownMenuItem(
+                      value: 'abo',
+                      child: Text(l10n.dreamWorldAbo),
+                    ),
+                    DropdownMenuItem(
+                      value: 'vampire',
+                      child: Text(l10n.dreamWorldVampire),
+                    ),
+                    DropdownMenuItem(
+                      value: 'cat',
+                      child: Text(l10n.dreamWorldCat),
+                    ),
+                    DropdownMenuItem(
+                      value: 'flower_bud',
+                      child: Text(l10n.dreamWorldFlowerBud),
+                    ),
+                    DropdownMenuItem(
+                      value: 'custom',
+                      child: Text(l10n.customOption),
+                    ),
                   ],
                 ),
               ),
               SettingsRow(
                 c: c,
-                title: 'Dream 破限',
-                subtitle: 'Dream 独立 D0 预设',
+                title: l10n.settingsDreamJailbreakTitle,
+                subtitle: l10n.settingsDreamJailbreakSubtitle,
                 child: DropdownButton<String>(
                   value: dreamSettings?.jailbreakPreset ?? 'default',
                   onChanged: settingsBusy
@@ -441,10 +463,19 @@ class SettingsPage extends StatelessWidget {
                       : (value) {
                           if (value != null) onDreamJailbreak(value);
                         },
-                  items: const [
-                    DropdownMenuItem(value: 'default', child: Text('默认')),
-                    DropdownMenuItem(value: 'abo', child: Text('ABO')),
-                    DropdownMenuItem(value: 'custom', child: Text('自定义')),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'default',
+                      child: Text(l10n.defaultOption),
+                    ),
+                    DropdownMenuItem(
+                      value: 'abo',
+                      child: Text(l10n.dreamWorldAbo),
+                    ),
+                    DropdownMenuItem(
+                      value: 'custom',
+                      child: Text(l10n.customOption),
+                    ),
                   ],
                 ),
               ),
@@ -452,19 +483,19 @@ class SettingsPage extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    '后端设置读取/保存失败：$settingsError',
+                    l10n.settingsBackendSaveError(settingsError!),
                     style: mono(c, 10, color: c.danger),
                   ),
                 ),
-              const _SettingsSection(title: '诊断'),
+              _SettingsSection(title: l10n.settingsDiagnosticsSection),
               SettingsRow(
                 c: c,
-                title: '能力检查',
-                subtitle: '权限状态、后端连通、中继与同步状态',
+                title: l10n.settingsCapabilitiesTitle,
+                subtitle: l10n.settingsCapabilitiesSubtitle,
                 child: FilledButton.icon(
                   onPressed: onOpenCapabilities,
                   icon: const Icon(Icons.health_and_safety_outlined, size: 18),
-                  label: const Text('打开'),
+                  label: Text(l10n.openAction),
                 ),
               ),
               Padding(
@@ -477,7 +508,7 @@ class SettingsPage extends StatelessWidget {
                     border: Border.all(color: c.ink4),
                   ),
                   child: Text(
-                    '手机端负责聊天、通知、悬浮窗和本机显示；人格、记忆与调度仍由后端维护。',
+                    l10n.settingsThinClientNotice,
                     style: serif(
                       c,
                       13,
