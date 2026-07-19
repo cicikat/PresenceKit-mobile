@@ -1639,6 +1639,72 @@ abstract class AppLocalizations {
   /// **'成员管理（已选 {count} 位）'**
   String groupManagingCount(int count);
 
+  /// No description provided for @groupDreamEnterAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'入梦'**
+  String get groupDreamEnterAction;
+
+  /// No description provided for @groupDreamTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'群聊梦境'**
+  String get groupDreamTitle;
+
+  /// No description provided for @groupDreamEntering.
+  ///
+  /// In zh, this message translates to:
+  /// **'坠入中…'**
+  String get groupDreamEntering;
+
+  /// No description provided for @groupDreamEnterFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端没有允许这次入梦'**
+  String get groupDreamEnterFailed;
+
+  /// No description provided for @groupDreamSendToStart.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送消息，开始群聊梦境'**
+  String get groupDreamSendToStart;
+
+  /// No description provided for @groupDreamMembersResponding.
+  ///
+  /// In zh, this message translates to:
+  /// **'角色们陆续回应中…'**
+  String get groupDreamMembersResponding;
+
+  /// No description provided for @groupDreamSendHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'在梦中说些什么…'**
+  String get groupDreamSendHint;
+
+  /// No description provided for @groupDreamExitAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'醒来'**
+  String get groupDreamExitAction;
+
+  /// No description provided for @groupDreamExitConfirmTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要醒来吗？'**
+  String get groupDreamExitConfirmTitle;
+
+  /// No description provided for @groupDreamExitConfirmBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'退出后本轮群聊梦境立即结束，无法继续。'**
+  String get groupDreamExitConfirmBody;
+
+  /// No description provided for @groupDreamBlockedHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'群聊梦境进行中，现实对话暂时锁定'**
+  String get groupDreamBlockedHint;
+
   /// No description provided for @readingDeleteTitle.
   ///
   /// In zh, this message translates to:

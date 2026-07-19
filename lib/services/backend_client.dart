@@ -29,6 +29,9 @@ import '../models/app_models.dart'
         GardenState,
         GomokuState,
         GroupDetail,
+        GroupDreamSendResponse,
+        GroupDreamState,
+        GroupDreamTranscriptPage,
         GroupSummary,
         JailbreakEntry,
         LoreEntry,
@@ -1084,6 +1087,71 @@ class BackendClient {
       body: {'roster': roster},
     );
     return GroupDetail.fromJson(decoded);
+  }
+
+  // ── 群聊梦境（Brief 100/38 的 mobile 追加：无 WS，靠 transcript 轮询）───────────
+
+  Future<GroupDreamState> groupDreamGetState({
+    required String groupId,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/group/${Uri.encodeComponent(groupId)}/dream/state',
+      token: token,
+    );
+    return GroupDreamState.fromJson(decoded);
+  }
+
+  Future<bool> groupDreamEnter({
+    required String groupId,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/group/${Uri.encodeComponent(groupId)}/dream/enter',
+      token: token,
+      method: 'POST',
+      body: const {},
+    );
+    return decoded['ok'] == true;
+  }
+
+  Future<GroupDreamSendResponse> groupDreamSend({
+    required String groupId,
+    required String content,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/group/${Uri.encodeComponent(groupId)}/dream/send',
+      token: token,
+      method: 'POST',
+      body: {'content': content},
+    );
+    return GroupDreamSendResponse.fromJson(decoded);
+  }
+
+  Future<GroupDreamTranscriptPage> groupDreamTranscript({
+    required String groupId,
+    required int after,
+    required String token,
+  }) async {
+    final decoded = await _request(
+      '/group/${Uri.encodeComponent(groupId)}/dream/transcript?after=$after',
+      token: token,
+    );
+    return GroupDreamTranscriptPage.fromJson(decoded);
+  }
+
+  Future<void> groupDreamExit({
+    required String groupId,
+    required String token,
+  }) async {
+    await _request(
+      '/group/${Uri.encodeComponent(groupId)}/dream/exit',
+      token: token,
+      method: 'POST',
+      body: const {},
+      expectJson: false,
+    );
   }
 
   Future<void> pushScreenContext(

@@ -1542,6 +1542,102 @@ class GroupDetail {
   final List<GroupMessage> recent;
 }
 
+// ── 群聊梦境（desktop Brief 38/100 的 mobile 追加：无 WS，靠轮询）──────────────
+
+class GroupDreamState {
+  const GroupDreamState({required this.status, required this.blocksChat});
+
+  final String status;
+  final bool blocksChat;
+
+  bool get isActive => status == 'DREAM_ACTIVE' || status == 'DREAM_CLOSING';
+
+  factory GroupDreamState.fromJson(Map<String, dynamic> json) {
+    return GroupDreamState(
+      status: json['status']?.toString() ?? 'REALITY_CHAT',
+      blocksChat: json['blocks_chat'] == true,
+    );
+  }
+}
+
+class GroupDreamMessage {
+  const GroupDreamMessage({
+    required this.index,
+    required this.speakerId,
+    required this.isOwner,
+    required this.content,
+    required this.timestamp,
+    required this.roundId,
+  });
+
+  factory GroupDreamMessage.fromJson(Map<String, dynamic> json) {
+    final ts = json['timestamp'];
+    return GroupDreamMessage(
+      index: (json['index'] as num?)?.toInt() ?? 0,
+      speakerId: (json['speaker_id'] ?? '').toString(),
+      isOwner: json['is_owner'] == true,
+      content: (json['content'] ?? '').toString(),
+      timestamp: ts is num
+          ? ts.toDouble()
+          : double.tryParse((ts ?? '0').toString()) ?? 0,
+      roundId: (json['round_id'] ?? '').toString(),
+    );
+  }
+
+  final int index;
+  final String speakerId;
+  final bool isOwner;
+  final String content;
+  final double timestamp;
+  final String roundId;
+}
+
+/// `GET /group/{id}/dream/transcript?after=<cursor>` 响应：`cursor` 是下次轮询
+/// 要传的 `after` 值，`entries` 是本次新增的发言（可能为空）。
+class GroupDreamTranscriptPage {
+  const GroupDreamTranscriptPage({
+    required this.status,
+    required this.cursor,
+    required this.entries,
+  });
+
+  factory GroupDreamTranscriptPage.fromJson(Map<String, dynamic> json) {
+    final rawEntries = json['entries'];
+    return GroupDreamTranscriptPage(
+      status: json['status']?.toString() ?? 'REALITY_CHAT',
+      cursor: (json['cursor'] as num?)?.toInt() ?? 0,
+      entries: rawEntries is List
+          ? rawEntries
+                .whereType<Map>()
+                .map(
+                  (m) => GroupDreamMessage.fromJson(
+                    Map<String, dynamic>.from(m),
+                  ),
+                )
+                .toList(growable: false)
+          : const [],
+    );
+  }
+
+  final String status;
+  final int cursor;
+  final List<GroupDreamMessage> entries;
+}
+
+class GroupDreamSendResponse {
+  const GroupDreamSendResponse({required this.roundId, required this.status});
+
+  factory GroupDreamSendResponse.fromJson(Map<String, dynamic> json) {
+    return GroupDreamSendResponse(
+      roundId: (json['round_id'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+    );
+  }
+
+  final String roundId;
+  final String status;
+}
+
 // ── W6：状态感知 + Dream 补全 ──────────────────────────────────────────────────
 
 class ActivityCurrentState {

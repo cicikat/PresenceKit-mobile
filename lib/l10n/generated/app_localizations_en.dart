@@ -880,6 +880,42 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get groupDreamEnterAction => 'Dream';
+
+  @override
+  String get groupDreamTitle => 'Group Dream';
+
+  @override
+  String get groupDreamEntering => 'Falling asleep…';
+
+  @override
+  String get groupDreamEnterFailed =>
+      'The backend did not allow entering the dream';
+
+  @override
+  String get groupDreamSendToStart => 'Send a message to start the group dream';
+
+  @override
+  String get groupDreamMembersResponding => 'The others are responding…';
+
+  @override
+  String get groupDreamSendHint => 'Say something in the dream…';
+
+  @override
+  String get groupDreamExitAction => 'Wake up';
+
+  @override
+  String get groupDreamExitConfirmTitle => 'Wake up now?';
+
+  @override
+  String get groupDreamExitConfirmBody =>
+      'This ends the group dream immediately and it can\'t be resumed.';
+
+  @override
+  String get groupDreamBlockedHint =>
+      'Group dream in progress — reality chat is locked';
+
+  @override
   String readingDeleteTitle(String title) {
     return 'Delete “$title”?';
   }

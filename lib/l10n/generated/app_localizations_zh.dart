@@ -851,6 +851,39 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get groupDreamEnterAction => '入梦';
+
+  @override
+  String get groupDreamTitle => '群聊梦境';
+
+  @override
+  String get groupDreamEntering => '坠入中…';
+
+  @override
+  String get groupDreamEnterFailed => '后端没有允许这次入梦';
+
+  @override
+  String get groupDreamSendToStart => '发送消息，开始群聊梦境';
+
+  @override
+  String get groupDreamMembersResponding => '角色们陆续回应中…';
+
+  @override
+  String get groupDreamSendHint => '在梦中说些什么…';
+
+  @override
+  String get groupDreamExitAction => '醒来';
+
+  @override
+  String get groupDreamExitConfirmTitle => '确定要醒来吗？';
+
+  @override
+  String get groupDreamExitConfirmBody => '退出后本轮群聊梦境立即结束，无法继续。';
+
+  @override
+  String get groupDreamBlockedHint => '群聊梦境进行中，现实对话暂时锁定';
+
+  @override
   String readingDeleteTitle(String title) {
     return '删除《$title》？';
   }
