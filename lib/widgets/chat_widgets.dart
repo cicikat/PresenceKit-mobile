@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/chat_controller.dart';
+import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 import '../services/character_naming.dart';
 import '../widgets/common_widgets.dart';
@@ -59,6 +60,7 @@ class ChatScene extends StatelessWidget {
   }
 
   Widget _build(BuildContext context) {
+    final l10n = context.l10n;
     final backendBusy = controller.sending;
     final himTyping = controller.himTyping;
     final backendError = controller.backendError;
@@ -73,7 +75,7 @@ class ChatScene extends StatelessWidget {
     final visibleMessageLimit = controller.visibleMessageLimit;
     final scrollController = controller.scrollController;
     final showJumpToLatest = controller.showJumpToLatest;
-    final presence = PresenceSnapshot.current(c);
+    final presence = PresenceSnapshot.current(l10n);
     final totalMessageCount = historyMessages.length + sentMessages.length;
     final hiddenMessageCount = math.max(
       0,
@@ -83,24 +85,28 @@ class ChatScene extends StatelessWidget {
     final todayLine = formatTodayLine(DateTime.now());
     final topInset = MediaQuery.paddingOf(context).top;
     final metaItems = <Widget>[
-      if (loadingMoreHistory) MetaLine(c: c, text: '正在加载更早的对话…'),
+      if (loadingMoreHistory) MetaLine(c: c, text: l10n.chatLoadingOlder),
       if (hiddenMessageCount > 0)
-        MetaLine(c: c, text: '已折叠 $hiddenMessageCount 条更早对话 · 上滑继续展开'),
+        MetaLine(c: c, text: l10n.chatHiddenOlder(hiddenMessageCount)),
       MetaLine(c: c, text: todayLine),
-      if (loadingHistory) MetaLine(c: c, text: '正在从后端读取聊天记录'),
+      if (loadingHistory) MetaLine(c: c, text: l10n.chatLoadingHistory),
       if (historyLoaded && historyMessages.isEmpty)
-        MetaLine(c: c, text: '后端已连接 · 暂无聊天记录'),
-      if (historyError != null) MetaLine(c: c, text: '历史加载失败 · $historyError'),
-      if (backendBusy) MetaLine(c: c, text: '已送到后端 · 正在等他回话'),
-      if (backendError != null) MetaLine(c: c, text: '后端连接异常 · $backendError'),
+        MetaLine(c: c, text: l10n.chatEmptyHistory),
+      if (historyError != null)
+        MetaLine(c: c, text: l10n.chatHistoryError(historyError)),
+      if (backendBusy) MetaLine(c: c, text: l10n.chatWaitingReply),
+      if (backendError != null)
+        MetaLine(c: c, text: l10n.chatBackendError(backendError)),
       if (lastBackendReply != null && backendError == null)
         MetaLine(
           c: c,
-          text:
-              '后端已接入 · ${lastBackendReply.emotion} · 好感 ${lastBackendReply.affection}',
+          text: l10n.chatBackendStatus(
+            lastBackendReply.emotion,
+            lastBackendReply.affection,
+          ),
         ),
       if (mobileReceivedCount > 0)
-        MetaLine(c: c, text: '已接收 $mobileReceivedCount 条主动消息'),
+        MetaLine(c: c, text: l10n.chatMobileReceived(mobileReceivedCount)),
       const SizedBox(height: 14),
     ];
     final itemCount =
@@ -138,7 +144,7 @@ class ChatScene extends StatelessWidget {
                   if (messageIndex >= visibleMessageCount) {
                     return TypingHimMessage(
                       c: c,
-                      time: '正在输入',
+                      time: l10n.chatTyping,
                       prefs: prefs,
                       profileDisplayName: profileDisplayName,
                       profileAvatarBytes: profileAvatarBytes,
@@ -296,7 +302,7 @@ class ChatTopBar extends StatelessWidget {
                 icon: Icons.menu_rounded,
                 onPressed: onOpenDrawer,
                 onDark: true,
-                tooltip: '抽屉',
+                tooltip: context.l10n.drawerTooltip,
               ),
               const SizedBox(width: 8),
               YxAvatar(
@@ -362,7 +368,7 @@ class ChatTopBar extends StatelessWidget {
                 icon: Icons.tune_rounded,
                 onPressed: onOpenSettings,
                 onDark: true,
-                tooltip: '偏好',
+                tooltip: context.l10n.preferencesTooltip,
               ),
               const SizedBox(width: 6),
               YxIconButton(
@@ -370,7 +376,9 @@ class ChatTopBar extends StatelessWidget {
                 icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 onPressed: onToggleTheme,
                 onDark: true,
-                tooltip: dark ? '切到白天' : '切到夜里',
+                tooltip: dark
+                    ? context.l10n.switchToLightTooltip
+                    : context.l10n.switchToDarkTooltip,
               ),
             ],
           ),
@@ -424,7 +432,7 @@ class FloatingDrawerButton extends StatelessWidget {
         c: c,
         icon: Icons.menu_rounded,
         onPressed: onOpenDrawer,
-        tooltip: '抽屉',
+        tooltip: context.l10n.drawerTooltip,
       ),
     );
   }
@@ -473,13 +481,19 @@ Future<ChatBubbleAction?> showChatBubbleMenu({
       Offset.zero & overlay.size,
     ),
     items: [
-      const PopupMenuItem(value: ChatBubbleAction.copy, child: Text('复制')),
-      const PopupMenuItem(
+      PopupMenuItem(
+        value: ChatBubbleAction.copy,
+        child: Text(context.l10n.copyAction),
+      ),
+      PopupMenuItem(
         value: ChatBubbleAction.selectAll,
-        child: Text('全选'),
+        child: Text(context.l10n.selectAllAction),
       ),
       if (showReply)
-        const PopupMenuItem(value: ChatBubbleAction.reply, child: Text('回复')),
+        PopupMenuItem(
+          value: ChatBubbleAction.reply,
+          child: Text(context.l10n.replyAction),
+        ),
     ],
   );
 }
@@ -522,7 +536,7 @@ class ReplyPreviewBar extends StatelessWidget {
               icon: Icons.close_rounded,
               size: 26,
               onPressed: onCancel,
-              tooltip: '取消回复',
+              tooltip: context.l10n.cancelReplyTooltip,
             ),
           ],
         ),
@@ -1021,7 +1035,9 @@ class UserAttachmentCard extends StatelessWidget {
     final icon = attachment.isImage
         ? Icons.image_outlined
         : Icons.attach_file_rounded;
-    final label = attachment.isImage ? '图片附件' : '文件附件';
+    final label = attachment.isImage
+        ? context.l10n.imageAttachment
+        : context.l10n.fileAttachment;
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 188),
       child: Row(
@@ -1171,7 +1187,8 @@ class _ComposerState extends State<Composer> {
 
   @override
   Widget build(BuildContext context) {
-    const placeholder = '对他说些什么…';
+    final l10n = context.l10n;
+    final placeholder = l10n.composerPlaceholder;
     return Container(
       color: widget.c.surfaceSoft,
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -1187,7 +1204,7 @@ class _ComposerState extends State<Composer> {
                 icon: Icons.add_rounded,
                 size: 38,
                 onPressed: widget.onOpenAttach,
-                tooltip: '附件',
+                tooltip: l10n.attachmentTooltip,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -1251,7 +1268,9 @@ class _ComposerState extends State<Composer> {
                         size: 38,
                         onPressed: () {},
                         onDark: _recording,
-                        tooltip: _recording ? '松开发送' : '长按说话',
+                        tooltip: _recording
+                            ? l10n.releaseToSendTooltip
+                            : l10n.holdToTalkTooltip,
                       ),
                     );
                   }
@@ -1279,7 +1298,7 @@ class _ComposerState extends State<Composer> {
                         size: 15,
                       ),
                       label: Text(
-                        widget.sending ? '等待' : '寄出',
+                        widget.sending ? l10n.waitAction : l10n.sendAction,
                         style: mono(widget.c, 11, color: widget.c.surface),
                       ),
                     ),
@@ -1299,7 +1318,7 @@ class _ComposerState extends State<Composer> {
                 valueListenable: _draft,
                 builder: (context, draft, _) {
                   return Text(
-                    draft.isEmpty ? '—' : '${draft.length} 字',
+                    draft.isEmpty ? '—' : l10n.characterCount(draft.length),
                     style: mono(widget.c, 9.5, color: widget.c.ink3),
                   );
                 },

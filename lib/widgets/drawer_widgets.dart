@@ -1,9 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 
 import '../widgets/common_widgets.dart';
+
 class YxDrawer extends StatelessWidget {
   const YxDrawer({
     super.key,
@@ -24,6 +25,7 @@ class YxDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Drawer(
       width: MediaQuery.sizeOf(context).width * 0.84,
       backgroundColor: c.characterDeep,
@@ -57,7 +59,7 @@ class YxDrawer extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '手机薄客户端 · 本机显示',
+                          l10n.drawerClientSubtitle,
                           style: mono(
                             c,
                             10,
@@ -80,62 +82,62 @@ class YxDrawer extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Column(
                   children: [
-                    _DrawerSectionLabel(c: c, label: '页面'),
+                    _DrawerSectionLabel(c: c, label: l10n.drawerPagesSection),
                     DrawerItem(
                       c: c,
                       icon: Icons.chat_bubble_outline_rounded,
-                      title: '主对话',
-                      subtitle: '聊天窗口',
+                      title: l10n.drawerChatTitle,
+                      subtitle: l10n.drawerChatSubtitle,
                       active: route == AppRoute.chat,
                       onTap: () => onRoute(AppRoute.chat),
                     ),
                     DrawerItem(
                       c: c,
                       icon: Icons.bedtime_outlined,
-                      title: '梦境',
-                      subtitle: '独立的 Dream 对话',
+                      title: l10n.drawerDreamTitle,
+                      subtitle: l10n.drawerDreamSubtitle,
                       active: route == AppRoute.dream,
                       onTap: () => onRoute(AppRoute.dream),
                     ),
                     DrawerItem(
                       c: c,
                       icon: Icons.badge_outlined,
-                      title: '角色资料',
-                      subtitle: '本机备注和头像',
+                      title: l10n.drawerProfileTitle,
+                      subtitle: l10n.drawerProfileSubtitle,
                       active: route == AppRoute.profile,
                       onTap: () => onRoute(AppRoute.profile),
                     ),
                     DrawerItem(
                       c: c,
                       icon: Icons.menu_book_outlined,
-                      title: '$profileDisplayName的日记',
-                      subtitle: '他写给自己的',
+                      title: l10n.drawerDiaryTitle(profileDisplayName),
+                      subtitle: l10n.drawerDiarySubtitle,
                       active: route == AppRoute.diary,
                       onTap: () => onRoute(AppRoute.diary),
                     ),
                     DrawerItem(
                       c: c,
                       icon: Icons.sports_esports_outlined,
-                      title: '活动',
-                      subtitle: '看书 / 五子棋 / 国际象棋 / 梦境预构',
+                      title: l10n.drawerActivityTitle,
+                      subtitle: l10n.drawerActivitySubtitle,
                       active: route == AppRoute.activity,
                       onTap: () => onRoute(AppRoute.activity),
                     ),
                     DrawerItem(
                       c: c,
                       icon: Icons.groups_outlined,
-                      title: '群聊',
-                      subtitle: '多角色一起聊',
+                      title: l10n.drawerGroupTitle,
+                      subtitle: l10n.drawerGroupSubtitle,
                       active: route == AppRoute.group,
                       onTap: () => onRoute(AppRoute.group),
                     ),
                     _DrawerSectionDivider(c: c),
-                    _DrawerSectionLabel(c: c, label: '养成'),
+                    _DrawerSectionLabel(c: c, label: l10n.drawerGrowthSection),
                     DrawerItem(
                       c: c,
                       icon: Icons.local_florist_outlined,
-                      title: '状态花园',
-                      subtitle: '他今天的心境',
+                      title: l10n.drawerGardenTitle,
+                      subtitle: l10n.drawerGardenSubtitle,
                       active: route == AppRoute.garden,
                       onTap: () => onRoute(AppRoute.garden),
                     ),
@@ -151,7 +153,7 @@ class YxDrawer extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 10, 18, 2),
               child: Text(
-                '设置',
+                l10n.drawerSettingsTitle,
                 style: mono(
                   c,
                   10,
@@ -166,8 +168,8 @@ class YxDrawer extends StatelessWidget {
                   DrawerItem(
                     c: c,
                     icon: Icons.settings_outlined,
-                    title: '设置',
-                    subtitle: '连接、通知、外观与对话配置',
+                    title: l10n.drawerSettingsTitle,
+                    subtitle: l10n.drawerSettingsSubtitle,
                     active: false,
                     onTap: onOpenSettings,
                   ),
@@ -279,7 +281,7 @@ class DrawerItem extends StatelessWidget {
             ),
             if (active)
               Text(
-                '当前',
+                context.l10n.drawerCurrent,
                 style: mono(c, 9, color: c.characterOn.withValues(alpha: 0.7)),
               ),
           ],

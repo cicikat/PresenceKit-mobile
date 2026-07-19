@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 
 class PresenceSnapshot {
@@ -13,13 +13,13 @@ class PresenceSnapshot {
     this.dotColor,
   });
 
-  factory PresenceSnapshot.current(YxPalette c) {
-    return const PresenceSnapshot(
-      status: '在场',
-      subline: '手机端在线',
-      mood: '就绪',
-      activity: '聊天',
-      timeband: '现在',
+  factory PresenceSnapshot.current(AppLocalizations l10n) {
+    return PresenceSnapshot(
+      status: l10n.presenceOnline,
+      subline: l10n.presenceMobileOnline,
+      mood: l10n.presenceReady,
+      activity: l10n.presenceChatting,
+      timeband: l10n.presenceNow,
     );
   }
 
@@ -337,7 +337,7 @@ class PageHeader extends StatelessWidget {
             icon: Icons.arrow_back_rounded,
             onPressed: onBack,
             onDark: true,
-            tooltip: '返回',
+            tooltip: context.l10n.backTooltip,
           ),
           const SizedBox(width: 10),
           Expanded(

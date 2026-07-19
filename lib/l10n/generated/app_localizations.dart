@@ -199,6 +199,324 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'设置'**
   String get settingsSetAction;
+
+  /// No description provided for @drawerClientSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机薄客户端 · 本机显示'**
+  String get drawerClientSubtitle;
+
+  /// No description provided for @drawerPagesSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'页面'**
+  String get drawerPagesSection;
+
+  /// No description provided for @drawerChatTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'主对话'**
+  String get drawerChatTitle;
+
+  /// No description provided for @drawerChatSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天窗口'**
+  String get drawerChatSubtitle;
+
+  /// No description provided for @drawerDreamTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境'**
+  String get drawerDreamTitle;
+
+  /// No description provided for @drawerDreamSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'独立的 Dream 对话'**
+  String get drawerDreamSubtitle;
+
+  /// No description provided for @drawerProfileTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'角色资料'**
+  String get drawerProfileTitle;
+
+  /// No description provided for @drawerProfileSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'本机备注和头像'**
+  String get drawerProfileSubtitle;
+
+  /// No description provided for @drawerDiaryTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'{name}的日记'**
+  String drawerDiaryTitle(String name);
+
+  /// No description provided for @drawerDiarySubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'他写给自己的'**
+  String get drawerDiarySubtitle;
+
+  /// No description provided for @drawerActivityTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'活动'**
+  String get drawerActivityTitle;
+
+  /// No description provided for @drawerActivitySubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'看书 / 五子棋 / 国际象棋 / 梦境预构'**
+  String get drawerActivitySubtitle;
+
+  /// No description provided for @drawerGroupTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'群聊'**
+  String get drawerGroupTitle;
+
+  /// No description provided for @drawerGroupSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'多角色一起聊'**
+  String get drawerGroupSubtitle;
+
+  /// No description provided for @drawerGrowthSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'养成'**
+  String get drawerGrowthSection;
+
+  /// No description provided for @drawerGardenTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'状态花园'**
+  String get drawerGardenTitle;
+
+  /// No description provided for @drawerGardenSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'他今天的心境'**
+  String get drawerGardenSubtitle;
+
+  /// No description provided for @drawerSettingsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'设置'**
+  String get drawerSettingsTitle;
+
+  /// No description provided for @drawerSettingsSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接、通知、外观与对话配置'**
+  String get drawerSettingsSubtitle;
+
+  /// No description provided for @drawerCurrent.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前'**
+  String get drawerCurrent;
+
+  /// No description provided for @presenceOnline.
+  ///
+  /// In zh, this message translates to:
+  /// **'在场'**
+  String get presenceOnline;
+
+  /// No description provided for @presenceMobileOnline.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机端在线'**
+  String get presenceMobileOnline;
+
+  /// No description provided for @presenceReady.
+  ///
+  /// In zh, this message translates to:
+  /// **'就绪'**
+  String get presenceReady;
+
+  /// No description provided for @presenceChatting.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天'**
+  String get presenceChatting;
+
+  /// No description provided for @presenceNow.
+  ///
+  /// In zh, this message translates to:
+  /// **'现在'**
+  String get presenceNow;
+
+  /// No description provided for @backTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'返回'**
+  String get backTooltip;
+
+  /// No description provided for @chatLoadingOlder.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在加载更早的对话…'**
+  String get chatLoadingOlder;
+
+  /// No description provided for @chatHiddenOlder.
+  ///
+  /// In zh, this message translates to:
+  /// **'已折叠 {count} 条更早对话 · 上滑继续展开'**
+  String chatHiddenOlder(int count);
+
+  /// No description provided for @chatLoadingHistory.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在从后端读取聊天记录'**
+  String get chatLoadingHistory;
+
+  /// No description provided for @chatEmptyHistory.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端已连接 · 暂无聊天记录'**
+  String get chatEmptyHistory;
+
+  /// No description provided for @chatHistoryError.
+  ///
+  /// In zh, this message translates to:
+  /// **'历史加载失败 · {error}'**
+  String chatHistoryError(String error);
+
+  /// No description provided for @chatWaitingReply.
+  ///
+  /// In zh, this message translates to:
+  /// **'已送到后端 · 正在等他回话'**
+  String get chatWaitingReply;
+
+  /// No description provided for @chatBackendError.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端连接异常 · {error}'**
+  String chatBackendError(String error);
+
+  /// No description provided for @chatBackendStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端已接入 · {emotion} · 好感 {affection}'**
+  String chatBackendStatus(String emotion, int affection);
+
+  /// No description provided for @chatMobileReceived.
+  ///
+  /// In zh, this message translates to:
+  /// **'已接收 {count} 条主动消息'**
+  String chatMobileReceived(int count);
+
+  /// No description provided for @chatTyping.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在输入'**
+  String get chatTyping;
+
+  /// No description provided for @drawerTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'抽屉'**
+  String get drawerTooltip;
+
+  /// No description provided for @preferencesTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'偏好'**
+  String get preferencesTooltip;
+
+  /// No description provided for @switchToLightTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'切到白天'**
+  String get switchToLightTooltip;
+
+  /// No description provided for @switchToDarkTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'切到夜里'**
+  String get switchToDarkTooltip;
+
+  /// No description provided for @copyAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'复制'**
+  String get copyAction;
+
+  /// No description provided for @selectAllAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'全选'**
+  String get selectAllAction;
+
+  /// No description provided for @replyAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'回复'**
+  String get replyAction;
+
+  /// No description provided for @cancelReplyTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消回复'**
+  String get cancelReplyTooltip;
+
+  /// No description provided for @imageAttachment.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片附件'**
+  String get imageAttachment;
+
+  /// No description provided for @fileAttachment.
+  ///
+  /// In zh, this message translates to:
+  /// **'文件附件'**
+  String get fileAttachment;
+
+  /// No description provided for @composerPlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'对他说些什么…'**
+  String get composerPlaceholder;
+
+  /// No description provided for @attachmentTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'附件'**
+  String get attachmentTooltip;
+
+  /// No description provided for @releaseToSendTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'松开发送'**
+  String get releaseToSendTooltip;
+
+  /// No description provided for @holdToTalkTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'长按说话'**
+  String get holdToTalkTooltip;
+
+  /// No description provided for @waitAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待'**
+  String get waitAction;
+
+  /// No description provided for @sendAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'寄出'**
+  String get sendAction;
+
+  /// No description provided for @characterCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 字'**
+  String characterCount(int count);
 }
 
 class _AppLocalizationsDelegate
