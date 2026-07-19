@@ -950,4 +950,212 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get boardLoading => '棋盘加载中…';
+
+  @override
+  String get themePresetsTitle => '颜色预设';
+
+  @override
+  String get themePresetsDescription => '本机可保存多个预设；浏览器可导出颜色 mod。';
+
+  @override
+  String get newAction => '新建';
+
+  @override
+  String get themeNoCustomPresets => '还没有自定义预设';
+
+  @override
+  String get themeBundledReadOnly => 'mods/ 内置 · 只读';
+
+  @override
+  String themeLocalPreset(String base) {
+    return '$base底色 · 本机预设';
+  }
+
+  @override
+  String get themeCopyEdit => '复制并编辑';
+
+  @override
+  String get editAction => '编辑';
+
+  @override
+  String get themeResetColors => '重置颜色';
+
+  @override
+  String get themeExportMod => '导出 mod';
+
+  @override
+  String get themeDeleteTitle => '删除颜色预设？';
+
+  @override
+  String themeDeleteWarning(String name) {
+    return '“$name”会从本机删除，此操作无法撤销。';
+  }
+
+  @override
+  String get themeExportSuccess => '已下载颜色 mod；请手动放进项目 mods/ 文件夹。';
+
+  @override
+  String get exportFailed => '导出失败';
+
+  @override
+  String get themeEditTitle => '编辑颜色预设';
+
+  @override
+  String get themePresetNameLabel => '预设名称';
+
+  @override
+  String get themeComponentColors => '组件颜色';
+
+  @override
+  String get themeFreeColor => '自由选色';
+
+  @override
+  String themeHue(int value) {
+    return '色相 $value°';
+  }
+
+  @override
+  String themeOpacity(int value) {
+    return '透明度 $value%';
+  }
+
+  @override
+  String get themeApplyRgbTooltip => '应用 RGB';
+
+  @override
+  String get previewLabel => '预览';
+
+  @override
+  String get themeCharacterPreview => '角色消息与正文颜色';
+
+  @override
+  String get themeUserPreview => '用户消息颜色';
+
+  @override
+  String get themeDefaultName => '我的配色';
+
+  @override
+  String get themeNewTitle => '新建颜色预设';
+
+  @override
+  String get nameLabel => '名称';
+
+  @override
+  String get themeLightBase => '信纸底色';
+
+  @override
+  String get themeDarkBase => '夜间底色';
+
+  @override
+  String get createAction => '创建';
+
+  @override
+  String get avatarCropTitle => '裁切头像';
+
+  @override
+  String get avatarCropHelp => '拖动调整位置，双指或手势缩放。保存后只作为手机端本地头像。';
+
+  @override
+  String get resetAction => '重置';
+
+  @override
+  String get closeTooltip => '关闭';
+
+  @override
+  String get themeCustomPaletteTitle => '自定义色盘';
+
+  @override
+  String themeEditingRole(String role) {
+    return '正在修改：$role';
+  }
+
+  @override
+  String get themePreviewBody => '这套颜色会应用到聊天、抽屉和设置组件。';
+
+  @override
+  String get themeSidebarPreview => '侧边栏背景 / 文字图标 / 选中态';
+
+  @override
+  String get themeUserBubblePreview => '用户气泡也会跟着变。';
+
+  @override
+  String get noOptions => '暂无可用项';
+
+  @override
+  String get attachmentSheetTitle => '附加内容';
+
+  @override
+  String get attachmentDocument => '文档';
+
+  @override
+  String get attachmentDocumentSubtitle => 'txt / md / docx · 5MB 内';
+
+  @override
+  String get attachmentImage => '图片';
+
+  @override
+  String get attachmentImageSubtitle => '可多选 · 走后端视觉识别';
+
+  @override
+  String get attachmentRecording => '录音';
+
+  @override
+  String get attachmentRecordingSubtitle => '长按说话 · 转写 · 待接入';
+
+  @override
+  String get themeRoleSurface => '页面底色';
+
+  @override
+  String get themeRoleSurfaceSoft => '输入栏底色';
+
+  @override
+  String get themeRoleSurfaceDeep => '深层底色';
+
+  @override
+  String get themeRoleSurfaceEdge => '边框线';
+
+  @override
+  String get themeRoleInk1 => '主文字';
+
+  @override
+  String get themeRoleInk2 => '次文字';
+
+  @override
+  String get themeRoleInk3 => '弱文字';
+
+  @override
+  String get themeRoleInk4 => '淡线条';
+
+  @override
+  String get themeRoleCharacter => '角色主色/焦点';
+
+  @override
+  String get themeRoleCharacterDeep => '顶部/侧边栏';
+
+  @override
+  String get themeRoleCharacterSoft => '选中项/柔底';
+
+  @override
+  String get themeRoleCharacterOn => '侧边栏文字';
+
+  @override
+  String get themeRoleDanger => '危险提示';
+
+  @override
+  String get themeRoleWarn => '提醒提示';
+
+  @override
+  String get themeRoleOk => '正常提示';
+
+  @override
+  String get themeRoleSend => '发送按钮';
+
+  @override
+  String get themeRoleUserBubble => '用户气泡';
+
+  @override
+  String get themeRoleUserBubbleText => '用户气泡文字';
+
+  @override
+  String get themeRoleScrim => '遮罩颜色';
 }

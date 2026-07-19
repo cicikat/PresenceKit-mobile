@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../controllers/theme_controller.dart';
 import '../models/app_models.dart';
 import '../models/theme_models.dart';
+import '../l10n/l10n.dart';
 import 'common_widgets.dart';
 
 class ThemePresetManagerSheet extends StatelessWidget {
@@ -18,6 +19,7 @@ class ThemePresetManagerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) => Container(
@@ -32,21 +34,21 @@ class ThemePresetManagerSheet extends StatelessWidget {
           top: false,
           child: Column(
             children: [
-              _SheetHeader(c: c, title: '颜色预设'),
+              _SheetHeader(c: c, title: l10n.themePresetsTitle),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        '本机可保存多个预设；浏览器可导出颜色 mod。',
+                        l10n.themePresetsDescription,
                         style: mono(c, 10.5, color: c.ink3),
                       ),
                     ),
                     FilledButton.icon(
                       onPressed: () => _create(context),
                       icon: const Icon(Icons.add_rounded, size: 18),
-                      label: const Text('新建'),
+                      label: Text(l10n.newAction),
                     ),
                   ],
                 ),
@@ -55,7 +57,7 @@ class ThemePresetManagerSheet extends StatelessWidget {
                 child: controller.presets.isEmpty
                     ? Center(
                         child: Text(
-                          '还没有自定义预设',
+                          l10n.themeNoCustomPresets,
                           style: serif(c, 15, color: c.ink3),
                         ),
                       )
@@ -75,6 +77,7 @@ class ThemePresetManagerSheet extends StatelessWidget {
   }
 
   Widget _presetCard(BuildContext context, ThemeColorPreset preset) {
+    final l10n = context.l10n;
     final selected = controller.activeId == preset.id;
     return Material(
       color: selected ? c.characterSoft : c.surfaceSoft,
@@ -105,8 +108,12 @@ class ThemePresetManagerSheet extends StatelessWidget {
                         ),
                         Text(
                           preset.bundled
-                              ? 'mods/ 内置 · 只读'
-                              : '${preset.base == 'dark' ? '夜间' : '信纸'}底色 · 本机预设',
+                              ? l10n.themeBundledReadOnly
+                              : l10n.themeLocalPreset(
+                                  preset.base == 'dark'
+                                      ? l10n.themeNight
+                                      : l10n.themePaper,
+                                ),
                           style: mono(c, 9.5, color: c.ink3),
                         ),
                       ],
@@ -133,19 +140,21 @@ class ThemePresetManagerSheet extends StatelessWidget {
                       preset.bundled ? Icons.copy_rounded : Icons.tune_rounded,
                       size: 16,
                     ),
-                    label: Text(preset.bundled ? '复制并编辑' : '编辑'),
+                    label: Text(
+                      preset.bundled ? l10n.themeCopyEdit : l10n.editAction,
+                    ),
                   ),
                   if (!preset.bundled)
                     OutlinedButton.icon(
                       onPressed: () => controller.reset(preset.id),
                       icon: const Icon(Icons.restart_alt_rounded, size: 16),
-                      label: const Text('重置颜色'),
+                      label: Text(l10n.themeResetColors),
                     ),
                   if (kIsWeb)
                     OutlinedButton.icon(
                       onPressed: () => _export(context, preset),
                       icon: const Icon(Icons.download_rounded, size: 16),
-                      label: const Text('导出 mod'),
+                      label: Text(l10n.themeExportMod),
                     ),
                   if (!preset.bundled)
                     TextButton.icon(
@@ -155,7 +164,10 @@ class ThemePresetManagerSheet extends StatelessWidget {
                         size: 16,
                         color: c.danger,
                       ),
-                      label: Text('删除', style: TextStyle(color: c.danger)),
+                      label: Text(
+                        l10n.deleteAction,
+                        style: TextStyle(color: c.danger),
+                      ),
                     ),
                 ],
               ),
@@ -205,16 +217,16 @@ class ThemePresetManagerSheet extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: c.surface,
-        title: const Text('删除颜色预设？'),
-        content: Text('“${preset.name}”会从本机删除，此操作无法撤销。'),
+        title: Text(context.l10n.themeDeleteTitle),
+        content: Text(context.l10n.themeDeleteWarning(preset.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text(context.l10n.cancelAction),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
+            child: Text(context.l10n.deleteAction),
           ),
         ],
       ),
@@ -226,7 +238,11 @@ class ThemePresetManagerSheet extends StatelessWidget {
     final ok = await controller.exportPreset(preset.id);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(ok ? '已下载颜色 mod；请手动放进项目 mods/ 文件夹。' : '导出失败')),
+      SnackBar(
+        content: Text(
+          ok ? context.l10n.themeExportSuccess : context.l10n.exportFailed,
+        ),
+      ),
     );
   }
 }
@@ -255,26 +271,26 @@ class _ThemeColorEditorSheetState extends State<ThemeColorEditorSheet> {
   String _selected = 'character';
   bool _saving = false;
 
-  static const roles = <(String, String, IconData)>[
-    ('surface', '页面底色', Icons.layers_outlined),
-    ('surfaceSoft', '输入栏底色', Icons.notes_outlined),
-    ('surfaceDeep', '深层底色', Icons.inbox_outlined),
-    ('surfaceEdge', '边框线', Icons.border_outer_rounded),
-    ('ink1', '主文字', Icons.title_rounded),
-    ('ink2', '次文字', Icons.text_fields_rounded),
-    ('ink3', '弱文字', Icons.short_text_rounded),
-    ('ink4', '淡线条', Icons.linear_scale_rounded),
-    ('character', '角色主色/焦点', Icons.spa_outlined),
-    ('characterDeep', '顶部/侧边栏', Icons.view_sidebar_outlined),
-    ('characterSoft', '选中项/柔底', Icons.select_all_rounded),
-    ('characterOn', '侧边栏文字', Icons.text_format_rounded),
-    ('danger', '危险提示', Icons.warning_amber_rounded),
-    ('warn', '提醒提示', Icons.notifications_none_rounded),
-    ('ok', '正常提示', Icons.check_circle_outline_rounded),
-    ('send', '发送按钮', Icons.send_rounded),
-    ('userBubble', '用户气泡', Icons.chat_bubble_outline_rounded),
-    ('userBubbleText', '用户气泡文字', Icons.format_color_text),
-    ('scrim', '遮罩颜色', Icons.gradient_rounded),
+  static const roles = <(String, IconData)>[
+    ('surface', Icons.layers_outlined),
+    ('surfaceSoft', Icons.notes_outlined),
+    ('surfaceDeep', Icons.inbox_outlined),
+    ('surfaceEdge', Icons.border_outer_rounded),
+    ('ink1', Icons.title_rounded),
+    ('ink2', Icons.text_fields_rounded),
+    ('ink3', Icons.short_text_rounded),
+    ('ink4', Icons.linear_scale_rounded),
+    ('character', Icons.spa_outlined),
+    ('characterDeep', Icons.view_sidebar_outlined),
+    ('characterSoft', Icons.select_all_rounded),
+    ('characterOn', Icons.text_format_rounded),
+    ('danger', Icons.warning_amber_rounded),
+    ('warn', Icons.notifications_none_rounded),
+    ('ok', Icons.check_circle_outline_rounded),
+    ('send', Icons.send_rounded),
+    ('userBubble', Icons.chat_bubble_outline_rounded),
+    ('userBubbleText', Icons.format_color_text),
+    ('scrim', Icons.gradient_rounded),
   ];
 
   @override
@@ -359,15 +375,20 @@ class _ThemeColorEditorSheetState extends State<ThemeColorEditorSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SheetHeader(c: c, title: '编辑颜色预设'),
+              _SheetHeader(c: c, title: context.l10n.themeEditTitle),
               TextField(
                 controller: _name,
-                decoration: const InputDecoration(labelText: '预设名称'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.themePresetNameLabel,
+                ),
               ),
               const SizedBox(height: 12),
               _ThemePreview(c: _draft),
               const SizedBox(height: 14),
-              Text('组件颜色', style: mono(c, 11, color: c.ink3)),
+              Text(
+                context.l10n.themeComponentColors,
+                style: mono(c, 11, color: c.ink3),
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 7,
@@ -387,7 +408,7 @@ class _ThemeColorEditorSheetState extends State<ThemeColorEditorSheet> {
                 children: [
                   TextButton(
                     onPressed: _saving ? null : () => Navigator.pop(context),
-                    child: const Text('取消'),
+                    child: Text(context.l10n.cancelAction),
                   ),
                   const SizedBox(width: 8),
                   FilledButton.icon(
@@ -399,7 +420,7 @@ class _ThemeColorEditorSheetState extends State<ThemeColorEditorSheet> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('保存'),
+                    label: Text(context.l10n.saveAction),
                   ),
                 ],
               ),
@@ -410,11 +431,11 @@ class _ThemeColorEditorSheetState extends State<ThemeColorEditorSheet> {
     );
   }
 
-  Widget _roleChip(YxPalette c, (String, String, IconData) role) {
+  Widget _roleChip(YxPalette c, (String, IconData) role) {
     final selected = role.$1 == _selected;
     return ChoiceChip(
-      avatar: Icon(role.$3, size: 15),
-      label: Text(role.$2),
+      avatar: Icon(role.$2, size: 15),
+      label: Text(themeRoleLabel(context.l10n, role.$1)),
       selected: selected,
       onSelected: (_) => setState(() => _selected = role.$1),
     );
@@ -529,7 +550,7 @@ class _FreeColorPickerState extends State<FreeColorPicker> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('自由选色', style: mono(c, 11, color: c.ink3)),
+        Text(context.l10n.themeFreeColor, style: mono(c, 11, color: c.ink3)),
         const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -554,7 +575,10 @@ class _FreeColorPickerState extends State<FreeColorPicker> {
           },
         ),
         const SizedBox(height: 10),
-        Text('色相 ${_hsv.hue.round()}°', style: mono(c, 10, color: c.ink3)),
+        Text(
+          context.l10n.themeHue(_hsv.hue.round()),
+          style: mono(c, 10, color: c.ink3),
+        ),
         Slider(
           value: _hsv.hue,
           min: 0,
@@ -565,7 +589,7 @@ class _FreeColorPickerState extends State<FreeColorPicker> {
           },
         ),
         Text(
-          '透明度 ${(_alpha * 100).round()}%',
+          context.l10n.themeOpacity((_alpha * 100).round()),
           style: mono(c, 10, color: c.ink3),
         ),
         Slider(
@@ -591,7 +615,7 @@ class _FreeColorPickerState extends State<FreeColorPicker> {
             const SizedBox(width: 7),
             IconButton(
               onPressed: _applyRgb,
-              tooltip: '应用 RGB',
+              tooltip: context.l10n.themeApplyRgbTooltip,
               icon: const Icon(Icons.check_rounded),
             ),
           ],
@@ -680,7 +704,9 @@ class _ThemePreview extends StatelessWidget {
             children: [
               _ColorDot(color: c.character, border: c.surfaceEdge, size: 28),
               const SizedBox(width: 8),
-              Expanded(child: Text('预览', style: serif(c, 17))),
+              Expanded(
+                child: Text(context.l10n.previewLabel, style: serif(c, 17)),
+              ),
               Container(width: 54, height: 25, color: c.send),
             ],
           ),
@@ -690,7 +716,10 @@ class _ThemePreview extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(9),
               color: c.characterSoft,
-              child: Text('角色消息与正文颜色', style: serif(c, 14)),
+              child: Text(
+                context.l10n.themeCharacterPreview,
+                style: serif(c, 14),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -700,7 +729,7 @@ class _ThemePreview extends StatelessWidget {
               padding: const EdgeInsets.all(9),
               color: c.userBubble,
               child: Text(
-                '用户消息颜色',
+                context.l10n.themeUserPreview,
                 style: serif(c, 14, color: c.userBubbleText),
               ),
             ),
@@ -744,8 +773,18 @@ class _NewPresetDialog extends StatefulWidget {
 }
 
 class _NewPresetDialogState extends State<_NewPresetDialog> {
-  final _name = TextEditingController(text: '我的配色');
+  late final TextEditingController _name;
   String _base = 'light';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!mounted || _nameInitialized) return;
+    _name = TextEditingController(text: context.l10n.themeDefaultName);
+    _nameInitialized = true;
+  }
+
+  bool _nameInitialized = false;
 
   @override
   void dispose() {
@@ -757,20 +796,26 @@ class _NewPresetDialogState extends State<_NewPresetDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: widget.c.surface,
-      title: const Text('新建颜色预设'),
+      title: Text(context.l10n.themeNewTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _name,
             autofocus: true,
-            decoration: const InputDecoration(labelText: '名称'),
+            decoration: InputDecoration(labelText: context.l10n.nameLabel),
           ),
           const SizedBox(height: 12),
           SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'light', label: Text('信纸底色')),
-              ButtonSegment(value: 'dark', label: Text('夜间底色')),
+            segments: [
+              ButtonSegment(
+                value: 'light',
+                label: Text(context.l10n.themeLightBase),
+              ),
+              ButtonSegment(
+                value: 'dark',
+                label: Text(context.l10n.themeDarkBase),
+              ),
             ],
             selected: {_base},
             onSelectionChanged: (value) => setState(() => _base = value.first),
@@ -780,11 +825,11 @@ class _NewPresetDialogState extends State<_NewPresetDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
+          child: Text(context.l10n.cancelAction),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, (_name.text, _base)),
-          child: const Text('创建'),
+          child: Text(context.l10n.createAction),
         ),
       ],
     );

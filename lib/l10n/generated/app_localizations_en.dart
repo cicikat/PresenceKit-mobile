@@ -981,4 +981,218 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get boardLoading => 'Loading board…';
+
+  @override
+  String get themePresetsTitle => 'Color presets';
+
+  @override
+  String get themePresetsDescription =>
+      'Save multiple presets locally; export color mods in the browser.';
+
+  @override
+  String get newAction => 'New';
+
+  @override
+  String get themeNoCustomPresets => 'No custom presets yet';
+
+  @override
+  String get themeBundledReadOnly => 'Built into mods/ · Read-only';
+
+  @override
+  String themeLocalPreset(String base) {
+    return '$base base · Local preset';
+  }
+
+  @override
+  String get themeCopyEdit => 'Copy and edit';
+
+  @override
+  String get editAction => 'Edit';
+
+  @override
+  String get themeResetColors => 'Reset colors';
+
+  @override
+  String get themeExportMod => 'Export mod';
+
+  @override
+  String get themeDeleteTitle => 'Delete color preset?';
+
+  @override
+  String themeDeleteWarning(String name) {
+    return '“$name” will be deleted from this device. This cannot be undone.';
+  }
+
+  @override
+  String get themeExportSuccess =>
+      'Color mod downloaded. Place it in the project\'s mods/ folder manually.';
+
+  @override
+  String get exportFailed => 'Export failed';
+
+  @override
+  String get themeEditTitle => 'Edit color preset';
+
+  @override
+  String get themePresetNameLabel => 'Preset name';
+
+  @override
+  String get themeComponentColors => 'Component colors';
+
+  @override
+  String get themeFreeColor => 'Custom color';
+
+  @override
+  String themeHue(int value) {
+    return 'Hue $value°';
+  }
+
+  @override
+  String themeOpacity(int value) {
+    return 'Opacity $value%';
+  }
+
+  @override
+  String get themeApplyRgbTooltip => 'Apply RGB';
+
+  @override
+  String get previewLabel => 'Preview';
+
+  @override
+  String get themeCharacterPreview => 'Character message and body colors';
+
+  @override
+  String get themeUserPreview => 'User message color';
+
+  @override
+  String get themeDefaultName => 'My palette';
+
+  @override
+  String get themeNewTitle => 'New color preset';
+
+  @override
+  String get nameLabel => 'Name';
+
+  @override
+  String get themeLightBase => 'Paper base';
+
+  @override
+  String get themeDarkBase => 'Night base';
+
+  @override
+  String get createAction => 'Create';
+
+  @override
+  String get avatarCropTitle => 'Crop avatar';
+
+  @override
+  String get avatarCropHelp =>
+      'Drag to reposition and pinch or gesture to zoom. The saved avatar remains local to mobile.';
+
+  @override
+  String get resetAction => 'Reset';
+
+  @override
+  String get closeTooltip => 'Close';
+
+  @override
+  String get themeCustomPaletteTitle => 'Custom palette';
+
+  @override
+  String themeEditingRole(String role) {
+    return 'Editing: $role';
+  }
+
+  @override
+  String get themePreviewBody =>
+      'These colors apply to chat, drawer and settings components.';
+
+  @override
+  String get themeSidebarPreview =>
+      'Sidebar background / text and icons / selection';
+
+  @override
+  String get themeUserBubblePreview => 'User bubbles update too.';
+
+  @override
+  String get noOptions => 'No options available';
+
+  @override
+  String get attachmentSheetTitle => 'Attach content';
+
+  @override
+  String get attachmentDocument => 'Document';
+
+  @override
+  String get attachmentDocumentSubtitle => 'txt / md / docx · Up to 5 MB';
+
+  @override
+  String get attachmentImage => 'Images';
+
+  @override
+  String get attachmentImageSubtitle => 'Multiple selection · Backend vision';
+
+  @override
+  String get attachmentRecording => 'Recording';
+
+  @override
+  String get attachmentRecordingSubtitle =>
+      'Hold to talk · Transcription · Coming later';
+
+  @override
+  String get themeRoleSurface => 'Page background';
+
+  @override
+  String get themeRoleSurfaceSoft => 'Input background';
+
+  @override
+  String get themeRoleSurfaceDeep => 'Deep background';
+
+  @override
+  String get themeRoleSurfaceEdge => 'Borders';
+
+  @override
+  String get themeRoleInk1 => 'Primary text';
+
+  @override
+  String get themeRoleInk2 => 'Secondary text';
+
+  @override
+  String get themeRoleInk3 => 'Muted text';
+
+  @override
+  String get themeRoleInk4 => 'Faint lines';
+
+  @override
+  String get themeRoleCharacter => 'Character accent/focus';
+
+  @override
+  String get themeRoleCharacterDeep => 'Top bar/sidebar';
+
+  @override
+  String get themeRoleCharacterSoft => 'Selection/soft background';
+
+  @override
+  String get themeRoleCharacterOn => 'Sidebar text';
+
+  @override
+  String get themeRoleDanger => 'Danger';
+
+  @override
+  String get themeRoleWarn => 'Warning';
+
+  @override
+  String get themeRoleOk => 'Success';
+
+  @override
+  String get themeRoleSend => 'Send button';
+
+  @override
+  String get themeRoleUserBubble => 'User bubble';
+
+  @override
+  String get themeRoleUserBubbleText => 'User bubble text';
+
+  @override
+  String get themeRoleScrim => 'Scrim';
 }

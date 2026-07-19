@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import '../models/app_models.dart';
+import '../l10n/l10n.dart';
 import '../services/character_naming.dart';
 import '../widgets/common_widgets.dart';
+
 class AvatarCropDialog extends StatefulWidget {
   const AvatarCropDialog({super.key, required this.c, required this.bytes});
 
@@ -66,13 +68,16 @@ class _AvatarCropDialogState extends State<AvatarCropDialog> {
           children: [
             Row(
               children: [
-                Text('裁切头像', style: serif(c, 20, weight: FontWeight.w500)),
+                Text(
+                  context.l10n.avatarCropTitle,
+                  style: serif(c, 20, weight: FontWeight.w500),
+                ),
                 const Spacer(),
                 YxIconButton(
                   c: c,
                   icon: Icons.close_rounded,
                   onPressed: () => Navigator.pop(context),
-                  tooltip: '取消',
+                  tooltip: context.l10n.cancelAction,
                 ),
               ],
             ),
@@ -117,7 +122,7 @@ class _AvatarCropDialogState extends State<AvatarCropDialog> {
             ),
             const SizedBox(height: 12),
             Text(
-              '拖动调整位置，双指或手势缩放。保存后只作为手机端本地头像。',
+              context.l10n.avatarCropHelp,
               style: mono(c, 11, color: c.ink3),
             ),
             const SizedBox(height: 14),
@@ -126,12 +131,12 @@ class _AvatarCropDialogState extends State<AvatarCropDialog> {
                 TextButton.icon(
                   onPressed: _resetView,
                   icon: const Icon(Icons.center_focus_strong_rounded, size: 18),
-                  label: const Text('重置'),
+                  label: Text(context.l10n.resetAction),
                 ),
                 const Spacer(),
                 TextButton(
                   onPressed: _saving ? null : () => Navigator.pop(context),
-                  child: const Text('取消'),
+                  child: Text(context.l10n.cancelAction),
                 ),
                 const SizedBox(width: 8),
                 FilledButton.icon(
@@ -143,7 +148,7 @@ class _AvatarCropDialogState extends State<AvatarCropDialog> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.check_rounded, size: 18),
-                  label: const Text('保存'),
+                  label: Text(context.l10n.saveAction),
                 ),
               ],
             ),
@@ -181,24 +186,24 @@ class _ThemePaletteSheetState extends State<ThemePaletteSheet> {
   bool _deleting = false;
 
   static const List<_PaletteRole> _roles = [
-    _PaletteRole('surface', '页面底色', Icons.layers_outlined),
-    _PaletteRole('surfaceSoft', '输入栏底色', Icons.notes_outlined),
-    _PaletteRole('surfaceDeep', '深一层底色', Icons.inbox_outlined),
-    _PaletteRole('surfaceEdge', '边框线', Icons.border_outer_rounded),
-    _PaletteRole('ink1', '主文字', Icons.title_rounded),
-    _PaletteRole('ink2', '次文字', Icons.text_fields_rounded),
-    _PaletteRole('ink3', '弱文字', Icons.short_text_rounded),
-    _PaletteRole('ink4', '淡线条', Icons.linear_scale_rounded),
-    _PaletteRole('character', '角色主色/焦点', Icons.spa_outlined),
-    _PaletteRole('characterDeep', '顶部/侧边栏背景', Icons.view_sidebar_outlined),
-    _PaletteRole('characterSoft', '选中项/柔底', Icons.select_all_rounded),
-    _PaletteRole('characterOn', '侧边栏文字图标', Icons.text_format_rounded),
-    _PaletteRole('danger', '危险提示', Icons.warning_amber_rounded),
-    _PaletteRole('warn', '提醒提示', Icons.notifications_none_rounded),
-    _PaletteRole('ok', '正常提示', Icons.check_circle_outline_rounded),
-    _PaletteRole('send', '发送按钮', Icons.send_rounded),
-    _PaletteRole('userBubble', '用户气泡', Icons.chat_bubble_outline_rounded),
-    _PaletteRole('userBubbleText', '用户气泡文字', Icons.format_color_text),
+    _PaletteRole('surface', Icons.layers_outlined),
+    _PaletteRole('surfaceSoft', Icons.notes_outlined),
+    _PaletteRole('surfaceDeep', Icons.inbox_outlined),
+    _PaletteRole('surfaceEdge', Icons.border_outer_rounded),
+    _PaletteRole('ink1', Icons.title_rounded),
+    _PaletteRole('ink2', Icons.text_fields_rounded),
+    _PaletteRole('ink3', Icons.short_text_rounded),
+    _PaletteRole('ink4', Icons.linear_scale_rounded),
+    _PaletteRole('character', Icons.spa_outlined),
+    _PaletteRole('characterDeep', Icons.view_sidebar_outlined),
+    _PaletteRole('characterSoft', Icons.select_all_rounded),
+    _PaletteRole('characterOn', Icons.text_format_rounded),
+    _PaletteRole('danger', Icons.warning_amber_rounded),
+    _PaletteRole('warn', Icons.notifications_none_rounded),
+    _PaletteRole('ok', Icons.check_circle_outline_rounded),
+    _PaletteRole('send', Icons.send_rounded),
+    _PaletteRole('userBubble', Icons.chat_bubble_outline_rounded),
+    _PaletteRole('userBubbleText', Icons.format_color_text),
   ];
 
   static const List<Color> _swatches = [
@@ -284,10 +289,11 @@ class _ThemePaletteSheetState extends State<ThemePaletteSheet> {
     });
   }
 
-  String _selectedLabel() {
-    return _roles
+  String _selectedLabel(AppLocalizations l10n) {
+    final key = _roles
         .firstWhere((role) => role.key == _selected, orElse: () => _roles.first)
-        .label;
+        .key;
+    return themeRoleLabel(l10n, key);
   }
 
   Future<void> _save() async {
@@ -338,7 +344,7 @@ class _ThemePaletteSheetState extends State<ThemePaletteSheet> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '自定义色盘',
+                    context.l10n.themeCustomPaletteTitle,
                     style: serif(c, 22, weight: FontWeight.w500),
                   ),
                 ),
@@ -346,14 +352,17 @@ class _ThemePaletteSheetState extends State<ThemePaletteSheet> {
                   c: c,
                   icon: Icons.close_rounded,
                   onPressed: () => Navigator.pop(context),
-                  tooltip: '关闭',
+                  tooltip: context.l10n.closeTooltip,
                 ),
               ],
             ),
             const SizedBox(height: 12),
             _ThemePreview(c: _draft),
             const SizedBox(height: 14),
-            Text('组件颜色', style: mono(c, 11, color: c.ink3)),
+            Text(
+              context.l10n.themeComponentColors,
+              style: mono(c, 11, color: c.ink3),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -361,7 +370,10 @@ class _ThemePaletteSheetState extends State<ThemePaletteSheet> {
               children: [for (final role in _roles) _roleChip(c, role)],
             ),
             const SizedBox(height: 16),
-            Text('正在修改：${_selectedLabel()}', style: mono(c, 11, color: c.ink3)),
+            Text(
+              context.l10n.themeEditingRole(_selectedLabel(context.l10n)),
+              style: mono(c, 11, color: c.ink3),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -381,14 +393,14 @@ class _ThemePaletteSheetState extends State<ThemePaletteSheet> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.delete_outline_rounded, size: 18),
-                    label: const Text('删除'),
+                    label: Text(context.l10n.deleteAction),
                   ),
                 const Spacer(),
                 TextButton(
                   onPressed: _saving || _deleting
                       ? null
                       : () => Navigator.pop(context),
-                  child: const Text('取消'),
+                  child: Text(context.l10n.cancelAction),
                 ),
                 const SizedBox(width: 8),
                 FilledButton.icon(
@@ -400,7 +412,7 @@ class _ThemePaletteSheetState extends State<ThemePaletteSheet> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.check_rounded, size: 18),
-                  label: const Text('保存'),
+                  label: Text(context.l10n.saveAction),
                 ),
               ],
             ),
@@ -430,7 +442,7 @@ class _ThemePaletteSheetState extends State<ThemePaletteSheet> {
             const SizedBox(width: 7),
             Expanded(
               child: Text(
-                role.label,
+                themeRoleLabel(context.l10n, role.key),
                 overflow: TextOverflow.ellipsis,
                 style: mono(c, 10.5, color: selected ? c.character : c.ink2),
               ),
@@ -512,7 +524,7 @@ class _ThemePreview extends StatelessWidget {
               border: Border.all(color: c.surfaceEdge),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text('这套颜色会应用到聊天、抽屉和设置组件。', style: serif(c, 14)),
+            child: Text(context.l10n.themePreviewBody, style: serif(c, 14)),
           ),
           const SizedBox(height: 8),
           Container(
@@ -532,7 +544,7 @@ class _ThemePreview extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '侧边栏背景 / 文字图标 / 选中态',
+                    context.l10n.themeSidebarPreview,
                     style: mono(
                       c,
                       10.5,
@@ -564,7 +576,7 @@ class _ThemePreview extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '用户气泡也会跟着变。',
+                context.l10n.themeUserBubblePreview,
                 style: serif(c, 14, color: c.userBubbleText),
               ),
             ),
@@ -576,10 +588,9 @@ class _ThemePreview extends StatelessWidget {
 }
 
 class _PaletteRole {
-  const _PaletteRole(this.key, this.label, this.icon);
+  const _PaletteRole(this.key, this.icon);
 
   final String key;
-  final String label;
   final IconData icon;
 }
 
@@ -676,7 +687,7 @@ class PromptOptionChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (options.isEmpty) {
-      return Text('暂无可用项', style: mono(c, 10.5, color: c.ink3));
+      return Text(context.l10n.noOptions, style: mono(c, 10.5, color: c.ink3));
     }
     return Wrap(
       spacing: 6,
@@ -708,15 +719,26 @@ class AttachSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final options = [
       (
         Icons.insert_drive_file_outlined,
-        '文档',
-        'txt / md / docx · 5MB 内',
+        l10n.attachmentDocument,
+        l10n.attachmentDocumentSubtitle,
         onUploadFile,
       ),
-      (Icons.image_outlined, '图片', '可多选 · 走后端视觉识别', onUploadImages),
-      (Icons.mic_none_rounded, '录音', '长按说话 · 转写 · 待接入', () {}),
+      (
+        Icons.image_outlined,
+        l10n.attachmentImage,
+        l10n.attachmentImageSubtitle,
+        onUploadImages,
+      ),
+      (
+        Icons.mic_none_rounded,
+        l10n.attachmentRecording,
+        l10n.attachmentRecordingSubtitle,
+        () {},
+      ),
     ];
     return Container(
       decoration: BoxDecoration(
@@ -741,7 +763,10 @@ class AttachSheet extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('附加内容', style: mono(c, 10, color: c.ink3)),
+                child: Text(
+                  l10n.attachmentSheetTitle,
+                  style: mono(c, 10, color: c.ink3),
+                ),
               ),
             ),
             for (final option in options)

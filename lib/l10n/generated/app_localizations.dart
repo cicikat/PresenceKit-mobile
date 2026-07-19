@@ -1812,6 +1812,402 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'棋盘加载中…'**
   String get boardLoading;
+
+  /// No description provided for @themePresetsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'颜色预设'**
+  String get themePresetsTitle;
+
+  /// No description provided for @themePresetsDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'本机可保存多个预设；浏览器可导出颜色 mod。'**
+  String get themePresetsDescription;
+
+  /// No description provided for @newAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建'**
+  String get newAction;
+
+  /// No description provided for @themeNoCustomPresets.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有自定义预设'**
+  String get themeNoCustomPresets;
+
+  /// No description provided for @themeBundledReadOnly.
+  ///
+  /// In zh, this message translates to:
+  /// **'mods/ 内置 · 只读'**
+  String get themeBundledReadOnly;
+
+  /// No description provided for @themeLocalPreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'{base}底色 · 本机预设'**
+  String themeLocalPreset(String base);
+
+  /// No description provided for @themeCopyEdit.
+  ///
+  /// In zh, this message translates to:
+  /// **'复制并编辑'**
+  String get themeCopyEdit;
+
+  /// No description provided for @editAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑'**
+  String get editAction;
+
+  /// No description provided for @themeResetColors.
+  ///
+  /// In zh, this message translates to:
+  /// **'重置颜色'**
+  String get themeResetColors;
+
+  /// No description provided for @themeExportMod.
+  ///
+  /// In zh, this message translates to:
+  /// **'导出 mod'**
+  String get themeExportMod;
+
+  /// No description provided for @themeDeleteTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除颜色预设？'**
+  String get themeDeleteTitle;
+
+  /// No description provided for @themeDeleteWarning.
+  ///
+  /// In zh, this message translates to:
+  /// **'“{name}”会从本机删除，此操作无法撤销。'**
+  String themeDeleteWarning(String name);
+
+  /// No description provided for @themeExportSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'已下载颜色 mod；请手动放进项目 mods/ 文件夹。'**
+  String get themeExportSuccess;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'导出失败'**
+  String get exportFailed;
+
+  /// No description provided for @themeEditTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑颜色预设'**
+  String get themeEditTitle;
+
+  /// No description provided for @themePresetNameLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'预设名称'**
+  String get themePresetNameLabel;
+
+  /// No description provided for @themeComponentColors.
+  ///
+  /// In zh, this message translates to:
+  /// **'组件颜色'**
+  String get themeComponentColors;
+
+  /// No description provided for @themeFreeColor.
+  ///
+  /// In zh, this message translates to:
+  /// **'自由选色'**
+  String get themeFreeColor;
+
+  /// No description provided for @themeHue.
+  ///
+  /// In zh, this message translates to:
+  /// **'色相 {value}°'**
+  String themeHue(int value);
+
+  /// No description provided for @themeOpacity.
+  ///
+  /// In zh, this message translates to:
+  /// **'透明度 {value}%'**
+  String themeOpacity(int value);
+
+  /// No description provided for @themeApplyRgbTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'应用 RGB'**
+  String get themeApplyRgbTooltip;
+
+  /// No description provided for @previewLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'预览'**
+  String get previewLabel;
+
+  /// No description provided for @themeCharacterPreview.
+  ///
+  /// In zh, this message translates to:
+  /// **'角色消息与正文颜色'**
+  String get themeCharacterPreview;
+
+  /// No description provided for @themeUserPreview.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户消息颜色'**
+  String get themeUserPreview;
+
+  /// No description provided for @themeDefaultName.
+  ///
+  /// In zh, this message translates to:
+  /// **'我的配色'**
+  String get themeDefaultName;
+
+  /// No description provided for @themeNewTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建颜色预设'**
+  String get themeNewTitle;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'名称'**
+  String get nameLabel;
+
+  /// No description provided for @themeLightBase.
+  ///
+  /// In zh, this message translates to:
+  /// **'信纸底色'**
+  String get themeLightBase;
+
+  /// No description provided for @themeDarkBase.
+  ///
+  /// In zh, this message translates to:
+  /// **'夜间底色'**
+  String get themeDarkBase;
+
+  /// No description provided for @createAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'创建'**
+  String get createAction;
+
+  /// No description provided for @avatarCropTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'裁切头像'**
+  String get avatarCropTitle;
+
+  /// No description provided for @avatarCropHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'拖动调整位置，双指或手势缩放。保存后只作为手机端本地头像。'**
+  String get avatarCropHelp;
+
+  /// No description provided for @resetAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'重置'**
+  String get resetAction;
+
+  /// No description provided for @closeTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭'**
+  String get closeTooltip;
+
+  /// No description provided for @themeCustomPaletteTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'自定义色盘'**
+  String get themeCustomPaletteTitle;
+
+  /// No description provided for @themeEditingRole.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在修改：{role}'**
+  String themeEditingRole(String role);
+
+  /// No description provided for @themePreviewBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'这套颜色会应用到聊天、抽屉和设置组件。'**
+  String get themePreviewBody;
+
+  /// No description provided for @themeSidebarPreview.
+  ///
+  /// In zh, this message translates to:
+  /// **'侧边栏背景 / 文字图标 / 选中态'**
+  String get themeSidebarPreview;
+
+  /// No description provided for @themeUserBubblePreview.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户气泡也会跟着变。'**
+  String get themeUserBubblePreview;
+
+  /// No description provided for @noOptions.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无可用项'**
+  String get noOptions;
+
+  /// No description provided for @attachmentSheetTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'附加内容'**
+  String get attachmentSheetTitle;
+
+  /// No description provided for @attachmentDocument.
+  ///
+  /// In zh, this message translates to:
+  /// **'文档'**
+  String get attachmentDocument;
+
+  /// No description provided for @attachmentDocumentSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'txt / md / docx · 5MB 内'**
+  String get attachmentDocumentSubtitle;
+
+  /// No description provided for @attachmentImage.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片'**
+  String get attachmentImage;
+
+  /// No description provided for @attachmentImageSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'可多选 · 走后端视觉识别'**
+  String get attachmentImageSubtitle;
+
+  /// No description provided for @attachmentRecording.
+  ///
+  /// In zh, this message translates to:
+  /// **'录音'**
+  String get attachmentRecording;
+
+  /// No description provided for @attachmentRecordingSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'长按说话 · 转写 · 待接入'**
+  String get attachmentRecordingSubtitle;
+
+  /// No description provided for @themeRoleSurface.
+  ///
+  /// In zh, this message translates to:
+  /// **'页面底色'**
+  String get themeRoleSurface;
+
+  /// No description provided for @themeRoleSurfaceSoft.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入栏底色'**
+  String get themeRoleSurfaceSoft;
+
+  /// No description provided for @themeRoleSurfaceDeep.
+  ///
+  /// In zh, this message translates to:
+  /// **'深层底色'**
+  String get themeRoleSurfaceDeep;
+
+  /// No description provided for @themeRoleSurfaceEdge.
+  ///
+  /// In zh, this message translates to:
+  /// **'边框线'**
+  String get themeRoleSurfaceEdge;
+
+  /// No description provided for @themeRoleInk1.
+  ///
+  /// In zh, this message translates to:
+  /// **'主文字'**
+  String get themeRoleInk1;
+
+  /// No description provided for @themeRoleInk2.
+  ///
+  /// In zh, this message translates to:
+  /// **'次文字'**
+  String get themeRoleInk2;
+
+  /// No description provided for @themeRoleInk3.
+  ///
+  /// In zh, this message translates to:
+  /// **'弱文字'**
+  String get themeRoleInk3;
+
+  /// No description provided for @themeRoleInk4.
+  ///
+  /// In zh, this message translates to:
+  /// **'淡线条'**
+  String get themeRoleInk4;
+
+  /// No description provided for @themeRoleCharacter.
+  ///
+  /// In zh, this message translates to:
+  /// **'角色主色/焦点'**
+  String get themeRoleCharacter;
+
+  /// No description provided for @themeRoleCharacterDeep.
+  ///
+  /// In zh, this message translates to:
+  /// **'顶部/侧边栏'**
+  String get themeRoleCharacterDeep;
+
+  /// No description provided for @themeRoleCharacterSoft.
+  ///
+  /// In zh, this message translates to:
+  /// **'选中项/柔底'**
+  String get themeRoleCharacterSoft;
+
+  /// No description provided for @themeRoleCharacterOn.
+  ///
+  /// In zh, this message translates to:
+  /// **'侧边栏文字'**
+  String get themeRoleCharacterOn;
+
+  /// No description provided for @themeRoleDanger.
+  ///
+  /// In zh, this message translates to:
+  /// **'危险提示'**
+  String get themeRoleDanger;
+
+  /// No description provided for @themeRoleWarn.
+  ///
+  /// In zh, this message translates to:
+  /// **'提醒提示'**
+  String get themeRoleWarn;
+
+  /// No description provided for @themeRoleOk.
+  ///
+  /// In zh, this message translates to:
+  /// **'正常提示'**
+  String get themeRoleOk;
+
+  /// No description provided for @themeRoleSend.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送按钮'**
+  String get themeRoleSend;
+
+  /// No description provided for @themeRoleUserBubble.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户气泡'**
+  String get themeRoleUserBubble;
+
+  /// No description provided for @themeRoleUserBubbleText.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户气泡文字'**
+  String get themeRoleUserBubbleText;
+
+  /// No description provided for @themeRoleScrim.
+  ///
+  /// In zh, this message translates to:
+  /// **'遮罩颜色'**
+  String get themeRoleScrim;
 }
 
 class _AppLocalizationsDelegate
