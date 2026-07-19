@@ -1,0 +1,20 @@
+{
+  "@@locale": "en",
+  "appTitle": "Companion",
+  "appErrorTitle": "Something went wrong",
+  "backHome": "Back to home",
+  "retry": "Retry",
+  "settingsTitle": "Settings",
+  "settingsGeneralSection": "General",
+  "settingsLanguageTitle": "Language",
+  "settingsLanguageSubtitle": "Changes apply immediately and are saved on this device",
+  "languageSystem": "System default",
+  "languageSimplifiedChinese": "简体中文",
+  "languageEnglish": "English",
+  "settingsConnectionAccountSection": "Connection & account",
+  "settingsAccessTokenTitle": "Access token",
+  "settingsAccessTokenConfigured": "Configured · Stored in Android private storage",
+  "settingsAccessTokenMissing": "Not configured · Required before connecting",
+  "settingsReplaceAction": "Replace",
+  "settingsSetAction": "Set"
+}

@@ -1,0 +1,20 @@
+{
+  "@@locale": "zh",
+  "appTitle": "陪伴",
+  "appErrorTitle": "页面出了点问题",
+  "backHome": "回到主界面",
+  "retry": "重试",
+  "settingsTitle": "设置",
+  "settingsGeneralSection": "通用",
+  "settingsLanguageTitle": "语言",
+  "settingsLanguageSubtitle": "切换后立即生效，并保存到本机",
+  "languageSystem": "跟随系统",
+  "languageSimplifiedChinese": "简体中文",
+  "languageEnglish": "English",
+  "settingsConnectionAccountSection": "连接与账户",
+  "settingsAccessTokenTitle": "访问 Token",
+  "settingsAccessTokenConfigured": "已设置 · 保存在本机 Android 私有存储",
+  "settingsAccessTokenMissing": "尚未设置 · 连接后端前必须填写",
+  "settingsReplaceAction": "更换",
+  "settingsSetAction": "设置"
+}

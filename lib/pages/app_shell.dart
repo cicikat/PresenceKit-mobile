@@ -9,6 +9,7 @@ import '../controllers/device_controller.dart';
 import '../controllers/dream_controller.dart';
 import '../controllers/diary_controller.dart';
 import '../controllers/garden_controller.dart';
+import '../controllers/locale_controller.dart';
 import '../controllers/prompt_entries_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../models/app_models.dart';
@@ -38,10 +39,12 @@ class CompanionApp extends StatefulWidget {
     super.key,
     this.settingsStore = const AppSettingsStore(),
     this.backendClient,
+    this.localeController,
   });
 
   final AppSettingsStore settingsStore;
   final BackendClient? backendClient;
+  final LocaleController? localeController;
 
   @override
   State<CompanionApp> createState() => _CompanionAppState();
@@ -78,6 +81,8 @@ class _CompanionAppState extends State<CompanionApp>
   YxPrefs _prefs = const YxPrefs();
   late final ThemeController _themeController;
   late final PromptEntriesController _promptEntries;
+  late final LocaleController _localeController;
+  late final bool _ownsLocaleController;
 
   BackendClient get _backend => _connectionController.backend;
   String get _backendBaseUrl => _connectionController.baseUrl;
@@ -119,6 +124,9 @@ class _CompanionAppState extends State<CompanionApp>
   @override
   void initState() {
     super.initState();
+    _ownsLocaleController = widget.localeController == null;
+    _localeController = widget.localeController ?? LocaleController();
+    if (!_localeController.loaded) unawaited(_localeController.load());
     final settingsStore = widget.settingsStore;
     _settings = SettingsStore(settingsStore);
     _themeController = ThemeController(
@@ -231,6 +239,7 @@ class _CompanionAppState extends State<CompanionApp>
     _themeController.dispose();
     _promptEntries.removeListener(_handlePromptEntriesChanged);
     _promptEntries.dispose();
+    if (_ownsLocaleController) _localeController.dispose();
     super.dispose();
   }
 
@@ -1146,6 +1155,7 @@ class _CompanionAppState extends State<CompanionApp>
 
             return SettingsPage(
               c: c,
+              language: _localeController.language,
               dark: _dark,
               activeThemePresetName: _themeController.activePreset?.name,
               themePresetCount: _themeController.presets.length,
@@ -1164,6 +1174,10 @@ class _CompanionAppState extends State<CompanionApp>
               settingsError:
                   _promptAssetsError ?? _dreamController.settingsError,
               onTheme: updateTheme,
+              onLanguage: (language) {
+                unawaited(_localeController.setLanguage(language));
+                sheetSetState(() {});
+              },
               onManageThemes: manageThemes,
               onPrefs: updatePrefs,
               onEditProfileName: _editProfileName,

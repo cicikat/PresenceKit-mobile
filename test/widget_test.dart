@@ -65,14 +65,19 @@ void main() {
     expect(find.text('对他说些什么…'), findsOneWidget);
   });
 
-  testWidgets('settings page puts token first', (WidgetTester tester) async {
+  testWidgets('settings page puts language above token', (
+    WidgetTester tester,
+  ) async {
     var credentialTapped = false;
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SettingsPage(
             c: YxPalette.light,
+            language: AppLanguage.system,
             hasAdminToken: true,
             backgroundNotifications: true,
             backendBaseUrl: 'http://127.0.0.1:8080',
@@ -91,6 +96,7 @@ void main() {
             settingsError: null,
             notificationTestMode: false,
             onTheme: (_) {},
+            onLanguage: (_) {},
             onManageThemes: () {},
             onPrefs: (_) {},
             onEditProfileName: () {},
@@ -114,8 +120,13 @@ void main() {
     );
 
     expect(find.text('设置'), findsOneWidget);
+    expect(find.text('语言'), findsOneWidget);
     expect(find.text('访问 Token'), findsOneWidget);
     expect(find.textContaining('中继只承载新消息信号'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('语言')).dy,
+      lessThan(tester.getTopLeft(find.text('访问 Token')).dy),
+    );
     expect(
       tester.getTopLeft(find.text('访问 Token')).dy,
       lessThan(tester.getTopLeft(find.text('能力检查')).dy),

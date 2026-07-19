@@ -18,6 +18,29 @@ class AppSettingsStore {
 
   const AppSettingsStore();
 
+  Future<String?> loadAppLanguage() async {
+    if (!_channelAvailable) return null;
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<String>(
+        'getAppLanguage',
+      );
+    } on PlatformException {
+      return null;
+    }
+  }
+
+  Future<void> saveAppLanguage(String value) async {
+    if (!_channelAvailable) return;
+    try {
+      await PlatformSettingsChannel.channel.invokeMethod<void>(
+        'setAppLanguage',
+        {'value': value},
+      );
+    } on PlatformException {
+      // Language changes remain effective for this session if persistence fails.
+    }
+  }
+
   Future<String?> loadBackendBaseUrl() async {
     if (!_channelAvailable) return null;
     try {

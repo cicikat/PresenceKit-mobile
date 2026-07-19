@@ -33,9 +33,9 @@ void main() {
     handler = (_) async => null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
-      calls.add(call);
-      return handler(call);
-    });
+          calls.add(call);
+          return handler(call);
+        });
   });
 
   tearDown(() {
@@ -44,30 +44,61 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
+  group('应用语言', () {
+    test('loads and saves the language through the stable channel', () async {
+      reply('en-US');
+      expect(await store.loadAppLanguage(), 'en-US');
+      expect(calls.single.method, 'getAppLanguage');
+
+      calls.clear();
+      await store.saveAppLanguage('zh-CN');
+      expect(calls.single.method, 'setAppLanguage');
+      expect(calls.single.arguments, {'value': 'zh-CN'});
+    });
+
+    test('falls back safely when language persistence fails', () async {
+      throwPlatformError();
+      expect(await store.loadAppLanguage(), isNull);
+      await store.saveAppLanguage('en-US');
+    });
+  });
+
   group('后台服务启停', () {
-    test('startBackgroundNotifications calls the channel with no args and swallows platform errors', () async {
-      throwPlatformError();
-      await store.startBackgroundNotifications();
-      expect(calls.single.method, 'startBackgroundNotifications');
-      expect(calls.single.arguments, isNull);
-    });
+    test(
+      'startBackgroundNotifications calls the channel with no args and swallows platform errors',
+      () async {
+        throwPlatformError();
+        await store.startBackgroundNotifications();
+        expect(calls.single.method, 'startBackgroundNotifications');
+        expect(calls.single.arguments, isNull);
+      },
+    );
 
-    test('stopBackgroundNotifications calls the channel and swallows platform errors', () async {
-      throwPlatformError();
-      await store.stopBackgroundNotifications();
-      expect(calls.single.method, 'stopBackgroundNotifications');
-    });
+    test(
+      'stopBackgroundNotifications calls the channel and swallows platform errors',
+      () async {
+        throwPlatformError();
+        await store.stopBackgroundNotifications();
+        expect(calls.single.method, 'stopBackgroundNotifications');
+      },
+    );
 
-    test('isBackgroundNotificationServiceRunning parses the bool reply', () async {
-      reply(true);
-      expect(await store.isBackgroundNotificationServiceRunning(), isTrue);
-      expect(calls.single.method, 'isBackgroundNotificationServiceRunning');
-    });
+    test(
+      'isBackgroundNotificationServiceRunning parses the bool reply',
+      () async {
+        reply(true);
+        expect(await store.isBackgroundNotificationServiceRunning(), isTrue);
+        expect(calls.single.method, 'isBackgroundNotificationServiceRunning');
+      },
+    );
 
-    test('isBackgroundNotificationServiceRunning falls back to false on a platform error', () async {
-      throwPlatformError();
-      expect(await store.isBackgroundNotificationServiceRunning(), isFalse);
-    });
+    test(
+      'isBackgroundNotificationServiceRunning falls back to false on a platform error',
+      () async {
+        throwPlatformError();
+        expect(await store.isBackgroundNotificationServiceRunning(), isFalse);
+      },
+    );
 
     test('getBackgroundPollStatus parses the platform map', () async {
       reply({
@@ -83,12 +114,15 @@ void main() {
       expect(status.lastError, 'boom');
     });
 
-    test('getBackgroundPollStatus falls back to the empty default on a platform error', () async {
-      throwPlatformError();
-      final status = await store.loadBackgroundPollStatus();
-      expect(status.lastPollAt, isNull);
-      expect(status.lastError, isNull);
-    });
+    test(
+      'getBackgroundPollStatus falls back to the empty default on a platform error',
+      () async {
+        throwPlatformError();
+        final status = await store.loadBackgroundPollStatus();
+        expect(status.lastPollAt, isNull);
+        expect(status.lastError, isNull);
+      },
+    );
 
     test('getRelayConnectionStatus parses the platform map', () async {
       reply({
@@ -100,11 +134,14 @@ void main() {
       expect(status.connectionStatus, 'connected');
     });
 
-    test('getRelayConnectionStatus falls back to unconfigured on a platform error', () async {
-      throwPlatformError();
-      final status = await store.loadRelayConnectionStatus();
-      expect(status.connectionStatus, 'unconfigured');
-    });
+    test(
+      'getRelayConnectionStatus falls back to unconfigured on a platform error',
+      () async {
+        throwPlatformError();
+        final status = await store.loadRelayConnectionStatus();
+        expect(status.connectionStatus, 'unconfigured');
+      },
+    );
 
     test('getNotificationGateStatus parses the platform map', () async {
       reply({
@@ -119,30 +156,39 @@ void main() {
       expect(status.testModeEnabled, isTrue);
     });
 
-    test('debugBackgroundDelivery sends content/behavior args and parses the bool reply', () async {
-      reply(true);
-      final ok = await store.debugBackgroundDelivery(
-        content: 'hi',
-        behaviorJson: '{"kind":"notify"}',
-      );
-      expect(ok, isTrue);
-      expect(calls.single.method, 'debugBackgroundDelivery');
-      expect(calls.single.arguments, {
-        'content': 'hi',
-        'behavior': '{"kind":"notify"}',
-      });
-    });
+    test(
+      'debugBackgroundDelivery sends content/behavior args and parses the bool reply',
+      () async {
+        reply(true);
+        final ok = await store.debugBackgroundDelivery(
+          content: 'hi',
+          behaviorJson: '{"kind":"notify"}',
+        );
+        expect(ok, isTrue);
+        expect(calls.single.method, 'debugBackgroundDelivery');
+        expect(calls.single.arguments, {
+          'content': 'hi',
+          'behavior': '{"kind":"notify"}',
+        });
+      },
+    );
 
-    test('debugBackgroundDelivery defaults the behavior arg to an empty string', () async {
-      reply(true);
-      await store.debugBackgroundDelivery(content: 'hi');
-      expect(calls.single.arguments, {'content': 'hi', 'behavior': ''});
-    });
+    test(
+      'debugBackgroundDelivery defaults the behavior arg to an empty string',
+      () async {
+        reply(true);
+        await store.debugBackgroundDelivery(content: 'hi');
+        expect(calls.single.arguments, {'content': 'hi', 'behavior': ''});
+      },
+    );
 
-    test('debugBackgroundDelivery falls back to false on a platform error', () async {
-      throwPlatformError();
-      expect(await store.debugBackgroundDelivery(content: 'hi'), isFalse);
-    });
+    test(
+      'debugBackgroundDelivery falls back to false on a platform error',
+      () async {
+        throwPlatformError();
+        expect(await store.debugBackgroundDelivery(content: 'hi'), isFalse);
+      },
+    );
   });
 
   group('无障碍', () {
@@ -152,39 +198,51 @@ void main() {
       expect(calls.single.method, 'isAccessibilityServiceEnabled');
     });
 
-    test('isAccessibilityServiceEnabled falls back to false on a platform error', () async {
-      throwPlatformError();
-      expect(await store.isAccessibilityServiceEnabled(), isFalse);
-    });
+    test(
+      'isAccessibilityServiceEnabled falls back to false on a platform error',
+      () async {
+        throwPlatformError();
+        expect(await store.isAccessibilityServiceEnabled(), isFalse);
+      },
+    );
 
-    test('requestAccessibilityPermission calls the channel and swallows platform errors', () async {
-      throwPlatformError();
-      await store.requestAccessibilityPermission();
-      expect(calls.single.method, 'requestAccessibilityPermission');
-    });
+    test(
+      'requestAccessibilityPermission calls the channel and swallows platform errors',
+      () async {
+        throwPlatformError();
+        await store.requestAccessibilityPermission();
+        expect(calls.single.method, 'requestAccessibilityPermission');
+      },
+    );
 
-    test('captureScreenContext parses the platform map into a snapshot', () async {
-      reply({
-        'isBlocked': false,
-        'packageName': 'com.example.shop',
-        'appLabel': 'Shop',
-        'windowTitle': 'Cart',
-        'visibleText': ['a', 'b'],
-        'clickableText': ['结算'],
-        'capturedAt': 1781280000.5,
-      });
-      final snapshot = await store.captureScreenContext();
-      expect(calls.single.method, 'captureScreenContext');
-      expect(snapshot, isNotNull);
-      expect(snapshot!.packageName, 'com.example.shop');
-      expect(snapshot.visibleText, ['a', 'b']);
-      expect(snapshot.capturedAt, 1781280000.5);
-    });
+    test(
+      'captureScreenContext parses the platform map into a snapshot',
+      () async {
+        reply({
+          'isBlocked': false,
+          'packageName': 'com.example.shop',
+          'appLabel': 'Shop',
+          'windowTitle': 'Cart',
+          'visibleText': ['a', 'b'],
+          'clickableText': ['结算'],
+          'capturedAt': 1781280000.5,
+        });
+        final snapshot = await store.captureScreenContext();
+        expect(calls.single.method, 'captureScreenContext');
+        expect(snapshot, isNotNull);
+        expect(snapshot!.packageName, 'com.example.shop');
+        expect(snapshot.visibleText, ['a', 'b']);
+        expect(snapshot.capturedAt, 1781280000.5);
+      },
+    );
 
-    test('captureScreenContext returns null when the platform has nothing to report', () async {
-      reply(null);
-      expect(await store.captureScreenContext(), isNull);
-    });
+    test(
+      'captureScreenContext returns null when the platform has nothing to report',
+      () async {
+        reply(null);
+        expect(await store.captureScreenContext(), isNull);
+      },
+    );
 
     test('captureScreenContext returns null on a platform error', () async {
       throwPlatformError();
@@ -210,11 +268,14 @@ void main() {
       expect(await store.canDrawOverlays(), isFalse);
     });
 
-    test('requestOverlayPermission calls the channel and swallows platform errors', () async {
-      throwPlatformError();
-      await store.requestOverlayPermission();
-      expect(calls.single.method, 'requestOverlayPermission');
-    });
+    test(
+      'requestOverlayPermission calls the channel and swallows platform errors',
+      () async {
+        throwPlatformError();
+        await store.requestOverlayPermission();
+        expect(calls.single.method, 'requestOverlayPermission');
+      },
+    );
 
     test('showFloatingBubble parses the bool reply', () async {
       reply(true);
@@ -222,29 +283,38 @@ void main() {
       expect(calls.single.method, 'showFloatingBubble');
     });
 
-    test('showFloatingBubble falls back to false on a platform error', () async {
-      throwPlatformError();
-      expect(await store.showFloatingBubble(), isFalse);
-    });
+    test(
+      'showFloatingBubble falls back to false on a platform error',
+      () async {
+        throwPlatformError();
+        expect(await store.showFloatingBubble(), isFalse);
+      },
+    );
 
-    test('showOrderBubble sends the target arg and parses the bool reply', () async {
-      reply(true);
-      final ok = await store.showOrderBubble('taobao');
-      expect(ok, isTrue);
-      expect(calls.single.method, 'showOrderBubble');
-      expect(calls.single.arguments, {'target': 'taobao'});
-    });
+    test(
+      'showOrderBubble sends the target arg and parses the bool reply',
+      () async {
+        reply(true);
+        final ok = await store.showOrderBubble('taobao');
+        expect(ok, isTrue);
+        expect(calls.single.method, 'showOrderBubble');
+        expect(calls.single.arguments, {'target': 'taobao'});
+      },
+    );
 
     test('showOrderBubble falls back to false on a platform error', () async {
       throwPlatformError();
       expect(await store.showOrderBubble('taobao'), isFalse);
     });
 
-    test('hideFloatingBubble calls the channel and swallows platform errors', () async {
-      throwPlatformError();
-      await store.hideFloatingBubble();
-      expect(calls.single.method, 'hideFloatingBubble');
-    });
+    test(
+      'hideFloatingBubble calls the channel and swallows platform errors',
+      () async {
+        throwPlatformError();
+        await store.hideFloatingBubble();
+        expect(calls.single.method, 'hideFloatingBubble');
+      },
+    );
 
     test('isDeviceAdminActive parses the bool reply', () async {
       reply(true);
@@ -252,16 +322,22 @@ void main() {
       expect(calls.single.method, 'isDeviceAdminActive');
     });
 
-    test('isDeviceAdminActive falls back to false on a platform error', () async {
-      throwPlatformError();
-      expect(await store.isDeviceAdminActive(), isFalse);
-    });
+    test(
+      'isDeviceAdminActive falls back to false on a platform error',
+      () async {
+        throwPlatformError();
+        expect(await store.isDeviceAdminActive(), isFalse);
+      },
+    );
 
-    test('requestDeviceAdmin calls the channel and swallows platform errors', () async {
-      throwPlatformError();
-      await store.requestDeviceAdmin();
-      expect(calls.single.method, 'requestDeviceAdmin');
-    });
+    test(
+      'requestDeviceAdmin calls the channel and swallows platform errors',
+      () async {
+        throwPlatformError();
+        await store.requestDeviceAdmin();
+        expect(calls.single.method, 'requestDeviceAdmin');
+      },
+    );
 
     test('lockScreen parses the bool reply', () async {
       reply(true);
@@ -274,13 +350,16 @@ void main() {
       expect(await store.lockScreen(), isFalse);
     });
 
-    test('openShoppingApp sends the target arg and parses the bool reply', () async {
-      reply(true);
-      final ok = await store.openShoppingApp('jd');
-      expect(ok, isTrue);
-      expect(calls.single.method, 'openShoppingApp');
-      expect(calls.single.arguments, {'target': 'jd'});
-    });
+    test(
+      'openShoppingApp sends the target arg and parses the bool reply',
+      () async {
+        reply(true);
+        final ok = await store.openShoppingApp('jd');
+        expect(ok, isTrue);
+        expect(calls.single.method, 'openShoppingApp');
+        expect(calls.single.arguments, {'target': 'jd'});
+      },
+    );
 
     test('openShoppingApp falls back to false on a platform error', () async {
       throwPlatformError();

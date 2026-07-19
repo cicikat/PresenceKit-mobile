@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../controllers/locale_controller.dart';
+import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 
 import '../widgets/common_widgets.dart';
@@ -11,6 +13,7 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
     required this.c,
+    required this.language,
     required this.dark,
     required this.activeThemePresetName,
     required this.themePresetCount,
@@ -24,6 +27,7 @@ class SettingsPage extends StatelessWidget {
     required this.settingsBusy,
     required this.settingsError,
     required this.onTheme,
+    required this.onLanguage,
     required this.onManageThemes,
     required this.onPrefs,
     required this.onEditProfileName,
@@ -49,6 +53,7 @@ class SettingsPage extends StatelessWidget {
   });
 
   final YxPalette c;
+  final AppLanguage language;
   final bool dark;
   final String? activeThemePresetName;
   final int themePresetCount;
@@ -62,6 +67,7 @@ class SettingsPage extends StatelessWidget {
   final bool settingsBusy;
   final String? settingsError;
   final ValueChanged<bool> onTheme;
+  final ValueChanged<AppLanguage> onLanguage;
   final VoidCallback onManageThemes;
   final ValueChanged<YxPrefs> onPrefs;
   final VoidCallback onEditProfileName;
@@ -87,13 +93,22 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final languageLabel = switch (language) {
+      AppLanguage.system => l10n.languageSystem,
+      AppLanguage.simplifiedChinese => l10n.languageSimplifiedChinese,
+      AppLanguage.english => l10n.languageEnglish,
+    };
     return Scaffold(
       backgroundColor: c.surface,
       appBar: AppBar(
         backgroundColor: c.surface,
         foregroundColor: c.ink1,
         elevation: 0,
-        title: Text('设置', style: serif(c, 22, weight: FontWeight.w500)),
+        title: Text(
+          l10n.settingsTitle,
+          style: serif(c, 22, weight: FontWeight.w500),
+        ),
       ),
       body: SafeArea(
         top: false,
@@ -101,17 +116,55 @@ class SettingsPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const _SettingsSection(title: '连接与账户'),
+              _SettingsSection(title: l10n.settingsGeneralSection),
               SettingsRow(
                 c: c,
-                title: '访问 Token',
+                title: l10n.settingsLanguageTitle,
+                subtitle: l10n.settingsLanguageSubtitle,
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<AppLanguage>(
+                    value: language,
+                    alignment: AlignmentDirectional.centerEnd,
+                    borderRadius: BorderRadius.circular(8),
+                    selectedItemBuilder: (context) => [
+                      for (final _ in AppLanguage.values)
+                        Text(languageLabel, style: serif(c, 14)),
+                    ],
+                    items: [
+                      DropdownMenuItem(
+                        value: AppLanguage.system,
+                        child: Text(l10n.languageSystem),
+                      ),
+                      DropdownMenuItem(
+                        value: AppLanguage.simplifiedChinese,
+                        child: Text(l10n.languageSimplifiedChinese),
+                      ),
+                      DropdownMenuItem(
+                        value: AppLanguage.english,
+                        child: Text(l10n.languageEnglish),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) onLanguage(value);
+                    },
+                  ),
+                ),
+              ),
+              _SettingsSection(title: l10n.settingsConnectionAccountSection),
+              SettingsRow(
+                c: c,
+                title: l10n.settingsAccessTokenTitle,
                 subtitle: hasAdminToken
-                    ? '已设置 · 保存在本机 Android 私有存储'
-                    : '尚未设置 · 连接后端前必须填写',
+                    ? l10n.settingsAccessTokenConfigured
+                    : l10n.settingsAccessTokenMissing,
                 child: FilledButton.icon(
                   onPressed: onEditCredential,
                   icon: const Icon(Icons.key_rounded, size: 18),
-                  label: Text(hasAdminToken ? '更换' : '设置'),
+                  label: Text(
+                    hasAdminToken
+                        ? l10n.settingsReplaceAction
+                        : l10n.settingsSetAction,
+                  ),
                 ),
               ),
               SettingsRow(
@@ -310,7 +363,10 @@ class SettingsPage extends StatelessWidget {
                   c: c,
                   options: [
                     for (final entry in loreEntries)
-                      PromptAssetOption(id: entry.id, label: entry.displayLabel),
+                      PromptAssetOption(
+                        id: entry.id,
+                        label: entry.displayLabel,
+                      ),
                   ],
                   selected: {
                     for (final entry in loreEntries)
@@ -328,7 +384,10 @@ class SettingsPage extends StatelessWidget {
                   c: c,
                   options: [
                     for (final entry in jailbreakEntries)
-                      PromptAssetOption(id: entry.id, label: entry.displayLabel),
+                      PromptAssetOption(
+                        id: entry.id,
+                        label: entry.displayLabel,
+                      ),
                   ],
                   selected: {
                     for (final entry in jailbreakEntries)

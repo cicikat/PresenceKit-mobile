@@ -74,6 +74,18 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
                 when (call.method) {
+                    "getAppLanguage" -> {
+                        result.success(prefs.getString("appLanguage", null))
+                    }
+                    "setAppLanguage" -> {
+                        val value = call.argument<String>("value").orEmpty()
+                        if (value in setOf("system", "zh-CN", "en-US")) {
+                            prefs.edit().putString("appLanguage", value).apply()
+                            result.success(null)
+                        } else {
+                            result.error("invalid_language", "Unsupported app language", null)
+                        }
+                    }
                     "getBackendBaseUrl" -> {
                         result.success(prefs.getString("backendBaseUrl", null))
                     }
