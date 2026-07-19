@@ -1316,4 +1316,472 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get taobaoName => '淘宝';
+
+  @override
+  String get capabilityTitle => '能力检查';
+
+  @override
+  String get capabilityRefreshTooltip => '重新检测';
+
+  @override
+  String get capabilityLoading => '正在读取系统状态…';
+
+  @override
+  String get capabilityUnavailable => '暂时读不到状态，稍后再试。';
+
+  @override
+  String get capabilityNotificationTitle => '通知权限';
+
+  @override
+  String get capabilityNotificationSubtitle => '允许系统通知，后台主动消息才能弹出来。';
+
+  @override
+  String get enabledStatus => '已开启';
+
+  @override
+  String get disabledStatus => '已关闭';
+
+  @override
+  String get enableAction => '去开启';
+
+  @override
+  String get configureAction => '去设置';
+
+  @override
+  String get authorizeAction => '去授权';
+
+  @override
+  String get authorizedStatus => '已豁免';
+
+  @override
+  String get capabilityBatteryTitle => '电池优化豁免';
+
+  @override
+  String get capabilityBatteryEnabled => '已允许后台持续运行；仍建议检查厂商自启动与后台白名单。';
+
+  @override
+  String get capabilityBatteryDisabled => '未豁免：息屏或 Doze 时后台轮询可能暂停。';
+
+  @override
+  String get capabilityOverlayTitle => '悬浮窗权限';
+
+  @override
+  String get capabilityOverlaySubtitle => '显示在桌面和其他 App 上层，用于短句提醒和确认。';
+
+  @override
+  String get capabilityAccessibilityTitle => '无障碍服务';
+
+  @override
+  String get capabilityAccessibilitySubtitle => '读取当前 App、窗口标题和可见文字摘要；不上传截图。';
+
+  @override
+  String get capabilityScreenContextTitle => '屏幕上下文';
+
+  @override
+  String get capabilityScreenContextEnabled => '已开启：仅上传经过本机过滤的非敏感文本摘要。';
+
+  @override
+  String get capabilityScreenContextDisabled => '默认关闭；能力页仍可读取经过本机过滤的快照。';
+
+  @override
+  String get capabilityWhitelistTitle => '屏幕正文上传白名单';
+
+  @override
+  String get capabilityWhitelistEmpty =>
+      '当前为空：所有 App 仅上报包名和 App 名，不上传窗口标题或可见正文。';
+
+  @override
+  String capabilityWhitelistCount(int count) {
+    return '仅勾选的 $count 个 App 可上传正文；敏感页面仍会二次拦截。';
+  }
+
+  @override
+  String get manageAction => '管理';
+
+  @override
+  String get capabilityWhitelistNoApps => '没有读取到可启动的 App。默认不会上传任何 App 的屏幕正文。';
+
+  @override
+  String get capabilityDeviceAdminTitle => '设备管理器锁屏';
+
+  @override
+  String get capabilityDeviceAdminSubtitle => '授权后才能执行 lockNow，每次仍由界面确认。';
+
+  @override
+  String get capabilityBackgroundServiceTitle => '后台通知服务';
+
+  @override
+  String get switchEnabledStatus => '开关已开';
+
+  @override
+  String get capabilityRelayTitle => '中继连接状态';
+
+  @override
+  String get capabilityGateTitle => '通知闸门状态';
+
+  @override
+  String get testingStatus => '测试中';
+
+  @override
+  String get normalStatus => '正常';
+
+  @override
+  String get capabilityBackendTitle => 'adb reverse / 后端连通';
+
+  @override
+  String get detectingStatus => '检测中';
+
+  @override
+  String get connectedStatus => '已接入';
+
+  @override
+  String get detectAction => '检测';
+
+  @override
+  String get notConnectedStatus => '未接通';
+
+  @override
+  String get capabilityEditBackendTooltip => '修改后端节点';
+
+  @override
+  String get capabilityDetectBackendTooltip => '检测后端连通';
+
+  @override
+  String capabilityBackendLastError(String error) {
+    return '最近连接错误：$error';
+  }
+
+  @override
+  String get capabilityBackendNotice =>
+      '能力页只显示手机端可验证的状态；adb reverse 本身在电脑侧执行，手机端通过 127.0.0.1 后端是否可达来判断。';
+
+  @override
+  String get relayConnected => '已连接';
+
+  @override
+  String get relayConnecting => '连接中';
+
+  @override
+  String get relayStopped => '已停止';
+
+  @override
+  String get relayError => '错误';
+
+  @override
+  String get relayUnconfigured => '未配置';
+
+  @override
+  String get syncStatusTitle => '同步状态';
+
+  @override
+  String get readingStatus => '读取中';
+
+  @override
+  String failedStatus(String error) {
+    return '失败：$error';
+  }
+
+  @override
+  String get pendingSyncStatus => '待同步';
+
+  @override
+  String get pollingStatus => '轮询中';
+
+  @override
+  String get activatedStatus => '已激活';
+
+  @override
+  String get pendingActivationStatus => '待激活';
+
+  @override
+  String syncChatStatus(String status) {
+    return '聊天记录：$status';
+  }
+
+  @override
+  String syncGardenStatus(String status) {
+    return '花园状态：$status';
+  }
+
+  @override
+  String syncMobileStatus(String status, String received) {
+    return '主动消息：$status$received';
+  }
+
+  @override
+  String syncReceivedSuffix(int count) {
+    return ' · 已接收 $count 条';
+  }
+
+  @override
+  String syncLatestMessage(String content) {
+    return '最近一条：$content';
+  }
+
+  @override
+  String get screenSnapshotEmpty => '暂无屏幕快照';
+
+  @override
+  String get screenDebugTitle => '屏幕上下文调试';
+
+  @override
+  String get readAction => '读取';
+
+  @override
+  String get pushAction => '推送';
+
+  @override
+  String screenWindow(String value) {
+    return '窗口：$value';
+  }
+
+  @override
+  String screenVisible(String value) {
+    return '可见：$value';
+  }
+
+  @override
+  String screenClickable(String value) {
+    return '可点：$value';
+  }
+
+  @override
+  String get behaviorTestTitle => '主动行为测试';
+
+  @override
+  String get behaviorTestDescription =>
+      '写入后端 mobile queue，并立刻轮询一次；悬浮/确认类会在前台直接弹。';
+
+  @override
+  String get notificationLabel => '通知';
+
+  @override
+  String get overlayLabel => '悬浮';
+
+  @override
+  String get lockConfirmLabel => '锁屏确认';
+
+  @override
+  String get takeoutConfirmLabel => '外卖确认';
+
+  @override
+  String get backgroundDeliveryTitle => '后台交付测试';
+
+  @override
+  String get backgroundDeliveryDescription =>
+      '不经过后端，直接测试手机端后台通知 / 存在感悬浮 / 工具确认分流。';
+
+  @override
+  String get normalNotificationLabel => '普通通知';
+
+  @override
+  String get presenceOverlayLabel => '存在感悬浮';
+
+  @override
+  String get lockRequestLabel => '锁屏请求';
+
+  @override
+  String get takeoutRequestLabel => '外卖请求';
+
+  @override
+  String get behaviorDecisionTitle => '行为裁决状态';
+
+  @override
+  String get behaviorDecisionEmpty => '还没读取。刷新后会显示后端最近一次行为裁决为什么弹或为什么没弹。';
+
+  @override
+  String readFailedMessage(String error) {
+    return '读取失败：$error';
+  }
+
+  @override
+  String get fieldTime => '时间';
+
+  @override
+  String get fieldReason => '原因';
+
+  @override
+  String get fieldEvent => '事件';
+
+  @override
+  String get fieldApp => '应用';
+
+  @override
+  String get fieldNarrative => '叙事';
+
+  @override
+  String get fieldScreen => '屏幕';
+
+  @override
+  String get fieldReply => '回复';
+
+  @override
+  String get backendDiagnosticsTitle => '后端 / 资产诊断';
+
+  @override
+  String get backendDiagnosticsEmpty => '点击“读取”拉取后端节点、数据目录、模型、角色卡、世界书、破限和梦境配置。';
+
+  @override
+  String get diagnosticBackendNode => '后端节点';
+
+  @override
+  String get diagnosticDataPath => '数据目录';
+
+  @override
+  String get diagnosticNoPermission => '无权限（mobile token 预期行为）';
+
+  @override
+  String get diagnosticMetaMode => '元模式';
+
+  @override
+  String get diagnosticDangerMode => '危险模式';
+
+  @override
+  String get diagnosticSafeMode => '安全模式';
+
+  @override
+  String get diagnosticModel => '模型';
+
+  @override
+  String get diagnosticShortTermRounds => '短期轮数';
+
+  @override
+  String get diagnosticCharacterCard => '角色卡';
+
+  @override
+  String get diagnosticLorebook => '世界书';
+
+  @override
+  String get diagnosticJailbreak => '破限';
+
+  @override
+  String diagnosticEntries(int count) {
+    return '$count 条';
+  }
+
+  @override
+  String get diagnosticDream => '梦境';
+
+  @override
+  String get diagnosticDreamLorebook => '梦境世界书';
+
+  @override
+  String get enabledShortStatus => '已启用';
+
+  @override
+  String get disabledShortStatus => '未启用';
+
+  @override
+  String get diagnosticDreamLayer => '梦境层';
+
+  @override
+  String get diagnosticDreamJailbreak => '梦境破限';
+
+  @override
+  String get capabilityLastPollNone => '最近周期补偿：暂无';
+
+  @override
+  String capabilityLastPoll(String time) {
+    return '最近周期补偿：$time';
+  }
+
+  @override
+  String get capabilityLastErrorNone => '最近错误原因：无';
+
+  @override
+  String capabilityLastError(String error) {
+    return '最近错误原因：$error';
+  }
+
+  @override
+  String get capabilityNativeRelayRunning => '原生中继服务正在运行';
+
+  @override
+  String get capabilityNativeRelayStopped =>
+      '原生中继服务未运行；前台由 Flutter 每 5 秒读取主动消息';
+
+  @override
+  String get capabilityGateTestOn => '测试模式已开启：仅绕过静音时段和 30 分钟冷却';
+
+  @override
+  String get capabilityGateTestOff => '测试模式关闭：静音时段 23:30–06:30，普通通知间隔 30 分钟';
+
+  @override
+  String get noneStatus => '无';
+
+  @override
+  String capabilityGateSummary(String mode, int count, String reason) {
+    return '$mode。\n被吞计数：$count / 最近原因：$reason';
+  }
+
+  @override
+  String capabilityOverlayLastError(String base, String time, String error) {
+    return '$base\n权限已授予，但最近一次弹窗失败$time：$error';
+  }
+
+  @override
+  String get capabilitySignalNone => '最近信号时间：暂无';
+
+  @override
+  String capabilitySignalTime(String time) {
+    return '最近信号时间：$time';
+  }
+
+  @override
+  String get capabilityHeartbeatNone => '最近中继心跳：暂无';
+
+  @override
+  String capabilityHeartbeatTime(String time) {
+    return '最近中继心跳：$time';
+  }
+
+  @override
+  String capabilityRelayLastError(String error) {
+    return '\n最近中继错误：$error';
+  }
+
+  @override
+  String get capabilityRelayConfigWarning =>
+      '\n已连接不等于后端已配置；请检查后端 relay_base_url / relay_topic 与此处完全一致。';
+
+  @override
+  String capabilityLoopbackHint(String url) {
+    return '$url · 真机调试依赖 adb reverse tcp:8080 tcp:8080';
+  }
+
+  @override
+  String capabilityRemoteHint(String url) {
+    return '$url · 局域网/VPN/内网穿透需可达';
+  }
+
+  @override
+  String get notEnabledStatus => '未开启';
+
+  @override
+  String get sandboxSuffix => '  ⚠ 沙盒';
+
+  @override
+  String diagnosticReadError(String label, String message) {
+    return '$label：读取失败 — $message';
+  }
+
+  @override
+  String get backgroundTestPresenceMessage => '我在这里。你不想说话也没关系。';
+
+  @override
+  String get backgroundTestLockMessage => '已经很晚了。要我替你锁一下屏吗？';
+
+  @override
+  String get backgroundTestTakeoutMessage => '你还没吃东西。要不要我帮你打开外卖页看一眼？';
+
+  @override
+  String get backgroundTestDefaultMessage => '我刚才给你发了一句话，回来再看也可以。';
+
+  @override
+  String get checkingStatus => '检测中';
+
+  @override
+  String oemBackgroundGuide(String appName) {
+    return '厂商后台白名单参考：\n小米：设置 → 应用设置 → 应用管理 → $appName → 省电策略/自启动 → 无限制并开启自启动\nOPPO：设置 → 应用 → 自启动/耗电管理 → $appName → 允许后台运行\nvivo：设置 → 电池 → 后台耗电管理 → $appName → 允许后台高耗电\n华为：设置 → 应用和服务 → 应用启动管理 → $appName → 手动管理并允许后台活动';
+  }
 }

@@ -2490,6 +2490,834 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'淘宝'**
   String get taobaoName;
+
+  /// No description provided for @capabilityTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'能力检查'**
+  String get capabilityTitle;
+
+  /// No description provided for @capabilityRefreshTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新检测'**
+  String get capabilityRefreshTooltip;
+
+  /// No description provided for @capabilityLoading.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在读取系统状态…'**
+  String get capabilityLoading;
+
+  /// No description provided for @capabilityUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时读不到状态，稍后再试。'**
+  String get capabilityUnavailable;
+
+  /// No description provided for @capabilityNotificationTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知权限'**
+  String get capabilityNotificationTitle;
+
+  /// No description provided for @capabilityNotificationSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'允许系统通知，后台主动消息才能弹出来。'**
+  String get capabilityNotificationSubtitle;
+
+  /// No description provided for @enabledStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'已开启'**
+  String get enabledStatus;
+
+  /// No description provided for @disabledStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'已关闭'**
+  String get disabledStatus;
+
+  /// No description provided for @enableAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'去开启'**
+  String get enableAction;
+
+  /// No description provided for @configureAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'去设置'**
+  String get configureAction;
+
+  /// No description provided for @authorizeAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'去授权'**
+  String get authorizeAction;
+
+  /// No description provided for @authorizedStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'已豁免'**
+  String get authorizedStatus;
+
+  /// No description provided for @capabilityBatteryTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'电池优化豁免'**
+  String get capabilityBatteryTitle;
+
+  /// No description provided for @capabilityBatteryEnabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'已允许后台持续运行；仍建议检查厂商自启动与后台白名单。'**
+  String get capabilityBatteryEnabled;
+
+  /// No description provided for @capabilityBatteryDisabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'未豁免：息屏或 Doze 时后台轮询可能暂停。'**
+  String get capabilityBatteryDisabled;
+
+  /// No description provided for @capabilityOverlayTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'悬浮窗权限'**
+  String get capabilityOverlayTitle;
+
+  /// No description provided for @capabilityOverlaySubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示在桌面和其他 App 上层，用于短句提醒和确认。'**
+  String get capabilityOverlaySubtitle;
+
+  /// No description provided for @capabilityAccessibilityTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'无障碍服务'**
+  String get capabilityAccessibilityTitle;
+
+  /// No description provided for @capabilityAccessibilitySubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'读取当前 App、窗口标题和可见文字摘要；不上传截图。'**
+  String get capabilityAccessibilitySubtitle;
+
+  /// No description provided for @capabilityScreenContextTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'屏幕上下文'**
+  String get capabilityScreenContextTitle;
+
+  /// No description provided for @capabilityScreenContextEnabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'已开启：仅上传经过本机过滤的非敏感文本摘要。'**
+  String get capabilityScreenContextEnabled;
+
+  /// No description provided for @capabilityScreenContextDisabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认关闭；能力页仍可读取经过本机过滤的快照。'**
+  String get capabilityScreenContextDisabled;
+
+  /// No description provided for @capabilityWhitelistTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'屏幕正文上传白名单'**
+  String get capabilityWhitelistTitle;
+
+  /// No description provided for @capabilityWhitelistEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前为空：所有 App 仅上报包名和 App 名，不上传窗口标题或可见正文。'**
+  String get capabilityWhitelistEmpty;
+
+  /// No description provided for @capabilityWhitelistCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅勾选的 {count} 个 App 可上传正文；敏感页面仍会二次拦截。'**
+  String capabilityWhitelistCount(int count);
+
+  /// No description provided for @manageAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'管理'**
+  String get manageAction;
+
+  /// No description provided for @capabilityWhitelistNoApps.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有读取到可启动的 App。默认不会上传任何 App 的屏幕正文。'**
+  String get capabilityWhitelistNoApps;
+
+  /// No description provided for @capabilityDeviceAdminTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'设备管理器锁屏'**
+  String get capabilityDeviceAdminTitle;
+
+  /// No description provided for @capabilityDeviceAdminSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'授权后才能执行 lockNow，每次仍由界面确认。'**
+  String get capabilityDeviceAdminSubtitle;
+
+  /// No description provided for @capabilityBackgroundServiceTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'后台通知服务'**
+  String get capabilityBackgroundServiceTitle;
+
+  /// No description provided for @switchEnabledStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'开关已开'**
+  String get switchEnabledStatus;
+
+  /// No description provided for @capabilityRelayTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'中继连接状态'**
+  String get capabilityRelayTitle;
+
+  /// No description provided for @capabilityGateTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知闸门状态'**
+  String get capabilityGateTitle;
+
+  /// No description provided for @testingStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'测试中'**
+  String get testingStatus;
+
+  /// No description provided for @normalStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'正常'**
+  String get normalStatus;
+
+  /// No description provided for @capabilityBackendTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'adb reverse / 后端连通'**
+  String get capabilityBackendTitle;
+
+  /// No description provided for @detectingStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'检测中'**
+  String get detectingStatus;
+
+  /// No description provided for @connectedStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'已接入'**
+  String get connectedStatus;
+
+  /// No description provided for @detectAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'检测'**
+  String get detectAction;
+
+  /// No description provided for @notConnectedStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'未接通'**
+  String get notConnectedStatus;
+
+  /// No description provided for @capabilityEditBackendTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'修改后端节点'**
+  String get capabilityEditBackendTooltip;
+
+  /// No description provided for @capabilityDetectBackendTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'检测后端连通'**
+  String get capabilityDetectBackendTooltip;
+
+  /// No description provided for @capabilityBackendLastError.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近连接错误：{error}'**
+  String capabilityBackendLastError(String error);
+
+  /// No description provided for @capabilityBackendNotice.
+  ///
+  /// In zh, this message translates to:
+  /// **'能力页只显示手机端可验证的状态；adb reverse 本身在电脑侧执行，手机端通过 127.0.0.1 后端是否可达来判断。'**
+  String get capabilityBackendNotice;
+
+  /// No description provided for @relayConnected.
+  ///
+  /// In zh, this message translates to:
+  /// **'已连接'**
+  String get relayConnected;
+
+  /// No description provided for @relayConnecting.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接中'**
+  String get relayConnecting;
+
+  /// No description provided for @relayStopped.
+  ///
+  /// In zh, this message translates to:
+  /// **'已停止'**
+  String get relayStopped;
+
+  /// No description provided for @relayError.
+  ///
+  /// In zh, this message translates to:
+  /// **'错误'**
+  String get relayError;
+
+  /// No description provided for @relayUnconfigured.
+  ///
+  /// In zh, this message translates to:
+  /// **'未配置'**
+  String get relayUnconfigured;
+
+  /// No description provided for @syncStatusTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'同步状态'**
+  String get syncStatusTitle;
+
+  /// No description provided for @readingStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'读取中'**
+  String get readingStatus;
+
+  /// No description provided for @failedStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'失败：{error}'**
+  String failedStatus(String error);
+
+  /// No description provided for @pendingSyncStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'待同步'**
+  String get pendingSyncStatus;
+
+  /// No description provided for @pollingStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'轮询中'**
+  String get pollingStatus;
+
+  /// No description provided for @activatedStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'已激活'**
+  String get activatedStatus;
+
+  /// No description provided for @pendingActivationStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'待激活'**
+  String get pendingActivationStatus;
+
+  /// No description provided for @syncChatStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天记录：{status}'**
+  String syncChatStatus(String status);
+
+  /// No description provided for @syncGardenStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'花园状态：{status}'**
+  String syncGardenStatus(String status);
+
+  /// No description provided for @syncMobileStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'主动消息：{status}{received}'**
+  String syncMobileStatus(String status, String received);
+
+  /// No description provided for @syncReceivedSuffix.
+  ///
+  /// In zh, this message translates to:
+  /// **' · 已接收 {count} 条'**
+  String syncReceivedSuffix(int count);
+
+  /// No description provided for @syncLatestMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近一条：{content}'**
+  String syncLatestMessage(String content);
+
+  /// No description provided for @screenSnapshotEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无屏幕快照'**
+  String get screenSnapshotEmpty;
+
+  /// No description provided for @screenDebugTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'屏幕上下文调试'**
+  String get screenDebugTitle;
+
+  /// No description provided for @readAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'读取'**
+  String get readAction;
+
+  /// No description provided for @pushAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'推送'**
+  String get pushAction;
+
+  /// No description provided for @screenWindow.
+  ///
+  /// In zh, this message translates to:
+  /// **'窗口：{value}'**
+  String screenWindow(String value);
+
+  /// No description provided for @screenVisible.
+  ///
+  /// In zh, this message translates to:
+  /// **'可见：{value}'**
+  String screenVisible(String value);
+
+  /// No description provided for @screenClickable.
+  ///
+  /// In zh, this message translates to:
+  /// **'可点：{value}'**
+  String screenClickable(String value);
+
+  /// No description provided for @behaviorTestTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'主动行为测试'**
+  String get behaviorTestTitle;
+
+  /// No description provided for @behaviorTestDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'写入后端 mobile queue，并立刻轮询一次；悬浮/确认类会在前台直接弹。'**
+  String get behaviorTestDescription;
+
+  /// No description provided for @notificationLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知'**
+  String get notificationLabel;
+
+  /// No description provided for @overlayLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'悬浮'**
+  String get overlayLabel;
+
+  /// No description provided for @lockConfirmLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'锁屏确认'**
+  String get lockConfirmLabel;
+
+  /// No description provided for @takeoutConfirmLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'外卖确认'**
+  String get takeoutConfirmLabel;
+
+  /// No description provided for @backgroundDeliveryTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'后台交付测试'**
+  String get backgroundDeliveryTitle;
+
+  /// No description provided for @backgroundDeliveryDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'不经过后端，直接测试手机端后台通知 / 存在感悬浮 / 工具确认分流。'**
+  String get backgroundDeliveryDescription;
+
+  /// No description provided for @normalNotificationLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'普通通知'**
+  String get normalNotificationLabel;
+
+  /// No description provided for @presenceOverlayLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'存在感悬浮'**
+  String get presenceOverlayLabel;
+
+  /// No description provided for @lockRequestLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'锁屏请求'**
+  String get lockRequestLabel;
+
+  /// No description provided for @takeoutRequestLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'外卖请求'**
+  String get takeoutRequestLabel;
+
+  /// No description provided for @behaviorDecisionTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'行为裁决状态'**
+  String get behaviorDecisionTitle;
+
+  /// No description provided for @behaviorDecisionEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没读取。刷新后会显示后端最近一次行为裁决为什么弹或为什么没弹。'**
+  String get behaviorDecisionEmpty;
+
+  /// No description provided for @readFailedMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'读取失败：{error}'**
+  String readFailedMessage(String error);
+
+  /// No description provided for @fieldTime.
+  ///
+  /// In zh, this message translates to:
+  /// **'时间'**
+  String get fieldTime;
+
+  /// No description provided for @fieldReason.
+  ///
+  /// In zh, this message translates to:
+  /// **'原因'**
+  String get fieldReason;
+
+  /// No description provided for @fieldEvent.
+  ///
+  /// In zh, this message translates to:
+  /// **'事件'**
+  String get fieldEvent;
+
+  /// No description provided for @fieldApp.
+  ///
+  /// In zh, this message translates to:
+  /// **'应用'**
+  String get fieldApp;
+
+  /// No description provided for @fieldNarrative.
+  ///
+  /// In zh, this message translates to:
+  /// **'叙事'**
+  String get fieldNarrative;
+
+  /// No description provided for @fieldScreen.
+  ///
+  /// In zh, this message translates to:
+  /// **'屏幕'**
+  String get fieldScreen;
+
+  /// No description provided for @fieldReply.
+  ///
+  /// In zh, this message translates to:
+  /// **'回复'**
+  String get fieldReply;
+
+  /// No description provided for @backendDiagnosticsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端 / 资产诊断'**
+  String get backendDiagnosticsTitle;
+
+  /// No description provided for @backendDiagnosticsEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'点击“读取”拉取后端节点、数据目录、模型、角色卡、世界书、破限和梦境配置。'**
+  String get backendDiagnosticsEmpty;
+
+  /// No description provided for @diagnosticBackendNode.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端节点'**
+  String get diagnosticBackendNode;
+
+  /// No description provided for @diagnosticDataPath.
+  ///
+  /// In zh, this message translates to:
+  /// **'数据目录'**
+  String get diagnosticDataPath;
+
+  /// No description provided for @diagnosticNoPermission.
+  ///
+  /// In zh, this message translates to:
+  /// **'无权限（mobile token 预期行为）'**
+  String get diagnosticNoPermission;
+
+  /// No description provided for @diagnosticMetaMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'元模式'**
+  String get diagnosticMetaMode;
+
+  /// No description provided for @diagnosticDangerMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'危险模式'**
+  String get diagnosticDangerMode;
+
+  /// No description provided for @diagnosticSafeMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'安全模式'**
+  String get diagnosticSafeMode;
+
+  /// No description provided for @diagnosticModel.
+  ///
+  /// In zh, this message translates to:
+  /// **'模型'**
+  String get diagnosticModel;
+
+  /// No description provided for @diagnosticShortTermRounds.
+  ///
+  /// In zh, this message translates to:
+  /// **'短期轮数'**
+  String get diagnosticShortTermRounds;
+
+  /// No description provided for @diagnosticCharacterCard.
+  ///
+  /// In zh, this message translates to:
+  /// **'角色卡'**
+  String get diagnosticCharacterCard;
+
+  /// No description provided for @diagnosticLorebook.
+  ///
+  /// In zh, this message translates to:
+  /// **'世界书'**
+  String get diagnosticLorebook;
+
+  /// No description provided for @diagnosticJailbreak.
+  ///
+  /// In zh, this message translates to:
+  /// **'破限'**
+  String get diagnosticJailbreak;
+
+  /// No description provided for @diagnosticEntries.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 条'**
+  String diagnosticEntries(int count);
+
+  /// No description provided for @diagnosticDream.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境'**
+  String get diagnosticDream;
+
+  /// No description provided for @diagnosticDreamLorebook.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境世界书'**
+  String get diagnosticDreamLorebook;
+
+  /// No description provided for @enabledShortStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'已启用'**
+  String get enabledShortStatus;
+
+  /// No description provided for @disabledShortStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'未启用'**
+  String get disabledShortStatus;
+
+  /// No description provided for @diagnosticDreamLayer.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境层'**
+  String get diagnosticDreamLayer;
+
+  /// No description provided for @diagnosticDreamJailbreak.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境破限'**
+  String get diagnosticDreamJailbreak;
+
+  /// No description provided for @capabilityLastPollNone.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近周期补偿：暂无'**
+  String get capabilityLastPollNone;
+
+  /// No description provided for @capabilityLastPoll.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近周期补偿：{time}'**
+  String capabilityLastPoll(String time);
+
+  /// No description provided for @capabilityLastErrorNone.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近错误原因：无'**
+  String get capabilityLastErrorNone;
+
+  /// No description provided for @capabilityLastError.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近错误原因：{error}'**
+  String capabilityLastError(String error);
+
+  /// No description provided for @capabilityNativeRelayRunning.
+  ///
+  /// In zh, this message translates to:
+  /// **'原生中继服务正在运行'**
+  String get capabilityNativeRelayRunning;
+
+  /// No description provided for @capabilityNativeRelayStopped.
+  ///
+  /// In zh, this message translates to:
+  /// **'原生中继服务未运行；前台由 Flutter 每 5 秒读取主动消息'**
+  String get capabilityNativeRelayStopped;
+
+  /// No description provided for @capabilityGateTestOn.
+  ///
+  /// In zh, this message translates to:
+  /// **'测试模式已开启：仅绕过静音时段和 30 分钟冷却'**
+  String get capabilityGateTestOn;
+
+  /// No description provided for @capabilityGateTestOff.
+  ///
+  /// In zh, this message translates to:
+  /// **'测试模式关闭：静音时段 23:30–06:30，普通通知间隔 30 分钟'**
+  String get capabilityGateTestOff;
+
+  /// No description provided for @noneStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'无'**
+  String get noneStatus;
+
+  /// No description provided for @capabilityGateSummary.
+  ///
+  /// In zh, this message translates to:
+  /// **'{mode}。\n被吞计数：{count} / 最近原因：{reason}'**
+  String capabilityGateSummary(String mode, int count, String reason);
+
+  /// No description provided for @capabilityOverlayLastError.
+  ///
+  /// In zh, this message translates to:
+  /// **'{base}\n权限已授予，但最近一次弹窗失败{time}：{error}'**
+  String capabilityOverlayLastError(String base, String time, String error);
+
+  /// No description provided for @capabilitySignalNone.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近信号时间：暂无'**
+  String get capabilitySignalNone;
+
+  /// No description provided for @capabilitySignalTime.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近信号时间：{time}'**
+  String capabilitySignalTime(String time);
+
+  /// No description provided for @capabilityHeartbeatNone.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近中继心跳：暂无'**
+  String get capabilityHeartbeatNone;
+
+  /// No description provided for @capabilityHeartbeatTime.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近中继心跳：{time}'**
+  String capabilityHeartbeatTime(String time);
+
+  /// No description provided for @capabilityRelayLastError.
+  ///
+  /// In zh, this message translates to:
+  /// **'\n最近中继错误：{error}'**
+  String capabilityRelayLastError(String error);
+
+  /// No description provided for @capabilityRelayConfigWarning.
+  ///
+  /// In zh, this message translates to:
+  /// **'\n已连接不等于后端已配置；请检查后端 relay_base_url / relay_topic 与此处完全一致。'**
+  String get capabilityRelayConfigWarning;
+
+  /// No description provided for @capabilityLoopbackHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'{url} · 真机调试依赖 adb reverse tcp:8080 tcp:8080'**
+  String capabilityLoopbackHint(String url);
+
+  /// No description provided for @capabilityRemoteHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'{url} · 局域网/VPN/内网穿透需可达'**
+  String capabilityRemoteHint(String url);
+
+  /// No description provided for @notEnabledStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'未开启'**
+  String get notEnabledStatus;
+
+  /// No description provided for @sandboxSuffix.
+  ///
+  /// In zh, this message translates to:
+  /// **'  ⚠ 沙盒'**
+  String get sandboxSuffix;
+
+  /// No description provided for @diagnosticReadError.
+  ///
+  /// In zh, this message translates to:
+  /// **'{label}：读取失败 — {message}'**
+  String diagnosticReadError(String label, String message);
+
+  /// No description provided for @backgroundTestPresenceMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'我在这里。你不想说话也没关系。'**
+  String get backgroundTestPresenceMessage;
+
+  /// No description provided for @backgroundTestLockMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'已经很晚了。要我替你锁一下屏吗？'**
+  String get backgroundTestLockMessage;
+
+  /// No description provided for @backgroundTestTakeoutMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'你还没吃东西。要不要我帮你打开外卖页看一眼？'**
+  String get backgroundTestTakeoutMessage;
+
+  /// No description provided for @backgroundTestDefaultMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'我刚才给你发了一句话，回来再看也可以。'**
+  String get backgroundTestDefaultMessage;
+
+  /// No description provided for @checkingStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'检测中'**
+  String get checkingStatus;
+
+  /// No description provided for @oemBackgroundGuide.
+  ///
+  /// In zh, this message translates to:
+  /// **'厂商后台白名单参考：\n小米：设置 → 应用设置 → 应用管理 → {appName} → 省电策略/自启动 → 无限制并开启自启动\nOPPO：设置 → 应用 → 自启动/耗电管理 → {appName} → 允许后台运行\nvivo：设置 → 电池 → 后台耗电管理 → {appName} → 允许后台高耗电\n华为：设置 → 应用和服务 → 应用启动管理 → {appName} → 手动管理并允许后台活动'**
+  String oemBackgroundGuide(String appName);
 }
 
 class _AppLocalizationsDelegate

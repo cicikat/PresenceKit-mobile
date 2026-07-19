@@ -6,10 +6,12 @@ import '../app_constants.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
 import '../models/capability_status.dart';
+import '../l10n/l10n.dart';
 import '../models/screen_context.dart';
 import '../services/backend_client.dart';
 
 import '../widgets/common_widgets.dart';
+
 class CapabilitySheet extends StatefulWidget {
   const CapabilitySheet({
     super.key,
@@ -157,11 +159,11 @@ class _CapabilitySheetState extends State<CapabilitySheet>
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           scrollable: true,
-          title: const Text('屏幕正文上传白名单'),
+          title: Text(context.l10n.capabilityWhitelistTitle),
           content: SizedBox(
             width: 520,
             child: status.screenTextUploadAppOptions.isEmpty
-                ? const Text('没有读取到可启动的 App。默认不会上传任何 App 的屏幕正文。')
+                ? Text(context.l10n.capabilityWhitelistNoApps)
                 : ListView.builder(
                     shrinkWrap: true,
                     itemCount: status.screenTextUploadAppOptions.length,
@@ -188,11 +190,11 @@ class _CapabilitySheetState extends State<CapabilitySheet>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('取消'),
+              child: Text(context.l10n.cancelAction),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, selected),
-              child: const Text('保存'),
+              child: Text(context.l10n.saveAction),
             ),
           ],
         ),
@@ -274,7 +276,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          '能力检查',
+                          context.l10n.capabilityTitle,
                           style: serif(c, 22, weight: FontWeight.w500),
                         ),
                       ),
@@ -282,14 +284,14 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                         c: c,
                         icon: Icons.refresh_rounded,
                         onPressed: _acting ? () {} : _refresh,
-                        tooltip: '重新检测',
+                        tooltip: context.l10n.capabilityRefreshTooltip,
                       ),
                       const SizedBox(width: 8),
                       YxIconButton(
                         c: c,
                         icon: Icons.close_rounded,
                         onPressed: () => Navigator.pop(context),
-                        tooltip: '关闭',
+                        tooltip: context.l10n.closeTooltip,
                       ),
                     ],
                   ),
@@ -302,23 +304,31 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                       children: [
                         CircularProgressIndicator(color: c.character),
                         const SizedBox(height: 14),
-                        Text('正在读取系统状态…', style: mono(c, 12)),
+                        Text(
+                          context.l10n.capabilityLoading,
+                          style: mono(c, 12),
+                        ),
                       ],
                     ),
                   )
                 else if (status == null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-                    child: Text('暂时读不到状态，稍后再试。', style: serif(c, 14)),
+                    child: Text(
+                      context.l10n.capabilityUnavailable,
+                      style: serif(c, 14),
+                    ),
                   )
                 else ...[
                   CapabilityRow(
                     c: c,
                     icon: Icons.notifications_active_outlined,
-                    title: '通知权限',
-                    subtitle: '允许系统通知，后台主动消息才能弹出来。',
+                    title: context.l10n.capabilityNotificationTitle,
+                    subtitle: context.l10n.capabilityNotificationSubtitle,
                     enabled: status.notificationsEnabled,
-                    actionLabel: status.notificationsEnabled ? '已开启' : '去开启',
+                    actionLabel: status.notificationsEnabled
+                        ? context.l10n.enabledStatus
+                        : context.l10n.enableAction,
                     onPressed: status.notificationsEnabled
                         ? null
                         : () => _run(widget.onRequestNotifications),
@@ -326,14 +336,14 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   CapabilityRow(
                     c: c,
                     icon: Icons.battery_saver_outlined,
-                    title: '电池优化豁免',
+                    title: context.l10n.capabilityBatteryTitle,
                     subtitle: status.ignoringBatteryOptimizations
-                        ? '已允许后台持续运行；仍建议检查厂商自启动与后台白名单。'
-                        : '未豁免：息屏或 Doze 时后台轮询可能暂停。',
+                        ? context.l10n.capabilityBatteryEnabled
+                        : context.l10n.capabilityBatteryDisabled,
                     enabled: status.ignoringBatteryOptimizations,
                     actionLabel: status.ignoringBatteryOptimizations
-                        ? '已豁免'
-                        : '去授权',
+                        ? context.l10n.authorizedStatus
+                        : context.l10n.authorizeAction,
                     onPressed: status.ignoringBatteryOptimizations
                         ? null
                         : () =>
@@ -343,14 +353,16 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   CapabilityRow(
                     c: c,
                     icon: Icons.picture_in_picture_alt_outlined,
-                    title: '悬浮窗权限',
+                    title: context.l10n.capabilityOverlayTitle,
                     subtitle: _overlaySubtitle(status),
                     // 权限已授予不等于弹窗一定成功：部分厂商 ROM 会在实际弹出时
                     // 才拦截，因此这里同时看权限位和最近一次弹窗失败记录。
                     enabled:
                         status.overlayEnabled &&
                         status.overlayErrorStatus.lastError == null,
-                    actionLabel: status.overlayEnabled ? '已开启' : '去设置',
+                    actionLabel: status.overlayEnabled
+                        ? context.l10n.enabledStatus
+                        : context.l10n.configureAction,
                     onPressed: status.overlayEnabled
                         ? null
                         : () => _run(widget.onRequestOverlay),
@@ -358,10 +370,12 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   CapabilityRow(
                     c: c,
                     icon: Icons.accessibility_new_rounded,
-                    title: '无障碍服务',
-                    subtitle: '读取当前 App、窗口标题和可见文字摘要；不上传截图。',
+                    title: context.l10n.capabilityAccessibilityTitle,
+                    subtitle: context.l10n.capabilityAccessibilitySubtitle,
                     enabled: status.accessibilityEnabled,
-                    actionLabel: status.accessibilityEnabled ? '已开启' : '去设置',
+                    actionLabel: status.accessibilityEnabled
+                        ? context.l10n.enabledStatus
+                        : context.l10n.configureAction,
                     onPressed: status.accessibilityEnabled
                         ? null
                         : () => _run(widget.onRequestAccessibility),
@@ -369,14 +383,14 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   CapabilityRow(
                     c: c,
                     icon: Icons.visibility_outlined,
-                    title: '屏幕上下文',
+                    title: context.l10n.capabilityScreenContextTitle,
                     subtitle: status.screenContextUploadEnabled
-                        ? '已开启：仅上传经过本机过滤的非敏感文本摘要。'
-                        : '默认关闭；能力页仍可读取经过本机过滤的快照。',
+                        ? context.l10n.capabilityScreenContextEnabled
+                        : context.l10n.capabilityScreenContextDisabled,
                     enabled: status.screenContextUploadEnabled,
                     actionLabel: status.screenContextUploadEnabled
-                        ? '已开启'
-                        : '已关闭',
+                        ? context.l10n.enabledStatus
+                        : context.l10n.disabledStatus,
                     trailing: Switch(
                       value: status.screenContextUploadEnabled,
                       onChanged: _acting
@@ -389,12 +403,14 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   CapabilityRow(
                     c: c,
                     icon: Icons.fact_check_outlined,
-                    title: '屏幕正文上传白名单',
+                    title: context.l10n.capabilityWhitelistTitle,
                     subtitle: status.screenTextUploadAllowedPackages.isEmpty
-                        ? '当前为空：所有 App 仅上报包名和 App 名，不上传窗口标题或可见正文。'
-                        : '仅勾选的 ${status.screenTextUploadAllowedPackages.length} 个 App 可上传正文；敏感页面仍会二次拦截。',
+                        ? context.l10n.capabilityWhitelistEmpty
+                        : context.l10n.capabilityWhitelistCount(
+                            status.screenTextUploadAllowedPackages.length,
+                          ),
                     enabled: status.screenTextUploadAllowedPackages.isNotEmpty,
-                    actionLabel: '管理',
+                    actionLabel: context.l10n.manageAction,
                     onPressed: _acting
                         ? null
                         : () => _editScreenTextUploadWhitelist(status),
@@ -418,7 +434,10 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     c: c,
                     acting: _acting,
                     onTest: (kind) => _run(() async {
-                      final spec = _BackgroundDeliveryTestSpec.forKind(kind);
+                      final spec = _BackgroundDeliveryTestSpec.forKind(
+                        kind,
+                        context.l10n,
+                      );
                       await widget.onDebugBackgroundDelivery(
                         content: spec.content,
                         behaviorJson: spec.behaviorJson,
@@ -435,10 +454,12 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   CapabilityRow(
                     c: c,
                     icon: Icons.screen_lock_portrait_outlined,
-                    title: '设备管理器锁屏',
-                    subtitle: '授权后才能执行 lockNow，每次仍由界面确认。',
+                    title: context.l10n.capabilityDeviceAdminTitle,
+                    subtitle: context.l10n.capabilityDeviceAdminSubtitle,
                     enabled: status.deviceAdminEnabled,
-                    actionLabel: status.deviceAdminEnabled ? '已开启' : '去授权',
+                    actionLabel: status.deviceAdminEnabled
+                        ? context.l10n.enabledStatus
+                        : context.l10n.authorizeAction,
                     onPressed: status.deviceAdminEnabled
                         ? null
                         : () => _run(widget.onRequestDeviceAdmin),
@@ -446,12 +467,12 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   CapabilityRow(
                     c: c,
                     icon: Icons.sync_lock_outlined,
-                    title: '后台通知服务',
+                    title: context.l10n.capabilityBackgroundServiceTitle,
                     subtitle: _backgroundServiceSubtitle(status),
                     enabled: status.backgroundNotificationsEnabled,
                     actionLabel: status.backgroundNotificationsEnabled
-                        ? '开关已开'
-                        : '已关闭',
+                        ? context.l10n.switchEnabledStatus
+                        : context.l10n.disabledStatus,
                     trailing: Switch(
                       value: status.backgroundNotificationsEnabled,
                       onChanged: _acting
@@ -466,7 +487,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   CapabilityRow(
                     c: c,
                     icon: Icons.cell_tower_outlined,
-                    title: '中继连接状态',
+                    title: context.l10n.capabilityRelayTitle,
                     subtitle: _relayConnectionSubtitle(status),
                     enabled:
                         status.relayConnectionStatus.displayStatus ==
@@ -479,24 +500,24 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   CapabilityRow(
                     c: c,
                     icon: Icons.notifications_paused_outlined,
-                    title: '通知闸门状态',
+                    title: context.l10n.capabilityGateTitle,
                     subtitle: _notificationGateSubtitle(status),
                     enabled: status.notificationGateStatus.testModeEnabled,
                     actionLabel: status.notificationGateStatus.testModeEnabled
-                        ? '测试中'
-                        : '正常',
+                        ? context.l10n.testingStatus
+                        : context.l10n.normalStatus,
                   ),
                   CapabilityRow(
                     c: c,
                     icon: Icons.hub_outlined,
-                    title: 'adb reverse / 后端连通',
+                    title: context.l10n.capabilityBackendTitle,
                     subtitle: _backendCapabilitySubtitle(status),
                     enabled: status.backendReachable,
                     actionLabel: status.backendBusy
-                        ? '检测中'
+                        ? context.l10n.detectingStatus
                         : status.backendReachable
-                        ? '已接入'
-                        : '检测',
+                        ? context.l10n.connectedStatus
+                        : context.l10n.detectAction,
                     trailing: Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -506,14 +527,14 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                           c: c,
                           enabled: status.backendReachable,
                           waiting: status.backendBusy,
-                          enabledLabel: '已接入',
-                          disabledLabel: '未接通',
+                          enabledLabel: context.l10n.connectedStatus,
+                          disabledLabel: context.l10n.notConnectedStatus,
                         ),
                         YxIconButton(
                           c: c,
                           icon: Icons.edit_location_alt_rounded,
                           onPressed: widget.onEditBackend,
-                          tooltip: '修改后端节点',
+                          tooltip: context.l10n.capabilityEditBackendTooltip,
                           size: 30,
                         ),
                         YxIconButton(
@@ -522,7 +543,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                           onPressed: _acting
                               ? () {}
                               : () => _run(widget.onTestBackend),
-                          tooltip: '检测后端连通',
+                          tooltip: context.l10n.capabilityDetectBackendTooltip,
                           size: 30,
                         ),
                       ],
@@ -546,8 +567,10 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                       ),
                       child: Text(
                         status.backendError != null
-                            ? '最近连接错误：${status.backendError}'
-                            : '能力页只显示手机端可验证的状态；adb reverse 本身在电脑侧执行，手机端通过 127.0.0.1 后端是否可达来判断。',
+                            ? context.l10n.capabilityBackendLastError(
+                                status.backendError!,
+                              )
+                            : context.l10n.capabilityBackendNotice,
                         style: serif(
                           c,
                           13,
@@ -568,43 +591,53 @@ class _CapabilitySheetState extends State<CapabilitySheet>
   String _backgroundServiceSubtitle(CapabilityStatus status) {
     final poll = status.backgroundPollStatus;
     final heartbeat = poll.lastPollAt == null
-        ? '最近周期补偿：暂无'
-        : '最近周期补偿：${_formatCapabilityTime(poll.lastPollAt!)}';
+        ? context.l10n.capabilityLastPollNone
+        : context.l10n.capabilityLastPoll(
+            _formatCapabilityTime(poll.lastPollAt!),
+          );
     final error = poll.lastError == null
-        ? '最近错误原因：无'
-        : '最近错误原因：${poll.lastError}';
+        ? context.l10n.capabilityLastErrorNone
+        : context.l10n.capabilityLastError(poll.lastError!);
     final service = status.backgroundServiceRunning
-        ? '原生中继服务正在运行'
-        : '原生中继服务未运行；前台由 Flutter 每 5 秒读取主动消息';
+        ? context.l10n.capabilityNativeRelayRunning
+        : context.l10n.capabilityNativeRelayStopped;
     return '$service。\n$heartbeat / $error';
   }
 
   String _notificationGateSubtitle(CapabilityStatus status) {
     final gate = status.notificationGateStatus;
     final mode = gate.testModeEnabled
-        ? '测试模式已开启：仅绕过静音时段和 30 分钟冷却'
-        : '测试模式关闭：静音时段 23:30–06:30，普通通知间隔 30 分钟';
-    final reason = gate.lastSuppressReason ?? '无';
-    return '$mode。\n被吞计数：${gate.suppressedCount} / 最近原因：$reason';
+        ? context.l10n.capabilityGateTestOn
+        : context.l10n.capabilityGateTestOff;
+    final reason = gate.lastSuppressReason ?? context.l10n.noneStatus;
+    return context.l10n.capabilityGateSummary(
+      mode,
+      gate.suppressedCount,
+      reason,
+    );
   }
 
   String _overlaySubtitle(CapabilityStatus status) {
-    const base = '显示在桌面和其他 App 上层，用于短句提醒和确认。';
+    final base = context.l10n.capabilityOverlaySubtitle;
     final overlayError = status.overlayErrorStatus;
     if (overlayError.lastError == null) return base;
     final at = overlayError.lastErrorAt == null
         ? ''
         : '（${_formatCapabilityTime(overlayError.lastErrorAt!)}）';
-    return '$base\n权限已授予，但最近一次弹窗失败$at：${overlayError.lastError}';
+    return context.l10n.capabilityOverlayLastError(
+      base,
+      at,
+      overlayError.lastError!,
+    );
   }
 
   String _relayConnectionLabel(RelayConnectionStatus relay) {
     return switch (relay.displayStatus) {
-      RelayDisplayStatus.connected => '已连接',
-      RelayDisplayStatus.connecting => '连接中',
-      RelayDisplayStatus.stopped => '已停止',
-      RelayDisplayStatus.error => '错误',
-      RelayDisplayStatus.unconfigured => '未配置',
+      RelayDisplayStatus.connected => context.l10n.relayConnected,
+      RelayDisplayStatus.connecting => context.l10n.relayConnecting,
+      RelayDisplayStatus.stopped => context.l10n.relayStopped,
+      RelayDisplayStatus.error => context.l10n.relayError,
+      RelayDisplayStatus.unconfigured => context.l10n.relayUnconfigured,
     };
   }
 
@@ -625,14 +658,20 @@ class _CapabilitySheetState extends State<CapabilitySheet>
   String _relayConnectionSubtitle(CapabilityStatus status) {
     final relay = status.relayConnectionStatus;
     final delivered = relay.lastDeliveredAt == null
-        ? '最近信号时间：暂无'
-        : '最近信号时间：${_formatCapabilityTime(relay.lastDeliveredAt!)}';
+        ? context.l10n.capabilitySignalNone
+        : context.l10n.capabilitySignalTime(
+            _formatCapabilityTime(relay.lastDeliveredAt!),
+          );
     final heartbeat = relay.lastHeartbeatAt == null
-        ? '最近中继心跳：暂无'
-        : '最近中继心跳：${_formatCapabilityTime(relay.lastHeartbeatAt!)}';
-    final error = relay.lastError == null ? '' : '\n最近中继错误：${relay.lastError}';
+        ? context.l10n.capabilityHeartbeatNone
+        : context.l10n.capabilityHeartbeatTime(
+            _formatCapabilityTime(relay.lastHeartbeatAt!),
+          );
+    final error = relay.lastError == null
+        ? ''
+        : context.l10n.capabilityRelayLastError(relay.lastError!);
     final configurationHint = relay.lastDeliveredAt == null
-        ? '\n已连接不等于后端已配置；请检查后端 relay_base_url / relay_topic 与此处完全一致。'
+        ? context.l10n.capabilityRelayConfigWarning
         : '';
     return '${_relayConnectionLabel(relay)}；$delivered / $heartbeat$error$configurationHint';
   }
@@ -649,9 +688,9 @@ class _CapabilitySheetState extends State<CapabilitySheet>
     final host = uri?.host ?? '';
     final needsReverse = host == '127.0.0.1' || host == 'localhost';
     if (needsReverse) {
-      return '${status.backendBaseUrl} · 真机调试依赖 adb reverse tcp:8080 tcp:8080';
+      return context.l10n.capabilityLoopbackHint(status.backendBaseUrl);
     }
-    return '${status.backendBaseUrl} · 局域网/VPN/内网穿透需可达';
+    return context.l10n.capabilityRemoteHint(status.backendBaseUrl);
   }
 }
 
@@ -662,49 +701,73 @@ class _SyncStatusSection extends StatelessWidget {
   final CapabilitySheet sheet;
 
   String _state({
+    required AppLocalizations l10n,
     required bool loading,
     required bool ready,
     required String? error,
   }) {
-    if (loading) return '读取中';
-    if (error != null) return '失败：$error';
-    return ready ? '已同步' : '待同步';
+    if (loading) return l10n.readingStatus;
+    if (error != null) return l10n.failedStatus(error);
+    return ready ? l10n.syncedStatus : l10n.pendingSyncStatus;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final mobileState = sheet.pollingMobile
-        ? '轮询中'
+        ? l10n.pollingStatus
         : sheet.mobileError != null
-        ? '失败：${sheet.mobileError}'
+        ? l10n.failedStatus(sheet.mobileError!)
         : sheet.mobileActive
-        ? '已激活'
-        : '待激活';
+        ? l10n.activatedStatus
+        : l10n.pendingActivationStatus;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('同步状态', style: serif(c, 15, weight: FontWeight.w600)),
+          Text(
+            l10n.syncStatusTitle,
+            style: serif(c, 15, weight: FontWeight.w600),
+          ),
           const SizedBox(height: 8),
           Text(
-            '聊天记录：${_state(loading: sheet.loadingHistory, ready: sheet.historyLoaded, error: sheet.historyError)}',
+            l10n.syncChatStatus(
+              _state(
+                l10n: l10n,
+                loading: sheet.loadingHistory,
+                ready: sheet.historyLoaded,
+                error: sheet.historyError,
+              ),
+            ),
             style: mono(c, 11, color: c.ink2),
           ),
           const SizedBox(height: 4),
           Text(
-            '花园状态：${_state(loading: sheet.loadingGarden, ready: sheet.gardenLoaded, error: sheet.gardenError)}',
+            l10n.syncGardenStatus(
+              _state(
+                l10n: l10n,
+                loading: sheet.loadingGarden,
+                ready: sheet.gardenLoaded,
+                error: sheet.gardenError,
+              ),
+            ),
             style: mono(c, 11, color: c.ink2),
           ),
           const SizedBox(height: 4),
           Text(
-            '主动消息：$mobileState${sheet.mobileReceivedCount > 0 ? ' · 已接收 ${sheet.mobileReceivedCount} 条' : ''}',
+            l10n.syncMobileStatus(
+              mobileState,
+              sheet.mobileReceivedCount > 0
+                  ? l10n.syncReceivedSuffix(sheet.mobileReceivedCount)
+                  : '',
+            ),
             style: mono(c, 11, color: c.ink2),
           ),
           if (sheet.lastMobileContent != null) ...[
             const SizedBox(height: 4),
             Text(
-              '最近一条：${sheet.lastMobileContent}',
+              l10n.syncLatestMessage(sheet.lastMobileContent!),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: mono(c, 11, color: c.ink2),
@@ -740,7 +803,7 @@ class ScreenContextDebugCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final snap = snapshot;
     final label = snap == null
-        ? '暂无屏幕快照'
+        ? context.l10n.screenSnapshotEmpty
         : [
             if (snap.appLabel.isNotEmpty) snap.appLabel,
             if (snap.packageName.isNotEmpty) snap.packageName,
@@ -763,14 +826,14 @@ class ScreenContextDebugCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '屏幕上下文调试',
+                  context.l10n.screenDebugTitle,
                   style: serif(c, 16, weight: FontWeight.w500),
                 ),
               ),
               OutlinedButton.icon(
                 onPressed: enabled && !acting ? onCapture : null,
                 icon: const Icon(Icons.search_rounded, size: 16),
-                label: const Text('读取'),
+                label: Text(context.l10n.readAction),
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
@@ -783,7 +846,7 @@ class ScreenContextDebugCard extends StatelessWidget {
                     ? onPush
                     : null,
                 icon: const Icon(Icons.upload_rounded, size: 16),
-                label: const Text('推送'),
+                label: Text(context.l10n.pushAction),
               ),
             ],
           ),
@@ -799,14 +862,14 @@ class ScreenContextDebugCard extends StatelessWidget {
           if (snap?.windowTitle.isNotEmpty == true) ...[
             const SizedBox(height: 4),
             Text(
-              '窗口：${snap!.windowTitle}',
+              context.l10n.screenWindow(snap!.windowTitle),
               style: mono(c, 10.5, color: c.ink3),
             ),
           ],
           if (visible.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              '可见：$visible',
+              context.l10n.screenVisible(visible),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: mono(c, 10.5, color: c.ink3),
@@ -815,7 +878,7 @@ class ScreenContextDebugCard extends StatelessWidget {
           if (clickable.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              '可点：$clickable',
+              context.l10n.screenClickable(clickable),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: mono(c, 10.5, color: c.ink3),
@@ -857,7 +920,7 @@ class BehaviorTestPanel extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '主动行为测试',
+                  context.l10n.behaviorTestTitle,
                   style: serif(c, 16, weight: FontWeight.w500),
                 ),
               ),
@@ -865,7 +928,7 @@ class BehaviorTestPanel extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            '写入后端 mobile queue，并立刻轮询一次；悬浮/确认类会在前台直接弹。',
+            context.l10n.behaviorTestDescription,
             style: mono(c, 10.5, color: c.ink3),
           ),
           const SizedBox(height: 10),
@@ -873,21 +936,25 @@ class BehaviorTestPanel extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _testButton('notify', Icons.notifications_none_rounded, '通知'),
+              _testButton(
+                'notify',
+                Icons.notifications_none_rounded,
+                context.l10n.notificationLabel,
+              ),
               _testButton(
                 'overlay_message',
                 Icons.picture_in_picture_alt_outlined,
-                '悬浮',
+                context.l10n.overlayLabel,
               ),
               _testButton(
                 'lock_screen_confirm',
                 Icons.screen_lock_portrait_outlined,
-                '锁屏确认',
+                context.l10n.lockConfirmLabel,
               ),
               _testButton(
                 'takeout_overlay',
                 Icons.shopping_bag_outlined,
-                '外卖确认',
+                context.l10n.takeoutConfirmLabel,
               ),
             ],
           ),
@@ -935,7 +1002,7 @@ class BackgroundDeliveryTestPanel extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '后台交付测试',
+                  context.l10n.backgroundDeliveryTitle,
                   style: serif(c, 16, weight: FontWeight.w500),
                 ),
               ),
@@ -943,7 +1010,7 @@ class BackgroundDeliveryTestPanel extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            '不经过后端，直接测试手机端后台通知 / 存在感悬浮 / 工具确认分流。',
+            context.l10n.backgroundDeliveryDescription,
             style: mono(c, 10.5, color: c.ink3),
           ),
           const SizedBox(height: 10),
@@ -951,14 +1018,26 @@ class BackgroundDeliveryTestPanel extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _testButton('notify', Icons.notifications_none_rounded, '普通通知'),
+              _testButton(
+                'notify',
+                Icons.notifications_none_rounded,
+                context.l10n.normalNotificationLabel,
+              ),
               _testButton(
                 'presence',
                 Icons.picture_in_picture_alt_outlined,
-                '存在感悬浮',
+                context.l10n.presenceOverlayLabel,
               ),
-              _testButton('lock', Icons.screen_lock_portrait_outlined, '锁屏请求'),
-              _testButton('takeout', Icons.shopping_bag_outlined, '外卖请求'),
+              _testButton(
+                'lock',
+                Icons.screen_lock_portrait_outlined,
+                context.l10n.lockRequestLabel,
+              ),
+              _testButton(
+                'takeout',
+                Icons.shopping_bag_outlined,
+                context.l10n.takeoutRequestLabel,
+              ),
             ],
           ),
         ],
@@ -978,24 +1057,29 @@ class BackgroundDeliveryTestPanel extends StatelessWidget {
 class _BackgroundDeliveryTestSpec {
   const _BackgroundDeliveryTestSpec({required this.content, this.behaviorJson});
 
-  factory _BackgroundDeliveryTestSpec.forKind(String kind) {
+  factory _BackgroundDeliveryTestSpec.forKind(
+    String kind,
+    AppLocalizations l10n,
+  ) {
     return switch (kind) {
-      'presence' => const _BackgroundDeliveryTestSpec(
-        content: '我在这里。你不想说话也没关系。',
+      'presence' => _BackgroundDeliveryTestSpec(
+        content: l10n.backgroundTestPresenceMessage,
         behaviorJson:
             '{"kind":"overlay_message","delivery":"overlay","level":"attention_grab","behavior_id":"presence_ping"}',
       ),
-      'lock' => const _BackgroundDeliveryTestSpec(
-        content: '已经很晚了。要我替你锁一下屏吗？',
+      'lock' => _BackgroundDeliveryTestSpec(
+        content: l10n.backgroundTestLockMessage,
         behaviorJson:
             '{"kind":"lock_screen_confirm","delivery":"overlay","level":"direct_act","behavior_id":"lock_screen","requires_confirmation":true}',
       ),
-      'takeout' => const _BackgroundDeliveryTestSpec(
-        content: '你还没吃东西。要不要我帮你打开外卖页看一眼？',
+      'takeout' => _BackgroundDeliveryTestSpec(
+        content: l10n.backgroundTestTakeoutMessage,
         behaviorJson:
             '{"kind":"takeout_overlay","delivery":"overlay","level":"direct_act","behavior_id":"takeout_order","requires_confirmation":true}',
       ),
-      _ => const _BackgroundDeliveryTestSpec(content: '我刚才给你发了一句话，回来再看也可以。'),
+      _ => _BackgroundDeliveryTestSpec(
+        content: l10n.backgroundTestDefaultMessage,
+      ),
     };
   }
 
@@ -1038,7 +1122,7 @@ class BehaviorDecisionDebugCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '行为裁决状态',
+                  context.l10n.behaviorDecisionTitle,
                   style: serif(c, 16, weight: FontWeight.w500),
                 ),
               ),
@@ -1051,16 +1135,19 @@ class BehaviorDecisionDebugCard extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.refresh_rounded, size: 16),
-                label: const Text('刷新'),
+                label: Text(context.l10n.refreshAction),
               ),
             ],
           ),
           const SizedBox(height: 6),
           if (error != null)
-            Text('读取失败：$error', style: mono(c, 10.5, color: c.danger))
+            Text(
+              context.l10n.readFailedMessage(error!),
+              style: mono(c, 10.5, color: c.danger),
+            )
           else if (s == null)
             Text(
-              '还没读取。刷新后会显示后端最近一次行为裁决为什么弹或为什么没弹。',
+              context.l10n.behaviorDecisionEmpty,
               style: mono(c, 10.5, color: c.ink3),
             )
           else ...[
@@ -1081,13 +1168,17 @@ class BehaviorDecisionDebugCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            _line('时间', s.timeLabel),
-            _line('原因', s.reason),
-            if (s.eventType.isNotEmpty) _line('事件', s.eventType),
-            if (s.focusApp.isNotEmpty) _line('应用', s.focusApp),
-            if (s.narrative.isNotEmpty) _line('叙事', s.narrative),
-            if (s.screenTextHint.isNotEmpty) _line('屏幕', s.screenTextHint),
-            if (s.replyPreview.isNotEmpty) _line('回复', s.replyPreview),
+            _line(context.l10n.fieldTime, s.timeLabel),
+            _line(context.l10n.fieldReason, s.reason),
+            if (s.eventType.isNotEmpty)
+              _line(context.l10n.fieldEvent, s.eventType),
+            if (s.focusApp.isNotEmpty) _line(context.l10n.fieldApp, s.focusApp),
+            if (s.narrative.isNotEmpty)
+              _line(context.l10n.fieldNarrative, s.narrative),
+            if (s.screenTextHint.isNotEmpty)
+              _line(context.l10n.fieldScreen, s.screenTextHint),
+            if (s.replyPreview.isNotEmpty)
+              _line(context.l10n.fieldReply, s.replyPreview),
           ],
         ],
       ),
@@ -1123,11 +1214,7 @@ class _OemBackgroundGuide extends StatelessWidget {
         border: Border(bottom: BorderSide(color: c.surfaceEdge)),
       ),
       child: Text(
-        '厂商后台白名单参考：\n'
-        '小米：设置 → 应用设置 → 应用管理 → $appDisplayName → 省电策略/自启动 → 无限制并开启自启动\n'
-        'OPPO：设置 → 应用 → 自启动/耗电管理 → $appDisplayName → 允许后台运行\n'
-        'vivo：设置 → 电池 → 后台耗电管理 → $appDisplayName → 允许后台高耗电\n'
-        '华为：设置 → 应用和服务 → 应用启动管理 → $appDisplayName → 手动管理并允许后台活动',
+        context.l10n.oemBackgroundGuide(appDisplayName),
         style: mono(c, 10.5, color: c.ink3),
       ),
     );
@@ -1222,25 +1309,25 @@ class YxStatusPill extends StatelessWidget {
     required this.c,
     required this.enabled,
     this.waiting = false,
-    this.enabledLabel = '已开启',
-    this.disabledLabel = '未开启',
-    this.waitingLabel = '检测中',
+    this.enabledLabel,
+    this.disabledLabel,
+    this.waitingLabel,
   });
 
   final YxPalette c;
   final bool enabled;
   final bool waiting;
-  final String enabledLabel;
-  final String disabledLabel;
-  final String waitingLabel;
+  final String? enabledLabel;
+  final String? disabledLabel;
+  final String? waitingLabel;
 
   @override
   Widget build(BuildContext context) {
     final text = waiting
-        ? waitingLabel
+        ? waitingLabel ?? context.l10n.checkingStatus
         : enabled
-        ? enabledLabel
-        : disabledLabel;
+        ? enabledLabel ?? context.l10n.enabledStatus
+        : disabledLabel ?? context.l10n.disabledStatus;
     final color = waiting
         ? c.warn
         : enabled
@@ -1298,7 +1385,7 @@ class BackendDiagnosticsCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '后端 / 资产诊断',
+                  context.l10n.backendDiagnosticsTitle,
                   style: serif(c, 16, weight: FontWeight.w500),
                 ),
               ),
@@ -1314,55 +1401,75 @@ class BackendDiagnosticsCard extends StatelessWidget {
                         ),
                       )
                     : const Icon(Icons.refresh_rounded, size: 16),
-                label: const Text('读取'),
+                label: Text(context.l10n.readAction),
               ),
             ],
           ),
           const SizedBox(height: 6),
           if (error != null)
-            Text('读取失败：$error', style: mono(c, 10.5, color: c.danger))
+            Text(
+              context.l10n.readFailedMessage(error!),
+              style: mono(c, 10.5, color: c.danger),
+            )
           else if (d == null)
             Text(
-              '点击"读取"拉取后端节点、数据目录、模型、角色卡、世界书、破限和梦境配置。',
+              context.l10n.backendDiagnosticsEmpty,
               style: mono(c, 10.5, color: c.ink3),
             )
           else ...[
             // ── 最重要：后端节点 + 数据目录 ────────────────────────────
             _highlightRow(
-              label: '后端节点',
+              label: context.l10n.diagnosticBackendNode,
               value: d.backendBase,
               highlight: false,
             ),
             if (d.dataPathForbidden)
-              _infoRow('数据目录', '无权限（mobile token 预期行为）')
+              _infoRow(
+                context.l10n.diagnosticDataPath,
+                context.l10n.diagnosticNoPermission,
+              )
             else if (d.dataPathError != null)
-              _errorRow('数据目录', d.dataPathError!)
+              _errorRow(
+                context,
+                context.l10n.diagnosticDataPath,
+                d.dataPathError!,
+              )
             else
               _highlightRow(
-                label: '数据目录',
+                label: context.l10n.diagnosticDataPath,
                 value: d.dataPath ?? '—',
                 highlight: d.dataPathIsSandbox,
-                highlightSuffix: d.dataPathIsSandbox ? '  ⚠ 沙盒' : null,
+                highlightSuffix: d.dataPathIsSandbox
+                    ? context.l10n.sandboxSuffix
+                    : null,
               ),
             const SizedBox(height: 6),
             // ── 元模式 ──────────────────────────────────────────────────
             if (d.metaModeError != null)
-              _errorRow('元模式', d.metaModeError!)
+              _errorRow(
+                context,
+                context.l10n.diagnosticMetaMode,
+                d.metaModeError!,
+              )
             else if (d.metaMode != null)
               _infoRow(
-                '元模式',
+                context.l10n.diagnosticMetaMode,
                 d.metaMode!.isDanger
-                    ? '危险模式${d.metaMode!.expiresAt != null ? "（到 ${d.metaMode!.expiresAt}）" : ""}'
-                    : '安全模式',
+                    ? context.l10n.diagnosticDangerMode
+                    : context.l10n.diagnosticSafeMode,
                 danger: d.metaMode!.isDanger,
               ),
             // ── 模型 ─────────────────────────────────────────────────────
             if (d.statusSummaryError != null)
-              _errorRow('模型', d.statusSummaryError!)
+              _errorRow(
+                context,
+                context.l10n.diagnosticModel,
+                d.statusSummaryError!,
+              )
             else if (d.statusSummary != null) ...[
               if (d.statusSummary!.llmModel != null)
                 _infoRow(
-                  '模型',
+                  context.l10n.diagnosticModel,
                   [
                     d.statusSummary!.llmModel!,
                     if (d.statusSummary!.llmProvider != null)
@@ -1370,34 +1477,70 @@ class BackendDiagnosticsCard extends StatelessWidget {
                   ].join(' · '),
                 ),
               if (d.statusSummary!.shortTermRounds != null)
-                _infoRow('短期轮数', '${d.statusSummary!.shortTermRounds}'),
+                _infoRow(
+                  context.l10n.diagnosticShortTermRounds,
+                  '${d.statusSummary!.shortTermRounds}',
+                ),
             ],
             // ── 角色卡 ───────────────────────────────────────────────────
             if (d.activeCharacterError != null)
-              _errorRow('角色卡', d.activeCharacterError!)
+              _errorRow(
+                context,
+                context.l10n.diagnosticCharacterCard,
+                d.activeCharacterError!,
+              )
             else if (d.activeCharacter != null)
-              _infoRow('角色卡', d.activeCharacter!.display),
+              _infoRow(
+                context.l10n.diagnosticCharacterCard,
+                d.activeCharacter!.display,
+              ),
             // ── 世界书 / 破限 ────────────────────────────────────────────
             if (d.lorebookError != null)
-              _errorRow('世界书', d.lorebookError!)
+              _errorRow(
+                context,
+                context.l10n.diagnosticLorebook,
+                d.lorebookError!,
+              )
             else if (d.lorebookCount != null)
-              _infoRow('世界书', '${d.lorebookCount} 条'),
+              _infoRow(
+                context.l10n.diagnosticLorebook,
+                context.l10n.diagnosticEntries(d.lorebookCount ?? 0),
+              ),
             if (d.jailbreakError != null)
-              _errorRow('破限', d.jailbreakError!)
+              _errorRow(
+                context,
+                context.l10n.diagnosticJailbreak,
+                d.jailbreakError!,
+              )
             else if (d.jailbreakCount != null)
-              _infoRow('破限', '${d.jailbreakCount} 条'),
+              _infoRow(
+                context.l10n.diagnosticJailbreak,
+                context.l10n.diagnosticEntries(d.jailbreakCount ?? 0),
+              ),
             // ── 梦境配置 ─────────────────────────────────────────────────
             if (d.dreamSettingsError != null)
-              _errorRow('梦境', d.dreamSettingsError!)
+              _errorRow(
+                context,
+                context.l10n.diagnosticDream,
+                d.dreamSettingsError!,
+              )
             else if (d.dreamSettings != null) ...[
               _infoRow(
-                '梦境世界书',
-                d.dreamSettings!.enableDreamLorebook == true ? '已启用' : '未启用',
+                context.l10n.diagnosticDreamLorebook,
+                d.dreamSettings!.enableDreamLorebook == true
+                    ? context.l10n.enabledShortStatus
+                    : context.l10n.disabledShortStatus,
               ),
               if (d.dreamSettings!.worldLayer != null)
-                _infoRow('梦境层', d.dreamSettings!.worldLayer!),
+                _infoRow(
+                  context.l10n.diagnosticDreamLayer,
+                  d.dreamSettings!.worldLayer!,
+                ),
               if (d.dreamSettings!.jailbreakPreset != null)
-                _infoRow('梦境破限', d.dreamSettings!.jailbreakPreset!),
+                _infoRow(
+                  context.l10n.diagnosticDreamJailbreak,
+                  d.dreamSettings!.jailbreakPreset!,
+                ),
             ],
           ],
         ],
@@ -1454,11 +1597,11 @@ class BackendDiagnosticsCard extends StatelessWidget {
     );
   }
 
-  Widget _errorRow(String label, String message) {
+  Widget _errorRow(BuildContext context, String label, String message) {
     return Padding(
       padding: const EdgeInsets.only(top: 3),
       child: Text(
-        '$label：读取失败 — $message',
+        context.l10n.diagnosticReadError(label, message),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: mono(c, 10.5, color: c.danger),

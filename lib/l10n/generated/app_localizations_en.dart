@@ -1363,4 +1363,491 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taobaoName => 'Taobao';
+
+  @override
+  String get capabilityTitle => 'Capability check';
+
+  @override
+  String get capabilityRefreshTooltip => 'Run checks again';
+
+  @override
+  String get capabilityLoading => 'Reading system status…';
+
+  @override
+  String get capabilityUnavailable => 'Status is unavailable. Try again later.';
+
+  @override
+  String get capabilityNotificationTitle => 'Notification permission';
+
+  @override
+  String get capabilityNotificationSubtitle =>
+      'System notifications are required for proactive background messages.';
+
+  @override
+  String get enabledStatus => 'Enabled';
+
+  @override
+  String get disabledStatus => 'Disabled';
+
+  @override
+  String get enableAction => 'Enable';
+
+  @override
+  String get configureAction => 'Configure';
+
+  @override
+  String get authorizeAction => 'Authorize';
+
+  @override
+  String get authorizedStatus => 'Exempt';
+
+  @override
+  String get capabilityBatteryTitle => 'Battery optimization exemption';
+
+  @override
+  String get capabilityBatteryEnabled =>
+      'Background operation is allowed. Also check the vendor\'s auto-start and background allowlists.';
+
+  @override
+  String get capabilityBatteryDisabled =>
+      'Not exempt: background polling may pause while the screen is off or in Doze.';
+
+  @override
+  String get capabilityOverlayTitle => 'Overlay permission';
+
+  @override
+  String get capabilityOverlaySubtitle =>
+      'Displays short reminders and confirmations over the desktop and other apps.';
+
+  @override
+  String get capabilityAccessibilityTitle => 'Accessibility service';
+
+  @override
+  String get capabilityAccessibilitySubtitle =>
+      'Reads the current app, window title and visible text summary; screenshots are not uploaded.';
+
+  @override
+  String get capabilityScreenContextTitle => 'Screen context';
+
+  @override
+  String get capabilityScreenContextEnabled =>
+      'Enabled: only locally filtered, non-sensitive text summaries are uploaded.';
+
+  @override
+  String get capabilityScreenContextDisabled =>
+      'Off by default; this page can still read a locally filtered snapshot.';
+
+  @override
+  String get capabilityWhitelistTitle => 'Screen text upload allowlist';
+
+  @override
+  String get capabilityWhitelistEmpty =>
+      'Empty: apps report package and app names only, without window titles or visible text.';
+
+  @override
+  String capabilityWhitelistCount(int count) {
+    return 'Visible text is allowed for $count selected apps; sensitive pages are still blocked.';
+  }
+
+  @override
+  String get manageAction => 'Manage';
+
+  @override
+  String get capabilityWhitelistNoApps =>
+      'No launchable apps were found. Screen text is not uploaded for any app by default.';
+
+  @override
+  String get capabilityDeviceAdminTitle => 'Device administrator lock';
+
+  @override
+  String get capabilityDeviceAdminSubtitle =>
+      'Required for lockNow; every action still needs UI confirmation.';
+
+  @override
+  String get capabilityBackgroundServiceTitle =>
+      'Background notification service';
+
+  @override
+  String get switchEnabledStatus => 'Switch on';
+
+  @override
+  String get capabilityRelayTitle => 'Relay connection';
+
+  @override
+  String get capabilityGateTitle => 'Notification gate';
+
+  @override
+  String get testingStatus => 'Testing';
+
+  @override
+  String get normalStatus => 'Normal';
+
+  @override
+  String get capabilityBackendTitle => 'adb reverse / backend';
+
+  @override
+  String get detectingStatus => 'Checking';
+
+  @override
+  String get connectedStatus => 'Connected';
+
+  @override
+  String get detectAction => 'Check';
+
+  @override
+  String get notConnectedStatus => 'Disconnected';
+
+  @override
+  String get capabilityEditBackendTooltip => 'Edit backend node';
+
+  @override
+  String get capabilityDetectBackendTooltip => 'Check backend connection';
+
+  @override
+  String capabilityBackendLastError(String error) {
+    return 'Latest connection error: $error';
+  }
+
+  @override
+  String get capabilityBackendNotice =>
+      'This page shows only status the phone can verify. adb reverse runs on the computer; the phone infers it from backend reachability at 127.0.0.1.';
+
+  @override
+  String get relayConnected => 'Connected';
+
+  @override
+  String get relayConnecting => 'Connecting';
+
+  @override
+  String get relayStopped => 'Stopped';
+
+  @override
+  String get relayError => 'Error';
+
+  @override
+  String get relayUnconfigured => 'Not configured';
+
+  @override
+  String get syncStatusTitle => 'Sync status';
+
+  @override
+  String get readingStatus => 'Reading';
+
+  @override
+  String failedStatus(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get pendingSyncStatus => 'Pending';
+
+  @override
+  String get pollingStatus => 'Polling';
+
+  @override
+  String get activatedStatus => 'Active';
+
+  @override
+  String get pendingActivationStatus => 'Pending activation';
+
+  @override
+  String syncChatStatus(String status) {
+    return 'Chat history: $status';
+  }
+
+  @override
+  String syncGardenStatus(String status) {
+    return 'Garden state: $status';
+  }
+
+  @override
+  String syncMobileStatus(String status, String received) {
+    return 'Proactive messages: $status$received';
+  }
+
+  @override
+  String syncReceivedSuffix(int count) {
+    return ' · $count received';
+  }
+
+  @override
+  String syncLatestMessage(String content) {
+    return 'Latest: $content';
+  }
+
+  @override
+  String get screenSnapshotEmpty => 'No screen snapshot';
+
+  @override
+  String get screenDebugTitle => 'Screen context debug';
+
+  @override
+  String get readAction => 'Read';
+
+  @override
+  String get pushAction => 'Push';
+
+  @override
+  String screenWindow(String value) {
+    return 'Window: $value';
+  }
+
+  @override
+  String screenVisible(String value) {
+    return 'Visible: $value';
+  }
+
+  @override
+  String screenClickable(String value) {
+    return 'Clickable: $value';
+  }
+
+  @override
+  String get behaviorTestTitle => 'Proactive behavior test';
+
+  @override
+  String get behaviorTestDescription =>
+      'Writes to the backend mobile queue and polls immediately; overlay and confirmation actions appear directly in foreground.';
+
+  @override
+  String get notificationLabel => 'Notification';
+
+  @override
+  String get overlayLabel => 'Overlay';
+
+  @override
+  String get lockConfirmLabel => 'Lock confirmation';
+
+  @override
+  String get takeoutConfirmLabel => 'Takeout confirmation';
+
+  @override
+  String get backgroundDeliveryTitle => 'Background delivery test';
+
+  @override
+  String get backgroundDeliveryDescription =>
+      'Tests mobile background notification, presence overlay and tool confirmation routing without the backend.';
+
+  @override
+  String get normalNotificationLabel => 'Regular notification';
+
+  @override
+  String get presenceOverlayLabel => 'Presence overlay';
+
+  @override
+  String get lockRequestLabel => 'Lock request';
+
+  @override
+  String get takeoutRequestLabel => 'Takeout request';
+
+  @override
+  String get behaviorDecisionTitle => 'Behavior decision';
+
+  @override
+  String get behaviorDecisionEmpty =>
+      'Not loaded yet. Refresh to see why the latest backend behavior decision did or did not show.';
+
+  @override
+  String readFailedMessage(String error) {
+    return 'Read failed: $error';
+  }
+
+  @override
+  String get fieldTime => 'Time';
+
+  @override
+  String get fieldReason => 'Reason';
+
+  @override
+  String get fieldEvent => 'Event';
+
+  @override
+  String get fieldApp => 'App';
+
+  @override
+  String get fieldNarrative => 'Narrative';
+
+  @override
+  String get fieldScreen => 'Screen';
+
+  @override
+  String get fieldReply => 'Reply';
+
+  @override
+  String get backendDiagnosticsTitle => 'Backend / asset diagnostics';
+
+  @override
+  String get backendDiagnosticsEmpty =>
+      'Tap Read to fetch the backend node, data path, model, character card, lorebook, jailbreak and Dream configuration.';
+
+  @override
+  String get diagnosticBackendNode => 'Backend node';
+
+  @override
+  String get diagnosticDataPath => 'Data path';
+
+  @override
+  String get diagnosticNoPermission =>
+      'No permission (expected with a mobile token)';
+
+  @override
+  String get diagnosticMetaMode => 'Meta mode';
+
+  @override
+  String get diagnosticDangerMode => 'Danger mode';
+
+  @override
+  String get diagnosticSafeMode => 'Safe mode';
+
+  @override
+  String get diagnosticModel => 'Model';
+
+  @override
+  String get diagnosticShortTermRounds => 'Short-term rounds';
+
+  @override
+  String get diagnosticCharacterCard => 'Character card';
+
+  @override
+  String get diagnosticLorebook => 'Lorebook';
+
+  @override
+  String get diagnosticJailbreak => 'Jailbreak';
+
+  @override
+  String diagnosticEntries(int count) {
+    return '$count entries';
+  }
+
+  @override
+  String get diagnosticDream => 'Dream';
+
+  @override
+  String get diagnosticDreamLorebook => 'Dream lorebook';
+
+  @override
+  String get enabledShortStatus => 'Enabled';
+
+  @override
+  String get disabledShortStatus => 'Disabled';
+
+  @override
+  String get diagnosticDreamLayer => 'Dream layer';
+
+  @override
+  String get diagnosticDreamJailbreak => 'Dream jailbreak';
+
+  @override
+  String get capabilityLastPollNone => 'Latest fallback poll: none';
+
+  @override
+  String capabilityLastPoll(String time) {
+    return 'Latest fallback poll: $time';
+  }
+
+  @override
+  String get capabilityLastErrorNone => 'Latest error: none';
+
+  @override
+  String capabilityLastError(String error) {
+    return 'Latest error: $error';
+  }
+
+  @override
+  String get capabilityNativeRelayRunning => 'Native relay service is running';
+
+  @override
+  String get capabilityNativeRelayStopped =>
+      'Native relay service is stopped; Flutter checks proactive messages every 5 seconds in foreground';
+
+  @override
+  String get capabilityGateTestOn =>
+      'Test mode is on: quiet hours and the 30-minute cooldown are bypassed';
+
+  @override
+  String get capabilityGateTestOff =>
+      'Test mode is off: quiet hours 23:30–06:30; regular notifications are 30 minutes apart';
+
+  @override
+  String get noneStatus => 'None';
+
+  @override
+  String capabilityGateSummary(String mode, int count, String reason) {
+    return '$mode.\nSuppressed: $count / Latest reason: $reason';
+  }
+
+  @override
+  String capabilityOverlayLastError(String base, String time, String error) {
+    return '$base\nPermission is granted, but the latest overlay failed$time: $error';
+  }
+
+  @override
+  String get capabilitySignalNone => 'Latest signal: none';
+
+  @override
+  String capabilitySignalTime(String time) {
+    return 'Latest signal: $time';
+  }
+
+  @override
+  String get capabilityHeartbeatNone => 'Latest relay heartbeat: none';
+
+  @override
+  String capabilityHeartbeatTime(String time) {
+    return 'Latest relay heartbeat: $time';
+  }
+
+  @override
+  String capabilityRelayLastError(String error) {
+    return '\nLatest relay error: $error';
+  }
+
+  @override
+  String get capabilityRelayConfigWarning =>
+      '\nConnected does not mean the backend is configured; ensure backend relay_base_url and relay_topic match exactly.';
+
+  @override
+  String capabilityLoopbackHint(String url) {
+    return '$url · Real-device debugging requires adb reverse tcp:8080 tcp:8080';
+  }
+
+  @override
+  String capabilityRemoteHint(String url) {
+    return '$url · LAN/VPN/tunnel address must be reachable';
+  }
+
+  @override
+  String get notEnabledStatus => 'Not enabled';
+
+  @override
+  String get sandboxSuffix => '  ⚠ Sandbox';
+
+  @override
+  String diagnosticReadError(String label, String message) {
+    return '$label: read failed — $message';
+  }
+
+  @override
+  String get backgroundTestPresenceMessage =>
+      'I\'m here. It\'s okay if you don\'t feel like talking.';
+
+  @override
+  String get backgroundTestLockMessage =>
+      'It\'s getting late. Would you like me to lock the screen?';
+
+  @override
+  String get backgroundTestTakeoutMessage =>
+      'You haven\'t eaten yet. Want me to open the takeout page?';
+
+  @override
+  String get backgroundTestDefaultMessage =>
+      'I sent you a message earlier. You can read it when you get back.';
+
+  @override
+  String get checkingStatus => 'Checking';
+
+  @override
+  String oemBackgroundGuide(String appName) {
+    return 'Vendor background allowlist reference:\nXiaomi: Settings → Apps → Manage apps → $appName → Battery saver/Autostart → No restrictions and enable autostart\nOPPO: Settings → Apps → Autostart/Power usage → $appName → Allow background activity\nvivo: Settings → Battery → Background power usage → $appName → Allow high background power usage\nHuawei: Settings → Apps & services → App launch → $appName → Manage manually and allow background activity';
+  }
 }
