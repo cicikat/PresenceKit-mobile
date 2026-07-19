@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../models/app_models.dart';
+import '../l10n/l10n.dart';
 import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../widgets/activity_widgets.dart';
 import '../widgets/common_widgets.dart';
+
 class ReadingScreen extends StatefulWidget {
   const ReadingScreen({
     super.key,
@@ -101,16 +103,16 @@ class _ReadingScreenState extends State<ReadingScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('删除《${book.title}》？'),
-        content: const Text('此操作不可撤销。'),
+        title: Text(context.l10n.readingDeleteTitle(book.title)),
+        content: Text(context.l10n.irreversibleWarning),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text(context.l10n.cancelAction),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
+            child: Text(context.l10n.deleteAction),
           ),
         ],
       ),
@@ -219,6 +221,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
   Future<String?> _sendChat(String message) async {
     final sessionId = _state?.sessionId;
     if (sessionId == null) return null;
+    final l10n = context.l10n;
     try {
       final result = await widget.backend.readingChat(
         sessionId: sessionId,
@@ -227,12 +230,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
       );
       return result.reply;
     } on BackendException catch (e) {
-      return '（发送失败：${e.message}）';
+      return l10n.sendFailedMessage(e.message);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final c = widget.c;
     final active = _state?.isActive == true;
     return Scaffold(
@@ -241,14 +245,19 @@ class _ReadingScreenState extends State<ReadingScreen> {
         backgroundColor: c.surface,
         foregroundColor: c.ink1,
         title: Text(
-          active ? (_state?.title ?? '阅读中') : '一起看书',
+          active
+              ? (_state?.title ?? l10n.readingInProgress)
+              : l10n.readingTogetherTitle,
           style: serif(c, 16, weight: FontWeight.w600),
         ),
         actions: [
           if (active)
             TextButton(
               onPressed: _busy ? null : () => unawaited(_closeReading()),
-              child: Text('关闭', style: mono(c, 11, color: c.danger)),
+              child: Text(
+                l10n.closeAction,
+                style: mono(c, 11, color: c.danger),
+              ),
             ),
         ],
       ),
@@ -266,7 +275,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                 ActivityChatSheet.open(
                   context: context,
                   c: c,
-                  title: '看书聊天',
+                  title: l10n.readingChatTitle,
                   messages: _history,
                   onSend: _sendChat,
                 ),
@@ -278,6 +287,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
   }
 
   Widget _buildLibraryView(YxPalette c) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -292,14 +302,18 @@ class _ReadingScreenState extends State<ReadingScreen> {
             children: [
               Expanded(
                 child: Text(
-                  '书库',
-                  style: mono(c, 11, color: c.ink3).copyWith(letterSpacing: 1.2),
+                  l10n.readingLibrary,
+                  style: mono(
+                    c,
+                    11,
+                    color: c.ink3,
+                  ).copyWith(letterSpacing: 1.2),
                 ),
               ),
               TextButton.icon(
                 onPressed: _busy ? null : () => unawaited(_addBook()),
                 icon: const Icon(Icons.add_rounded, size: 18),
-                label: Text(_busy ? '添加中…' : '添加 PDF'),
+                label: Text(_busy ? l10n.readingAdding : l10n.readingAddPdf),
               ),
             ],
           ),
@@ -308,8 +322,12 @@ class _ReadingScreenState extends State<ReadingScreen> {
           child: _books.isEmpty
               ? Center(
                   child: Text(
-                    '书库还是空的，先添加一本 PDF 吧',
-                    style: serif(c, 13, color: c.ink3).copyWith(fontStyle: FontStyle.italic),
+                    l10n.readingEmptyLibrary,
+                    style: serif(
+                      c,
+                      13,
+                      color: c.ink3,
+                    ).copyWith(fontStyle: FontStyle.italic),
                   ),
                 )
               : ListView.separated(
@@ -319,8 +337,12 @@ class _ReadingScreenState extends State<ReadingScreen> {
                   itemBuilder: (context, index) {
                     final book = _books[index];
                     return InkWell(
-                      onTap: _busy ? null : () => unawaited(_startReading(book)),
-                      onLongPress: _busy ? null : () => unawaited(_deleteBook(book)),
+                      onTap: _busy
+                          ? null
+                          : () => unawaited(_startReading(book)),
+                      onLongPress: _busy
+                          ? null
+                          : () => unawaited(_deleteBook(book)),
                       borderRadius: BorderRadius.circular(4),
                       child: Container(
                         padding: const EdgeInsets.all(12),
@@ -339,12 +361,18 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                     book.title.isNotEmpty
                                         ? book.title
                                         : book.filename,
-                                    style: serif(c, 14, weight: FontWeight.w600),
+                                    style: serif(
+                                      c,
+                                      14,
+                                      weight: FontWeight.w600,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${book.totalPages ?? '?'} 页 · 长按删除',
+                                    l10n.readingBookPages(
+                                      (book.totalPages ?? '?').toString(),
+                                    ),
                                     style: mono(c, 9.5, color: c.ink3),
                                   ),
                                 ],
@@ -363,13 +391,17 @@ class _ReadingScreenState extends State<ReadingScreen> {
   }
 
   Widget _buildReadingView(YxPalette c) {
+    final l10n = context.l10n;
     final page = _page;
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
-            '第 ${_state?.currentPage ?? '?'} 页 / 共 ${_state?.totalPages ?? '?'} 页',
+            l10n.readingPageStatus(
+              (_state?.currentPage ?? '?').toString(),
+              (_state?.totalPages ?? '?').toString(),
+            ),
             style: mono(c, 10.5, color: c.ink3),
           ),
         ),
@@ -377,7 +409,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Text(
-              page?.text ?? '加载页面内容…',
+              page?.text ?? l10n.readingLoadingPage,
               style: serif(c, 15, color: c.ink1).copyWith(height: 1.75),
             ),
           ),
@@ -391,7 +423,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                   onPressed: _busy || (_state?.currentPage ?? 1) <= 1
                       ? null
                       : () => unawaited(_turnPage('prev')),
-                  child: const Text('← 上一页'),
+                  child: Text(l10n.readingPreviousPage),
                 ),
               ),
               const SizedBox(width: 10),
@@ -403,7 +435,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                               (_state?.totalPages ?? 0)
                       ? null
                       : () => unawaited(_turnPage('next')),
-                  child: const Text('下一页 →'),
+                  child: Text(l10n.readingNextPage),
                 ),
               ),
             ],

@@ -787,4 +787,198 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dreamWaitingBehindDoor => 'The dream is waiting behind the door';
+
+  @override
+  String get cancelAction => 'Cancel';
+
+  @override
+  String get deleteAction => 'Delete';
+
+  @override
+  String get saveAction => 'Save';
+
+  @override
+  String get savingAction => 'Saving…';
+
+  @override
+  String get closeAction => 'Close';
+
+  @override
+  String get startGameAction => 'Start game';
+
+  @override
+  String groupDeleteTitle(String title) {
+    return 'Delete “$title”?';
+  }
+
+  @override
+  String get groupDeleteWarning =>
+      'The chat history will also be deleted and cannot be recovered.';
+
+  @override
+  String get groupTitle => 'Group chat';
+
+  @override
+  String get groupEyebrow => 'Chat with multiple characters';
+
+  @override
+  String get groupCreateAction => 'New group';
+
+  @override
+  String get groupEmpty => 'No group chats yet';
+
+  @override
+  String groupRosterDeleteHint(String members) {
+    return '$members · Hold to delete';
+  }
+
+  @override
+  String get groupSelectAtLeastOne => 'Select at least one character';
+
+  @override
+  String groupSelectedCount(int count) {
+    return 'Select members ($count selected)';
+  }
+
+  @override
+  String get groupNoCharacters => 'No characters available';
+
+  @override
+  String groupMinResponders(int count) {
+    return 'N minimum responders: $count';
+  }
+
+  @override
+  String groupMaxResponders(int count) {
+    return 'M maximum responders: $count';
+  }
+
+  @override
+  String get groupCreating => 'Creating…';
+
+  @override
+  String get groupConfirmCreate => 'Create group';
+
+  @override
+  String get groupSendToStart => 'Send a message to start the group chat';
+
+  @override
+  String get groupMembersResponding => 'Members are responding…';
+
+  @override
+  String get groupSendHint => 'Send a message…';
+
+  @override
+  String get groupKeepAtLeastOne => 'Keep at least one member';
+
+  @override
+  String get groupSettingsTitle => 'Group settings';
+
+  @override
+  String groupManagingCount(int count) {
+    return 'Manage members ($count selected)';
+  }
+
+  @override
+  String readingDeleteTitle(String title) {
+    return 'Delete “$title”?';
+  }
+
+  @override
+  String get irreversibleWarning => 'This action cannot be undone.';
+
+  @override
+  String get readingInProgress => 'Reading';
+
+  @override
+  String get readingTogetherTitle => 'Read together';
+
+  @override
+  String get readingChatTitle => 'Reading chat';
+
+  @override
+  String get readingLibrary => 'Library';
+
+  @override
+  String get readingAdding => 'Adding…';
+
+  @override
+  String get readingAddPdf => 'Add PDF';
+
+  @override
+  String get readingEmptyLibrary => 'The library is empty. Add a PDF to begin.';
+
+  @override
+  String readingBookPages(String pages) {
+    return '$pages pages · Hold to delete';
+  }
+
+  @override
+  String readingPageStatus(String current, String total) {
+    return 'Page $current of $total';
+  }
+
+  @override
+  String get readingLoadingPage => 'Loading page content…';
+
+  @override
+  String get readingPreviousPage => '← Previous';
+
+  @override
+  String get readingNextPage => 'Next →';
+
+  @override
+  String get chessTitle => 'Chess';
+
+  @override
+  String get chessIntro =>
+      'Play a game of chess with him. You play White and move first: tap a piece, then its destination.';
+
+  @override
+  String chessGameOver(String result) {
+    return 'Game over: $result';
+  }
+
+  @override
+  String chessTurn(String side) {
+    return 'Turn: $side';
+  }
+
+  @override
+  String get whiteSide => 'White';
+
+  @override
+  String get blackSide => 'Black';
+
+  @override
+  String get gameChatTitle => 'Game chat';
+
+  @override
+  String get gomokuTitle => 'Gomoku';
+
+  @override
+  String get gomokuIntro =>
+      'Play a game of Gomoku with him. You move first by tapping the board.';
+
+  @override
+  String get drawResult => 'Draw';
+
+  @override
+  String gomokuWinner(String stone) {
+    return '$stone wins';
+  }
+
+  @override
+  String gomokuTurn(String stone) {
+    return 'Turn: $stone';
+  }
+
+  @override
+  String get blackStone => 'Black';
+
+  @override
+  String get whiteStone => 'White';
+
+  @override
+  String get boardLoading => 'Loading board…';
 }

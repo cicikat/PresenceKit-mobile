@@ -1482,6 +1482,336 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'梦在门后等待'**
   String get dreamWaitingBehindDoor;
+
+  /// No description provided for @cancelAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消'**
+  String get cancelAction;
+
+  /// No description provided for @deleteAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除'**
+  String get deleteAction;
+
+  /// No description provided for @saveAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存'**
+  String get saveAction;
+
+  /// No description provided for @savingAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存中…'**
+  String get savingAction;
+
+  /// No description provided for @closeAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭'**
+  String get closeAction;
+
+  /// No description provided for @startGameAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'开局'**
+  String get startGameAction;
+
+  /// No description provided for @groupDeleteTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除「{title}」？'**
+  String groupDeleteTitle(String title);
+
+  /// No description provided for @groupDeleteWarning.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天记录一并清除，不可恢复。'**
+  String get groupDeleteWarning;
+
+  /// No description provided for @groupTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'群聊'**
+  String get groupTitle;
+
+  /// No description provided for @groupEyebrow.
+  ///
+  /// In zh, this message translates to:
+  /// **'多角色一起聊'**
+  String get groupEyebrow;
+
+  /// No description provided for @groupCreateAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'新建群聊'**
+  String get groupCreateAction;
+
+  /// No description provided for @groupEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有群聊'**
+  String get groupEmpty;
+
+  /// No description provided for @groupRosterDeleteHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'{members} · 长按删除'**
+  String groupRosterDeleteHint(String members);
+
+  /// No description provided for @groupSelectAtLeastOne.
+  ///
+  /// In zh, this message translates to:
+  /// **'至少选择 1 位角色'**
+  String get groupSelectAtLeastOne;
+
+  /// No description provided for @groupSelectedCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择成员（已选 {count} 位）'**
+  String groupSelectedCount(int count);
+
+  /// No description provided for @groupNoCharacters.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无可用角色'**
+  String get groupNoCharacters;
+
+  /// No description provided for @groupMinResponders.
+  ///
+  /// In zh, this message translates to:
+  /// **'N 最少回应人数：{count}'**
+  String groupMinResponders(int count);
+
+  /// No description provided for @groupMaxResponders.
+  ///
+  /// In zh, this message translates to:
+  /// **'M 最多回应人数：{count}'**
+  String groupMaxResponders(int count);
+
+  /// No description provided for @groupCreating.
+  ///
+  /// In zh, this message translates to:
+  /// **'建群中…'**
+  String get groupCreating;
+
+  /// No description provided for @groupConfirmCreate.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认建群'**
+  String get groupConfirmCreate;
+
+  /// No description provided for @groupSendToStart.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送消息，开始群聊'**
+  String get groupSendToStart;
+
+  /// No description provided for @groupMembersResponding.
+  ///
+  /// In zh, this message translates to:
+  /// **'成员陆续回应中…'**
+  String get groupMembersResponding;
+
+  /// No description provided for @groupSendHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送消息…'**
+  String get groupSendHint;
+
+  /// No description provided for @groupKeepAtLeastOne.
+  ///
+  /// In zh, this message translates to:
+  /// **'至少保留 1 位成员'**
+  String get groupKeepAtLeastOne;
+
+  /// No description provided for @groupSettingsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'群设置'**
+  String get groupSettingsTitle;
+
+  /// No description provided for @groupManagingCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'成员管理（已选 {count} 位）'**
+  String groupManagingCount(int count);
+
+  /// No description provided for @readingDeleteTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除《{title}》？'**
+  String readingDeleteTitle(String title);
+
+  /// No description provided for @irreversibleWarning.
+  ///
+  /// In zh, this message translates to:
+  /// **'此操作不可撤销。'**
+  String get irreversibleWarning;
+
+  /// No description provided for @readingInProgress.
+  ///
+  /// In zh, this message translates to:
+  /// **'阅读中'**
+  String get readingInProgress;
+
+  /// No description provided for @readingTogetherTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'一起看书'**
+  String get readingTogetherTitle;
+
+  /// No description provided for @readingChatTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'看书聊天'**
+  String get readingChatTitle;
+
+  /// No description provided for @readingLibrary.
+  ///
+  /// In zh, this message translates to:
+  /// **'书库'**
+  String get readingLibrary;
+
+  /// No description provided for @readingAdding.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加中…'**
+  String get readingAdding;
+
+  /// No description provided for @readingAddPdf.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加 PDF'**
+  String get readingAddPdf;
+
+  /// No description provided for @readingEmptyLibrary.
+  ///
+  /// In zh, this message translates to:
+  /// **'书库还是空的，先添加一本 PDF 吧'**
+  String get readingEmptyLibrary;
+
+  /// No description provided for @readingBookPages.
+  ///
+  /// In zh, this message translates to:
+  /// **'{pages} 页 · 长按删除'**
+  String readingBookPages(String pages);
+
+  /// No description provided for @readingPageStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'第 {current} 页 / 共 {total} 页'**
+  String readingPageStatus(String current, String total);
+
+  /// No description provided for @readingLoadingPage.
+  ///
+  /// In zh, this message translates to:
+  /// **'加载页面内容…'**
+  String get readingLoadingPage;
+
+  /// No description provided for @readingPreviousPage.
+  ///
+  /// In zh, this message translates to:
+  /// **'← 上一页'**
+  String get readingPreviousPage;
+
+  /// No description provided for @readingNextPage.
+  ///
+  /// In zh, this message translates to:
+  /// **'下一页 →'**
+  String get readingNextPage;
+
+  /// No description provided for @chessTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'国际象棋'**
+  String get chessTitle;
+
+  /// No description provided for @chessIntro.
+  ///
+  /// In zh, this message translates to:
+  /// **'和他下一局国际象棋。你执白先行，点棋子选中，再点目标格落子。'**
+  String get chessIntro;
+
+  /// No description provided for @chessGameOver.
+  ///
+  /// In zh, this message translates to:
+  /// **'对局结束：{result}'**
+  String chessGameOver(String result);
+
+  /// No description provided for @chessTurn.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前走子方：{side}'**
+  String chessTurn(String side);
+
+  /// No description provided for @whiteSide.
+  ///
+  /// In zh, this message translates to:
+  /// **'白方'**
+  String get whiteSide;
+
+  /// No description provided for @blackSide.
+  ///
+  /// In zh, this message translates to:
+  /// **'黑方'**
+  String get blackSide;
+
+  /// No description provided for @gameChatTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'棋局闲聊'**
+  String get gameChatTitle;
+
+  /// No description provided for @gomokuTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'五子棋'**
+  String get gomokuTitle;
+
+  /// No description provided for @gomokuIntro.
+  ///
+  /// In zh, this message translates to:
+  /// **'和他下一局五子棋。你先手，触屏落子。'**
+  String get gomokuIntro;
+
+  /// No description provided for @drawResult.
+  ///
+  /// In zh, this message translates to:
+  /// **'平局'**
+  String get drawResult;
+
+  /// No description provided for @gomokuWinner.
+  ///
+  /// In zh, this message translates to:
+  /// **'{stone} 获胜'**
+  String gomokuWinner(String stone);
+
+  /// No description provided for @gomokuTurn.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前落子方：{stone}'**
+  String gomokuTurn(String stone);
+
+  /// No description provided for @blackStone.
+  ///
+  /// In zh, this message translates to:
+  /// **'黑棋'**
+  String get blackStone;
+
+  /// No description provided for @whiteStone.
+  ///
+  /// In zh, this message translates to:
+  /// **'白棋'**
+  String get whiteStone;
+
+  /// No description provided for @boardLoading.
+  ///
+  /// In zh, this message translates to:
+  /// **'棋盘加载中…'**
+  String get boardLoading;
 }
 
 class _AppLocalizationsDelegate

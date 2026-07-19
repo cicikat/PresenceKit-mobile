@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../models/app_models.dart';
+import '../l10n/l10n.dart';
 import '../services/backend_client.dart';
 
 import '../widgets/common_widgets.dart';
@@ -63,16 +64,16 @@ class _GroupListScreenState extends State<GroupListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('删除「${group.displayTitle}」？'),
-        content: const Text('聊天记录一并清除，不可恢复。'),
+        title: Text(context.l10n.groupDeleteTitle(group.displayTitle)),
+        content: Text(context.l10n.groupDeleteWarning),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
+            child: Text(context.l10n.cancelAction),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
+            child: Text(context.l10n.deleteAction),
           ),
         ],
       ),
@@ -110,6 +111,7 @@ class _GroupListScreenState extends State<GroupListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final c = widget.c;
     return Container(
       color: c.characterDeep,
@@ -117,8 +119,8 @@ class _GroupListScreenState extends State<GroupListScreen> {
         children: [
           PageHeader(
             c: c,
-            title: '群聊',
-            eyebrow: '多角色一起聊',
+            title: l10n.groupTitle,
+            eyebrow: l10n.groupEyebrow,
             onBack: widget.onBack,
             trailing: '',
             darkHeader: true,
@@ -138,7 +140,7 @@ class _GroupListScreenState extends State<GroupListScreen> {
                         OutlinedButton.icon(
                           onPressed: () => unawaited(_openCreate()),
                           icon: const Icon(Icons.add_rounded),
-                          label: const Text('新建群聊'),
+                          label: Text(l10n.groupCreateAction),
                         ),
                         const SizedBox(height: 16),
                         if (_groups.isEmpty)
@@ -146,7 +148,7 @@ class _GroupListScreenState extends State<GroupListScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 24),
                             child: Center(
                               child: Text(
-                                '还没有群聊',
+                                l10n.groupEmpty,
                                 style: serif(
                                   c,
                                   13,
@@ -197,8 +199,16 @@ class _GroupListScreenState extends State<GroupListScreen> {
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
-                                              '${group.roster.map((m) => m.label).join(' · ')} · 长按删除',
-                                              style: mono(c, 9.5, color: c.ink3),
+                                              l10n.groupRosterDeleteHint(
+                                                group.roster
+                                                    .map((m) => m.label)
+                                                    .join(' · '),
+                                              ),
+                                              style: mono(
+                                                c,
+                                                9.5,
+                                                color: c.ink3,
+                                              ),
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ],
@@ -274,7 +284,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
 
   Future<void> _create() async {
     if (_selected.isEmpty) {
-      setState(() => _error = '至少选择 1 位角色');
+      setState(() => _error = context.l10n.groupSelectAtLeastOne);
       return;
     }
     setState(() {
@@ -316,7 +326,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                 children: [
                   Expanded(
                     child: Text(
-                      '新建群聊',
+                      context.l10n.groupCreateAction,
                       style: serif(c, 15, weight: FontWeight.w600),
                     ),
                   ),
@@ -334,13 +344,13 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       children: [
                         Text(
-                          '选择成员（已选 ${_selected.length} 位）',
+                          context.l10n.groupSelectedCount(_selected.length),
                           style: mono(c, 10.5, color: c.ink3),
                         ),
                         const SizedBox(height: 10),
                         if (_characters.isEmpty)
                           Text(
-                            '暂无可用角色',
+                            context.l10n.groupNoCharacters,
                             style: serif(
                               c,
                               13,
@@ -362,13 +372,16 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                                 }
                               }),
                               title: Text(ch.label, style: serif(c, 14)),
-                              subtitle: Text(ch.id, style: mono(c, 10, color: c.ink3)),
+                              subtitle: Text(
+                                ch.id,
+                                style: mono(c, 10, color: c.ink3),
+                              ),
                               controlAffinity: ListTileControlAffinity.leading,
                               dense: true,
                             ),
                         const SizedBox(height: 16),
                         Text(
-                          'N 最少回应人数：$_minR',
+                          context.l10n.groupMinResponders(_minR),
                           style: serif(c, 13, weight: FontWeight.w500),
                         ),
                         Slider(
@@ -382,7 +395,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                           }),
                         ),
                         Text(
-                          'M 最多回应人数：$_maxR',
+                          context.l10n.groupMaxResponders(_maxR),
                           style: serif(c, 13, weight: FontWeight.w500),
                         ),
                         Slider(
@@ -401,8 +414,14 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                         ],
                         const SizedBox(height: 16),
                         FilledButton(
-                          onPressed: _saving ? null : () => unawaited(_create()),
-                          child: Text(_saving ? '建群中…' : '确认建群'),
+                          onPressed: _saving
+                              ? null
+                              : () => unawaited(_create()),
+                          child: Text(
+                            _saving
+                                ? context.l10n.groupCreating
+                                : context.l10n.groupConfirmCreate,
+                          ),
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -571,7 +590,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         backgroundColor: c.surface,
         foregroundColor: c.ink1,
         title: Text(
-          detail?.summary.displayTitle ?? '群聊',
+          detail?.summary.displayTitle ?? context.l10n.groupTitle,
           style: serif(c, 16, weight: FontWeight.w600),
         ),
         actions: [
@@ -596,7 +615,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     child: detail == null || detail.recent.isEmpty
                         ? Center(
                             child: Text(
-                              '发送消息，开始群聊',
+                              context.l10n.groupSendToStart,
                               style: serif(
                                 c,
                                 13,
@@ -634,7 +653,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Text(
-                        '成员陆续回应中…',
+                        context.l10n.groupMembersResponding,
                         style: mono(c, 10, color: c.ink3),
                       ),
                     ),
@@ -650,7 +669,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                             style: serif(c, 14),
                             decoration: InputDecoration(
                               isDense: true,
-                              hintText: '发送消息…',
+                              hintText: context.l10n.groupSendHint,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 10,
@@ -740,7 +759,10 @@ class _GroupBubble extends StatelessWidget {
                 border: Border(left: BorderSide(color: c.character, width: 3)),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Text(message.content, style: serif(c, 13.5, color: c.ink1)),
+              child: Text(
+                message.content,
+                style: serif(c, 13.5, color: c.ink1),
+              ),
             ),
           ],
         ),
@@ -806,7 +828,7 @@ class _GroupSettingsSheetState extends State<_GroupSettingsSheet> {
 
   Future<void> _save() async {
     if (_roster.isEmpty) {
-      setState(() => _error = '至少保留 1 位成员');
+      setState(() => _error = context.l10n.groupKeepAtLeastOne);
       return;
     }
     setState(() {
@@ -865,7 +887,7 @@ class _GroupSettingsSheetState extends State<_GroupSettingsSheet> {
                 children: [
                   Expanded(
                     child: Text(
-                      '群设置',
+                      context.l10n.groupSettingsTitle,
                       style: serif(c, 15, weight: FontWeight.w600),
                     ),
                   ),
@@ -883,7 +905,7 @@ class _GroupSettingsSheetState extends State<_GroupSettingsSheet> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       children: [
                         Text(
-                          '成员管理（已选 ${_roster.length} 位）',
+                          context.l10n.groupManagingCount(_roster.length),
                           style: mono(c, 10.5, color: c.ink3),
                         ),
                         const SizedBox(height: 10),
@@ -898,13 +920,16 @@ class _GroupSettingsSheetState extends State<_GroupSettingsSheet> {
                               }
                             }),
                             title: Text(ch.label, style: serif(c, 14)),
-                            subtitle: Text(ch.id, style: mono(c, 10, color: c.ink3)),
+                            subtitle: Text(
+                              ch.id,
+                              style: mono(c, 10, color: c.ink3),
+                            ),
                             controlAffinity: ListTileControlAffinity.leading,
                             dense: true,
                           ),
                         const SizedBox(height: 16),
                         Text(
-                          'N 最少回应人数：$_minR',
+                          context.l10n.groupMinResponders(_minR),
                           style: serif(c, 13, weight: FontWeight.w500),
                         ),
                         Slider(
@@ -921,7 +946,7 @@ class _GroupSettingsSheetState extends State<_GroupSettingsSheet> {
                           }),
                         ),
                         Text(
-                          'M 最多回应人数：$_maxR',
+                          context.l10n.groupMaxResponders(_maxR),
                           style: serif(c, 13, weight: FontWeight.w500),
                         ),
                         Slider(
@@ -941,7 +966,11 @@ class _GroupSettingsSheetState extends State<_GroupSettingsSheet> {
                         const SizedBox(height: 16),
                         FilledButton(
                           onPressed: _saving ? null : () => unawaited(_save()),
-                          child: Text(_saving ? '保存中…' : '保存'),
+                          child: Text(
+                            _saving
+                                ? context.l10n.savingAction
+                                : context.l10n.saveAction,
+                          ),
                         ),
                         const SizedBox(height: 24),
                       ],

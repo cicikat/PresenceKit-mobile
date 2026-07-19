@@ -759,4 +759,195 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dreamWaitingBehindDoor => '梦在门后等待';
+
+  @override
+  String get cancelAction => '取消';
+
+  @override
+  String get deleteAction => '删除';
+
+  @override
+  String get saveAction => '保存';
+
+  @override
+  String get savingAction => '保存中…';
+
+  @override
+  String get closeAction => '关闭';
+
+  @override
+  String get startGameAction => '开局';
+
+  @override
+  String groupDeleteTitle(String title) {
+    return '删除「$title」？';
+  }
+
+  @override
+  String get groupDeleteWarning => '聊天记录一并清除，不可恢复。';
+
+  @override
+  String get groupTitle => '群聊';
+
+  @override
+  String get groupEyebrow => '多角色一起聊';
+
+  @override
+  String get groupCreateAction => '新建群聊';
+
+  @override
+  String get groupEmpty => '还没有群聊';
+
+  @override
+  String groupRosterDeleteHint(String members) {
+    return '$members · 长按删除';
+  }
+
+  @override
+  String get groupSelectAtLeastOne => '至少选择 1 位角色';
+
+  @override
+  String groupSelectedCount(int count) {
+    return '选择成员（已选 $count 位）';
+  }
+
+  @override
+  String get groupNoCharacters => '暂无可用角色';
+
+  @override
+  String groupMinResponders(int count) {
+    return 'N 最少回应人数：$count';
+  }
+
+  @override
+  String groupMaxResponders(int count) {
+    return 'M 最多回应人数：$count';
+  }
+
+  @override
+  String get groupCreating => '建群中…';
+
+  @override
+  String get groupConfirmCreate => '确认建群';
+
+  @override
+  String get groupSendToStart => '发送消息，开始群聊';
+
+  @override
+  String get groupMembersResponding => '成员陆续回应中…';
+
+  @override
+  String get groupSendHint => '发送消息…';
+
+  @override
+  String get groupKeepAtLeastOne => '至少保留 1 位成员';
+
+  @override
+  String get groupSettingsTitle => '群设置';
+
+  @override
+  String groupManagingCount(int count) {
+    return '成员管理（已选 $count 位）';
+  }
+
+  @override
+  String readingDeleteTitle(String title) {
+    return '删除《$title》？';
+  }
+
+  @override
+  String get irreversibleWarning => '此操作不可撤销。';
+
+  @override
+  String get readingInProgress => '阅读中';
+
+  @override
+  String get readingTogetherTitle => '一起看书';
+
+  @override
+  String get readingChatTitle => '看书聊天';
+
+  @override
+  String get readingLibrary => '书库';
+
+  @override
+  String get readingAdding => '添加中…';
+
+  @override
+  String get readingAddPdf => '添加 PDF';
+
+  @override
+  String get readingEmptyLibrary => '书库还是空的，先添加一本 PDF 吧';
+
+  @override
+  String readingBookPages(String pages) {
+    return '$pages 页 · 长按删除';
+  }
+
+  @override
+  String readingPageStatus(String current, String total) {
+    return '第 $current 页 / 共 $total 页';
+  }
+
+  @override
+  String get readingLoadingPage => '加载页面内容…';
+
+  @override
+  String get readingPreviousPage => '← 上一页';
+
+  @override
+  String get readingNextPage => '下一页 →';
+
+  @override
+  String get chessTitle => '国际象棋';
+
+  @override
+  String get chessIntro => '和他下一局国际象棋。你执白先行，点棋子选中，再点目标格落子。';
+
+  @override
+  String chessGameOver(String result) {
+    return '对局结束：$result';
+  }
+
+  @override
+  String chessTurn(String side) {
+    return '当前走子方：$side';
+  }
+
+  @override
+  String get whiteSide => '白方';
+
+  @override
+  String get blackSide => '黑方';
+
+  @override
+  String get gameChatTitle => '棋局闲聊';
+
+  @override
+  String get gomokuTitle => '五子棋';
+
+  @override
+  String get gomokuIntro => '和他下一局五子棋。你先手，触屏落子。';
+
+  @override
+  String get drawResult => '平局';
+
+  @override
+  String gomokuWinner(String stone) {
+    return '$stone 获胜';
+  }
+
+  @override
+  String gomokuTurn(String stone) {
+    return '当前落子方：$stone';
+  }
+
+  @override
+  String get blackStone => '黑棋';
+
+  @override
+  String get whiteStone => '白棋';
+
+  @override
+  String get boardLoading => '棋盘加载中…';
 }

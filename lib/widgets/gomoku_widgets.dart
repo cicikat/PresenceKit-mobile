@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../models/app_models.dart';
+import '../l10n/l10n.dart';
 import '../services/backend_client.dart';
 import '../widgets/activity_widgets.dart';
 import '../widgets/common_widgets.dart';
+
 class GomokuScreen extends StatefulWidget {
   const GomokuScreen({
     super.key,
@@ -146,6 +148,7 @@ class _GomokuScreenState extends State<GomokuScreen> {
   Future<String?> _sendChat(String message) async {
     final sessionId = _state?.sessionId;
     if (sessionId == null) return null;
+    final l10n = context.l10n;
     try {
       final result = await widget.backend.gomokuChat(
         sessionId: sessionId,
@@ -154,12 +157,13 @@ class _GomokuScreenState extends State<GomokuScreen> {
       );
       return result.reply;
     } on BackendException catch (e) {
-      return '（发送失败：${e.message}）';
+      return l10n.sendFailedMessage(e.message);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final c = widget.c;
     final state = _state;
     return Scaffold(
@@ -167,12 +171,15 @@ class _GomokuScreenState extends State<GomokuScreen> {
       appBar: AppBar(
         backgroundColor: c.surface,
         foregroundColor: c.ink1,
-        title: Text('五子棋', style: serif(c, 16, weight: FontWeight.w600)),
+        title: Text(
+          l10n.gomokuTitle,
+          style: serif(c, 16, weight: FontWeight.w600),
+        ),
         actions: [
           if (state != null)
             TextButton(
               onPressed: _busy ? null : () => unawaited(_close()),
-              child: Text('结束', style: mono(c, 11, color: c.danger)),
+              child: Text(l10n.endAction, style: mono(c, 11, color: c.danger)),
             ),
         ],
       ),
@@ -190,21 +197,33 @@ class _GomokuScreenState extends State<GomokuScreen> {
                     ],
                     if (state == null) ...[
                       Text(
-                        '和他下一局五子棋。你先手，触屏落子。',
-                        style: serif(c, 13.5, color: c.ink2).copyWith(height: 1.6),
+                        l10n.gomokuIntro,
+                        style: serif(
+                          c,
+                          13.5,
+                          color: c.ink2,
+                        ).copyWith(height: 1.6),
                       ),
                       const SizedBox(height: 20),
                       FilledButton(
                         onPressed: _busy ? null : () => unawaited(_start()),
-                        child: const Text('开局'),
+                        child: Text(l10n.startGameAction),
                       ),
                     ] else ...[
                       Text(
                         state.winner != null
                             ? (state.winner == 'draw'
-                                  ? '平局'
-                                  : '${state.winner == 'black' ? '黑棋' : '白棋'} 获胜')
-                            : '当前落子方：${state.currentTurn == 'black' ? '黑棋' : '白棋'}',
+                                  ? l10n.drawResult
+                                  : l10n.gomokuWinner(
+                                      state.winner == 'black'
+                                          ? l10n.blackStone
+                                          : l10n.whiteStone,
+                                    ))
+                            : l10n.gomokuTurn(
+                                state.currentTurn == 'black'
+                                    ? l10n.blackStone
+                                    : l10n.whiteStone,
+                              ),
                         style: mono(c, 11, color: c.ink3),
                       ),
                       const SizedBox(height: 12),
@@ -232,7 +251,7 @@ class _GomokuScreenState extends State<GomokuScreen> {
                 ActivityChatSheet.open(
                   context: context,
                   c: c,
-                  title: '棋局闲聊',
+                  title: l10n.gameChatTitle,
                   messages: _history,
                   onSend: _sendChat,
                 ),
@@ -260,7 +279,10 @@ class _GomokuBoard extends StatelessWidget {
     final size = board.length;
     if (size == 0) {
       return Center(
-        child: Text('棋盘加载中…', style: mono(c, 11, color: c.ink3)),
+        child: Text(
+          context.l10n.boardLoading,
+          style: mono(c, 11, color: c.ink3),
+        ),
       );
     }
     return Container(

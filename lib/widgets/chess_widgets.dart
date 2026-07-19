@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../models/app_models.dart';
+import '../l10n/l10n.dart';
 import '../services/backend_client.dart';
 import '../widgets/activity_widgets.dart';
 import '../widgets/common_widgets.dart';
+
 const String _chessStartFen =
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -12,7 +14,10 @@ const String _chessStartFen =
 List<List<String?>> _parseFenBoard(String fen) {
   final placement = fen.split(' ').firstOrNull ?? '';
   final ranks = placement.split('/');
-  final board = List<List<String?>>.generate(8, (_) => List<String?>.filled(8, null));
+  final board = List<List<String?>>.generate(
+    8,
+    (_) => List<String?>.filled(8, null),
+  );
   for (var r = 0; r < ranks.length && r < 8; r++) {
     var col = 0;
     for (final ch in ranks[r].split('')) {
@@ -36,8 +41,18 @@ String _squareName(int row, int col) {
 
 String _pieceGlyph(String piece) {
   const glyphs = {
-    'P': '♙', 'N': '♘', 'B': '♗', 'R': '♖', 'Q': '♕', 'K': '♔',
-    'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛', 'k': '♚',
+    'P': '♙',
+    'N': '♘',
+    'B': '♗',
+    'R': '♖',
+    'Q': '♕',
+    'K': '♔',
+    'p': '♟',
+    'n': '♞',
+    'b': '♝',
+    'r': '♜',
+    'q': '♛',
+    'k': '♚',
   };
   return glyphs[piece] ?? '';
 }
@@ -238,6 +253,7 @@ class _ChessScreenState extends State<ChessScreen> {
   Future<String?> _sendChat(String message) async {
     final sessionId = _state?.sessionId;
     if (sessionId == null) return null;
+    final l10n = context.l10n;
     try {
       final result = await widget.backend.chessChat(
         sessionId: sessionId,
@@ -246,12 +262,13 @@ class _ChessScreenState extends State<ChessScreen> {
       );
       return result.reply;
     } on BackendException catch (e) {
-      return '（发送失败：${e.message}）';
+      return l10n.sendFailedMessage(e.message);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final c = widget.c;
     final state = _state;
     return Scaffold(
@@ -259,12 +276,15 @@ class _ChessScreenState extends State<ChessScreen> {
       appBar: AppBar(
         backgroundColor: c.surface,
         foregroundColor: c.ink1,
-        title: Text('国际象棋', style: serif(c, 16, weight: FontWeight.w600)),
+        title: Text(
+          l10n.chessTitle,
+          style: serif(c, 16, weight: FontWeight.w600),
+        ),
         actions: [
           if (state != null)
             TextButton(
               onPressed: _busy ? null : () => unawaited(_close()),
-              child: Text('结束', style: mono(c, 11, color: c.danger)),
+              child: Text(l10n.endAction, style: mono(c, 11, color: c.danger)),
             ),
         ],
       ),
@@ -282,19 +302,27 @@ class _ChessScreenState extends State<ChessScreen> {
                     ],
                     if (state == null) ...[
                       Text(
-                        '和他下一局国际象棋。你执白先行，点棋子选中，再点目标格落子。',
-                        style: serif(c, 13.5, color: c.ink2).copyWith(height: 1.6),
+                        l10n.chessIntro,
+                        style: serif(
+                          c,
+                          13.5,
+                          color: c.ink2,
+                        ).copyWith(height: 1.6),
                       ),
                       const SizedBox(height: 20),
                       FilledButton(
                         onPressed: _busy ? null : () => unawaited(_start()),
-                        child: const Text('开局'),
+                        child: Text(l10n.startGameAction),
                       ),
                     ] else ...[
                       Text(
                         state.result != null
-                            ? '对局结束：${state.result}'
-                            : '当前走子方：${state.turn == 'white' ? '白方' : '黑方'}',
+                            ? l10n.chessGameOver(state.result!)
+                            : l10n.chessTurn(
+                                state.turn == 'white'
+                                    ? l10n.whiteSide
+                                    : l10n.blackSide,
+                              ),
                         style: mono(c, 11, color: c.ink3),
                       ),
                       const SizedBox(height: 12),
@@ -331,7 +359,7 @@ class _ChessScreenState extends State<ChessScreen> {
                 ActivityChatSheet.open(
                   context: context,
                   c: c,
-                  title: '棋局闲聊',
+                  title: l10n.gameChatTitle,
                   messages: _history,
                   onSend: _sendChat,
                 ),
@@ -361,7 +389,9 @@ class _ChessBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(border: Border.all(color: c.surfaceEdge, width: 2)),
+      decoration: BoxDecoration(
+        border: Border.all(color: c.surfaceEdge, width: 2),
+      ),
       child: GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
