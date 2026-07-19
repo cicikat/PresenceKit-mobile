@@ -30,3 +30,16 @@ String themeRoleLabel(AppLocalizations l10n, String key) => switch (key) {
   'scrim' => l10n.themeRoleScrim,
   _ => key,
 };
+
+String moodLabel(AppLocalizations l10n, String key) => switch (key) {
+  'neutral' => l10n.moodNeutral,
+  'gentle' => l10n.moodGentle,
+  'thinking' => l10n.moodThinking,
+  'happy' => l10n.moodHappy,
+  'sad' => l10n.moodSad,
+  'surprised' => l10n.moodSurprised,
+  'angry' => l10n.moodAngry,
+  'sleepy' => l10n.moodSleepy,
+  'yandere' => l10n.moodYandere,
+  _ => key,
+};

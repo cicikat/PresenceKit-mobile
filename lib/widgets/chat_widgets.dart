@@ -82,7 +82,11 @@ class ChatScene extends StatelessWidget {
       totalMessageCount - visibleMessageLimit,
     );
     final visibleMessageCount = totalMessageCount - hiddenMessageCount;
-    final todayLine = formatTodayLine(DateTime.now());
+    final now = DateTime.now();
+    final todayLine = l10n.chatTodayLine(
+      MaterialLocalizations.of(context).formatFullDate(now),
+      TimeOfDay.fromDateTime(now).format(context),
+    );
     final topInset = MediaQuery.paddingOf(context).top;
     final metaItems = <Widget>[
       if (loadingMoreHistory) MetaLine(c: c, text: l10n.chatLoadingOlder),

@@ -1168,7 +1168,10 @@ class BehaviorDecisionDebugCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            _line(context.l10n.fieldTime, s.timeLabel),
+            _line(
+              context.l10n.fieldTime,
+              s.ts == null ? context.l10n.notRunStatus : s.timeLabel,
+            ),
             _line(context.l10n.fieldReason, s.reason),
             if (s.eventType.isNotEmpty)
               _line(context.l10n.fieldEvent, s.eventType),

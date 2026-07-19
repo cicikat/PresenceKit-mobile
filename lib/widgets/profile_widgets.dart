@@ -174,7 +174,7 @@ class ProfilePage extends StatelessWidget {
                               YxTag(
                                 c: c,
                                 text: l10n.profileMoodStatus(
-                                  moodState!.label,
+                                  moodLabel(l10n, moodState!.current),
                                   (moodState!.intensity * 100).round(),
                                 ),
                               ),

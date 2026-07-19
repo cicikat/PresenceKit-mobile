@@ -1610,6 +1610,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Writes to the backend mobile queue and polls immediately; overlay and confirmation actions appear directly in foreground.';
 
   @override
+  String get behaviorOverlayTestMessage =>
+      '(Test) I\'ll wait by the edge of your screen for a moment.';
+
+  @override
+  String get behaviorLockTestMessage =>
+      '(Test) Would you like me to lock the screen? It only happens after confirmation.';
+
+  @override
+  String get behaviorTakeoutTestMessage =>
+      '(Test) Want me to open the takeout page? No order will be placed automatically.';
+
+  @override
+  String get behaviorNotificationTestMessage =>
+      '(Test) This is a regular proactive message.';
+
+  @override
   String get notificationLabel => 'Notification';
 
   @override
@@ -1845,6 +1861,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkingStatus => 'Checking';
+
+  @override
+  String get notRunStatus => 'Not run';
+
+  @override
+  String chatTodayLine(String date, String time) {
+    return 'Today · $date · $time';
+  }
+
+  @override
+  String get moodNeutral => 'Calm';
+
+  @override
+  String get moodGentle => 'Gentle';
+
+  @override
+  String get moodThinking => 'Thoughtful';
+
+  @override
+  String get moodHappy => 'Happy';
+
+  @override
+  String get moodSad => 'A little sad';
+
+  @override
+  String get moodSurprised => 'A little surprised';
+
+  @override
+  String get moodAngry => 'A little upset';
+
+  @override
+  String get moodSleepy => 'Sleepy';
+
+  @override
+  String get moodYandere => 'Intense';
 
   @override
   String oemBackgroundGuide(String appName) {

@@ -579,7 +579,7 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   Future<void> _pushBehaviorTest(String kind) async {
-    final spec = BehaviorTestSpec.forKind(kind);
+    final spec = BehaviorTestSpec.forKind(kind, context.l10n);
     try {
       await _backend.pushMobileBehaviorTest(
         token: _requireAdminToken(),

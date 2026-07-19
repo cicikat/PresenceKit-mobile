@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/l10n.dart';
+
 class BehaviorTestSpec {
   const BehaviorTestSpec({
     required this.kind,
@@ -12,31 +14,31 @@ class BehaviorTestSpec {
     required this.content,
   });
 
-  factory BehaviorTestSpec.forKind(String kind) {
+  factory BehaviorTestSpec.forKind(String kind, AppLocalizations l10n) {
     return switch (kind) {
-      'overlay_message' => const BehaviorTestSpec(
+      'overlay_message' => BehaviorTestSpec(
         kind: 'overlay_message',
         delivery: 'overlay',
-        label: '悬浮短句',
-        content: '（测试）我在屏幕边等你一下。',
+        label: l10n.overlayLabel,
+        content: l10n.behaviorOverlayTestMessage,
       ),
-      'lock_screen_confirm' => const BehaviorTestSpec(
+      'lock_screen_confirm' => BehaviorTestSpec(
         kind: 'lock_screen_confirm',
         delivery: 'overlay',
-        label: '锁屏确认',
-        content: '（测试）要我替你锁屏吗？点确认才会执行。',
+        label: l10n.lockConfirmLabel,
+        content: l10n.behaviorLockTestMessage,
       ),
-      'takeout_overlay' => const BehaviorTestSpec(
+      'takeout_overlay' => BehaviorTestSpec(
         kind: 'takeout_overlay',
         delivery: 'overlay',
-        label: '外卖确认',
-        content: '（测试）要不要打开外卖页看一眼？不会自动下单。',
+        label: l10n.takeoutConfirmLabel,
+        content: l10n.behaviorTakeoutTestMessage,
       ),
-      _ => const BehaviorTestSpec(
+      _ => BehaviorTestSpec(
         kind: 'notify',
         delivery: 'notification',
-        label: '普通通知',
-        content: '（测试）这是一条普通主动消息。',
+        label: l10n.normalNotificationLabel,
+        content: l10n.behaviorNotificationTestMessage,
       ),
     };
   }
@@ -464,6 +466,7 @@ class ChatMessage {
   final String time;
   final bool animate;
   final List<NarrativeSegment>? segments;
+
   /// 用于「回复」引用(reply_to.ts);历史消息没有真实 epoch,退化为加载时刻——
   /// 只影响后端相对时间前缀的措辞("今天"而非准确日期),不影响功能正确性。
   final DateTime timestamp;
@@ -1555,18 +1558,6 @@ class ActivityCurrentState {
   final String? arc;
 }
 
-const Map<String, String> _moodLabels = {
-  'neutral': '平静',
-  'gentle': '温柔',
-  'thinking': '在想事情',
-  'happy': '开心',
-  'sad': '有点难过',
-  'surprised': '有点惊讶',
-  'angry': '有点生气',
-  'sleepy': '困困的',
-  'yandere': '情绪很浓',
-};
-
 class MoodStateSnapshot {
   const MoodStateSnapshot({required this.current, required this.intensity});
 
@@ -1582,8 +1573,6 @@ class MoodStateSnapshot {
 
   final String current;
   final double intensity;
-
-  String get label => _moodLabels[current] ?? current;
 }
 
 class DreamStats {
@@ -1631,13 +1620,4 @@ String _formatDateTime(DateTime date) {
   final hour = date.hour.toString().padLeft(2, '0');
   final minute = date.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
-}
-
-String _weekdayLabel(int weekday) {
-  const labels = ['一', '二', '三', '四', '五', '六', '日'];
-  return labels[(weekday - 1).clamp(0, labels.length - 1)];
-}
-
-String formatTodayLine(DateTime date) {
-  return '今日 · ${date.month}月${date.day}日 · 周${_weekdayLabel(date.weekday)} · ${_formatDateTime(date)}';
 }

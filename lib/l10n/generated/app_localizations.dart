@@ -2911,6 +2911,30 @@ abstract class AppLocalizations {
   /// **'写入后端 mobile queue，并立刻轮询一次；悬浮/确认类会在前台直接弹。'**
   String get behaviorTestDescription;
 
+  /// No description provided for @behaviorOverlayTestMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'（测试）我在屏幕边等你一下。'**
+  String get behaviorOverlayTestMessage;
+
+  /// No description provided for @behaviorLockTestMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'（测试）要我替你锁屏吗？点确认才会执行。'**
+  String get behaviorLockTestMessage;
+
+  /// No description provided for @behaviorTakeoutTestMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'（测试）要不要打开外卖页看一眼？不会自动下单。'**
+  String get behaviorTakeoutTestMessage;
+
+  /// No description provided for @behaviorNotificationTestMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'（测试）这是一条普通主动消息。'**
+  String get behaviorNotificationTestMessage;
+
   /// No description provided for @notificationLabel.
   ///
   /// In zh, this message translates to:
@@ -3312,6 +3336,72 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'检测中'**
   String get checkingStatus;
+
+  /// No description provided for @notRunStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'未运行'**
+  String get notRunStatus;
+
+  /// No description provided for @chatTodayLine.
+  ///
+  /// In zh, this message translates to:
+  /// **'今日 · {date} · {time}'**
+  String chatTodayLine(String date, String time);
+
+  /// No description provided for @moodNeutral.
+  ///
+  /// In zh, this message translates to:
+  /// **'平静'**
+  String get moodNeutral;
+
+  /// No description provided for @moodGentle.
+  ///
+  /// In zh, this message translates to:
+  /// **'温柔'**
+  String get moodGentle;
+
+  /// No description provided for @moodThinking.
+  ///
+  /// In zh, this message translates to:
+  /// **'在想事情'**
+  String get moodThinking;
+
+  /// No description provided for @moodHappy.
+  ///
+  /// In zh, this message translates to:
+  /// **'开心'**
+  String get moodHappy;
+
+  /// No description provided for @moodSad.
+  ///
+  /// In zh, this message translates to:
+  /// **'有点难过'**
+  String get moodSad;
+
+  /// No description provided for @moodSurprised.
+  ///
+  /// In zh, this message translates to:
+  /// **'有点惊讶'**
+  String get moodSurprised;
+
+  /// No description provided for @moodAngry.
+  ///
+  /// In zh, this message translates to:
+  /// **'有点生气'**
+  String get moodAngry;
+
+  /// No description provided for @moodSleepy.
+  ///
+  /// In zh, this message translates to:
+  /// **'困困的'**
+  String get moodSleepy;
+
+  /// No description provided for @moodYandere.
+  ///
+  /// In zh, this message translates to:
+  /// **'情绪很浓'**
+  String get moodYandere;
 
   /// No description provided for @oemBackgroundGuide.
   ///

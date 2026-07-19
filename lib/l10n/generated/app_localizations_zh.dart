@@ -1553,6 +1553,18 @@ class AppLocalizationsZh extends AppLocalizations {
       '写入后端 mobile queue，并立刻轮询一次；悬浮/确认类会在前台直接弹。';
 
   @override
+  String get behaviorOverlayTestMessage => '（测试）我在屏幕边等你一下。';
+
+  @override
+  String get behaviorLockTestMessage => '（测试）要我替你锁屏吗？点确认才会执行。';
+
+  @override
+  String get behaviorTakeoutTestMessage => '（测试）要不要打开外卖页看一眼？不会自动下单。';
+
+  @override
+  String get behaviorNotificationTestMessage => '（测试）这是一条普通主动消息。';
+
+  @override
   String get notificationLabel => '通知';
 
   @override
@@ -1779,6 +1791,41 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get checkingStatus => '检测中';
+
+  @override
+  String get notRunStatus => '未运行';
+
+  @override
+  String chatTodayLine(String date, String time) {
+    return '今日 · $date · $time';
+  }
+
+  @override
+  String get moodNeutral => '平静';
+
+  @override
+  String get moodGentle => '温柔';
+
+  @override
+  String get moodThinking => '在想事情';
+
+  @override
+  String get moodHappy => '开心';
+
+  @override
+  String get moodSad => '有点难过';
+
+  @override
+  String get moodSurprised => '有点惊讶';
+
+  @override
+  String get moodAngry => '有点生气';
+
+  @override
+  String get moodSleepy => '困困的';
+
+  @override
+  String get moodYandere => '情绪很浓';
 
   @override
   String oemBackgroundGuide(String appName) {
