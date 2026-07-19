@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../models/app_models.dart';
+import '../l10n/l10n.dart';
 import '../services/backend_client.dart';
 
 import '../widgets/chess_widgets.dart';
@@ -34,6 +35,7 @@ class ActivityHomePage extends StatefulWidget {
 class _ActivityHomePageState extends State<ActivityHomePage> {
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final c = widget.c;
     return Container(
       color: c.characterDeep,
@@ -41,8 +43,8 @@ class _ActivityHomePageState extends State<ActivityHomePage> {
         children: [
           PageHeader(
             c: c,
-            title: '活动',
-            eyebrow: '和他一起做点什么',
+            title: l10n.activityTitle,
+            eyebrow: l10n.activityEyebrow,
             onBack: widget.onBack,
             trailing: '',
             darkHeader: true,
@@ -53,59 +55,59 @@ class _ActivityHomePageState extends State<ActivityHomePage> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
-            _ActivityCard(
-              c: c,
-              icon: Icons.menu_book_rounded,
-              title: '一起看书',
-              subtitle: '上传 PDF，翻页时聊两句',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => ReadingScreen(
+                  _ActivityCard(
                     c: c,
-                    backend: widget.backend,
-                    requireToken: widget.requireToken,
+                    icon: Icons.menu_book_rounded,
+                    title: l10n.activityReadingTitle,
+                    subtitle: l10n.activityReadingSubtitle,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ReadingScreen(
+                          c: c,
+                          backend: widget.backend,
+                          requireToken: widget.requireToken,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _ActivityCard(
-              c: c,
-              icon: Icons.grid_4x4_rounded,
-              title: '五子棋',
-              subtitle: '对战角色 AI，触屏落子',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => GomokuScreen(
+                  const SizedBox(height: 12),
+                  _ActivityCard(
                     c: c,
-                    backend: widget.backend,
-                    requireToken: widget.requireToken,
+                    icon: Icons.grid_4x4_rounded,
+                    title: l10n.activityGomokuTitle,
+                    subtitle: l10n.activityGomokuSubtitle,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => GomokuScreen(
+                          c: c,
+                          backend: widget.backend,
+                          requireToken: widget.requireToken,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _ActivityCard(
-              c: c,
-              icon: Icons.castle_rounded,
-              title: '国际象棋',
-              subtitle: '对战角色 AI',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => ChessScreen(
+                  const SizedBox(height: 12),
+                  _ActivityCard(
                     c: c,
-                    backend: widget.backend,
-                    requireToken: widget.requireToken,
+                    icon: Icons.castle_rounded,
+                    title: l10n.activityChessTitle,
+                    subtitle: l10n.activityChessSubtitle,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ChessScreen(
+                          c: c,
+                          backend: widget.backend,
+                          requireToken: widget.requireToken,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   _ActivityCard(
                     c: c,
                     icon: Icons.nightlight_round,
-                    title: '梦境预构',
-                    subtitle: '出发前先聊聊今晚想做什么梦',
+                    title: l10n.activityDreamBuildTitle,
+                    subtitle: l10n.activityDreamBuildSubtitle,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => DreamSeedScreen(
@@ -170,10 +172,7 @@ class _ActivityCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: serif(c, 16, weight: FontWeight.w600),
-                  ),
+                  Text(title, style: serif(c, 16, weight: FontWeight.w600)),
                   const SizedBox(height: 2),
                   Text(subtitle, style: mono(c, 10, color: c.ink3)),
                 ],
@@ -298,7 +297,7 @@ class _ActivityChatSheetState extends State<ActivityChatSheet> {
               child: all.isEmpty
                   ? Center(
                       child: Text(
-                        '说点什么，聊聊现在的进展',
+                        context.l10n.activityChatPrompt,
                         style: mono(c, 11, color: c.ink3),
                       ),
                     )
@@ -321,8 +320,7 @@ class _ActivityChatSheetState extends State<ActivityChatSheet> {
                               vertical: 8,
                             ),
                             constraints: BoxConstraints(
-                              maxWidth:
-                                  MediaQuery.sizeOf(context).width * 0.72,
+                              maxWidth: MediaQuery.sizeOf(context).width * 0.72,
                             ),
                             decoration: BoxDecoration(
                               color: m.mine ? c.send : c.surfaceSoft,
@@ -353,7 +351,7 @@ class _ActivityChatSheetState extends State<ActivityChatSheet> {
                       style: serif(c, 14),
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: '说点什么…',
+                        hintText: context.l10n.saySomethingHint,
                         hintStyle: serif(c, 14, color: c.ink3),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -479,6 +477,7 @@ class _DreamSeedScreenState extends State<DreamSeedScreen> {
   Future<String?> _send(String message) async {
     final sessionId = _state?.sessionId;
     if (sessionId == null) return null;
+    final l10n = context.l10n;
     try {
       final result = await widget.backend.dreamSeedChat(
         sessionId: sessionId,
@@ -487,12 +486,13 @@ class _DreamSeedScreenState extends State<DreamSeedScreen> {
       );
       return result.reply;
     } on BackendException catch (e) {
-      return '（发送失败：${e.message}）';
+      return l10n.sendFailedMessage(e.message);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final c = widget.c;
     final state = _state;
     final active = state?.active == true && state?.sessionId != null;
@@ -501,12 +501,15 @@ class _DreamSeedScreenState extends State<DreamSeedScreen> {
       appBar: AppBar(
         backgroundColor: c.surface,
         foregroundColor: c.ink1,
-        title: Text('梦境预构', style: serif(c, 16, weight: FontWeight.w600)),
+        title: Text(
+          l10n.activityDreamBuildTitle,
+          style: serif(c, 16, weight: FontWeight.w600),
+        ),
         actions: [
           if (active)
             TextButton(
               onPressed: _loading ? null : () => unawaited(_close()),
-              child: Text('结束', style: mono(c, 11, color: c.danger)),
+              child: Text(l10n.endAction, style: mono(c, 11, color: c.danger)),
             ),
         ],
       ),
@@ -514,9 +517,7 @@ class _DreamSeedScreenState extends State<DreamSeedScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: _loading && state == null
-              ? Center(
-                  child: CircularProgressIndicator(color: c.character),
-                )
+              ? Center(child: CircularProgressIndicator(color: c.character))
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -526,14 +527,17 @@ class _DreamSeedScreenState extends State<DreamSeedScreen> {
                     ],
                     if (!active) ...[
                       Text(
-                        '还没开始预构梦境。开始后可以先跟他聊聊今晚想梦到什么，'
-                        '结束时会把这段对话浓缩成一个种子，供入梦时参考。',
-                        style: serif(c, 13.5, color: c.ink2).copyWith(height: 1.6),
+                        l10n.dreamBuildIntro,
+                        style: serif(
+                          c,
+                          13.5,
+                          color: c.ink2,
+                        ).copyWith(height: 1.6),
                       ),
                       const SizedBox(height: 20),
                       FilledButton(
                         onPressed: _loading ? null : () => unawaited(_start()),
-                        child: const Text('开始预构'),
+                        child: Text(l10n.dreamBuildStart),
                       ),
                     ] else ...[
                       if (state?.hasSeed == true)
@@ -555,13 +559,13 @@ class _DreamSeedScreenState extends State<DreamSeedScreen> {
                           ActivityChatSheet.open(
                             context: context,
                             c: c,
-                            title: '预构对话',
+                            title: l10n.dreamBuildChatTitle,
                             messages: _history,
                             onSend: _send,
                           ),
                         ),
                         icon: const Icon(Icons.chat_bubble_outline_rounded),
-                        label: const Text('打开对话'),
+                        label: Text(l10n.openChatAction),
                       ),
                     ],
                   ],

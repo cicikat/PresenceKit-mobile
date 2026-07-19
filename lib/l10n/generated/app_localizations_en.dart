@@ -445,4 +445,346 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsThinClientNotice =>
       'The mobile client handles chat, notifications, overlays and local display; personality, memory and scheduling remain on the backend.';
+
+  @override
+  String get localDeviceLabel => 'Local';
+
+  @override
+  String get refreshAction => 'Refresh';
+
+  @override
+  String get loadingAction => 'Loading…';
+
+  @override
+  String get profileTitle => 'Character profile';
+
+  @override
+  String profileEyebrow(String name) {
+    return '$name · Local display';
+  }
+
+  @override
+  String get profileAvatarConfigured => 'Local avatar configured';
+
+  @override
+  String get profileAvatarDefault => 'Using the default letter avatar';
+
+  @override
+  String get profileNameAction => 'Display name';
+
+  @override
+  String get profileAvatarAction => 'Avatar';
+
+  @override
+  String get profileDefaultAction => 'Default';
+
+  @override
+  String get profileNowSection => 'Right now';
+
+  @override
+  String get profileNoActivity => 'Nothing in particular right now';
+
+  @override
+  String profileMoodStatus(String label, int percent) {
+    return 'Mood: $label ($percent%)';
+  }
+
+  @override
+  String get profileLocalNameTitle => 'Local display name';
+
+  @override
+  String get profileDefaultCharacterName => 'Default character name';
+
+  @override
+  String get profileLocalNameBody =>
+      'Only affects display on this phone: top bar, drawer, preferences and HIM chat bubbles. It is not written to the backend or the core personality configuration.';
+
+  @override
+  String get profileAvatarScopeTitle => 'Avatar scope';
+
+  @override
+  String get profileDefaultAvatar => 'Default avatar';
+
+  @override
+  String get profileAvatarScopeBody =>
+      'The avatar is stored in the app\'s private directory and used only as a local mobile avatar. It is not uploaded to the backend or synced to other clients.';
+
+  @override
+  String get profileRealityCardTitle => 'Reality character card';
+
+  @override
+  String get profileRealityCardBody =>
+      'Switching changes the personality card used by the main chat. The backend saves it and syncs it to other clients.';
+
+  @override
+  String get profileCurrentCardLabel => 'Current character card';
+
+  @override
+  String get profileLoadCards => 'Load character cards';
+
+  @override
+  String get profileSyncBoundaryTitle => 'Sync boundary';
+
+  @override
+  String get profileSyncBoundaryValue => 'Mobile display override';
+
+  @override
+  String get profileSyncBoundaryBody =>
+      'If local names are synced to the backend later, that should use a separate confirmation action. This profile remains a thin-client setting to avoid changing core configuration by mistake.';
+
+  @override
+  String get profileDisplayLocationTitle => 'Display locations';
+
+  @override
+  String get profileDisplayLocationValue => 'UI updated';
+
+  @override
+  String profileDisplayLocationBody(String name) {
+    return 'The top bar, drawer, preferences and $name\'s message avatar all use this local profile. Your own avatar remains separate.';
+  }
+
+  @override
+  String profileFooterNotice(String name) {
+    return 'This page only manages the mobile thin client\'s visual identity. $name\'s core personality, memory and scheduling remain on the backend.';
+  }
+
+  @override
+  String get activityTitle => 'Activities';
+
+  @override
+  String get activityEyebrow => 'Do something together';
+
+  @override
+  String get activityReadingTitle => 'Read together';
+
+  @override
+  String get activityReadingSubtitle =>
+      'Upload a PDF and chat while turning pages';
+
+  @override
+  String get activityGomokuTitle => 'Gomoku';
+
+  @override
+  String get activityGomokuSubtitle =>
+      'Play against the character AI by tapping the board';
+
+  @override
+  String get activityChessTitle => 'Chess';
+
+  @override
+  String get activityChessSubtitle => 'Play against the character AI';
+
+  @override
+  String get activityDreamBuildTitle => 'Dream setup';
+
+  @override
+  String get activityDreamBuildSubtitle =>
+      'Talk about tonight\'s dream before you leave';
+
+  @override
+  String get activityChatPrompt => 'Say something about how it\'s going';
+
+  @override
+  String get saySomethingHint => 'Say something…';
+
+  @override
+  String sendFailedMessage(String error) {
+    return '(Send failed: $error)';
+  }
+
+  @override
+  String get endAction => 'End';
+
+  @override
+  String get dreamBuildIntro =>
+      'Dream setup has not started yet. Once started, you can talk about what you want to dream tonight. The conversation becomes a seed when you finish.';
+
+  @override
+  String get dreamBuildStart => 'Start setup';
+
+  @override
+  String get dreamBuildChatTitle => 'Setup chat';
+
+  @override
+  String get openChatAction => 'Open chat';
+
+  @override
+  String get diaryAllFilter => 'All';
+
+  @override
+  String get diaryTitle => 'Diary';
+
+  @override
+  String diaryEyebrow(String name) {
+    return '$name · Private writing';
+  }
+
+  @override
+  String get syncingStatus => 'Syncing';
+
+  @override
+  String get syncedStatus => 'Synced';
+
+  @override
+  String get diarySearchHint => 'Search · Keyword / date / mood';
+
+  @override
+  String get retryAction => 'Retry';
+
+  @override
+  String get diaryLoadingList => 'Loading diary entries from the backend…';
+
+  @override
+  String get diaryEmpty => 'He has not started writing a diary yet.';
+
+  @override
+  String get diaryNoResults => 'No matching diary entries.';
+
+  @override
+  String diaryRecentRefreshError(String error) {
+    return 'Most recent refresh failed: $error';
+  }
+
+  @override
+  String get diaryOpenToLoad => 'Open an entry to load its content.';
+
+  @override
+  String get diaryTapToLoad => 'Tap to load content';
+
+  @override
+  String get loadingStatus => 'Loading…';
+
+  @override
+  String get noData => 'No data';
+
+  @override
+  String loadFailedMessage(String error) {
+    return 'Load failed: $error';
+  }
+
+  @override
+  String get gardenTitle => 'Companion garden';
+
+  @override
+  String gardenEyebrow(String name) {
+    return '$name · State garden';
+  }
+
+  @override
+  String get gardenShortTitle => 'Garden';
+
+  @override
+  String get gardenLoadingDescription =>
+      'Loading garden state from the backend.';
+
+  @override
+  String get gardenErrorDescription =>
+      'Garden sync failed. You can refresh again later.';
+
+  @override
+  String get gardenLoadedDescription =>
+      'Garden state loaded. It keeps growing while you are away.';
+
+  @override
+  String get gardenNotLoadedDescription =>
+      'No garden state has been loaded yet.';
+
+  @override
+  String get gardenDominantMood => 'Right now · Dominant mood';
+
+  @override
+  String get waitingStatus => 'Waiting';
+
+  @override
+  String get gardenWaitingData => 'Waiting for garden data';
+
+  @override
+  String get gardenSyncing => 'Syncing garden';
+
+  @override
+  String get syncFailedStatus => 'Sync failed';
+
+  @override
+  String get gardenAutoRefresh => 'Backend · Refreshes every 30 seconds';
+
+  @override
+  String get notSyncedStatus => 'Not synced';
+
+  @override
+  String get gardenRefreshTooltip => 'Refresh garden';
+
+  @override
+  String get gardenSyncingMessage => 'Syncing garden…';
+
+  @override
+  String get gardenEmpty => 'No garden data';
+
+  @override
+  String get gardenWaitingSlot =>
+      'Waiting for the backend to return a garden slot.';
+
+  @override
+  String gardenStageSummary(
+    String mood,
+    int percent,
+    String harvest,
+    String vase,
+  ) {
+    return '$mood is closest to the next stage · $percent% · Harvest $harvest · Vase $vase';
+  }
+
+  @override
+  String dreamHeaderTitle(String name) {
+    return 'Dream · $name';
+  }
+
+  @override
+  String get dreamInProgress => 'In progress';
+
+  @override
+  String get dreamReady => 'DREAM · READY';
+
+  @override
+  String get dreamWakeAction => 'Wake up';
+
+  @override
+  String dreamConnectionError(String error) {
+    return 'Dream connection error · $error';
+  }
+
+  @override
+  String get dreamResponding => 'The dream is responding';
+
+  @override
+  String get dreamStability => 'Stability';
+
+  @override
+  String get dreamDepth => 'Depth';
+
+  @override
+  String get dreamFindingEntrance => 'Finding the dream entrance';
+
+  @override
+  String get dreamEntranceOpen => 'The dream entrance is open';
+
+  @override
+  String get dreamEntranceDescription =>
+      'Inside, the conversation pauses somewhere lighter and slower. This message flow is separate from the main chat.';
+
+  @override
+  String dreamValidCount(int count) {
+    return '$count valid dreams so far';
+  }
+
+  @override
+  String get dreamEntering => 'Falling in…';
+
+  @override
+  String get dreamEnterAction => 'Enter dream';
+
+  @override
+  String get dreamComposerHint => 'Write something here…';
+
+  @override
+  String get dreamWaitingBehindDoor => 'The dream is waiting behind the door';
 }

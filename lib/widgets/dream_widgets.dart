@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import 'package:flutter/services.dart';
 import '../controllers/dream_controller.dart';
 import '../models/app_models.dart';
@@ -57,7 +58,7 @@ class DreamPage extends StatelessWidget {
                 icon: Icons.menu_rounded,
                 onPressed: onOpenDrawer,
                 onDark: true,
-                tooltip: '抽屉',
+                tooltip: context.l10n.drawerTooltip,
               ),
               const SizedBox(width: 8),
               YxAvatar(
@@ -73,7 +74,7 @@ class DreamPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '梦 · $profileDisplayName',
+                      context.l10n.dreamHeaderTitle(profileDisplayName),
                       style: serif(
                         c,
                         18,
@@ -87,7 +88,9 @@ class DreamPage extends StatelessWidget {
                         LiveDot(color: active ? c.ok : c.ink4),
                         const SizedBox(width: 6),
                         Text(
-                          active ? '进行中' : 'DREAM · READY',
+                          active
+                              ? context.l10n.dreamInProgress
+                              : context.l10n.dreamReady,
                           style: mono(
                             c,
                             9.5,
@@ -102,7 +105,7 @@ class DreamPage extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onWake,
                 icon: const Icon(Icons.wb_sunny_outlined, size: 15),
-                label: const Text('醒来'),
+                label: Text(context.l10n.dreamWakeAction),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: c.characterOn,
                   side: BorderSide(
@@ -120,7 +123,11 @@ class DreamPage extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(12, 14, 12, 22),
                   children: [
                     DreamStateStrip(c: c, state: state!),
-                    if (error != null) MetaLine(c: c, text: '梦境连接异常 · $error'),
+                    if (error != null)
+                      MetaLine(
+                        c: c,
+                        text: context.l10n.dreamConnectionError(error),
+                      ),
                     const SizedBox(height: 14),
                     for (final message in messages)
                       if (message.role == 'system')
@@ -156,7 +163,7 @@ class DreamPage extends StatelessWidget {
                     if (sending)
                       TypingHimMessage(
                         c: c,
-                        time: '梦在回应',
+                        time: context.l10n.dreamResponding,
                         prefs: prefs,
                         profileDisplayName: profileDisplayName,
                         profileAvatarBytes: profileAvatarBytes,
@@ -210,8 +217,14 @@ class DreamStateStrip extends StatelessWidget {
             runSpacing: 6,
             children: [
               YxTag(c: c, text: state.emotionLabel, variant: 'solid'),
-              YxTag(c: c, text: metric('稳定度', state.dreamStability)),
-              YxTag(c: c, text: metric('深度', state.dreamDepth)),
+              YxTag(
+                c: c,
+                text: metric(context.l10n.dreamStability, state.dreamStability),
+              ),
+              YxTag(
+                c: c,
+                text: metric(context.l10n.dreamDepth, state.dreamDepth),
+              ),
             ],
           ),
         ],
@@ -249,13 +262,15 @@ class DreamEntrance extends StatelessWidget {
             Icon(Icons.bedtime_outlined, size: 42, color: c.character),
             const SizedBox(height: 16),
             Text(
-              loading ? '正在寻找梦境入口' : '梦境入口已经打开',
+              loading
+                  ? context.l10n.dreamFindingEntrance
+                  : context.l10n.dreamEntranceOpen,
               textAlign: TextAlign.center,
               style: serif(c, 24, weight: FontWeight.w600),
             ),
             const SizedBox(height: 9),
             Text(
-              '进入后，对话会暂时停在更轻、更慢的地方。这里与主对话消息流彼此独立。',
+              context.l10n.dreamEntranceDescription,
               textAlign: TextAlign.center,
               style: serif(c, 14, color: c.ink2),
             ),
@@ -269,7 +284,10 @@ class DreamEntrance extends StatelessWidget {
             ],
             if (stats != null && stats!.totalValid > 0) ...[
               const SizedBox(height: 14),
-              YxTag(c: c, text: '已经做过 ${stats!.totalValid} 次有效的梦'),
+              YxTag(
+                c: c,
+                text: context.l10n.dreamValidCount(stats!.totalValid),
+              ),
             ],
             const SizedBox(height: 20),
             FilledButton.icon(
@@ -278,7 +296,11 @@ class DreamEntrance extends StatelessWidget {
                 entering ? Icons.hourglass_top_rounded : Icons.bedtime_rounded,
                 size: 17,
               ),
-              label: Text(entering ? '坠入中…' : '进入梦境'),
+              label: Text(
+                entering
+                    ? context.l10n.dreamEntering
+                    : context.l10n.dreamEnterAction,
+              ),
             ),
           ],
         ),
@@ -402,14 +424,15 @@ class DreamSegmentedMessage extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(36, 2, 12, 2),
           child: Text(
             segment.text,
-            style: serif(
-              c,
-              weak ? prefs.fontSize - 1 : prefs.fontSize,
-              color: weak ? c.ink3 : c.ink2,
-            ).copyWith(
-              fontStyle: FontStyle.italic,
-              letterSpacing: weak ? 0.4 : null,
-            ),
+            style:
+                serif(
+                  c,
+                  weak ? prefs.fontSize - 1 : prefs.fontSize,
+                  color: weak ? c.ink3 : c.ink2,
+                ).copyWith(
+                  fontStyle: FontStyle.italic,
+                  letterSpacing: weak ? 0.4 : null,
+                ),
           ),
         );
       case 'env':
@@ -473,7 +496,9 @@ class _DreamComposerState extends State<DreamComposer> {
               onSubmitted: (_) => _send(),
               style: serif(widget.c, 15),
               decoration: InputDecoration(
-                hintText: widget.enabled ? '在这儿写点什么…' : '梦在门后等待',
+                hintText: widget.enabled
+                    ? context.l10n.dreamComposerHint
+                    : context.l10n.dreamWaitingBehindDoor,
                 filled: true,
                 fillColor: widget.c.surface,
                 border: OutlineInputBorder(
@@ -495,7 +520,11 @@ class _DreamComposerState extends State<DreamComposer> {
                     _controller.text.trim().isNotEmpty
                 ? _send
                 : null,
-            child: Text(widget.sending ? '等待' : '寄出'),
+            child: Text(
+              widget.sending
+                  ? context.l10n.waitAction
+                  : context.l10n.sendAction,
+            ),
           ),
         ],
       ),

@@ -427,4 +427,336 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsThinClientNotice => '手机端负责聊天、通知、悬浮窗和本机显示；人格、记忆与调度仍由后端维护。';
+
+  @override
+  String get localDeviceLabel => '本机';
+
+  @override
+  String get refreshAction => '刷新';
+
+  @override
+  String get loadingAction => '正在读取…';
+
+  @override
+  String get profileTitle => '角色资料';
+
+  @override
+  String profileEyebrow(String name) {
+    return '$name · 本机显示';
+  }
+
+  @override
+  String get profileAvatarConfigured => '本机头像已设置';
+
+  @override
+  String get profileAvatarDefault => '使用默认字母头像';
+
+  @override
+  String get profileNameAction => '备注名';
+
+  @override
+  String get profileAvatarAction => '头像';
+
+  @override
+  String get profileDefaultAction => '默认';
+
+  @override
+  String get profileNowSection => '此刻';
+
+  @override
+  String get profileNoActivity => '暂时没有特别的动向';
+
+  @override
+  String profileMoodStatus(String label, int percent) {
+    return '心情：$label（$percent%）';
+  }
+
+  @override
+  String get profileLocalNameTitle => '本机备注名';
+
+  @override
+  String get profileDefaultCharacterName => '默认角色名';
+
+  @override
+  String get profileLocalNameBody =>
+      '只影响这台手机里的显示：顶部栏、抽屉、偏好页和 HIM 聊天气泡。不会写回后端，也不会改核心人格配置。';
+
+  @override
+  String get profileAvatarScopeTitle => '头像作用域';
+
+  @override
+  String get profileDefaultAvatar => '默认头像';
+
+  @override
+  String get profileAvatarScopeBody =>
+      '头像保存在 App 私有目录，只作为手机端本地头像源。当前不会上传到后端，也不会同步到桌宠或其他客户端。';
+
+  @override
+  String get profileRealityCardTitle => 'Reality 角色卡';
+
+  @override
+  String get profileRealityCardBody => '切换后会影响主对话使用的人格卡；由后端保存并同步到其他客户端。';
+
+  @override
+  String get profileCurrentCardLabel => '当前角色卡';
+
+  @override
+  String get profileLoadCards => '读取角色卡';
+
+  @override
+  String get profileSyncBoundaryTitle => '同步边界';
+
+  @override
+  String get profileSyncBoundaryValue => '手机端覆盖显示';
+
+  @override
+  String get profileSyncBoundaryBody =>
+      '后续如果要同步备注名到后端，建议单独做确认按钮；现在资料页保持轻客户端边界，避免误改核心配置。';
+
+  @override
+  String get profileDisplayLocationTitle => '显示位置';
+
+  @override
+  String get profileDisplayLocationValue => 'UI 已跟随';
+
+  @override
+  String profileDisplayLocationBody(String name) {
+    return '顶部栏、抽屉、偏好页和$name消息头像都会读取这份本机资料。用户自己的头像设置仍独立处理。';
+  }
+
+  @override
+  String profileFooterNotice(String name) {
+    return '这页只管理手机薄客户端的外观身份。$name的核心人格、记忆和调度仍然以后端为准。';
+  }
+
+  @override
+  String get activityTitle => '活动';
+
+  @override
+  String get activityEyebrow => '和他一起做点什么';
+
+  @override
+  String get activityReadingTitle => '一起看书';
+
+  @override
+  String get activityReadingSubtitle => '上传 PDF，翻页时聊两句';
+
+  @override
+  String get activityGomokuTitle => '五子棋';
+
+  @override
+  String get activityGomokuSubtitle => '对战角色 AI，触屏落子';
+
+  @override
+  String get activityChessTitle => '国际象棋';
+
+  @override
+  String get activityChessSubtitle => '对战角色 AI';
+
+  @override
+  String get activityDreamBuildTitle => '梦境预构';
+
+  @override
+  String get activityDreamBuildSubtitle => '出发前先聊聊今晚想做什么梦';
+
+  @override
+  String get activityChatPrompt => '说点什么，聊聊现在的进展';
+
+  @override
+  String get saySomethingHint => '说点什么…';
+
+  @override
+  String sendFailedMessage(String error) {
+    return '（发送失败：$error）';
+  }
+
+  @override
+  String get endAction => '结束';
+
+  @override
+  String get dreamBuildIntro =>
+      '还没开始预构梦境。开始后可以先跟他聊聊今晚想梦到什么，结束时会把这段对话浓缩成一个种子，供入梦时参考。';
+
+  @override
+  String get dreamBuildStart => '开始预构';
+
+  @override
+  String get dreamBuildChatTitle => '预构对话';
+
+  @override
+  String get openChatAction => '打开对话';
+
+  @override
+  String get diaryAllFilter => '全部';
+
+  @override
+  String get diaryTitle => '日记';
+
+  @override
+  String diaryEyebrow(String name) {
+    return '$name · 私写';
+  }
+
+  @override
+  String get syncingStatus => '同步中';
+
+  @override
+  String get syncedStatus => '已同步';
+
+  @override
+  String get diarySearchHint => '搜索 · 关键词 / 日期 / 心情';
+
+  @override
+  String get retryAction => '重试';
+
+  @override
+  String get diaryLoadingList => '正在从后端读取日记列表…';
+
+  @override
+  String get diaryEmpty => '他还没开始写日记。';
+
+  @override
+  String get diaryNoResults => '找不到对应的日记。';
+
+  @override
+  String diaryRecentRefreshError(String error) {
+    return '最近刷新失败：$error';
+  }
+
+  @override
+  String get diaryOpenToLoad => '点开条目后再读取正文。';
+
+  @override
+  String get diaryTapToLoad => '点击读取正文';
+
+  @override
+  String get loadingStatus => '加载中…';
+
+  @override
+  String get noData => '无数据';
+
+  @override
+  String loadFailedMessage(String error) {
+    return '加载失败：$error';
+  }
+
+  @override
+  String get gardenTitle => '陪伴花园';
+
+  @override
+  String gardenEyebrow(String name) {
+    return '$name · 状态花园';
+  }
+
+  @override
+  String get gardenShortTitle => '花园';
+
+  @override
+  String get gardenLoadingDescription => '正在读取后端花园状态。';
+
+  @override
+  String get gardenErrorDescription => '花园同步失败，稍后可以重新刷新。';
+
+  @override
+  String get gardenLoadedDescription => '已读取后端花园状态。它在你不看的时候，也在生长。';
+
+  @override
+  String get gardenNotLoadedDescription => '还没有读取到后端花园状态。';
+
+  @override
+  String get gardenDominantMood => '他现在 · 主导心境';
+
+  @override
+  String get waitingStatus => '等待';
+
+  @override
+  String get gardenWaitingData => '等待后端花园数据';
+
+  @override
+  String get gardenSyncing => '正在同步花园';
+
+  @override
+  String get syncFailedStatus => '同步失败';
+
+  @override
+  String get gardenAutoRefresh => '后端 · 每 30 秒自动刷新';
+
+  @override
+  String get notSyncedStatus => '尚未同步';
+
+  @override
+  String get gardenRefreshTooltip => '刷新花园';
+
+  @override
+  String get gardenSyncingMessage => '正在同步花园…';
+
+  @override
+  String get gardenEmpty => '暂无花园数据';
+
+  @override
+  String get gardenWaitingSlot => '等待后端返回花园槽位。';
+
+  @override
+  String gardenStageSummary(
+    String mood,
+    int percent,
+    String harvest,
+    String vase,
+  ) {
+    return '$mood 槽位最接近下一阶段 · $percent% · 收获 $harvest · 花瓶 $vase';
+  }
+
+  @override
+  String dreamHeaderTitle(String name) {
+    return '梦 · $name';
+  }
+
+  @override
+  String get dreamInProgress => '进行中';
+
+  @override
+  String get dreamReady => 'DREAM · READY';
+
+  @override
+  String get dreamWakeAction => '醒来';
+
+  @override
+  String dreamConnectionError(String error) {
+    return '梦境连接异常 · $error';
+  }
+
+  @override
+  String get dreamResponding => '梦在回应';
+
+  @override
+  String get dreamStability => '稳定度';
+
+  @override
+  String get dreamDepth => '深度';
+
+  @override
+  String get dreamFindingEntrance => '正在寻找梦境入口';
+
+  @override
+  String get dreamEntranceOpen => '梦境入口已经打开';
+
+  @override
+  String get dreamEntranceDescription => '进入后，对话会暂时停在更轻、更慢的地方。这里与主对话消息流彼此独立。';
+
+  @override
+  String dreamValidCount(int count) {
+    return '已经做过 $count 次有效的梦';
+  }
+
+  @override
+  String get dreamEntering => '坠入中…';
+
+  @override
+  String get dreamEnterAction => '进入梦境';
+
+  @override
+  String get dreamComposerHint => '在这儿写点什么…';
+
+  @override
+  String get dreamWaitingBehindDoor => '梦在门后等待';
 }

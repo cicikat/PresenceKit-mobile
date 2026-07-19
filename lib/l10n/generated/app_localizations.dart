@@ -883,6 +883,605 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'手机端负责聊天、通知、悬浮窗和本机显示；人格、记忆与调度仍由后端维护。'**
   String get settingsThinClientNotice;
+
+  /// No description provided for @localDeviceLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'本机'**
+  String get localDeviceLabel;
+
+  /// No description provided for @refreshAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'刷新'**
+  String get refreshAction;
+
+  /// No description provided for @loadingAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在读取…'**
+  String get loadingAction;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'角色资料'**
+  String get profileTitle;
+
+  /// No description provided for @profileEyebrow.
+  ///
+  /// In zh, this message translates to:
+  /// **'{name} · 本机显示'**
+  String profileEyebrow(String name);
+
+  /// No description provided for @profileAvatarConfigured.
+  ///
+  /// In zh, this message translates to:
+  /// **'本机头像已设置'**
+  String get profileAvatarConfigured;
+
+  /// No description provided for @profileAvatarDefault.
+  ///
+  /// In zh, this message translates to:
+  /// **'使用默认字母头像'**
+  String get profileAvatarDefault;
+
+  /// No description provided for @profileNameAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'备注名'**
+  String get profileNameAction;
+
+  /// No description provided for @profileAvatarAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'头像'**
+  String get profileAvatarAction;
+
+  /// No description provided for @profileDefaultAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认'**
+  String get profileDefaultAction;
+
+  /// No description provided for @profileNowSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'此刻'**
+  String get profileNowSection;
+
+  /// No description provided for @profileNoActivity.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时没有特别的动向'**
+  String get profileNoActivity;
+
+  /// No description provided for @profileMoodStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'心情：{label}（{percent}%）'**
+  String profileMoodStatus(String label, int percent);
+
+  /// No description provided for @profileLocalNameTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'本机备注名'**
+  String get profileLocalNameTitle;
+
+  /// No description provided for @profileDefaultCharacterName.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认角色名'**
+  String get profileDefaultCharacterName;
+
+  /// No description provided for @profileLocalNameBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'只影响这台手机里的显示：顶部栏、抽屉、偏好页和 HIM 聊天气泡。不会写回后端，也不会改核心人格配置。'**
+  String get profileLocalNameBody;
+
+  /// No description provided for @profileAvatarScopeTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'头像作用域'**
+  String get profileAvatarScopeTitle;
+
+  /// No description provided for @profileDefaultAvatar.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认头像'**
+  String get profileDefaultAvatar;
+
+  /// No description provided for @profileAvatarScopeBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'头像保存在 App 私有目录，只作为手机端本地头像源。当前不会上传到后端，也不会同步到桌宠或其他客户端。'**
+  String get profileAvatarScopeBody;
+
+  /// No description provided for @profileRealityCardTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'Reality 角色卡'**
+  String get profileRealityCardTitle;
+
+  /// No description provided for @profileRealityCardBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'切换后会影响主对话使用的人格卡；由后端保存并同步到其他客户端。'**
+  String get profileRealityCardBody;
+
+  /// No description provided for @profileCurrentCardLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前角色卡'**
+  String get profileCurrentCardLabel;
+
+  /// No description provided for @profileLoadCards.
+  ///
+  /// In zh, this message translates to:
+  /// **'读取角色卡'**
+  String get profileLoadCards;
+
+  /// No description provided for @profileSyncBoundaryTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'同步边界'**
+  String get profileSyncBoundaryTitle;
+
+  /// No description provided for @profileSyncBoundaryValue.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机端覆盖显示'**
+  String get profileSyncBoundaryValue;
+
+  /// No description provided for @profileSyncBoundaryBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'后续如果要同步备注名到后端，建议单独做确认按钮；现在资料页保持轻客户端边界，避免误改核心配置。'**
+  String get profileSyncBoundaryBody;
+
+  /// No description provided for @profileDisplayLocationTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示位置'**
+  String get profileDisplayLocationTitle;
+
+  /// No description provided for @profileDisplayLocationValue.
+  ///
+  /// In zh, this message translates to:
+  /// **'UI 已跟随'**
+  String get profileDisplayLocationValue;
+
+  /// No description provided for @profileDisplayLocationBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'顶部栏、抽屉、偏好页和{name}消息头像都会读取这份本机资料。用户自己的头像设置仍独立处理。'**
+  String profileDisplayLocationBody(String name);
+
+  /// No description provided for @profileFooterNotice.
+  ///
+  /// In zh, this message translates to:
+  /// **'这页只管理手机薄客户端的外观身份。{name}的核心人格、记忆和调度仍然以后端为准。'**
+  String profileFooterNotice(String name);
+
+  /// No description provided for @activityTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'活动'**
+  String get activityTitle;
+
+  /// No description provided for @activityEyebrow.
+  ///
+  /// In zh, this message translates to:
+  /// **'和他一起做点什么'**
+  String get activityEyebrow;
+
+  /// No description provided for @activityReadingTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'一起看书'**
+  String get activityReadingTitle;
+
+  /// No description provided for @activityReadingSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'上传 PDF，翻页时聊两句'**
+  String get activityReadingSubtitle;
+
+  /// No description provided for @activityGomokuTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'五子棋'**
+  String get activityGomokuTitle;
+
+  /// No description provided for @activityGomokuSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'对战角色 AI，触屏落子'**
+  String get activityGomokuSubtitle;
+
+  /// No description provided for @activityChessTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'国际象棋'**
+  String get activityChessTitle;
+
+  /// No description provided for @activityChessSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'对战角色 AI'**
+  String get activityChessSubtitle;
+
+  /// No description provided for @activityDreamBuildTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境预构'**
+  String get activityDreamBuildTitle;
+
+  /// No description provided for @activityDreamBuildSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'出发前先聊聊今晚想做什么梦'**
+  String get activityDreamBuildSubtitle;
+
+  /// No description provided for @activityChatPrompt.
+  ///
+  /// In zh, this message translates to:
+  /// **'说点什么，聊聊现在的进展'**
+  String get activityChatPrompt;
+
+  /// No description provided for @saySomethingHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'说点什么…'**
+  String get saySomethingHint;
+
+  /// No description provided for @sendFailedMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'（发送失败：{error}）'**
+  String sendFailedMessage(String error);
+
+  /// No description provided for @endAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'结束'**
+  String get endAction;
+
+  /// No description provided for @dreamBuildIntro.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没开始预构梦境。开始后可以先跟他聊聊今晚想梦到什么，结束时会把这段对话浓缩成一个种子，供入梦时参考。'**
+  String get dreamBuildIntro;
+
+  /// No description provided for @dreamBuildStart.
+  ///
+  /// In zh, this message translates to:
+  /// **'开始预构'**
+  String get dreamBuildStart;
+
+  /// No description provided for @dreamBuildChatTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'预构对话'**
+  String get dreamBuildChatTitle;
+
+  /// No description provided for @openChatAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开对话'**
+  String get openChatAction;
+
+  /// No description provided for @diaryAllFilter.
+  ///
+  /// In zh, this message translates to:
+  /// **'全部'**
+  String get diaryAllFilter;
+
+  /// No description provided for @diaryTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'日记'**
+  String get diaryTitle;
+
+  /// No description provided for @diaryEyebrow.
+  ///
+  /// In zh, this message translates to:
+  /// **'{name} · 私写'**
+  String diaryEyebrow(String name);
+
+  /// No description provided for @syncingStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'同步中'**
+  String get syncingStatus;
+
+  /// No description provided for @syncedStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'已同步'**
+  String get syncedStatus;
+
+  /// No description provided for @diarySearchHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索 · 关键词 / 日期 / 心情'**
+  String get diarySearchHint;
+
+  /// No description provided for @retryAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'重试'**
+  String get retryAction;
+
+  /// No description provided for @diaryLoadingList.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在从后端读取日记列表…'**
+  String get diaryLoadingList;
+
+  /// No description provided for @diaryEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'他还没开始写日记。'**
+  String get diaryEmpty;
+
+  /// No description provided for @diaryNoResults.
+  ///
+  /// In zh, this message translates to:
+  /// **'找不到对应的日记。'**
+  String get diaryNoResults;
+
+  /// No description provided for @diaryRecentRefreshError.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近刷新失败：{error}'**
+  String diaryRecentRefreshError(String error);
+
+  /// No description provided for @diaryOpenToLoad.
+  ///
+  /// In zh, this message translates to:
+  /// **'点开条目后再读取正文。'**
+  String get diaryOpenToLoad;
+
+  /// No description provided for @diaryTapToLoad.
+  ///
+  /// In zh, this message translates to:
+  /// **'点击读取正文'**
+  String get diaryTapToLoad;
+
+  /// No description provided for @loadingStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'加载中…'**
+  String get loadingStatus;
+
+  /// No description provided for @noData.
+  ///
+  /// In zh, this message translates to:
+  /// **'无数据'**
+  String get noData;
+
+  /// No description provided for @loadFailedMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'加载失败：{error}'**
+  String loadFailedMessage(String error);
+
+  /// No description provided for @gardenTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'陪伴花园'**
+  String get gardenTitle;
+
+  /// No description provided for @gardenEyebrow.
+  ///
+  /// In zh, this message translates to:
+  /// **'{name} · 状态花园'**
+  String gardenEyebrow(String name);
+
+  /// No description provided for @gardenShortTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'花园'**
+  String get gardenShortTitle;
+
+  /// No description provided for @gardenLoadingDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在读取后端花园状态。'**
+  String get gardenLoadingDescription;
+
+  /// No description provided for @gardenErrorDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'花园同步失败，稍后可以重新刷新。'**
+  String get gardenErrorDescription;
+
+  /// No description provided for @gardenLoadedDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'已读取后端花园状态。它在你不看的时候，也在生长。'**
+  String get gardenLoadedDescription;
+
+  /// No description provided for @gardenNotLoadedDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有读取到后端花园状态。'**
+  String get gardenNotLoadedDescription;
+
+  /// No description provided for @gardenDominantMood.
+  ///
+  /// In zh, this message translates to:
+  /// **'他现在 · 主导心境'**
+  String get gardenDominantMood;
+
+  /// No description provided for @waitingStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待'**
+  String get waitingStatus;
+
+  /// No description provided for @gardenWaitingData.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待后端花园数据'**
+  String get gardenWaitingData;
+
+  /// No description provided for @gardenSyncing.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在同步花园'**
+  String get gardenSyncing;
+
+  /// No description provided for @syncFailedStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'同步失败'**
+  String get syncFailedStatus;
+
+  /// No description provided for @gardenAutoRefresh.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端 · 每 30 秒自动刷新'**
+  String get gardenAutoRefresh;
+
+  /// No description provided for @notSyncedStatus.
+  ///
+  /// In zh, this message translates to:
+  /// **'尚未同步'**
+  String get notSyncedStatus;
+
+  /// No description provided for @gardenRefreshTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'刷新花园'**
+  String get gardenRefreshTooltip;
+
+  /// No description provided for @gardenSyncingMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在同步花园…'**
+  String get gardenSyncingMessage;
+
+  /// No description provided for @gardenEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无花园数据'**
+  String get gardenEmpty;
+
+  /// No description provided for @gardenWaitingSlot.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待后端返回花园槽位。'**
+  String get gardenWaitingSlot;
+
+  /// No description provided for @gardenStageSummary.
+  ///
+  /// In zh, this message translates to:
+  /// **'{mood} 槽位最接近下一阶段 · {percent}% · 收获 {harvest} · 花瓶 {vase}'**
+  String gardenStageSummary(
+    String mood,
+    int percent,
+    String harvest,
+    String vase,
+  );
+
+  /// No description provided for @dreamHeaderTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦 · {name}'**
+  String dreamHeaderTitle(String name);
+
+  /// No description provided for @dreamInProgress.
+  ///
+  /// In zh, this message translates to:
+  /// **'进行中'**
+  String get dreamInProgress;
+
+  /// No description provided for @dreamReady.
+  ///
+  /// In zh, this message translates to:
+  /// **'DREAM · READY'**
+  String get dreamReady;
+
+  /// No description provided for @dreamWakeAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'醒来'**
+  String get dreamWakeAction;
+
+  /// No description provided for @dreamConnectionError.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境连接异常 · {error}'**
+  String dreamConnectionError(String error);
+
+  /// No description provided for @dreamResponding.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦在回应'**
+  String get dreamResponding;
+
+  /// No description provided for @dreamStability.
+  ///
+  /// In zh, this message translates to:
+  /// **'稳定度'**
+  String get dreamStability;
+
+  /// No description provided for @dreamDepth.
+  ///
+  /// In zh, this message translates to:
+  /// **'深度'**
+  String get dreamDepth;
+
+  /// No description provided for @dreamFindingEntrance.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在寻找梦境入口'**
+  String get dreamFindingEntrance;
+
+  /// No description provided for @dreamEntranceOpen.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境入口已经打开'**
+  String get dreamEntranceOpen;
+
+  /// No description provided for @dreamEntranceDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'进入后，对话会暂时停在更轻、更慢的地方。这里与主对话消息流彼此独立。'**
+  String get dreamEntranceDescription;
+
+  /// No description provided for @dreamValidCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'已经做过 {count} 次有效的梦'**
+  String dreamValidCount(int count);
+
+  /// No description provided for @dreamEntering.
+  ///
+  /// In zh, this message translates to:
+  /// **'坠入中…'**
+  String get dreamEntering;
+
+  /// No description provided for @dreamEnterAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'进入梦境'**
+  String get dreamEnterAction;
+
+  /// No description provided for @dreamComposerHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'在这儿写点什么…'**
+  String get dreamComposerHint;
+
+  /// No description provided for @dreamWaitingBehindDoor.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦在门后等待'**
+  String get dreamWaitingBehindDoor;
 }
 
 class _AppLocalizationsDelegate

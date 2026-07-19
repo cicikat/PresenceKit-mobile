@@ -1,9 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 
 import '../widgets/common_widgets.dart';
+
 class ProfilePage extends StatelessWidget {
   const ProfilePage({
     super.key,
@@ -48,15 +49,16 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final hasAvatar = profileAvatarBytes != null;
     return Column(
       children: [
         PageHeader(
           c: c,
-          title: '角色资料',
-          eyebrow: '$profileDisplayName · 本机显示',
+          title: l10n.profileTitle,
+          eyebrow: l10n.profileEyebrow(profileDisplayName),
           onBack: onBack,
-          trailing: '本机',
+          trailing: l10n.localDeviceLabel,
         ),
         Expanded(
           child: SingleChildScrollView(
@@ -87,7 +89,9 @@ class ProfilePage extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              hasAvatar ? '本机头像已设置' : '使用默认字母头像',
+                              hasAvatar
+                                  ? l10n.profileAvatarConfigured
+                                  : l10n.profileAvatarDefault,
                               style: mono(c, 11, color: c.ink3),
                             ),
                             const SizedBox(height: 12),
@@ -101,7 +105,7 @@ class ProfilePage extends StatelessWidget {
                                     Icons.badge_outlined,
                                     size: 18,
                                   ),
-                                  label: const Text('备注名'),
+                                  label: Text(l10n.profileNameAction),
                                 ),
                                 OutlinedButton.icon(
                                   onPressed: onImportProfileAvatar,
@@ -109,7 +113,7 @@ class ProfilePage extends StatelessWidget {
                                     Icons.add_photo_alternate_outlined,
                                     size: 18,
                                   ),
-                                  label: const Text('头像'),
+                                  label: Text(l10n.profileAvatarAction),
                                 ),
                                 if (hasAvatar)
                                   OutlinedButton.icon(
@@ -118,7 +122,7 @@ class ProfilePage extends StatelessWidget {
                                       Icons.restore_rounded,
                                       size: 18,
                                     ),
-                                    label: const Text('默认'),
+                                    label: Text(l10n.profileDefaultAction),
                                   ),
                               ],
                             ),
@@ -134,7 +138,7 @@ class ProfilePage extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '此刻',
+                          l10n.profileNowSection,
                           style: serif(c, 16, weight: FontWeight.w500),
                         ),
                       ),
@@ -142,7 +146,7 @@ class ProfilePage extends StatelessWidget {
                         c: c,
                         icon: Icons.refresh_rounded,
                         onPressed: onReloadStatusSnapshot,
-                        tooltip: '刷新',
+                        tooltip: l10n.refreshAction,
                         size: 28,
                       ),
                     ],
@@ -151,7 +155,10 @@ class ProfilePage extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                   child: loadingStatusSnapshot
-                      ? Text('正在读取…', style: mono(c, 10.5, color: c.ink3))
+                      ? Text(
+                          l10n.loadingAction,
+                          style: mono(c, 10.5, color: c.ink3),
+                        )
                       : Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -160,14 +167,16 @@ class ProfilePage extends StatelessWidget {
                               c: c,
                               text: activityCurrent?.text.isNotEmpty == true
                                   ? activityCurrent!.text
-                                  : '暂时没有特别的动向',
+                                  : l10n.profileNoActivity,
                               variant: 'warm',
                             ),
                             if (moodState != null)
                               YxTag(
                                 c: c,
-                                text:
-                                    '心情：${moodState!.label}（${(moodState!.intensity * 100).round()}%）',
+                                text: l10n.profileMoodStatus(
+                                  moodState!.label,
+                                  (moodState!.intensity * 100).round(),
+                                ),
                               ),
                           ],
                         ),
@@ -175,20 +184,22 @@ class ProfilePage extends StatelessWidget {
                 ProfileInfoRow(
                   c: c,
                   icon: Icons.drive_file_rename_outline_rounded,
-                  title: '本机备注名',
+                  title: l10n.profileLocalNameTitle,
                   value: hasProfileNameOverride
                       ? profileDisplayName
-                      : '默认角色名',
-                  body: '只影响这台手机里的显示：顶部栏、抽屉、偏好页和 HIM 聊天气泡。不会写回后端，也不会改核心人格配置。',
+                      : l10n.profileDefaultCharacterName,
+                  body: l10n.profileLocalNameBody,
                   actionIcon: Icons.edit_rounded,
                   onAction: onEditProfileName,
                 ),
                 ProfileInfoRow(
                   c: c,
                   icon: Icons.image_outlined,
-                  title: '头像作用域',
-                  value: hasAvatar ? 'profile_avatar.png' : '默认头像',
-                  body: '头像保存在 App 私有目录，只作为手机端本地头像源。当前不会上传到后端，也不会同步到桌宠或其他客户端。',
+                  title: l10n.profileAvatarScopeTitle,
+                  value: hasAvatar
+                      ? 'profile_avatar.png'
+                      : l10n.profileDefaultAvatar,
+                  body: l10n.profileAvatarScopeBody,
                   actionIcon: Icons.add_photo_alternate_outlined,
                   onAction: onImportProfileAvatar,
                 ),
@@ -198,12 +209,12 @@ class ProfilePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Reality 角色卡',
+                        l10n.profileRealityCardTitle,
                         style: serif(c, 16, weight: FontWeight.w500),
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        '切换后会影响主对话使用的人格卡；由后端保存并同步到其他客户端。',
+                        l10n.profileRealityCardBody,
                         style: serif(c, 13.5, color: c.ink2),
                       ),
                       const SizedBox(height: 10),
@@ -228,7 +239,9 @@ class ProfilePage extends StatelessWidget {
                               : (value) {
                                   if (value != null) onSelectCharacter(value);
                                 },
-                          decoration: const InputDecoration(labelText: '当前角色卡'),
+                          decoration: InputDecoration(
+                            labelText: l10n.profileCurrentCardLabel,
+                          ),
                         )
                       else
                         FilledButton.icon(
@@ -236,7 +249,11 @@ class ProfilePage extends StatelessWidget {
                               ? null
                               : onReloadPromptAssets,
                           icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: Text(loadingPromptAssets ? '正在读取…' : '读取角色卡'),
+                          label: Text(
+                            loadingPromptAssets
+                                ? l10n.loadingAction
+                                : l10n.profileLoadCards,
+                          ),
                         ),
                       if (promptAssetsError != null) ...[
                         const SizedBox(height: 8),
@@ -251,16 +268,16 @@ class ProfilePage extends StatelessWidget {
                 ProfileInfoRow(
                   c: c,
                   icon: Icons.sync_disabled_rounded,
-                  title: '同步边界',
-                  value: '手机端覆盖显示',
-                  body: '后续如果要同步备注名到后端，建议单独做确认按钮；现在资料页保持轻客户端边界，避免误改核心配置。',
+                  title: l10n.profileSyncBoundaryTitle,
+                  value: l10n.profileSyncBoundaryValue,
+                  body: l10n.profileSyncBoundaryBody,
                 ),
                 ProfileInfoRow(
                   c: c,
                   icon: Icons.visibility_outlined,
-                  title: '显示位置',
-                  value: 'UI 已跟随',
-                  body: '顶部栏、抽屉、偏好页和$profileDisplayName消息头像都会读取这份本机资料。用户自己的头像设置仍独立处理。',
+                  title: l10n.profileDisplayLocationTitle,
+                  value: l10n.profileDisplayLocationValue,
+                  body: l10n.profileDisplayLocationBody(profileDisplayName),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
@@ -271,7 +288,7 @@ class ProfilePage extends StatelessWidget {
                       border: Border.all(color: c.ink4),
                     ),
                     child: Text(
-                      '这页只管理手机薄客户端的外观身份。$profileDisplayName的核心人格、记忆和调度仍然以后端为准。',
+                      l10n.profileFooterNotice(profileDisplayName),
                       style: serif(
                         c,
                         13,

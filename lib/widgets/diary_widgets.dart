@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../controllers/diary_controller.dart';
 import '../models/app_models.dart';
 
@@ -52,6 +53,7 @@ class _DiaryPageState extends State<DiaryPage> {
   }
 
   Widget _build(BuildContext context) {
+    final l10n = context.l10n;
     final emotions = [
       '全部',
       ...{
@@ -72,14 +74,14 @@ class _DiaryPageState extends State<DiaryPage> {
       children: [
         PageHeader(
           c: widget.c,
-          title: '日记',
-          eyebrow: '${widget.profileDisplayName} · 私写',
+          title: l10n.diaryTitle,
+          eyebrow: l10n.diaryEyebrow(widget.profileDisplayName),
           onBack: widget.onBack,
           trailing: widget.loading
-              ? '同步中'
+              ? l10n.syncingStatus
               : widget.loaded
               ? '${filtered.length}/${widget.entries.length}'
-              : '日记',
+              : l10n.diaryTitle,
         ),
         Container(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
@@ -90,7 +92,7 @@ class _DiaryPageState extends State<DiaryPage> {
             decoration: InputDecoration(
               isDense: true,
               prefixIcon: Icon(Icons.search_rounded, color: widget.c.ink3),
-              hintText: '搜索 · 关键词 / 日期 / 心情',
+              hintText: l10n.diarySearchHint,
               hintStyle: mono(widget.c, 12, color: widget.c.ink3),
               border: InputBorder.none,
             ),
@@ -105,7 +107,7 @@ class _DiaryPageState extends State<DiaryPage> {
             children: [
               for (final mood in emotions)
                 ChoiceChip(
-                  label: Text(mood),
+                  label: Text(mood == '全部' ? l10n.diaryAllFilter : mood),
                   selected: _filter == mood,
                   onSelected: (_) => setState(() => _filter = mood),
                 ),
@@ -120,7 +122,7 @@ class _DiaryPageState extends State<DiaryPage> {
                         ),
                       )
                     : const Icon(Icons.refresh_rounded, size: 16),
-                label: const Text('刷新'),
+                label: Text(l10n.refreshAction),
                 onPressed: widget.loading
                     ? null
                     : () => unawaited(widget.onRefresh()),
@@ -139,7 +141,7 @@ class _DiaryPageState extends State<DiaryPage> {
         c: widget.c,
         icon: Icons.cloud_off_outlined,
         text: widget.error!,
-        actionLabel: '重试',
+        actionLabel: context.l10n.retryAction,
         onAction: () => unawaited(widget.onRefresh()),
       );
     }
@@ -147,14 +149,16 @@ class _DiaryPageState extends State<DiaryPage> {
       return DiaryEmptyState(
         c: widget.c,
         icon: Icons.hourglass_empty_rounded,
-        text: '正在从后端读取日记列表…',
+        text: context.l10n.diaryLoadingList,
       );
     }
     if (filtered.isEmpty) {
       return DiaryEmptyState(
         c: widget.c,
         icon: Icons.menu_book_outlined,
-        text: widget.entries.isEmpty ? '他还没开始写日记。' : '找不到对应的日记。',
+        text: widget.entries.isEmpty
+            ? context.l10n.diaryEmpty
+            : context.l10n.diaryNoResults,
       );
     }
     return RefreshIndicator(
@@ -166,7 +170,7 @@ class _DiaryPageState extends State<DiaryPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
               child: Text(
-                '最近刷新失败：${widget.error}',
+                context.l10n.diaryRecentRefreshError(widget.error!),
                 style: mono(widget.c, 10.5, color: widget.c.danger),
               ),
             ),
@@ -186,7 +190,7 @@ class _DiaryPageState extends State<DiaryPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '点开条目后再读取正文。',
+                  context.l10n.diaryOpenToLoad,
                   style: serif(
                     widget.c,
                     13,
@@ -241,7 +245,7 @@ class DiaryCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    _formatDiaryDate(entry.date),
+                    _formatDiaryDate(context, entry.date),
                     style: mono(c, 11, color: c.ink3),
                   ),
                 ),
@@ -256,7 +260,7 @@ class DiaryCard extends StatelessWidget {
             Text(entry.title, style: serif(c, 17, weight: FontWeight.w600)),
             const SizedBox(height: 6),
             Text(
-              '点击读取正文',
+              context.l10n.diaryTapToLoad,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: serif(c, 13.5, color: c.ink2),
@@ -302,7 +306,7 @@ class DiaryDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      _formatDiaryDate(item.date),
+                      _formatDiaryDate(context, item.date),
                       style: mono(
                         c,
                         10,
@@ -325,14 +329,19 @@ class DiaryDialog extends StatelessWidget {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Padding(
                       padding: const EdgeInsets.all(32),
-                      child: Text('加载中…', style: mono(c, 12, color: c.ink3)),
+                      child: Text(
+                        context.l10n.loadingStatus,
+                        style: mono(c, 12, color: c.ink3),
+                      ),
                     );
                   }
                   if (snapshot.hasError || snapshot.data == null) {
                     return Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        '加载失败：${snapshot.error ?? '无数据'}',
+                        context.l10n.loadFailedMessage(
+                          snapshot.error?.toString() ?? context.l10n.noData,
+                        ),
                         style: serif(c, 14, color: c.danger),
                       ),
                     );
@@ -436,13 +445,15 @@ class DiaryEmptyState extends StatelessWidget {
   }
 }
 
-String _formatDiaryDate(String date) {
+String _formatDiaryDate(BuildContext context, String date) {
   final parts = date.split('-');
   if (parts.length != 3) return date;
   final month = int.tryParse(parts[1]) ?? 0;
   final day = int.tryParse(parts[2]) ?? 0;
   if (month <= 0 || day <= 0) return date;
-  return '${parts[0]}年$month月$day日';
+  final parsed = DateTime.tryParse(date);
+  if (parsed == null) return date;
+  return MaterialLocalizations.of(context).formatFullDate(parsed);
 }
 
 List<String> _diaryBodyBlocks(String body) {

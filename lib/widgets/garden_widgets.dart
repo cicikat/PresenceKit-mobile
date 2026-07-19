@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../controllers/garden_controller.dart';
+import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 
 import '../widgets/common_widgets.dart';
@@ -33,6 +34,7 @@ class GardenPage extends StatelessWidget {
   }
 
   Widget _build(BuildContext context) {
+    final l10n = context.l10n;
     final realPlants = gardenState?.slots
         .map((slot) => Plant.fromSlot(slot, c))
         .toList(growable: false);
@@ -47,15 +49,15 @@ class GardenPage extends StatelessWidget {
         children: [
           PageHeader(
             c: c,
-            title: '陪伴花园',
-            eyebrow: '$profileDisplayName · 状态花园',
+            title: l10n.gardenTitle,
+            eyebrow: l10n.gardenEyebrow(profileDisplayName),
             onBack: onBack,
             darkHeader: true,
             trailing: loading
-                ? '同步中'
+                ? l10n.syncingStatus
                 : hasLiveData
-                ? '已同步'
-                : '花园',
+                ? l10n.syncedStatus
+                : l10n.gardenShortTitle,
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
@@ -64,12 +66,12 @@ class GardenPage extends StatelessWidget {
               children: [
                 Text(
                   loading
-                      ? '正在读取后端花园状态。'
+                      ? l10n.gardenLoadingDescription
                       : error != null
-                      ? '花园同步失败，稍后可以重新刷新。'
+                      ? l10n.gardenErrorDescription
                       : hasLiveData
-                      ? '已读取后端花园状态。它在你不看的时候，也在生长。'
-                      : '还没有读取到后端花园状态。',
+                      ? l10n.gardenLoadedDescription
+                      : l10n.gardenNotLoadedDescription,
                   style: serif(
                     c,
                     13,
@@ -89,7 +91,7 @@ class GardenPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '他现在 · 主导心境',
+                        l10n.gardenDominantMood,
                         style: mono(
                           c,
                           10,
@@ -101,7 +103,7 @@ class GardenPage extends StatelessWidget {
                         children: [
                           YxTag(
                             c: c,
-                            text: activePlant?.mood ?? '等待',
+                            text: activePlant?.mood ?? l10n.waitingStatus,
                             variant: 'warm',
                           ),
                           const SizedBox(width: 10),
@@ -109,7 +111,7 @@ class GardenPage extends StatelessWidget {
                             child: Text(
                               hasLiveData
                                   ? '${activePlant!.name} · ${activePlant.stage}'
-                                  : '等待后端花园数据',
+                                  : l10n.gardenWaitingData,
                               style: serif(
                                 c,
                                 18,
@@ -123,6 +125,7 @@ class GardenPage extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         _gardenSummary(
+                          l10n: l10n,
                           live: hasLiveData,
                           state: gardenState,
                           plant: activePlant,
@@ -147,12 +150,12 @@ class GardenPage extends StatelessWidget {
                           const SizedBox(width: 6),
                           Text(
                             loading
-                                ? '正在同步花园'
+                                ? l10n.gardenSyncing
                                 : error != null
-                                ? '同步失败'
+                                ? l10n.syncFailedStatus
                                 : hasLiveData
-                                ? '后端 · 每 30 秒自动刷新'
-                                : '尚未同步',
+                                ? l10n.gardenAutoRefresh
+                                : l10n.notSyncedStatus,
                             style: mono(
                               c,
                               10,
@@ -166,7 +169,7 @@ class GardenPage extends StatelessWidget {
                             onPressed: () =>
                                 unawaited(onRefresh(silent: false)),
                             onDark: true,
-                            tooltip: '刷新花园',
+                            tooltip: l10n.gardenRefreshTooltip,
                           ),
                         ],
                       ),
@@ -182,7 +185,7 @@ class GardenPage extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        loading ? '正在同步花园…' : '暂无花园数据',
+                        loading ? l10n.gardenSyncingMessage : l10n.gardenEmpty,
                         style: serif(
                           c,
                           16,
@@ -258,6 +261,7 @@ Color _gardenAccent(String slotKey, YxPalette c) {
 }
 
 String _gardenSummary({
+  required AppLocalizations l10n,
   required bool live,
   required GardenState? state,
   required Plant? plant,
@@ -265,12 +269,17 @@ String _gardenSummary({
 }) {
   if (error != null) return error;
   if (!live || state == null || plant == null) {
-    return '等待后端返回花园槽位。';
+    return l10n.gardenWaitingSlot;
   }
   final harvest = state.harvestCount;
   final vase = state.vaseCount;
   final percent = (plant.percent * 100).round();
-  return '${plant.mood} 槽位最接近下一阶段 · $percent% · 收获 $harvest · 花瓶 $vase';
+  return l10n.gardenStageSummary(
+    plant.mood,
+    percent,
+    harvest.toString(),
+    vase.toString(),
+  );
 }
 
 class PlantCard extends StatelessWidget {
