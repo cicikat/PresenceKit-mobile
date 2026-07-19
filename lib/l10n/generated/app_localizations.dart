@@ -2208,6 +2208,288 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'遮罩颜色'**
   String get themeRoleScrim;
+
+  /// No description provided for @backendInvalidAddress.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端地址格式不对'**
+  String get backendInvalidAddress;
+
+  /// No description provided for @tokenSetTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'设置访问 Token'**
+  String get tokenSetTitle;
+
+  /// No description provided for @tokenReplaceTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'设置 / 更换 Token'**
+  String get tokenReplaceTitle;
+
+  /// No description provided for @tokenHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'填后端签发的 mobile token（emt_ 开头）；旧 admin secret 仍可用但不建议。Token 只保存在 Android 本机私有存储中，不会打包进应用。'**
+  String get tokenHelp;
+
+  /// No description provided for @tokenRequiredError.
+  ///
+  /// In zh, this message translates to:
+  /// **'请填写访问 Token'**
+  String get tokenRequiredError;
+
+  /// No description provided for @saveFailedMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存失败：{error}'**
+  String saveFailedMessage(String error);
+
+  /// No description provided for @deviceAdminRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先启用“陪伴锁屏确认”的设备管理器权限'**
+  String get deviceAdminRequired;
+
+  /// No description provided for @accessibilityAuthorized.
+  ///
+  /// In zh, this message translates to:
+  /// **'陪伴操作助手已授权'**
+  String get accessibilityAuthorized;
+
+  /// No description provided for @shoppingAppMissing.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有找到 {label}，先手动安装或确认包名'**
+  String shoppingAppMissing(String label);
+
+  /// No description provided for @orderBubbleShown.
+  ///
+  /// In zh, this message translates to:
+  /// **'已弹出 {label} 购物车确认悬浮窗'**
+  String orderBubbleShown(String label);
+
+  /// No description provided for @overlayPermissionRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先允许“显示在其他应用上层”，回来后再点一次'**
+  String get overlayPermissionRequired;
+
+  /// No description provided for @screenPushFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'屏幕上下文推送失败：{error}'**
+  String screenPushFailed(String error);
+
+  /// No description provided for @accessibilityRequiredForScreen.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先开启无障碍服务，才能读取屏幕上下文'**
+  String get accessibilityRequiredForScreen;
+
+  /// No description provided for @screenContextEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时没有可读的屏幕上下文'**
+  String get screenContextEmpty;
+
+  /// No description provided for @behaviorTestQueued.
+  ///
+  /// In zh, this message translates to:
+  /// **'已写入主动行为测试：{label}'**
+  String behaviorTestQueued(String label);
+
+  /// No description provided for @behaviorTestFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'主动行为测试失败：{error}'**
+  String behaviorTestFailed(String error);
+
+  /// No description provided for @profileNameHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'留空则显示后端角色名'**
+  String get profileNameHint;
+
+  /// No description provided for @restoreDefaultAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复默认'**
+  String get restoreDefaultAction;
+
+  /// No description provided for @avatarSaveFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'头像保存失败'**
+  String get avatarSaveFailed;
+
+  /// No description provided for @backendNodeTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端节点'**
+  String get backendNodeTitle;
+
+  /// No description provided for @backendNodeHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'插线调试用 127.0.0.1；脱线使用电脑局域网 IP。'**
+  String get backendNodeHelp;
+
+  /// No description provided for @userIdLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户 ID'**
+  String get userIdLabel;
+
+  /// No description provided for @userIdHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'QQ 号或后端约定的 uid，仅限字母数字下划线短横线'**
+  String get userIdHint;
+
+  /// No description provided for @invalidAddressError.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入有效地址'**
+  String get invalidAddressError;
+
+  /// No description provided for @userIdInvalidError.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅支持字母、数字、下划线、短横线'**
+  String get userIdInvalidError;
+
+  /// No description provided for @saveReconnectAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存并重连'**
+  String get saveReconnectAction;
+
+  /// No description provided for @relayDialogTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'推送中继（ntfy）'**
+  String get relayDialogTitle;
+
+  /// No description provided for @relayAddressLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'中继地址'**
+  String get relayAddressLabel;
+
+  /// No description provided for @relayTopicHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'例：mychar-wake-a1b2c3（当作密码，用随机串）'**
+  String get relayTopicHint;
+
+  /// No description provided for @relayTokenLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'token（可选）'**
+  String get relayTokenLabel;
+
+  /// No description provided for @relayTokenHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'中继服务无鉴权时留空'**
+  String get relayTokenHint;
+
+  /// No description provided for @relayHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'需与后端 config.yaml 的 relay_base_url/relay_topic/relay_token 三项一致。留空 topic 会关闭中继实时唤醒，退化为周期补偿轮询。'**
+  String get relayHelp;
+
+  /// No description provided for @relayTopicInvalidError.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅支持小写字母、数字、/ _ -，且不超过 128 字符'**
+  String get relayTopicInvalidError;
+
+  /// No description provided for @untrustedAddressError.
+  ///
+  /// In zh, this message translates to:
+  /// **'未信任该地址'**
+  String get untrustedAddressError;
+
+  /// No description provided for @dreamLeaveTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'要走了吗'**
+  String get dreamLeaveTitle;
+
+  /// No description provided for @dreamStayFallback.
+  ///
+  /// In zh, this message translates to:
+  /// **'再待一会儿吧。'**
+  String get dreamStayFallback;
+
+  /// No description provided for @dreamLeaveAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'还是要走'**
+  String get dreamLeaveAction;
+
+  /// No description provided for @dreamStayAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'留下'**
+  String get dreamStayAction;
+
+  /// No description provided for @fileTypeUnsupported.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端当前只支持 txt / md / docx'**
+  String get fileTypeUnsupported;
+
+  /// No description provided for @fileTooLarge.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端文件上限是 5MB'**
+  String get fileTooLarge;
+
+  /// No description provided for @fileFailureLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'文件'**
+  String get fileFailureLabel;
+
+  /// No description provided for @imageTypeUnsupported.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端当前只支持 jpg / png / gif / webp / heic / bmp'**
+  String get imageTypeUnsupported;
+
+  /// No description provided for @imageTooLarge.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端图片上限是单张 10MB'**
+  String get imageTooLarge;
+
+  /// No description provided for @imageCountPreview.
+  ///
+  /// In zh, this message translates to:
+  /// **'📎 {count}张图片：{names}{suffix}'**
+  String imageCountPreview(int count, String names, String suffix);
+
+  /// No description provided for @imageFailureLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片'**
+  String get imageFailureLabel;
+
+  /// No description provided for @meituanName.
+  ///
+  /// In zh, this message translates to:
+  /// **'美团'**
+  String get meituanName;
+
+  /// No description provided for @taobaoName.
+  ///
+  /// In zh, this message translates to:
+  /// **'淘宝'**
+  String get taobaoName;
 }
 
 class _AppLocalizationsDelegate

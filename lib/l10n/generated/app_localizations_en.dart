@@ -1195,4 +1195,172 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeRoleScrim => 'Scrim';
+
+  @override
+  String get backendInvalidAddress => 'Invalid backend address';
+
+  @override
+  String get tokenSetTitle => 'Set access token';
+
+  @override
+  String get tokenReplaceTitle => 'Set / replace token';
+
+  @override
+  String get tokenHelp =>
+      'Enter a mobile token issued by the backend (starts with emt_). Legacy admin secrets still work but are not recommended. The token stays in Android private storage and is never bundled with the app.';
+
+  @override
+  String get tokenRequiredError => 'Enter an access token';
+
+  @override
+  String saveFailedMessage(String error) {
+    return 'Save failed: $error';
+  }
+
+  @override
+  String get deviceAdminRequired =>
+      'Enable device administrator permission for Companion lock confirmation first';
+
+  @override
+  String get accessibilityAuthorized => 'Companion assistant is authorized';
+
+  @override
+  String shoppingAppMissing(String label) {
+    return 'Could not find $label. Install it manually or verify the package name.';
+  }
+
+  @override
+  String orderBubbleShown(String label) {
+    return 'Opened the $label cart confirmation overlay';
+  }
+
+  @override
+  String get overlayPermissionRequired =>
+      'Allow display over other apps, then return and try again';
+
+  @override
+  String screenPushFailed(String error) {
+    return 'Could not push screen context: $error';
+  }
+
+  @override
+  String get accessibilityRequiredForScreen =>
+      'Enable accessibility before reading screen context';
+
+  @override
+  String get screenContextEmpty => 'No readable screen context available';
+
+  @override
+  String behaviorTestQueued(String label) {
+    return 'Queued proactive behavior test: $label';
+  }
+
+  @override
+  String behaviorTestFailed(String error) {
+    return 'Proactive behavior test failed: $error';
+  }
+
+  @override
+  String get profileNameHint => 'Leave blank to use the backend character name';
+
+  @override
+  String get restoreDefaultAction => 'Restore default';
+
+  @override
+  String get avatarSaveFailed => 'Could not save avatar';
+
+  @override
+  String get backendNodeTitle => 'Backend node';
+
+  @override
+  String get backendNodeHelp =>
+      'Use 127.0.0.1 with a cable; use the computer\'s LAN IP when disconnected.';
+
+  @override
+  String get userIdLabel => 'User ID';
+
+  @override
+  String get userIdHint =>
+      'QQ number or backend uid; letters, numbers, underscores and hyphens only';
+
+  @override
+  String get invalidAddressError => 'Enter a valid address';
+
+  @override
+  String get userIdInvalidError =>
+      'Only letters, numbers, underscores and hyphens are supported';
+
+  @override
+  String get saveReconnectAction => 'Save and reconnect';
+
+  @override
+  String get relayDialogTitle => 'Push relay (ntfy)';
+
+  @override
+  String get relayAddressLabel => 'Relay address';
+
+  @override
+  String get relayTopicHint =>
+      'Example: mychar-wake-a1b2c3 (treat as a password; use random text)';
+
+  @override
+  String get relayTokenLabel => 'Token (optional)';
+
+  @override
+  String get relayTokenHint =>
+      'Leave blank when the relay has no authentication';
+
+  @override
+  String get relayHelp =>
+      'Must match relay_base_url, relay_topic and relay_token in the backend config.yaml. An empty topic disables live relay wakeups and falls back to periodic polling.';
+
+  @override
+  String get relayTopicInvalidError =>
+      'Use lowercase letters, numbers, / _ - only, up to 128 characters';
+
+  @override
+  String get untrustedAddressError => 'This address is not trusted';
+
+  @override
+  String get dreamLeaveTitle => 'Leaving?';
+
+  @override
+  String get dreamStayFallback => 'Stay a little longer.';
+
+  @override
+  String get dreamLeaveAction => 'Leave anyway';
+
+  @override
+  String get dreamStayAction => 'Stay';
+
+  @override
+  String get fileTypeUnsupported =>
+      'The backend currently supports txt / md / docx only';
+
+  @override
+  String get fileTooLarge => 'The backend file limit is 5 MB';
+
+  @override
+  String get fileFailureLabel => 'File';
+
+  @override
+  String get imageTypeUnsupported =>
+      'The backend currently supports jpg / png / gif / webp / heic / bmp only';
+
+  @override
+  String get imageTooLarge => 'The backend image limit is 10 MB per image';
+
+  @override
+  String imageCountPreview(int count, String names, String suffix) {
+    return '📎 $count images: $names$suffix';
+  }
+
+  @override
+  String get imageFailureLabel => 'Image';
+
+  @override
+  String get meituanName => 'Meituan';
+
+  @override
+  String get taobaoName => 'Taobao';
 }

@@ -16,6 +16,7 @@ import '../models/app_models.dart';
 import '../models/background_status.dart';
 import '../models/capability_status.dart';
 import '../models/screen_context.dart';
+import '../l10n/l10n.dart';
 import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/character_naming.dart';
@@ -317,7 +318,7 @@ class _CompanionAppState extends State<CompanionApp>
   Future<void> _changeBackendBaseUrl(String raw) async {
     final normalized = await _normalizeBackendBaseUrl(raw);
     if (normalized == null) {
-      setState(() => _backendError = '后端地址格式不对');
+      setState(() => _backendError = context.l10n.backendInvalidAddress);
       return;
     }
     if (!await _ensureTrustedBackendOrigin(normalized)) {
@@ -362,7 +363,9 @@ class _CompanionAppState extends State<CompanionApp>
           backgroundColor: c.surface,
           scrollable: true,
           title: Text(
-            required ? '设置访问 Token' : '设置 / 更换 Token',
+            required
+                ? dialogContext.l10n.tokenSetTitle
+                : dialogContext.l10n.tokenReplaceTitle,
             style: TextStyle(color: c.ink1),
           ),
           content: Column(
@@ -370,8 +373,7 @@ class _CompanionAppState extends State<CompanionApp>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '填后端签发的 mobile token（emt_ 开头）；旧 admin secret 仍可用但不建议。'
-                'Token 只保存在 Android 本机私有存储中，不会打包进应用。',
+                dialogContext.l10n.tokenHelp,
                 style: TextStyle(color: c.ink2),
               ),
               const SizedBox(height: 12),
@@ -386,7 +388,7 @@ class _CompanionAppState extends State<CompanionApp>
                 enableSuggestions: false,
                 style: TextStyle(color: c.ink1),
                 decoration: InputDecoration(
-                  labelText: '访问 Token',
+                  labelText: dialogContext.l10n.settingsAccessTokenTitle,
                   errorText: dialogError,
                 ),
               ),
@@ -396,26 +398,32 @@ class _CompanionAppState extends State<CompanionApp>
             if (!required)
               TextButton(
                 onPressed: () => _dismissTextInputDialog(dialogContext),
-                child: const Text('取消'),
+                child: Text(dialogContext.l10n.cancelAction),
               ),
             FilledButton(
               onPressed: () async {
                 final value = controller.text.trim();
                 if (value.isEmpty) {
-                  dialogSetState(() => dialogError = '请填写访问 Token');
+                  dialogSetState(
+                    () => dialogError = dialogContext.l10n.tokenRequiredError,
+                  );
                   return;
                 }
                 try {
                   await _connectionController.saveToken(value);
                 } catch (e) {
                   if (!dialogContext.mounted) return;
-                  dialogSetState(() => dialogError = '保存失败：$e');
+                  dialogSetState(
+                    () => dialogError = dialogContext.l10n.saveFailedMessage(
+                      e.toString(),
+                    ),
+                  );
                   return;
                 }
                 if (!dialogContext.mounted) return;
                 _dismissTextInputDialog(dialogContext, result: value);
               },
-              child: const Text('保存'),
+              child: Text(dialogContext.l10n.saveAction),
             ),
           ],
         ),
@@ -475,7 +483,7 @@ class _CompanionAppState extends State<CompanionApp>
     if (!locked) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('请先启用“陪伴锁屏确认”的设备管理器权限')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.deviceAdminRequired)));
     }
   }
 
@@ -483,9 +491,9 @@ class _CompanionAppState extends State<CompanionApp>
     final enabled = await _deviceController.isAccessibilityEnabled();
     if (!mounted) return;
     if (enabled) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('陪伴操作助手已授权')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.accessibilityAuthorized)),
+      );
       return;
     }
     await _deviceController.requestAccessibilityPermission();
@@ -495,9 +503,9 @@ class _CompanionAppState extends State<CompanionApp>
     final opened = await _deviceController.openShoppingApp(target);
     if (!mounted) return;
     if (!opened) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('没有找到 $label，先手动安装或确认包名')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.shoppingAppMissing(label))),
+      );
     }
   }
 
@@ -507,7 +515,9 @@ class _CompanionAppState extends State<CompanionApp>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          shown ? '已弹出 $label 购物车确认悬浮窗' : '请先允许“显示在其他应用上层”，回来后再点一次',
+          shown
+              ? context.l10n.orderBubbleShown(label)
+              : context.l10n.overlayPermissionRequired,
         ),
       ),
     );
@@ -523,7 +533,11 @@ class _CompanionAppState extends State<CompanionApp>
     await _deviceController.pushScreenContext(silent: silent);
     if (!silent && mounted && _deviceController.lastError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('屏幕上下文推送失败：${_deviceController.lastError}')),
+        SnackBar(
+          content: Text(
+            context.l10n.screenPushFailed(_deviceController.lastError ?? ''),
+          ),
+        ),
       );
     }
   }
@@ -533,9 +547,9 @@ class _CompanionAppState extends State<CompanionApp>
   }) async {
     if (!await _deviceController.isAccessibilityEnabled()) {
       if (!silent && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('请先开启无障碍服务，才能读取屏幕上下文')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.accessibilityRequiredForScreen)),
+        );
       }
       return null;
     }
@@ -543,7 +557,7 @@ class _CompanionAppState extends State<CompanionApp>
     if ((snapshot == null || snapshot.isEmpty) && !silent && mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('暂时没有可读的屏幕上下文')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.screenContextEmpty)));
     }
     return snapshot;
   }
@@ -555,7 +569,11 @@ class _CompanionAppState extends State<CompanionApp>
     await _deviceController.pushSnapshot(snapshot, silent: silent);
     if (!silent && mounted && _deviceController.lastError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('屏幕上下文推送失败：${_deviceController.lastError}')),
+        SnackBar(
+          content: Text(
+            context.l10n.screenPushFailed(_deviceController.lastError ?? ''),
+          ),
+        ),
       );
     }
   }
@@ -571,15 +589,15 @@ class _CompanionAppState extends State<CompanionApp>
         delivery: spec.delivery,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('已写入主动行为测试：${spec.label}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.behaviorTestQueued(spec.label))),
+      );
       await _chatController.pollIfBackgroundUnavailable();
     } on BackendException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('主动行为测试失败：${e.message}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.behaviorTestFailed(e.message))),
+      );
     }
   }
 
@@ -593,29 +611,32 @@ class _CompanionAppState extends State<CompanionApp>
         return AlertDialog(
           backgroundColor: c.surface,
           scrollable: true,
-          title: Text('本机备注名', style: serif(c, 20)),
+          title: Text(
+            dialogContext.l10n.profileLocalNameTitle,
+            style: serif(c, 20),
+          ),
           content: TextField(
             controller: controller,
             autofocus: true,
             maxLength: 12,
-            decoration: const InputDecoration(
-              hintText: '留空则显示后端角色名',
+            decoration: InputDecoration(
+              hintText: dialogContext.l10n.profileNameHint,
               counterText: '',
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('取消'),
+              child: Text(dialogContext.l10n.cancelAction),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, ''),
-              child: const Text('恢复默认'),
+              child: Text(dialogContext.l10n.restoreDefaultAction),
             ),
             FilledButton(
               onPressed: () =>
                   Navigator.pop(dialogContext, controller.text.trim()),
-              child: const Text('保存'),
+              child: Text(dialogContext.l10n.saveAction),
             ),
           ],
         );
@@ -644,7 +665,7 @@ class _CompanionAppState extends State<CompanionApp>
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('头像保存失败')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.avatarSaveFailed)));
     }
   }
 
@@ -841,7 +862,10 @@ class _CompanionAppState extends State<CompanionApp>
               return AlertDialog(
                 backgroundColor: c.surface,
                 scrollable: true,
-                title: Text('后端节点', style: serif(c, 20)),
+                title: Text(
+                  dialogContext.l10n.backendNodeTitle,
+                  style: serif(c, 20),
+                ),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -858,7 +882,7 @@ class _CompanionAppState extends State<CompanionApp>
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      '插线调试用 127.0.0.1；脱线使用电脑局域网 IP。',
+                      dialogContext.l10n.backendNodeHelp,
                       style: serif(c, 12, color: c.ink3),
                     ),
                     const SizedBox(height: 16),
@@ -867,8 +891,8 @@ class _CompanionAppState extends State<CompanionApp>
                       keyboardType: TextInputType.text,
                       style: mono(c, 13),
                       decoration: InputDecoration(
-                        labelText: '用户 ID',
-                        hintText: 'QQ 号或后端约定的 uid，仅限字母数字下划线短横线',
+                        labelText: dialogContext.l10n.userIdLabel,
+                        hintText: dialogContext.l10n.userIdHint,
                         errorText: ownerDialogError,
                       ),
                     ),
@@ -877,7 +901,7 @@ class _CompanionAppState extends State<CompanionApp>
                 actions: [
                   TextButton(
                     onPressed: () => _dismissTextInputDialog(dialogContext),
-                    child: const Text('取消'),
+                    child: Text(dialogContext.l10n.cancelAction),
                   ),
                   FilledButton(
                     onPressed: () async {
@@ -885,14 +909,18 @@ class _CompanionAppState extends State<CompanionApp>
                         controller.text,
                       );
                       if (normalized == null) {
-                        dialogSetState(() => dialogError = '请输入有效地址');
+                        dialogSetState(
+                          () => dialogError =
+                              dialogContext.l10n.invalidAddressError,
+                        );
                         return;
                       }
                       final ownerValue = ownerController.text.trim();
                       if (ownerValue.isNotEmpty &&
                           !_safeOwnerUserIdPattern.hasMatch(ownerValue)) {
                         dialogSetState(
-                          () => ownerDialogError = '仅支持字母、数字、下划线、短横线',
+                          () => ownerDialogError =
+                              dialogContext.l10n.userIdInvalidError,
                         );
                         return;
                       }
@@ -904,7 +932,7 @@ class _CompanionAppState extends State<CompanionApp>
                       }
                       unawaited(_changeBackendBaseUrl(normalized));
                     },
-                    child: const Text('保存并重连'),
+                    child: Text(dialogContext.l10n.saveReconnectAction),
                   ),
                 ],
               );
@@ -935,7 +963,10 @@ class _CompanionAppState extends State<CompanionApp>
             return AlertDialog(
               backgroundColor: c.surface,
               scrollable: true,
-              title: Text('推送中继（ntfy）', style: serif(c, 20)),
+              title: Text(
+                dialogContext.l10n.relayDialogTitle,
+                style: serif(c, 20),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -946,7 +977,7 @@ class _CompanionAppState extends State<CompanionApp>
                     keyboardType: TextInputType.url,
                     style: mono(c, 13),
                     decoration: InputDecoration(
-                      labelText: '中继地址',
+                      labelText: dialogContext.l10n.relayAddressLabel,
                       hintText: 'https://ntfy.sh 或 http://192.168.x.x:8090',
                       errorText: baseUrlError,
                     ),
@@ -958,7 +989,7 @@ class _CompanionAppState extends State<CompanionApp>
                     style: mono(c, 13),
                     decoration: InputDecoration(
                       labelText: 'topic',
-                      hintText: '例：mychar-wake-a1b2c3（当作密码，用随机串）',
+                      hintText: dialogContext.l10n.relayTopicHint,
                       errorText: topicError,
                     ),
                   ),
@@ -967,15 +998,14 @@ class _CompanionAppState extends State<CompanionApp>
                     controller: tokenController,
                     keyboardType: TextInputType.text,
                     style: mono(c, 13),
-                    decoration: const InputDecoration(
-                      labelText: 'token（可选）',
-                      hintText: '中继服务无鉴权时留空',
+                    decoration: InputDecoration(
+                      labelText: dialogContext.l10n.relayTokenLabel,
+                      hintText: dialogContext.l10n.relayTokenHint,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '需与后端 config.yaml 的 relay_base_url/relay_topic/relay_token 三项一致。'
-                    '留空 topic 会关闭中继实时唤醒，退化为周期补偿轮询。',
+                    dialogContext.l10n.relayHelp,
                     style: serif(c, 12, color: c.ink3),
                   ),
                 ],
@@ -983,7 +1013,7 @@ class _CompanionAppState extends State<CompanionApp>
               actions: [
                 TextButton(
                   onPressed: () => _dismissTextInputDialog(dialogContext),
-                  child: const Text('取消'),
+                  child: Text(dialogContext.l10n.cancelAction),
                 ),
                 FilledButton(
                   onPressed: () async {
@@ -992,7 +1022,8 @@ class _CompanionAppState extends State<CompanionApp>
                         (!_safeRelayTopicPattern.hasMatch(topicValue) ||
                             topicValue.length > 128)) {
                       dialogSetState(
-                        () => topicError = '仅支持小写字母、数字、/ _ -，且不超过 128 字符',
+                        () => topicError =
+                            dialogContext.l10n.relayTopicInvalidError,
                       );
                       return;
                     }
@@ -1003,11 +1034,17 @@ class _CompanionAppState extends State<CompanionApp>
                         rawBaseUrl,
                       );
                       if (resolved == null) {
-                        dialogSetState(() => baseUrlError = '请输入有效地址');
+                        dialogSetState(
+                          () => baseUrlError =
+                              dialogContext.l10n.invalidAddressError,
+                        );
                         return;
                       }
                       if (!await _ensureTrustedBackendOrigin(resolved)) {
-                        dialogSetState(() => baseUrlError = '未信任该地址');
+                        dialogSetState(
+                          () => baseUrlError =
+                              dialogContext.l10n.untrustedAddressError,
+                        );
                         return;
                       }
                       normalized = resolved;
@@ -1020,7 +1057,7 @@ class _CompanionAppState extends State<CompanionApp>
                       token: tokenController.text.trim(),
                     );
                   },
-                  child: const Text('保存'),
+                  child: Text(dialogContext.l10n.saveAction),
                 ),
               ],
             );
@@ -1042,19 +1079,22 @@ class _CompanionAppState extends State<CompanionApp>
       builder: (dialogContext) => AlertDialog(
         backgroundColor: c.surface,
         scrollable: true,
-        title: Text('要走了吗', style: serif(c, 18, color: c.ink1)),
+        title: Text(
+          dialogContext.l10n.dreamLeaveTitle,
+          style: serif(c, 18, color: c.ink1),
+        ),
         content: Text(
-          result.retentionText ?? '再待一会儿吧。',
+          result.retentionText ?? dialogContext.l10n.dreamStayFallback,
           style: serif(c, 14, color: c.ink2),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('还是要走'),
+            child: Text(dialogContext.l10n.dreamLeaveAction),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('留下'),
+            child: Text(dialogContext.l10n.dreamStayAction),
           ),
         ],
       ),
@@ -1272,19 +1312,19 @@ class _CompanionAppState extends State<CompanionApp>
     if (!supported.any(lowerName.endsWith)) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('后端当前只支持 txt / md / docx')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.fileTypeUnsupported)));
       return;
     }
     if (picked.bytes.length > 5 * 1024 * 1024) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('后端文件上限是 5MB')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.fileTooLarge)));
       return;
     }
     await _chatController.uploadFiles(
       [picked],
       preview: '📎 ${picked.name}',
-      failureLabel: '文件',
+      failureLabel: context.l10n.fileFailureLabel,
     );
   }
 
@@ -1306,16 +1346,14 @@ class _CompanionAppState extends State<CompanionApp>
       (file) => !supported.any(file.name.toLowerCase().endsWith),
     )) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('后端当前只支持 jpg / png / gif / webp / heic / bmp'),
-        ),
+        SnackBar(content: Text(context.l10n.imageTypeUnsupported)),
       );
       return;
     }
     if (picked.any((file) => file.bytes.length > 10 * 1024 * 1024)) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('后端图片上限是单张 10MB')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.imageTooLarge)));
       return;
     }
     final names = picked.length == 1
@@ -1323,11 +1361,15 @@ class _CompanionAppState extends State<CompanionApp>
         : picked.take(3).map((file) => file.name).join('、');
     final preview = picked.length == 1
         ? '📎 $names'
-        : '📎 ${picked.length}张图片：$names${picked.length > 3 ? '…' : ''}';
+        : context.l10n.imageCountPreview(
+            picked.length,
+            names,
+            picked.length > 3 ? '…' : '',
+          );
     await _chatController.uploadFiles(
       picked,
       preview: preview,
-      failureLabel: '图片',
+      failureLabel: context.l10n.imageFailureLabel,
     );
   }
 
@@ -1415,9 +1457,12 @@ class _CompanionAppState extends State<CompanionApp>
           onLockNow: () => unawaited(_lockScreenNow()),
           onOpenOrderAccessibility: () =>
               unawaited(_requestOrderAssistantPermission()),
-          onOpenMeituan: () => unawaited(_openShoppingApp('meituan', '美团')),
-          onOpenTaobao: () => unawaited(_openShoppingApp('taobao', '淘宝')),
-          onShowOrderBubble: () => unawaited(_showOrderBubble('meituan', '美团')),
+          onOpenMeituan: () =>
+              unawaited(_openShoppingApp('meituan', context.l10n.meituanName)),
+          onOpenTaobao: () =>
+              unawaited(_openShoppingApp('taobao', context.l10n.taobaoName)),
+          onShowOrderBubble: () =>
+              unawaited(_showOrderBubble('meituan', context.l10n.meituanName)),
           onVoiceRecordStart: _startVoiceRecording,
           onVoiceRecordStop: _stopVoiceRecordingAndTranscribe,
           onVoiceRecordCancel: () =>

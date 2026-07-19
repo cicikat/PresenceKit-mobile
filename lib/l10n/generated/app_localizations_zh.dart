@@ -1158,4 +1158,162 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get themeRoleScrim => '遮罩颜色';
+
+  @override
+  String get backendInvalidAddress => '后端地址格式不对';
+
+  @override
+  String get tokenSetTitle => '设置访问 Token';
+
+  @override
+  String get tokenReplaceTitle => '设置 / 更换 Token';
+
+  @override
+  String get tokenHelp =>
+      '填后端签发的 mobile token（emt_ 开头）；旧 admin secret 仍可用但不建议。Token 只保存在 Android 本机私有存储中，不会打包进应用。';
+
+  @override
+  String get tokenRequiredError => '请填写访问 Token';
+
+  @override
+  String saveFailedMessage(String error) {
+    return '保存失败：$error';
+  }
+
+  @override
+  String get deviceAdminRequired => '请先启用“陪伴锁屏确认”的设备管理器权限';
+
+  @override
+  String get accessibilityAuthorized => '陪伴操作助手已授权';
+
+  @override
+  String shoppingAppMissing(String label) {
+    return '没有找到 $label，先手动安装或确认包名';
+  }
+
+  @override
+  String orderBubbleShown(String label) {
+    return '已弹出 $label 购物车确认悬浮窗';
+  }
+
+  @override
+  String get overlayPermissionRequired => '请先允许“显示在其他应用上层”，回来后再点一次';
+
+  @override
+  String screenPushFailed(String error) {
+    return '屏幕上下文推送失败：$error';
+  }
+
+  @override
+  String get accessibilityRequiredForScreen => '请先开启无障碍服务，才能读取屏幕上下文';
+
+  @override
+  String get screenContextEmpty => '暂时没有可读的屏幕上下文';
+
+  @override
+  String behaviorTestQueued(String label) {
+    return '已写入主动行为测试：$label';
+  }
+
+  @override
+  String behaviorTestFailed(String error) {
+    return '主动行为测试失败：$error';
+  }
+
+  @override
+  String get profileNameHint => '留空则显示后端角色名';
+
+  @override
+  String get restoreDefaultAction => '恢复默认';
+
+  @override
+  String get avatarSaveFailed => '头像保存失败';
+
+  @override
+  String get backendNodeTitle => '后端节点';
+
+  @override
+  String get backendNodeHelp => '插线调试用 127.0.0.1；脱线使用电脑局域网 IP。';
+
+  @override
+  String get userIdLabel => '用户 ID';
+
+  @override
+  String get userIdHint => 'QQ 号或后端约定的 uid，仅限字母数字下划线短横线';
+
+  @override
+  String get invalidAddressError => '请输入有效地址';
+
+  @override
+  String get userIdInvalidError => '仅支持字母、数字、下划线、短横线';
+
+  @override
+  String get saveReconnectAction => '保存并重连';
+
+  @override
+  String get relayDialogTitle => '推送中继（ntfy）';
+
+  @override
+  String get relayAddressLabel => '中继地址';
+
+  @override
+  String get relayTopicHint => '例：mychar-wake-a1b2c3（当作密码，用随机串）';
+
+  @override
+  String get relayTokenLabel => 'token（可选）';
+
+  @override
+  String get relayTokenHint => '中继服务无鉴权时留空';
+
+  @override
+  String get relayHelp =>
+      '需与后端 config.yaml 的 relay_base_url/relay_topic/relay_token 三项一致。留空 topic 会关闭中继实时唤醒，退化为周期补偿轮询。';
+
+  @override
+  String get relayTopicInvalidError => '仅支持小写字母、数字、/ _ -，且不超过 128 字符';
+
+  @override
+  String get untrustedAddressError => '未信任该地址';
+
+  @override
+  String get dreamLeaveTitle => '要走了吗';
+
+  @override
+  String get dreamStayFallback => '再待一会儿吧。';
+
+  @override
+  String get dreamLeaveAction => '还是要走';
+
+  @override
+  String get dreamStayAction => '留下';
+
+  @override
+  String get fileTypeUnsupported => '后端当前只支持 txt / md / docx';
+
+  @override
+  String get fileTooLarge => '后端文件上限是 5MB';
+
+  @override
+  String get fileFailureLabel => '文件';
+
+  @override
+  String get imageTypeUnsupported =>
+      '后端当前只支持 jpg / png / gif / webp / heic / bmp';
+
+  @override
+  String get imageTooLarge => '后端图片上限是单张 10MB';
+
+  @override
+  String imageCountPreview(int count, String names, String suffix) {
+    return '📎 $count张图片：$names$suffix';
+  }
+
+  @override
+  String get imageFailureLabel => '图片';
+
+  @override
+  String get meituanName => '美团';
+
+  @override
+  String get taobaoName => '淘宝';
 }
