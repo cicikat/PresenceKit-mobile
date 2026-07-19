@@ -131,6 +131,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('zh'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: CompanionApp(
             settingsStore: settings,
             backendClient: backend,
@@ -141,6 +144,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
         if (backend.ackSeqs.isNotEmpty) break;
       }
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('游标持久化失败测试'), findsOneWidget);
       // The network ack still fired (it succeeded)...
@@ -185,6 +189,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('zh'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: CompanionApp(
             settingsStore: settings,
             backendClient: backend,
@@ -195,6 +202,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
         if (backend.ackSeqs.isNotEmpty) break;
       }
+      await tester.pump(const Duration(seconds: 1));
       expect(find.text('重复投递测试'), findsOneWidget);
       expect(settings.lastAckedSeq, 5);
 

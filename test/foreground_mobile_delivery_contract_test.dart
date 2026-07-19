@@ -177,6 +177,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('zh'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: CompanionApp(
             settingsStore: settings,
             backendClient: backend,
@@ -187,6 +190,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
         if (settings.lastAckedSeq == 12) break;
       }
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('前台契约消息一'), findsOneWidget);
       expect(find.text('前台契约消息二'), findsOneWidget);
@@ -218,6 +222,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('zh'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: CompanionApp(
             settingsStore: settings,
             backendClient: backend,
@@ -228,6 +235,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
         if (backend.ackSeqs.isNotEmpty) break;
       }
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('前台契约消息一'), findsOneWidget);
       expect(find.text('前台契约消息二'), findsOneWidget);
@@ -285,6 +293,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: CompanionApp(
           settingsStore: settings,
           backendClient: backend,
@@ -297,6 +308,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.byIcon(Icons.send_rounded));
     await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 1));
     expect(find.text(reply), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 5));
@@ -341,6 +353,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('zh'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: CompanionApp(
             settingsStore: settings,
             backendClient: backend,

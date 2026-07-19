@@ -58,6 +58,14 @@ void main() {
   });
 
   testWidgets('renders the companion shell', (WidgetTester tester) async {
+    // AppLanguage.system (the default before any preference is saved)
+    // resolves via localeListResolutionCallback against the *test harness's*
+    // reported platform locales, not the dev machine's — flutter test
+    // defaults that list to en_US, which would silently flip these Chinese-
+    // text assertions to English. Pin it so the test doesn't depend on
+    // ambient locale (MaterialApp reads the plural `.locales`, not `.locale`).
+    tester.platformDispatcher.localesTestValue = const [Locale('zh')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(const MyApp());
 
     expect(find.text('TA'), findsWidgets);
@@ -72,6 +80,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
@@ -141,6 +150,9 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           drawer: YxDrawer(
             c: YxPalette.light,
@@ -182,6 +194,9 @@ void main() {
     addTearDown(controller.dispose);
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: DreamPage(
             c: YxPalette.light,
