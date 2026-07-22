@@ -188,7 +188,7 @@ class BackendClient {
     return rawMessages
         .whereType<Map>()
         .map((m) => MobilePollMessage.fromJson(Map<String, dynamic>.from(m)))
-        .where((m) => m.content.trim().isNotEmpty)
+        .where((m) => m.content.trim().isNotEmpty || m.sticker != null)
         .toList(growable: false);
   }
 

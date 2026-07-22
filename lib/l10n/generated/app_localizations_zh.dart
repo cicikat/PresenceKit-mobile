@@ -207,6 +207,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageAttachment => '图片附件';
 
   @override
+  String get stickerLoadFailed => '表情包加载失败';
+
+  @override
   String get fileAttachment => '文件附件';
 
   @override

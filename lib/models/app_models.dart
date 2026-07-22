@@ -451,6 +451,7 @@ class ChatMessage {
     required this.role,
     required this.text,
     required this.time,
+    this.sticker,
     this.animate = false,
     this.segments,
     DateTime? timestamp,
@@ -464,6 +465,7 @@ class ChatMessage {
   final String role;
   final String text;
   final String time;
+  final StickerPayload? sticker;
   final bool animate;
   final List<NarrativeSegment>? segments;
 
@@ -477,6 +479,7 @@ class ChatMessage {
     role: role,
     text: text,
     time: time,
+    sticker: sticker,
     segments: segments,
     timestamp: timestamp,
   );
@@ -1005,6 +1008,7 @@ class MobilePollMessage {
     required this.behaviorDelivery,
     required this.behaviorLevel,
     required this.behaviorId,
+    this.sticker,
   });
 
   factory MobilePollMessage.fromJson(Map<String, dynamic> json) {
@@ -1025,6 +1029,7 @@ class MobilePollMessage {
       behaviorDelivery: (behavior['delivery'] ?? '').toString(),
       behaviorLevel: (behavior['level'] ?? '').toString(),
       behaviorId: (behavior['behavior_id'] ?? '').toString(),
+      sticker: StickerPayload.fromJson(json['sticker']),
     );
   }
 
@@ -1037,14 +1042,36 @@ class MobilePollMessage {
   final String behaviorDelivery;
   final String behaviorLevel;
   final String behaviorId;
+  final StickerPayload? sticker;
 
   ChatMessage toChatMessage() {
     return ChatMessage(
       role: 'him',
       text: content,
       time: timestamp == null ? '刚才' : _formatDateTime(timestamp!),
+      sticker: sticker,
     );
   }
+}
+
+/// Mobile channel 的自包含表情包 payload；图片字节只在 UI 层按需解码。
+class StickerPayload {
+  const StickerPayload({required this.emotion, required this.dataUrl});
+
+  static StickerPayload? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final json = Map<String, dynamic>.from(raw);
+    if (json['kind']?.toString() != 'sticker') return null;
+    final dataUrl = json['data_url']?.toString().trim() ?? '';
+    if (dataUrl.isEmpty) return null;
+    return StickerPayload(
+      emotion: json['emotion']?.toString() ?? '',
+      dataUrl: dataUrl,
+    );
+  }
+
+  final String emotion;
+  final String dataUrl;
 }
 
 class BackendChatResponse {

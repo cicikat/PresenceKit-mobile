@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -175,6 +176,7 @@ class ChatScene extends StatelessWidget {
                             profileDisplayName: profileDisplayName,
                             profileAvatarBytes: profileAvatarBytes,
                             text: m.text,
+                            sticker: m.sticker,
                             animate: m.animate,
                             onRevealStarted: m.animate
                                 ? () => controller.markRevealStarted(m)
@@ -556,6 +558,7 @@ class HimMessage extends StatefulWidget {
     required this.time,
     required this.text,
     required this.prefs,
+    this.sticker,
     this.profileDisplayName = kFallbackCharacterDisplayName,
     this.profileAvatarBytes,
     this.tag,
@@ -569,6 +572,7 @@ class HimMessage extends StatefulWidget {
   final YxPalette c;
   final String time;
   final String text;
+  final StickerPayload? sticker;
   final String? tag;
   final String tagVariant;
   final bool highlight;
@@ -650,8 +654,10 @@ class _HimMessageState extends State<HimMessage> {
                 ),
                 const SizedBox(height: 4),
                 GestureDetector(
-                  onLongPressStart: (details) =>
-                      unawaited(_handleLongPress(details.globalPosition)),
+                  onLongPressStart: widget.sticker == null
+                      ? (details) =>
+                            unawaited(_handleLongPress(details.globalPosition))
+                      : null,
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 300),
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
@@ -675,7 +681,9 @@ class _HimMessageState extends State<HimMessage> {
                           left: BorderSide(color: c.character, width: 3),
                         ),
                       ),
-                      child: _selectable
+                      child: widget.sticker != null
+                          ? StickerImage(sticker: widget.sticker!)
+                          : _selectable
                           ? SelectableText(
                               widget.text,
                               style: serif(c, widget.prefs.fontSize),
@@ -695,6 +703,41 @@ class _HimMessageState extends State<HimMessage> {
         ],
       ),
     );
+  }
+}
+
+class StickerImage extends StatelessWidget {
+  const StickerImage({super.key, required this.sticker});
+
+  final StickerPayload sticker;
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = _decodeDataUrl(sticker.dataUrl);
+    if (bytes == null) return Text(context.l10n.stickerLoadFailed);
+    // Image.memory uses Flutter's multi-frame image pipeline, including GIF.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 220, maxHeight: 220),
+      child: Image.memory(
+        bytes,
+        fit: BoxFit.contain,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) => Text(context.l10n.stickerLoadFailed),
+      ),
+    );
+  }
+
+  Uint8List? _decodeDataUrl(String dataUrl) {
+    final match = RegExp(
+      r'^data:image/[a-z0-9.+-]+;base64,([A-Za-z0-9+/=_-]+)$',
+      caseSensitive: false,
+    ).firstMatch(dataUrl.trim());
+    if (match == null) return null;
+    try {
+      return base64Decode(match.group(1)!);
+    } on FormatException {
+      return null;
+    }
   }
 }
 

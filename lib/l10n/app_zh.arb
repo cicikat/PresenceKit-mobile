@@ -68,6 +68,7 @@
   "replyAction": "回复",
   "cancelReplyTooltip": "取消回复",
   "imageAttachment": "图片附件",
+  "stickerLoadFailed": "表情包加载失败",
   "fileAttachment": "文件附件",
   "composerPlaceholder": "对他说些什么…",
   "attachmentTooltip": "附件",

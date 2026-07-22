@@ -40,7 +40,7 @@ class ChatController extends ChangeNotifier {
   final Map<String, DateTime> _recentReplies = {};
   final Map<String, String> _recentIdsByFingerprint = {};
   Timer? _pollTimer;
-  final List<List<String>> _segmentQueue = [];
+  final List<List<ChatMessage>> _messageQueue = [];
   bool _playingSegments = false;
   double? _lastScrollPixels;
   bool sending = false;
@@ -344,10 +344,15 @@ class ChatController extends ChangeNotifier {
       }
       for (final message in fresh) {
         final base = message.toChatMessage();
-        final parts = message.behaviorKind.isNotEmpty
-            ? [message.content]
-            : _splitSegments(message.content);
-        unawaited(_appendSegments(parts, time: base.time));
+        if (message.content.trim().isNotEmpty) {
+          final parts = message.behaviorKind.isNotEmpty
+              ? [message.content]
+              : _splitSegments(message.content);
+          unawaited(_appendSegments(parts, time: base.time));
+        }
+        if (message.sticker != null) {
+          unawaited(_appendSticker(message.sticker!, time: base.time));
+        }
       }
       mobileActive = true;
       mobileError = null;
@@ -444,32 +449,49 @@ class ChatController extends ChangeNotifier {
   /// 期间维持 [himTyping] = true。
   Future<void> _appendSegments(List<String> parts, {String? time}) async {
     if (parts.isEmpty) return;
-    _segmentQueue.add(parts);
+    await _appendMessages([
+      for (final part in parts)
+        ChatMessage(
+          role: 'him',
+          text: part,
+          time: time ?? _nowLabel(),
+          animate: true,
+        ),
+    ]);
+  }
+
+  Future<void> _appendSticker(StickerPayload sticker, {String? time}) =>
+      _appendMessages([
+        ChatMessage(
+          role: 'him',
+          text: '',
+          time: time ?? _nowLabel(),
+          sticker: sticker,
+        ),
+      ]);
+
+  Future<void> _appendMessages(List<ChatMessage> messages) async {
+    if (messages.isEmpty) return;
+    _messageQueue.add(messages);
     if (_playingSegments) return;
     _playingSegments = true;
     final random = math.Random();
     try {
-      while (_segmentQueue.isNotEmpty) {
-        final batch = _segmentQueue.removeAt(0);
+      while (_messageQueue.isNotEmpty) {
+        final batch = _messageQueue.removeAt(0);
         for (var i = 0; i < batch.length; i++) {
           himTyping = false;
-          sent.add(
-            ChatMessage(
-              role: 'him',
-              text: batch[i],
-              time: time ?? _nowLabel(),
-              animate: true,
-            ),
-          );
+          sent.add(batch[i]);
           notifyListeners();
           scrollToBottom();
-          final hasNext = i < batch.length - 1 || _segmentQueue.isNotEmpty;
+          final hasNext = i < batch.length - 1 || _messageQueue.isNotEmpty;
           if (hasNext) {
             himTyping = true;
             notifyListeners();
-            final revealMs = (batch[i].characters.length / revealCps * 1000)
-                .round()
-                .clamp(1, 60000);
+            final revealMs =
+                (batch[i].text.characters.length / revealCps * 1000)
+                    .round()
+                    .clamp(1, 60000);
             await Future<void>.delayed(
               Duration(milliseconds: revealMs + 100 + random.nextInt(901)),
             );

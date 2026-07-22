@@ -470,6 +470,12 @@ abstract class AppLocalizations {
   /// **'图片附件'**
   String get imageAttachment;
 
+  /// No description provided for @stickerLoadFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'表情包加载失败'**
+  String get stickerLoadFailed;
+
   /// No description provided for @fileAttachment.
   ///
   /// In zh, this message translates to:

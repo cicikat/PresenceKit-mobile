@@ -211,6 +211,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageAttachment => 'Image attachment';
 
   @override
+  String get stickerLoadFailed => 'Sticker failed to load';
+
+  @override
   String get fileAttachment => 'File attachment';
 
   @override
