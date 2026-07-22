@@ -5,6 +5,65 @@ import '../models/app_models.dart';
 
 import '../widgets/common_widgets.dart';
 
+class ProfileNameDialog extends StatefulWidget {
+  const ProfileNameDialog({
+    super.key,
+    required this.c,
+    required this.initialName,
+  });
+
+  final YxPalette c;
+  final String initialName;
+
+  @override
+  State<ProfileNameDialog> createState() => _ProfileNameDialogState();
+}
+
+class _ProfileNameDialogState extends State<ProfileNameDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialName,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      backgroundColor: widget.c.surface,
+      scrollable: true,
+      title: Text(l10n.profileLocalNameTitle, style: serif(widget.c, 20)),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: 12,
+        decoration: InputDecoration(
+          hintText: l10n.profileNameHint,
+          counterText: '',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancelAction),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, ''),
+          child: Text(l10n.restoreDefaultAction),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: Text(l10n.saveAction),
+        ),
+      ],
+    );
+  }
+}
+
 class ProfilePage extends StatelessWidget {
   const ProfilePage({
     super.key,

@@ -602,45 +602,12 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   Future<void> _editProfileName() async {
-    final controller = TextEditingController(
-      text: cleanCharacterDisplayName(_profileNameOverride) ?? '',
-    );
     final value = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: c.surface,
-          scrollable: true,
-          title: Text(
-            dialogContext.l10n.profileLocalNameTitle,
-            style: serif(c, 20),
-          ),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            maxLength: 12,
-            decoration: InputDecoration(
-              hintText: dialogContext.l10n.profileNameHint,
-              counterText: '',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(dialogContext.l10n.cancelAction),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, ''),
-              child: Text(dialogContext.l10n.restoreDefaultAction),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, controller.text.trim()),
-              child: Text(dialogContext.l10n.saveAction),
-            ),
-          ],
-        );
-      },
+      builder: (_) => ProfileNameDialog(
+        c: c,
+        initialName: cleanCharacterDisplayName(_profileNameOverride) ?? '',
+      ),
     );
     if (value == null) return;
     final cleaned = cleanCharacterDisplayName(value);
@@ -1076,28 +1043,8 @@ class _CompanionAppState extends State<CompanionApp>
     final stay = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: c.surface,
-        scrollable: true,
-        title: Text(
-          dialogContext.l10n.dreamLeaveTitle,
-          style: serif(c, 18, color: c.ink1),
-        ),
-        content: Text(
-          result.retentionText ?? dialogContext.l10n.dreamStayFallback,
-          style: serif(c, 14, color: c.ink2),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(dialogContext.l10n.dreamLeaveAction),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(dialogContext.l10n.dreamStayAction),
-          ),
-        ],
-      ),
+      builder: (_) =>
+          DreamLeaveDialog(c: c, retentionText: result.retentionText),
     );
     if (!mounted) return;
     if (stay == true) {

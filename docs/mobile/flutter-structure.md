@@ -28,6 +28,7 @@
 
 - `ChatScene` 直接通过 `AnimatedBuilder` 监听 `ChatController`。
 - `DreamPage`、`GardenPage`、`DiaryPage` 直接监听各自 controller；app shell 不再展开传递领域状态、加载标记和刷新回调。
+- 资料页的本机备注名编辑弹窗属于纯 UI，位于 `profile_widgets.dart`；app shell 只负责保存编辑结果和更新组合状态。
 - controller 通过构造注入获取 BackendClient、token getter 和设备门面，不反向依赖 app shell。
 - `AppSettingsStore` 保留 `presence_mobile/settings` channel 兼容契约；Dart 侧由 `SettingsStore`、`VoiceService`、`DeviceControlService`、`ScreenSensorService`、`RelayStatusService` 分域使用。
 - 根 `MaterialApp` 监听 `LocaleController`；设置页语言项位于第一行，切换后整棵 Flutter UI 即时按新 locale 重建。完整契约见 `localization.md`。

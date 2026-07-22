@@ -8,6 +8,41 @@ import '../services/character_naming.dart';
 import '../widgets/chat_widgets.dart';
 import '../widgets/common_widgets.dart';
 
+class DreamLeaveDialog extends StatelessWidget {
+  const DreamLeaveDialog({
+    super.key,
+    required this.c,
+    required this.retentionText,
+  });
+
+  final YxPalette c;
+  final String? retentionText;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      backgroundColor: c.surface,
+      scrollable: true,
+      title: Text(l10n.dreamLeaveTitle, style: serif(c, 18, color: c.ink1)),
+      content: Text(
+        retentionText ?? l10n.dreamStayFallback,
+        style: serif(c, 14, color: c.ink2),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(l10n.dreamLeaveAction),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(l10n.dreamStayAction),
+        ),
+      ],
+    );
+  }
+}
+
 class DreamPage extends StatelessWidget {
   const DreamPage({
     super.key,
