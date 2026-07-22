@@ -250,6 +250,8 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 
 **状态（2026-07-13）**：`part` 已移除；Connection、Chat、Device、Dream、Garden、Diary controller 已建立并接线，Chat/Dream/Garden/Diary 页面直接监听 controller；app shell 不再持有这些领域的 Timer 和成组业务状态。`AppSettingsStore` 已由五个域门面包装，app shell 无直接方法调用。
 
-**剩余**：app shell 约 1499 行，仍包含 profile、theme、capability/settings、附件选择和弹窗协调，尚未达到工单 07 的 `<=600` 行长期目标。影响主要是可维护性，不改变当前接口和安全闸门。
+**状态（2026-07-22）**：app shell 已降至约 1196 行；资料、Dream、Token、节点和中继的纯 UI 对话框，以及附件可见反馈/预览文案已迁至 `widgets/`。
+
+**剩余**：app shell 仍包含 profile、theme、capability/settings、附件选择和可信 HTTP origin 等安全确认协调，尚未达到工单 07 的 `<=600` 行长期目标。影响主要是可维护性，不改变当前接口和安全闸门。
 
 </details>

@@ -41,7 +41,7 @@ Flutter 入口 `lib/main.dart` 约 164 行：
 - `services/backend_client.dart` 直接用 `dart:io` `HttpClient` 调后端 HTTP。
 - `models/` 保存数据/config 定义，`widgets/` 按聊天、能力、设置、日记、花园等领域保存 Flutter UI。
 
-Dart `part` 结构已移除，models/services/controllers/pages/widgets 通过普通 import 建立独立 library 边界。controller 与设备门面已接入，剩余 UI 协调结构债见工单 07。
+Dart `part` 结构已移除，models/services/controllers/pages/widgets 通过普通 import 建立独立 library 边界。controller 与设备门面已接入；资料、Dream、Token、节点和中继的纯 UI 对话框已在 `widgets/`，剩余 UI 协调结构债见工单 07。
 
 Android 原生入口是 `MainActivity.kt`：
 
@@ -179,4 +179,4 @@ YexuanAccessibilityService
 | `DreamController` / `GardenController` / `DiaryController` | 各自页面状态与刷新/轮询 | 对应页面直接监听 |
 | `ThemeController` | 多颜色预设、旧单色盘迁移、内置 mod、Web 持久化与导出 | 设置页颜色预设管理器 |
 
-`app_shell.dart` 仍是组合根，不得新增领域字段、Timer 或成组业务方法；当前未下沉的 profile、theme、capability/settings、附件和弹窗协调列为工单 07 后续结构债。
+`app_shell.dart` 仍是组合根，不得新增领域字段、Timer 或成组业务方法；当前未下沉的 profile、theme、capability/settings、附件协调，以及可信 HTTP origin 等安全确认列为工单 07 后续结构债。

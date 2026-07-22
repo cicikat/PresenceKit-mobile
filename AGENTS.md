@@ -18,7 +18,7 @@
 
 - Flutter 主界面已经实现主对话、资料、日记、花园、能力检查、后端节点设置和主题编辑。
 - `lib/main.dart` 已完成重构，现在只有约 164 行入口代码；之前提到的 8k+ 行已拆分完毕。
-- `lib/pages/app_shell.dart` 当前约 1499 行，已迁出连接、聊天、设备、Dream、Garden、Diary 的领域状态与 Timer；仍保留组合根、路由以及 profile/theme/capability/settings 等 UI 协调。结构债状态见 `cc-tasks/07-app_shell结构债审计与拆分.md`。
+- `lib/pages/app_shell.dart` 当前约 1196 行，已迁出连接、聊天、设备、Dream、Garden、Diary 的领域状态与 Timer，并将资料、Dream、Token、节点和中继的纯 UI 对话框下沉至 `widgets/`；仍保留组合根、路由以及 profile/theme/capability/settings 等 UI 协调。结构债状态见 `cc-tasks/07-app_shell结构债审计与拆分.md`。
 - `lib/pages/chat_page.dart`、`lib/widgets/api_service.dart`、`lib/services/message_bubble.dart` **已废弃/不再使用**，上述路径已不存在或为空壳。
 - 主对话发送消息与 Emerald-client 桌面端一致，走 `POST /desktop/chat`；聊天历史只读 `/chat-log/*`。
 - Dream 是独立页面和消息流，走 `GET /dream/state`、`POST /dream/enter|chat|exit`。

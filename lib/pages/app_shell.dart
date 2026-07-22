@@ -31,9 +31,11 @@ import '../widgets/dream_widgets.dart';
 import '../widgets/garden_widgets.dart';
 import '../widgets/group_widgets.dart';
 import '../widgets/profile_widgets.dart';
+import '../widgets/settings_dialog_widgets.dart';
 import '../widgets/settings_editor_widgets.dart';
 import '../widgets/settings_widgets.dart';
 import '../widgets/theme_widgets.dart';
+import '../widgets/upload_feedback_widgets.dart';
 
 class CompanionApp extends StatefulWidget {
   const CompanionApp({
@@ -353,80 +355,13 @@ class _CompanionAppState extends State<CompanionApp>
 
   Future<void> _openAdminTokenSettings({bool required = false}) async {
     if (!mounted) return;
-    final controller = TextEditingController();
-    String? dialogError;
-    final savedToken = await _showTextInputDialog<String>(
-      controllers: [controller],
+    final savedToken = await showDialog<String>(
       barrierDismissible: !required,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, dialogSetState) => AlertDialog(
-          backgroundColor: c.surface,
-          scrollable: true,
-          title: Text(
-            required
-                ? dialogContext.l10n.tokenSetTitle
-                : dialogContext.l10n.tokenReplaceTitle,
-            style: TextStyle(color: c.ink1),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                dialogContext.l10n.tokenHelp,
-                style: TextStyle(color: c.ink2),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                obscureText: false,
-                enableInteractiveSelection: true,
-                keyboardType: TextInputType.text,
-                textInputAction: TextInputAction.done,
-                autocorrect: false,
-                enableSuggestions: false,
-                style: TextStyle(color: c.ink1),
-                decoration: InputDecoration(
-                  labelText: dialogContext.l10n.settingsAccessTokenTitle,
-                  errorText: dialogError,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            if (!required)
-              TextButton(
-                onPressed: () => _dismissTextInputDialog(dialogContext),
-                child: Text(dialogContext.l10n.cancelAction),
-              ),
-            FilledButton(
-              onPressed: () async {
-                final value = controller.text.trim();
-                if (value.isEmpty) {
-                  dialogSetState(
-                    () => dialogError = dialogContext.l10n.tokenRequiredError,
-                  );
-                  return;
-                }
-                try {
-                  await _connectionController.saveToken(value);
-                } catch (e) {
-                  if (!dialogContext.mounted) return;
-                  dialogSetState(
-                    () => dialogError = dialogContext.l10n.saveFailedMessage(
-                      e.toString(),
-                    ),
-                  );
-                  return;
-                }
-                if (!dialogContext.mounted) return;
-                _dismissTextInputDialog(dialogContext, result: value);
-              },
-              child: Text(dialogContext.l10n.saveAction),
-            ),
-          ],
-        ),
+      context: context,
+      builder: (_) => AdminTokenDialog(
+        c: c,
+        required: required,
+        onSave: _connectionController.saveToken,
       ),
     );
     if (savedToken == null || !mounted) return;
@@ -775,262 +710,45 @@ class _CompanionAppState extends State<CompanionApp>
   static final RegExp _safeOwnerUserIdPattern = RegExp(r'^[A-Za-z0-9_-]+$');
   static final RegExp _safeRelayTopicPattern = RegExp(r'^[a-z0-9/_-]+$');
 
-  Future<T?> _showTextInputDialog<T>({
-    required List<TextEditingController> controllers,
-    required WidgetBuilder builder,
-    bool barrierDismissible = true,
-  }) async {
-    try {
-      return await showDialog<T>(
-        context: context,
-        barrierDismissible: barrierDismissible,
-        builder: (dialogContext) => PopScope<T>(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, _) {
-            if (!didPop) _dismissTextInputDialog<T>(dialogContext);
-          },
-          child: builder(dialogContext),
-        ),
-      );
-    } finally {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(
-          Future<void>.delayed(const Duration(milliseconds: 320), () {
-            for (final controller in controllers) {
-              controller.dispose();
-            }
-          }),
-        );
-      });
-    }
-  }
-
-  void _dismissTextInputDialog<T>(BuildContext dialogContext, {T? result}) {
-    FocusManager.instance.primaryFocus?.unfocus();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (dialogContext.mounted) {
-        Navigator.of(dialogContext).pop<T>(result);
-      }
-    });
-  }
-
-  void _openBackendSettings() {
-    final controller = TextEditingController(text: _backendBaseUrl);
-    final ownerController = TextEditingController(text: _ownerUserId);
-    String? dialogError;
-    String? ownerDialogError;
-
-    unawaited(
-      _showTextInputDialog<void>(
-        controllers: [controller, ownerController],
-        builder: (dialogContext) {
-          return StatefulBuilder(
-            builder: (dialogContext, dialogSetState) {
-              return AlertDialog(
-                backgroundColor: c.surface,
-                scrollable: true,
-                title: Text(
-                  dialogContext.l10n.backendNodeTitle,
-                  style: serif(c, 20),
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: controller,
-                      autofocus: true,
-                      keyboardType: TextInputType.url,
-                      style: mono(c, 13),
-                      decoration: InputDecoration(
-                        hintText: 'http://192.168.1.23:8080',
-                        errorText: dialogError,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      dialogContext.l10n.backendNodeHelp,
-                      style: serif(c, 12, color: c.ink3),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: ownerController,
-                      keyboardType: TextInputType.text,
-                      style: mono(c, 13),
-                      decoration: InputDecoration(
-                        labelText: dialogContext.l10n.userIdLabel,
-                        hintText: dialogContext.l10n.userIdHint,
-                        errorText: ownerDialogError,
-                      ),
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => _dismissTextInputDialog(dialogContext),
-                    child: Text(dialogContext.l10n.cancelAction),
-                  ),
-                  FilledButton(
-                    onPressed: () async {
-                      final normalized = await _normalizeBackendBaseUrl(
-                        controller.text,
-                      );
-                      if (normalized == null) {
-                        dialogSetState(
-                          () => dialogError =
-                              dialogContext.l10n.invalidAddressError,
-                        );
-                        return;
-                      }
-                      final ownerValue = ownerController.text.trim();
-                      if (ownerValue.isNotEmpty &&
-                          !_safeOwnerUserIdPattern.hasMatch(ownerValue)) {
-                        dialogSetState(
-                          () => ownerDialogError =
-                              dialogContext.l10n.userIdInvalidError,
-                        );
-                        return;
-                      }
-                      if (!dialogContext.mounted) return;
-                      _dismissTextInputDialog(dialogContext);
-                      if (ownerValue != _ownerUserId) {
-                        await _connectionController.saveOwnerUserId(ownerValue);
-                        if (mounted) setState(() {});
-                      }
-                      unawaited(_changeBackendBaseUrl(normalized));
-                    },
-                    child: Text(dialogContext.l10n.saveReconnectAction),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+  Future<void> _openBackendSettings() async {
+    final result = await showDialog<BackendSettingsResult>(
+      context: context,
+      builder: (_) => BackendSettingsDialog(
+        c: c,
+        initialBaseUrl: _backendBaseUrl,
+        initialOwnerUserId: _ownerUserId,
+        normalizeBaseUrl: _normalizeBackendBaseUrl,
+        isOwnerUserIdValid: _safeOwnerUserIdPattern.hasMatch,
       ),
     );
+    if (result == null || !mounted) return;
+    if (result.ownerUserId != _ownerUserId) {
+      await _connectionController.saveOwnerUserId(result.ownerUserId);
+      if (!mounted) return;
+      setState(() {});
+    }
+    unawaited(_changeBackendBaseUrl(result.baseUrl));
   }
 
   Future<void> _openRelaySettings() async {
-    final currentBaseUrl = _connectionController.relayBaseUrl;
-    final currentTopic = _connectionController.relayTopic;
-    final currentToken = _connectionController.relayToken;
-    if (!mounted) return;
-
-    final baseUrlController = TextEditingController(text: currentBaseUrl);
-    final topicController = TextEditingController(text: currentTopic);
-    final tokenController = TextEditingController(text: currentToken);
-    String? baseUrlError;
-    String? topicError;
-
-    await _showTextInputDialog<void>(
-      controllers: [baseUrlController, topicController, tokenController],
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (dialogContext, dialogSetState) {
-            return AlertDialog(
-              backgroundColor: c.surface,
-              scrollable: true,
-              title: Text(
-                dialogContext.l10n.relayDialogTitle,
-                style: serif(c, 20),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: baseUrlController,
-                    autofocus: true,
-                    keyboardType: TextInputType.url,
-                    style: mono(c, 13),
-                    decoration: InputDecoration(
-                      labelText: dialogContext.l10n.relayAddressLabel,
-                      hintText: 'https://ntfy.sh 或 http://192.168.x.x:8090',
-                      errorText: baseUrlError,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: topicController,
-                    keyboardType: TextInputType.text,
-                    style: mono(c, 13),
-                    decoration: InputDecoration(
-                      labelText: 'topic',
-                      hintText: dialogContext.l10n.relayTopicHint,
-                      errorText: topicError,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: tokenController,
-                    keyboardType: TextInputType.text,
-                    style: mono(c, 13),
-                    decoration: InputDecoration(
-                      labelText: dialogContext.l10n.relayTokenLabel,
-                      hintText: dialogContext.l10n.relayTokenHint,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    dialogContext.l10n.relayHelp,
-                    style: serif(c, 12, color: c.ink3),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => _dismissTextInputDialog(dialogContext),
-                  child: Text(dialogContext.l10n.cancelAction),
-                ),
-                FilledButton(
-                  onPressed: () async {
-                    final topicValue = topicController.text.trim();
-                    if (topicValue.isNotEmpty &&
-                        (!_safeRelayTopicPattern.hasMatch(topicValue) ||
-                            topicValue.length > 128)) {
-                      dialogSetState(
-                        () => topicError =
-                            dialogContext.l10n.relayTopicInvalidError,
-                      );
-                      return;
-                    }
-                    final rawBaseUrl = baseUrlController.text.trim();
-                    String normalized = '';
-                    if (rawBaseUrl.isNotEmpty) {
-                      final resolved = await _normalizeBackendBaseUrl(
-                        rawBaseUrl,
-                      );
-                      if (resolved == null) {
-                        dialogSetState(
-                          () => baseUrlError =
-                              dialogContext.l10n.invalidAddressError,
-                        );
-                        return;
-                      }
-                      if (!await _ensureTrustedBackendOrigin(resolved)) {
-                        dialogSetState(
-                          () => baseUrlError =
-                              dialogContext.l10n.untrustedAddressError,
-                        );
-                        return;
-                      }
-                      normalized = resolved;
-                    }
-                    if (!dialogContext.mounted) return;
-                    _dismissTextInputDialog(dialogContext);
-                    await _connectionController.saveRelay(
-                      baseUrl: normalized,
-                      topic: topicValue,
-                      token: tokenController.text.trim(),
-                    );
-                  },
-                  child: Text(dialogContext.l10n.saveAction),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    final result = await showDialog<RelaySettingsResult>(
+      context: context,
+      builder: (_) => RelaySettingsDialog(
+        c: c,
+        initialBaseUrl: _connectionController.relayBaseUrl,
+        initialTopic: _connectionController.relayTopic,
+        initialToken: _connectionController.relayToken,
+        normalizeBaseUrl: _normalizeBackendBaseUrl,
+        ensureTrustedOrigin: _ensureTrustedBackendOrigin,
+        isTopicValid: (topic) =>
+            _safeRelayTopicPattern.hasMatch(topic) && topic.length <= 128,
+      ),
+    );
+    if (result == null || !mounted) return;
+    await _connectionController.saveRelay(
+      baseUrl: result.baseUrl,
+      topic: result.topic,
+      token: result.token,
     );
   }
 
@@ -1257,21 +975,17 @@ class _CompanionAppState extends State<CompanionApp>
     final lowerName = picked.name.toLowerCase();
     const supported = ['.txt', '.md', '.docx'];
     if (!supported.any(lowerName.endsWith)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.fileTypeUnsupported)));
+      UploadFeedback.fileTypeUnsupported(context);
       return;
     }
     if (picked.bytes.length > 5 * 1024 * 1024) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.fileTooLarge)));
+      UploadFeedback.fileTooLarge(context);
       return;
     }
     await _chatController.uploadFiles(
       [picked],
-      preview: '📎 ${picked.name}',
-      failureLabel: context.l10n.fileFailureLabel,
+      preview: UploadFeedback.filePreview(picked.name),
+      failureLabel: UploadFeedback.fileFailureLabel(context),
     );
   }
 
@@ -1292,31 +1006,26 @@ class _CompanionAppState extends State<CompanionApp>
     if (picked.any(
       (file) => !supported.any(file.name.toLowerCase().endsWith),
     )) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.imageTypeUnsupported)),
-      );
+      UploadFeedback.imageTypeUnsupported(context);
       return;
     }
     if (picked.any((file) => file.bytes.length > 10 * 1024 * 1024)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.imageTooLarge)));
+      UploadFeedback.imageTooLarge(context);
       return;
     }
     final names = picked.length == 1
         ? picked.first.name
         : picked.take(3).map((file) => file.name).join('、');
-    final preview = picked.length == 1
-        ? '📎 $names'
-        : context.l10n.imageCountPreview(
-            picked.length,
-            names,
-            picked.length > 3 ? '…' : '',
-          );
+    final preview = UploadFeedback.imagePreview(
+      context,
+      count: picked.length,
+      names: names,
+      hasMore: picked.length > 3,
+    );
     await _chatController.uploadFiles(
       picked,
       preview: preview,
-      failureLabel: context.l10n.imageFailureLabel,
+      failureLabel: UploadFeedback.imageFailureLabel(context),
     );
   }
 

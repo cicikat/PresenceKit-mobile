@@ -29,6 +29,7 @@
 - `ChatScene` 直接通过 `AnimatedBuilder` 监听 `ChatController`。
 - `DreamPage`、`GardenPage`、`DiaryPage` 直接监听各自 controller；app shell 不再展开传递领域状态、加载标记和刷新回调。
 - 资料页的本机备注名编辑弹窗属于纯 UI，位于 `profile_widgets.dart`；app shell 只负责保存编辑结果和更新组合状态。
+- Token、后端节点和中继设置对话框位于 `settings_dialog_widgets.dart`；附件选择与上传仍由 app shell 协调，`upload_feedback_widgets.dart` 负责其可见反馈和预览文案。
 - controller 通过构造注入获取 BackendClient、token getter 和设备门面，不反向依赖 app shell。
 - `AppSettingsStore` 保留 `presence_mobile/settings` channel 兼容契约；Dart 侧由 `SettingsStore`、`VoiceService`、`DeviceControlService`、`ScreenSensorService`、`RelayStatusService` 分域使用。
 - 根 `MaterialApp` 监听 `LocaleController`；设置页语言项位于第一行，切换后整棵 Flutter UI 即时按新 locale 重建。完整契约见 `localization.md`。
@@ -45,7 +46,7 @@
 
 ## 当前结构债
 
-`app_shell.dart` 已从本轮开始时约 2406 行降至约 1499 行，连接、聊天、设备、Dream、Garden、Diary 的领域状态和 Timer 已迁出。它仍包含 profile、theme、capability/settings 页面编排、附件选择和部分弹窗协调，尚未达到工单最初提出的 `<=600` 行愿景。后续新增领域功能仍必须新建 controller 和 widget，不得把领域字段、Timer 或成组业务方法加回 app shell。
+`app_shell.dart` 已从本轮开始时约 2406 行降至约 1196 行，连接、聊天、设备、Dream、Garden、Diary 的领域状态和 Timer 已迁出；资料、Dream、Token、节点和中继的纯 UI 对话框也已迁至 `widgets/`。它仍包含 profile、theme、capability/settings 页面编排、附件选择和可信 HTTP origin 等安全确认协调，尚未达到工单最初提出的 `<=600` 行愿景。后续新增领域功能仍必须新建 controller 和 widget，不得把领域字段、Timer 或成组业务方法加回 app shell。
 
 ## 验证
 
