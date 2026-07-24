@@ -52,6 +52,10 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
   不再固定显示应用名；API 28+ 用 `Notification.MessagingStyle` 让头像出现在左侧、更贴近聊天气泡观感，
   头像直接读 `MainActivity.avatarFile()`（`filesDir/profile_avatar.png`，Service 与 Activity 共享同一
   `filesDir`，无需额外传值）；低于 API 28 退回 `BigTextStyle` + `setLargeIcon()`，头像仍显示但在右侧。
+- 弹窗正文只显示 `content` 按 `\n+` 切出的第一段（对齐桌面端"一段一个气泡"的切法），超过 25 字
+  截断并加"…"（两行 × 15 字算下来是 30，但实测 30 会挤成三行，留了余量压到 25）；展开态也是同一份
+  裁过的文本，不会露出完整多段回复。已静默收取的条数不再拼进这条弹窗，能力检查页和常驻前台状态栏
+  已经展示。
 - 能力检查页展示被静音/冷却拦截的累计计数和最近原因；测试模式默认关闭，开启时只绕过静音与冷却闸门，不改变消息消费逻辑。
 
 注意：

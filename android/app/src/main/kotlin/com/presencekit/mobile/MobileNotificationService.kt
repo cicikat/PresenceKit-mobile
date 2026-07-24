@@ -151,7 +151,7 @@ class MobileNotificationService : Service() {
         }.getOrNull()
         Log.d(tag, "debug background delivery behavior=${behavior != null}")
         if (behavior == null) {
-            showMessageNotification(content, 0)
+            showMessageNotification(content)
             return
         }
         deliverBackgroundMessage(content, behavior)
@@ -918,7 +918,7 @@ class MobileNotificationService : Service() {
     private fun buildForegroundNotification(text: String) =
         notificationBuilder(serviceChannelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("\u966a\u4f34\u540e\u53f0\u63a5\u6536")
+            .setContentTitle("PresenceKit\u540e\u53f0\u63a5\u6536")
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -944,7 +944,7 @@ class MobileNotificationService : Service() {
             recordSuppressedMessage(blockReason)
             return
         }
-        showMessageNotification(content, suppressedCount())
+        showMessageNotification(content)
         servicePrefs()
             .edit()
             .putLong("lastMessageNotificationAt", now)
@@ -1117,19 +1117,42 @@ class MobileNotificationService : Service() {
         return runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
     }
 
-    private fun showMessageNotification(content: String, suppressedBefore: Int) {
-        val id = 20000 + (notificationIndex.getAndIncrement() % 1000)
-        val body = if (suppressedBefore > 0) {
-            "\u6b64\u524d\u5df2\u9759\u9ed8\u6536\u53d6 $suppressedBefore \u6761\u3002\n$content"
+    // Banner preview budget: ~15 CJK chars/line, 2 lines max before it looks
+    // cramped on a heads-up notification \u2014 measured empirically on-device, not
+    // an OS constant. Set below the naive 2\u00d715=30 because 30 (29 chars + "\u2026")
+    // still wrapped to 3 lines in practice \u2014 keeping a margin here instead of
+    // cutting it exactly at the line budget. Only the popup is capped; the
+    // in-app chat history still gets the untruncated `content`.
+    private val notificationPreviewMaxChars = 25
+
+    // Only the first "bubble" (paragraph \u2014 same \n+ split desktop uses to turn
+    // one reply into multiple chat bubbles) is ever shown in the popup; the
+    // rest is truncated with an ellipsis, same as if that first paragraph
+    // alone had run past the 2-line budget. Full text is one tap away in-app.
+    private fun notificationPreviewText(content: String): String {
+        val firstParagraph = content
+            .split(Regex("\n+"))
+            .map { it.trim() }
+            .firstOrNull { it.isNotEmpty() }
+            ?: content.trim()
+        return if (firstParagraph.length > notificationPreviewMaxChars) {
+            firstParagraph.take(notificationPreviewMaxChars - 1) + "\u2026"
         } else {
-            content
+            firstParagraph
         }
+    }
+
+    // 已静默收取的条数不再拼进弹窗正文（会顶掉两行预算）；能力检查页和常驻前台
+    // 状态栏（recordSuppressedMessage → updateForegroundNotification）已经展示这个计数。
+    private fun showMessageNotification(content: String) {
+        val id = 20000 + (notificationIndex.getAndIncrement() % 1000)
+        val preview = notificationPreviewText(content)
         val displayName = characterDisplayName()
         val avatar = avatarBitmap()
         val builder = notificationBuilder(messageChannelId)
             .setSmallIcon(android.R.drawable.ic_dialog_email)
             .setContentTitle(displayName)
-            .setContentText(content)
+            .setContentText(preview)
             .setAutoCancel(true)
             .setContentIntent(openAppIntent())
         if (avatar != null) {
@@ -1138,7 +1161,9 @@ class MobileNotificationService : Service() {
         // MessagingStyle renders the sender's avatar on the left like a chat
         // bubble (Person requires API 28+); older devices keep the plain
         // BigTextStyle + setLargeIcon() from before \u2014 avatar still shows, just
-        // on the right instead of the left.
+        // on the right instead of the left. Both styles use the same
+        // paragraph-capped `preview`, not the raw multi-paragraph `content` \u2014
+        // expanding the notification must not spill the full reply either.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val sender = Person.Builder().setName(displayName).apply {
                 if (avatar != null) setIcon(Icon.createWithBitmap(avatar))
@@ -1146,10 +1171,10 @@ class MobileNotificationService : Service() {
             val me = Person.Builder().setName("").build()
             builder.setStyle(
                 android.app.Notification.MessagingStyle(me)
-                    .addMessage(body, System.currentTimeMillis(), sender),
+                    .addMessage(preview, System.currentTimeMillis(), sender),
             )
         } else {
-            builder.setStyle(android.app.Notification.BigTextStyle().bigText(body))
+            builder.setStyle(android.app.Notification.BigTextStyle().bigText(preview))
         }
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(id, builder.build())
