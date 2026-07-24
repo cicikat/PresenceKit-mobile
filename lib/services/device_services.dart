@@ -19,6 +19,8 @@ class SettingsStore {
   Future<String?> loadProfileName() => _store.loadProfileDisplayName();
   Future<void> saveProfileName(String value) =>
       _store.saveProfileDisplayName(value);
+  Future<void> cacheCharacterDisplayName(String value) =>
+      _store.cacheCharacterDisplayName(value);
   Future<Uint8List?> loadAvatar() => _store.loadProfileAvatar();
   Future<bool> saveAvatar(Uint8List value) => _store.saveProfileAvatar(value);
   Future<void> deleteAvatar() => _store.deleteProfileAvatar();

@@ -116,6 +116,15 @@ class _CompanionAppState extends State<CompanionApp>
     backendName: _backendCharacterDisplayName,
   );
 
+  /// Pushes the resolved display name to native prefs so background push
+  /// notifications (`MobileNotificationService`) can title themselves with
+  /// the character's name instead of the generic app label. Call after any
+  /// state change that can affect [_profileDisplayName] (nickname override,
+  /// prompt assets load/switch).
+  void _syncCachedCharacterDisplayName() {
+    unawaited(_settings.cacheCharacterDisplayName(_profileDisplayName));
+  }
+
   String _requireAdminToken() {
     final token = _adminToken.trim();
     if (token.isEmpty) {
@@ -197,6 +206,7 @@ class _CompanionAppState extends State<CompanionApp>
         _profileNameOverride = storedName;
         _profileAvatarBytes = storedAvatar;
       });
+      _syncCachedCharacterDisplayName();
     }
     if (!mounted) return;
     if (_hasAdminToken) {
@@ -549,6 +559,7 @@ class _CompanionAppState extends State<CompanionApp>
     await _settings.saveProfileName(cleaned ?? '');
     if (!mounted) return;
     setState(() => _profileNameOverride = cleaned);
+    _syncCachedCharacterDisplayName();
   }
 
   Future<void> _importProfileAvatar() async {
@@ -792,6 +803,7 @@ class _CompanionAppState extends State<CompanionApp>
       );
       if (!mounted) return;
       setState(() => _promptAssets = assets);
+      _syncCachedCharacterDisplayName();
     } on BackendException catch (e) {
       if (mounted) setState(() => _promptAssetsError = e.message);
     } finally {
@@ -812,6 +824,7 @@ class _CompanionAppState extends State<CompanionApp>
       );
       if (!mounted) return;
       setState(() => _promptAssets = assets);
+      _syncCachedCharacterDisplayName();
     } on BackendException catch (e) {
       if (mounted) setState(() => _promptAssetsError = e.message);
     } finally {

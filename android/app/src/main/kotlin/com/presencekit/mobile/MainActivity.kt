@@ -185,6 +185,20 @@ class MainActivity : FlutterActivity() {
                         }
                         result.success(null)
                     }
+                    "cacheCharacterDisplayName" -> {
+                        // Fully-resolved display name (local override, else backend character
+                        // name, else neutral fallback — resolved in Dart's
+                        // resolveCharacterDisplayName()). Distinct from the raw
+                        // "profileDisplayName" override above; this is what
+                        // MobileNotificationService titles background push notifications with.
+                        val value = call.argument<String>("value").orEmpty().trim()
+                        if (value.isBlank()) {
+                            prefs.edit().remove("cachedCharacterDisplayName").apply()
+                        } else {
+                            prefs.edit().putString("cachedCharacterDisplayName", value).apply()
+                        }
+                        result.success(null)
+                    }
                     "pickProfileImage" -> {
                         pickProfileImage(result)
                     }

@@ -47,6 +47,11 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
   中继接管时会打断在途轮询并丢弃旧 generation 结果，避免双重弹出。
 - 根据 behavior metadata 决定悬浮窗或普通通知。
 - 普通通知受静音时段和 30 分钟冷却控制。
+- 普通通知标题使用 `cachedCharacterDisplayName`（Flutter 侧 `resolveCharacterDisplayName()` 的结果，
+  由 `AppSettingsStore.cacheCharacterDisplayName()` 经 `MethodChannel` 写入，取不到时回退中性占位），
+  不再固定显示应用名；API 28+ 用 `Notification.MessagingStyle` 让头像出现在左侧、更贴近聊天气泡观感，
+  头像直接读 `MainActivity.avatarFile()`（`filesDir/profile_avatar.png`，Service 与 Activity 共享同一
+  `filesDir`，无需额外传值）；低于 API 28 退回 `BigTextStyle` + `setLargeIcon()`，头像仍显示但在右侧。
 - 能力检查页展示被静音/冷却拦截的累计计数和最近原因；测试模式默认关闭，开启时只绕过静音与冷却闸门，不改变消息消费逻辑。
 
 注意：

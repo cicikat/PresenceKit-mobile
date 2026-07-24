@@ -279,6 +279,25 @@ class AppSettingsStore {
     }
   }
 
+  /// Caches the fully-resolved character display name (local nickname
+  /// override, else backend character name, else the neutral fallback — see
+  /// `resolveCharacterDisplayName()`) into native prefs so
+  /// `MobileNotificationService` can use it as the background push
+  /// notification title instead of the generic app name. Distinct from
+  /// [saveProfileDisplayName], which only stores the raw local override.
+  Future<void> cacheCharacterDisplayName(String value) async {
+    if (!_channelAvailable) return;
+    try {
+      await PlatformSettingsChannel.channel.invokeMethod<void>(
+        'cacheCharacterDisplayName',
+        {'value': value},
+      );
+    } on PlatformException {
+      // Best-effort cache for the background notification title; the
+      // notification just falls back to the neutral label if this fails.
+    }
+  }
+
   Future<Uint8List?> pickProfileImage() async {
     if (!_channelAvailable) return null;
     try {

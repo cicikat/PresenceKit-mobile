@@ -5,10 +5,14 @@ import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.Person
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.IBinder
 import android.os.SystemClock
@@ -18,6 +22,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.net.ConnectException
@@ -1093,6 +1098,25 @@ class MobileNotificationService : Service() {
         manager.notify(foregroundId, buildForegroundNotification(text))
     }
 
+    // Fully-resolved character display name cached by Flutter's
+    // _syncCachedCharacterDisplayName() (local nickname override, else backend
+    // character name, else neutral fallback). Falls back to the neutral label
+    // here too in case the cache was never written (fresh install, or the
+    // MethodChannel write raced with the very first background message).
+    private fun characterDisplayName(): String {
+        val cached = servicePrefs().getString("cachedCharacterDisplayName", null)?.trim().orEmpty()
+        return cached.ifBlank { "TA" }
+    }
+
+    // Same file MainActivity.avatarFile() writes to (app-private filesDir, not
+    // scoped by servicePrefs). Any Context \u2014 Service included \u2014 sees the same
+    // filesDir for this app, so no extra plumbing needed to share it.
+    private fun avatarBitmap(): Bitmap? {
+        val file = File(filesDir, "profile_avatar.png")
+        if (!file.exists()) return null
+        return runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+    }
+
     private fun showMessageNotification(content: String, suppressedBefore: Int) {
         val id = 20000 + (notificationIndex.getAndIncrement() % 1000)
         val body = if (suppressedBefore > 0) {
@@ -1100,16 +1124,35 @@ class MobileNotificationService : Service() {
         } else {
             content
         }
-        val notification = notificationBuilder(messageChannelId)
+        val displayName = characterDisplayName()
+        val avatar = avatarBitmap()
+        val builder = notificationBuilder(messageChannelId)
             .setSmallIcon(android.R.drawable.ic_dialog_email)
-            .setContentTitle("\u966a\u4f34")
+            .setContentTitle(displayName)
             .setContentText(content)
-            .setStyle(android.app.Notification.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setContentIntent(openAppIntent())
-            .build()
+        if (avatar != null) {
+            builder.setLargeIcon(avatar)
+        }
+        // MessagingStyle renders the sender's avatar on the left like a chat
+        // bubble (Person requires API 28+); older devices keep the plain
+        // BigTextStyle + setLargeIcon() from before \u2014 avatar still shows, just
+        // on the right instead of the left.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val sender = Person.Builder().setName(displayName).apply {
+                if (avatar != null) setIcon(Icon.createWithBitmap(avatar))
+            }.build()
+            val me = Person.Builder().setName("").build()
+            builder.setStyle(
+                android.app.Notification.MessagingStyle(me)
+                    .addMessage(body, System.currentTimeMillis(), sender),
+            )
+        } else {
+            builder.setStyle(android.app.Notification.BigTextStyle().bigText(body))
+        }
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(id, notification)
+        manager.notify(id, builder.build())
     }
 
     private fun notificationBuilder(channelId: String): android.app.Notification.Builder {
