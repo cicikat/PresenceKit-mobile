@@ -89,6 +89,9 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 | `POST /sensor/realtime` | Flutter / Android service | 屏幕上下文上报；默认仅包名/App 名，正文仅对白名单 App 放行 |
 | `GET /sensor/behavior/status` | 能力检查页 | 调试最近行为裁决 |
 | `POST /mobile/push` | 能力检查页 | 写入主动行为测试 |
+| `POST /phone_control/step` | Android `PhoneControlService` | 手机自动化循环：上报截屏/节点观察，换回下一步动作；契约见 `docs/protocols/phone-control-protocol.md` |
+| `GET /phone_control/status` | 能力检查页 | 只读诊断：角色是否已授权 `phone_control` 工具 + 视觉模型是否已配置 |
+| `POST /phone_control/debug/start` | 能力检查页测试面板 | 调试用：跳过 LLM 判断和 chat 内二次确认直接发起任务，仍过 danger-mode 门禁 |
 | `POST /upload/ingest` | Flutter 文件/图片上传 | 文件投喂后端 |
 | `GET /dream/state` | Flutter Dream 页面 | 读取 Dream 独立状态 |
 | `POST /dream/enter` | Flutter Dream 页面 | 进入 Dream |

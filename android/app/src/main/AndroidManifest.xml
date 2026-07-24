@@ -44,6 +44,14 @@
             android:name=".FloatingBubbleService"
             android:exported="false" />
         <service
+            android:name=".PhoneControlService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-confirmed phone automation loop (accessibility taps/reads)" />
+        </service>
+        <service
             android:name=".YexuanAccessibilityService"
             android:exported="true"
             android:label="@string/accessibility_service_label"

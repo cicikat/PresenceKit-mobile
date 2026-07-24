@@ -961,8 +961,10 @@ class MobileNotificationService : Service() {
             behavior.optString("delivery"),
             behavior.optString("level"),
         ) ?: return null
-        val route = if (mode == "lock" || mode == "order") "action" else "presence"
-        return OverlayRequest(mode, route)
+        val route = if (mode == "lock" || mode == "order" || mode == "control") "action" else "presence"
+        val taskId = if (mode == "control") behavior.optString("task_id").ifBlank { null } else null
+        val task = if (mode == "control") behavior.optString("task").ifBlank { null } else null
+        return OverlayRequest(mode, route, taskId, task)
     }
 
     companion object {
@@ -997,6 +999,7 @@ class MobileNotificationService : Service() {
         ): String? = when (behaviorId) {
             "lock_screen", "lock_screen_confirm" -> "lock"
             "takeout_order", "takeout_overlay" -> "order"
+            "phone_control_task" -> "control"
             "presence_ping" -> "message"
             else -> when (kind) {
                 "lock_screen_confirm" -> "lock"
@@ -1022,6 +1025,8 @@ class MobileNotificationService : Service() {
                 putExtra("mode", request.mode)
                 putExtra("message", content)
                 putExtra("target", "meituan")
+                request.taskId?.let { putExtra("task_id", it) }
+                request.task?.let { putExtra("task", it) }
             },
         )
         val label = if (request.route == "action") {
@@ -1037,6 +1042,8 @@ class MobileNotificationService : Service() {
     private data class OverlayRequest(
         val mode: String,
         val route: String,
+        val taskId: String? = null,
+        val task: String? = null,
     )
 
     private data class RelayConfig(

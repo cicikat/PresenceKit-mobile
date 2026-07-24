@@ -71,8 +71,11 @@ class FloatingBubbleService : Service() {
         val mode = intent?.getStringExtra("mode").orEmpty()
         val target = intent?.getStringExtra("target").orEmpty().ifBlank { "meituan" }
         val message = intent?.getStringExtra("message").orEmpty()
+        val taskId = intent?.getStringExtra("task_id").orEmpty()
+        val task = intent?.getStringExtra("task").orEmpty()
         val isOrder = mode == "order"
         val isLock = mode == "lock"
+        val isControl = mode == "control"
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -85,14 +88,21 @@ class FloatingBubbleService : Service() {
             elevation = dp(14).toFloat()
         }
 
-        addFloatingHeader(root, if (isOrder) "外卖 · 确认" else if (isLock) "锁屏 · 确认" else "浮窗 · 拖动")
+        addFloatingHeader(
+            root,
+            when {
+                isOrder -> "外卖 · 确认"
+                isLock -> "锁屏 · 确认"
+                isControl -> "手机自动化 · 确认"
+                else -> "浮窗 · 拖动"
+            },
+        )
 
-        if (isOrder) {
-            addOrderContent(root, target)
-        } else if (isLock) {
-            addLockContent(root, message)
-        } else {
-            addChatContent(root, message)
+        when {
+            isOrder -> addOrderContent(root, target)
+            isLock -> addLockContent(root, message)
+            isControl -> addControlContent(root, taskId, task)
+            else -> addChatContent(root, message)
         }
 
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -103,7 +113,7 @@ class FloatingBubbleService : Service() {
         }
         val prefs = getSharedPreferences(prefsName, Context.MODE_PRIVATE)
         val params = WindowManager.LayoutParams(
-            if (isOrder) dp(318) else if (isLock) dp(286) else dp(244),
+            if (isOrder) dp(318) else if (isLock) dp(286) else if (isControl) dp(318) else dp(244),
             WindowManager.LayoutParams.WRAP_CONTENT,
             type,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -307,6 +317,38 @@ class FloatingBubbleService : Service() {
         actions.addView(actionText("\u6253\u5f00 $label", true) { openShoppingTarget(target) })
         actions.addView(actionText("\u6253\u5f00\u804a\u5929", false) { openApp() })
         actions.addView(actionText("\u6682\u4e0d\u652f\u4ed8", false) { stopSelf() })
+        root.addView(actions)
+    }
+
+    private fun addControlContent(root: LinearLayout, taskId: String, task: String) {
+        addTagRow(root, "ACTION · 需要你确认", warn)
+        addTitle(root, "要帮你操作手机？")
+        addVoice(root, task.ifBlank { "没有任务描述。" })
+        root.addView(
+            TextView(this).apply {
+                text = "※ 遇到密码/支付页面会自动停下，过程随时可取消。"
+                setTextColor(characterGhost)
+                textSize = 11f
+                typeface = Typeface.MONOSPACE
+                setPadding(0, dp(8), 0, dp(10))
+            },
+        )
+        addDivider(root)
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(8), 0, 0)
+        }
+        actions.addView(
+            actionText("开始", true) {
+                if (taskId.isNotBlank()) {
+                    PhoneControlService.start(this, taskId, task)
+                }
+                stopSelf()
+            },
+        )
+        actions.addView(actionText("打开聊天", false) { openApp() })
+        actions.addView(actionText("取消", false) { stopSelf() })
         root.addView(actions)
     }
 

@@ -13,6 +13,7 @@ import '../models/app_models.dart'
         BackendDiagnostics,
         BackendDreamSettingsSummary,
         BackendMetaMode,
+        BackendPhoneControlStatus,
         BackendStatusSummary,
         BehaviorDecisionStatus,
         ChatLogDates,
@@ -37,6 +38,7 @@ import '../models/app_models.dart'
         LoreEntry,
         MobilePollMessage,
         MoodStateSnapshot,
+        PhoneControlDebugResult,
         PromptAssets,
         ReplyTarget,
         ReadingLibraryBook,
@@ -1249,6 +1251,7 @@ class BackendClient {
       _request('/lorebook', token: token).then<Object?>((d) => d).catchError((e) => e),
       _request('/jailbreak-entries', token: token).then<Object?>((d) => d).catchError((e) => e),
       _request('/dream/settings', token: token).then<Object?>((d) => d).catchError((e) => e),
+      _request('/phone_control/status', token: token).then<Object?>((d) => d).catchError((e) => e),
     ]);
 
     String errMsg(Object? r) =>
@@ -1317,6 +1320,16 @@ class BackendClient {
       dreamSettingsError = errMsg(results[6]);
     }
 
+    BackendPhoneControlStatus? phoneControlStatus;
+    String? phoneControlStatusError;
+    if (results[7] is Map<String, dynamic>) {
+      phoneControlStatus = BackendPhoneControlStatus.fromJson(
+        results[7] as Map<String, dynamic>,
+      );
+    } else {
+      phoneControlStatusError = errMsg(results[7]);
+    }
+
     return BackendDiagnostics(
       backendBase: baseUrl,
       dataPath: dataPath,
@@ -1334,7 +1347,26 @@ class BackendClient {
       jailbreakError: jailbreakError,
       dreamSettings: dreamSettings,
       dreamSettingsError: dreamSettingsError,
+      phoneControlStatus: phoneControlStatus,
+      phoneControlStatusError: phoneControlStatusError,
     );
+  }
+
+  /// 调试用：跳过 LLM 判断和 chat 内二次确认，直接发起一次手机自动化任务；
+  /// 后端仍然会走 danger-mode 门禁，安全模式下会返回 ok=false + 拒绝文案，
+  /// 不是异常——调用方按 PhoneControlDebugResult.ok 判断，不要用 try/catch 分流。
+  Future<PhoneControlDebugResult> debugStartPhoneControl({
+    required String task,
+    required String token,
+    String? userId,
+  }) async {
+    final decoded = await _request(
+      '/phone_control/debug/start',
+      token: token,
+      method: 'POST',
+      body: {'task': task, if (userId != null && userId.isNotEmpty) 'user_id': userId},
+    );
+    return PhoneControlDebugResult.fromJson(decoded);
   }
 
   @visibleForTesting

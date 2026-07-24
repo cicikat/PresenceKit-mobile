@@ -675,6 +675,10 @@ class _CompanionAppState extends State<CompanionApp>
             _backend.loadBehaviorDecisionStatus(token: _requireAdminToken()),
         onFetchDiagnostics: () =>
             _backend.fetchDiagnostics(token: _requireAdminToken()),
+        onTestPhoneControl: (task) => _backend.debugStartPhoneControl(
+          task: task,
+          token: _requireAdminToken(),
+        ),
         onEditBackend: _openBackendSettings,
         historyLoaded: _chatController.historyLoaded,
         loadingHistory: _chatController.loadingHistory,

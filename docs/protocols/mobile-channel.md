@@ -89,6 +89,7 @@ Flutter 前台共用的 `lastAckedSeq`。ack 失败不推进游标。
 | `takeout_order` | order | 外卖/购物确认浮窗 |
 | `takeout_overlay` | order | 外卖/购物确认浮窗 |
 | `presence_ping` | message | 悬浮短句（存在感提醒） |
+| `phone_control_task` | control | 手机自动化任务起手确认浮窗；用户点"开始"后转交 `PhoneControlService` 循环；`behavior.task_id`/`behavior.task` 见 `docs/protocols/phone-control-protocol.md` |
 
 ### kind 精确白名单（behavior_id 未命中时）
 

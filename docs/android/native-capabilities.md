@@ -81,16 +81,18 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 职责：
 
 - 用 `TYPE_APPLICATION_OVERLAY` 显示可拖动浮窗。
-- 模式包括普通短句、锁屏确认、外卖/购物确认。
+- 模式包括普通短句、锁屏确认、外卖/购物确认、手机自动化任务确认（`control`）。
 - 锁屏模式只有用户点击确认后才调用 `DevicePolicyManager.lockNow()`。
 - 购物模式会打开目标 App，并请求无障碍服务寻找“购物车”。
+- `control` 模式展示任务描述，用户点“开始”后调用 `PhoneControlService.start()` 转交循环协调服务并关闭浮窗；点“取消”只关闭浮窗，不触发任何操作。
 
 安全边界：
 
 - 不自动支付。
 - 不自动提交订单。
 - 不自动确认收货。
-- 不读取截图或 OCR。
+- 不读取截图或 OCR（`control` 模式的截屏/读屏由 `YexuanAccessibilityService` 采集，见下）。
+- `control` 任务必须用户在浮窗上点击“开始”才会转交 `PhoneControlService`；不会自动开始执行。
 
 ## YexuanAccessibilityService.kt
 
@@ -100,6 +102,16 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 - 在短窗口内查找“购物车”节点并点击节点或可点击父节点。
 - 无障碍事件只记录脏标记和包名；不在事件回调中遍历节点树。
 - 屏幕上下文仅在上传或能力页调试请求时按需采集，统一投递到服务 Handler 串行执行；5 秒内复用上一份完整快照。
+- 手机自动化（phone_control）通用观察/执行原语，供 `PhoneControlService` 调用（companion object 公开
+  静态方法，内部通过 `Handler.post` + `CountDownLatch` 从后台线程同步等待主线程结果）：
+  - `capturePhoneControlObservation()`：采集当前 `packageName`/`screenTitle`/可操作节点树（最多
+    120 个、深度 14，仅含可见且可点击/可编辑/可滚动/可聚焦、且有文本或辅助描述的节点）、屏幕分辨率，
+    以及 API 30+ 的 `takeScreenshot()` JPEG（Base64），低版本或截屏失败时截图字段为 `null`。
+  - `performTapAtRatio(xRatio, yRatio)` / `performTypeAtRatio(xRatio, yRatio, text)` /
+    `performScroll(direction)`：按归一化比例坐标执行点击/输入/滚动，`dispatchGesture` 回调链路
+    经过重构避免主线程自等待死锁（详见类内注释）。
+  - `isSensitiveObservation(packageName, texts)`：复用被动屏幕采集已有的敏感包名/App 名/文案关键词表，
+    供 `PhoneControlService` 做本地二次拦截，与后端 `sensitive_filter.py` 各自独立判断。
 
 隐私边界：
 
@@ -109,6 +121,31 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 - 独立上传开关 `screenContextUploadEnabled` 默认关闭。关闭时前台定时上传、后台轮询前上传和手动推送均禁止，原生上传采集入口也不会遍历节点树；能力页调试入口单独放行，仍可查看过滤后的本机快照。
 - 屏幕正文上传使用默认空的 App 白名单 `screenTextUploadAllowedPackages`。未勾选的 App 只上报包名和 App 名，不采集或上传窗口标题、可见正文、可点击正文。
 - 白名单 App 仍需经过原有敏感 App、密码节点和页级敏感关键词二次拦截；加入白名单不代表支付、医疗等敏感页面可上传。
+
+## PhoneControlService.kt
+
+手机自动化（"computer use 手机版"）循环协调服务，协议契约见
+`docs/protocols/phone-control-protocol.md`。由 `FloatingBubbleService` 的 `control` 模式浮窗在用户
+点击"开始"后通过 `PhoneControlService.start(context, taskId, task)` 启动，`specialUse` 前台服务。
+
+循环（每步）：
+
+1. `YexuanAccessibilityService.capturePhoneControlObservation()` 采集观察（包名/标题/节点树/截图）。
+2. 本地 `isSensitiveObservation()` 先过一遍——命中即以 `need_confirmation` 结束循环，不发请求。
+3. `POST /phone_control/step` 上报观察 + 上一步动作/结果，取回下一步动作。
+4. `status=continue`：动作再过一次本地敏感词校验（`isSensitiveAction()`，检查 `text` 字段），
+   命中同样直接结束；未命中则按 `action.type`（`tap`/`type`/`scroll`）执行，
+   `target_node_id` 优先从当轮观察的节点坐标换算比例，取不到才退化到 `target_point`。
+5. `status=done/need_confirmation/refused`，或步数超过 20，或收到取消，循环结束。
+
+安全边界（与后端 `sensitive_filter.py` 相互独立，任一方拦截即停，不是"后端说了算"）：
+
+- 命中敏感页面（观察侧或动作侧）一律停到 `need_confirmation`，从不自动点击确认/支付/提交类按钮——
+  这类按钮本身也会被关键词表命中。
+- 一次只允许一个任务在跑；新任务到来时若已有任务在运行，直接丢弃，不排队、不打断。
+- 前台常驻通知带"取消"按钮（`BroadcastReceiver` 监听 `ACTION_CANCEL`，按 `task_id` 匹配），随时可中断；
+  循环结束（无论何种终态）都会发一条独立的结果通知，并停止前台服务。
+- 步数上限（20）、单步间隔（600ms）均为客户端本地节流，与后端 `task_state.py` 的步数/超时上限各自独立。
 
 ## Manifest 权限
 

@@ -1130,6 +1130,8 @@ class BackendDiagnostics {
     this.jailbreakError,
     this.dreamSettings,
     this.dreamSettingsError,
+    this.phoneControlStatus,
+    this.phoneControlStatusError,
   });
 
   final String backendBase;
@@ -1158,8 +1160,51 @@ class BackendDiagnostics {
   final BackendDreamSettingsSummary? dreamSettings;
   final String? dreamSettingsError;
 
+  final BackendPhoneControlStatus? phoneControlStatus;
+  final String? phoneControlStatusError;
+
   bool get dataPathIsSandbox =>
       dataPath != null && dataPath!.contains('test_sandbox');
+}
+
+/// GET /phone_control/status 的只读诊断：角色是否已授权 phone_control 工具 +
+/// 视觉模型是否已配置。不含 api_key 等敏感字段本身，只是布尔判断。
+class BackendPhoneControlStatus {
+  const BackendPhoneControlStatus({
+    required this.toolEnabled,
+    required this.visionConfigured,
+    this.charId,
+  });
+
+  factory BackendPhoneControlStatus.fromJson(Map<String, dynamic> json) {
+    return BackendPhoneControlStatus(
+      toolEnabled: json['tool_enabled'] == true,
+      visionConfigured: json['vision_configured'] == true,
+      charId: json['char_id']?.toString(),
+    );
+  }
+
+  final bool toolEnabled;
+  final bool visionConfigured;
+  final String? charId;
+
+  bool get ready => toolEnabled && visionConfigured;
+}
+
+/// POST /phone_control/debug/start 的响应：调试用，跳过 LLM 判断和 chat 二次确认，
+/// 但仍然过 danger-mode 门禁，见 admin/routers/phone_control.py（Emerald-presence 仓库）。
+class PhoneControlDebugResult {
+  const PhoneControlDebugResult({required this.ok, required this.message});
+
+  factory PhoneControlDebugResult.fromJson(Map<String, dynamic> json) {
+    return PhoneControlDebugResult(
+      ok: json['ok'] == true,
+      message: (json['message'] ?? '').toString(),
+    );
+  }
+
+  final bool ok;
+  final String message;
 }
 
 class BackendMetaMode {

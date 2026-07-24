@@ -33,6 +33,7 @@ class CapabilitySheet extends StatefulWidget {
     required this.onDebugBackgroundDelivery,
     required this.onLoadBehaviorStatus,
     required this.onFetchDiagnostics,
+    required this.onTestPhoneControl,
     required this.onEditBackend,
     required this.historyLoaded,
     required this.loadingHistory,
@@ -68,6 +69,8 @@ class CapabilitySheet extends StatefulWidget {
   onDebugBackgroundDelivery;
   final Future<BehaviorDecisionStatus> Function() onLoadBehaviorStatus;
   final Future<BackendDiagnostics> Function() onFetchDiagnostics;
+  final Future<PhoneControlDebugResult> Function(String task)
+  onTestPhoneControl;
   final VoidCallback onEditBackend;
   final bool historyLoaded;
   final bool loadingHistory;
@@ -430,6 +433,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     onTest: (kind) =>
                         _run(() => widget.onPushBehaviorTest(kind)),
                   ),
+                  PhoneControlTestPanel(c: c, onTest: widget.onTestPhoneControl),
                   BackgroundDeliveryTestPanel(
                     c: c,
                     acting: _acting,
@@ -1202,6 +1206,131 @@ class BehaviorDecisionDebugCard extends StatelessWidget {
   }
 }
 
+class PhoneControlTestPanel extends StatefulWidget {
+  const PhoneControlTestPanel({super.key, required this.c, required this.onTest});
+
+  final YxPalette c;
+  final Future<PhoneControlDebugResult> Function(String task) onTest;
+
+  @override
+  State<PhoneControlTestPanel> createState() => _PhoneControlTestPanelState();
+}
+
+class _PhoneControlTestPanelState extends State<PhoneControlTestPanel> {
+  final _controller = TextEditingController();
+  bool _running = false;
+  bool _resultOk = true;
+  String? _resultMessage;
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _run() async {
+    final task = _controller.text.trim();
+    if (task.isEmpty) {
+      setState(() {
+        _error = context.l10n.phoneControlTestEmptyTask;
+        _resultMessage = null;
+      });
+      return;
+    }
+    setState(() {
+      _running = true;
+      _error = null;
+      _resultMessage = null;
+    });
+    try {
+      // ok=false（比如安全模式下被拒）不是异常，是后端正常返回的拒绝文案——
+      // 跟真的调用 phone_control_start 工具走的是同一道 danger-mode 门禁，
+      // 这里不用 try/catch 分流，直接看 result.ok 展示。
+      final result = await widget.onTest(task);
+      if (!mounted) return;
+      setState(() {
+        _resultOk = result.ok;
+        _resultMessage = result.message;
+      });
+    } on BackendException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _running = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.c;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      decoration: BoxDecoration(
+        color: c.surface,
+        border: Border(bottom: BorderSide(color: c.surfaceEdge)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.smartphone_outlined, color: c.ink2, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  context.l10n.phoneControlTestTitle,
+                  style: serif(c, 16, weight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            context.l10n.phoneControlTestDescription,
+            style: mono(c, 10.5, color: c.ink3),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _controller,
+            enabled: !_running,
+            style: mono(c, 12, color: c.ink1),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: context.l10n.phoneControlTestHint,
+              hintStyle: mono(c, 12, color: c.ink3),
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _running ? null : _run,
+            icon: _running
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.play_arrow_rounded, size: 16),
+            label: Text(context.l10n.phoneControlTestButton),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(_error!, style: mono(c, 10.5, color: c.danger)),
+          ] else if (_resultMessage != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _resultMessage!,
+              style: mono(c, 10.5, color: _resultOk ? c.ink2 : c.warn),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _OemBackgroundGuide extends StatelessWidget {
   const _OemBackgroundGuide({required this.c, required this.appDisplayName});
 
@@ -1544,6 +1673,29 @@ class BackendDiagnosticsCard extends StatelessWidget {
                   context.l10n.diagnosticDreamJailbreak,
                   d.dreamSettings!.jailbreakPreset!,
                 ),
+            ],
+            // ── 手机自动化（phone_control）只读状态 ─────────────────────────
+            if (d.phoneControlStatusError != null)
+              _errorRow(
+                context,
+                context.l10n.diagnosticPhoneControlTool,
+                d.phoneControlStatusError!,
+              )
+            else if (d.phoneControlStatus != null) ...[
+              _infoRow(
+                context.l10n.diagnosticPhoneControlTool,
+                d.phoneControlStatus!.toolEnabled
+                    ? context.l10n.enabledShortStatus
+                    : context.l10n.disabledShortStatus,
+                danger: !d.phoneControlStatus!.toolEnabled,
+              ),
+              _infoRow(
+                context.l10n.diagnosticPhoneControlVision,
+                d.phoneControlStatus!.visionConfigured
+                    ? context.l10n.enabledShortStatus
+                    : context.l10n.disabledShortStatus,
+                danger: !d.phoneControlStatus!.visionConfigured,
+              ),
             ],
           ],
         ],

@@ -1726,6 +1726,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get diagnosticDreamJailbreak => '梦境破限';
 
   @override
+  String get diagnosticPhoneControlTool => '手机自动化 · 角色授权';
+
+  @override
+  String get diagnosticPhoneControlVision => '手机自动化 · 视觉模型';
+
+  @override
+  String get phoneControlTestTitle => '手机自动化测试';
+
+  @override
+  String get phoneControlTestDescription =>
+      '跳过 LLM 判断和聊天内二次确认，直接发起一次手机自动化任务；仍然要先在后端开启危险模式，安全模式下会直接拒绝。';
+
+  @override
+  String get phoneControlTestHint => '任务描述，例如：帮我点杯奶茶';
+
+  @override
+  String get phoneControlTestButton => '发起测试任务';
+
+  @override
+  String get phoneControlTestEmptyTask => '先写清楚要测试的任务';
+
+  @override
   String get capabilityLastPollNone => '最近周期补偿：暂无';
 
   @override

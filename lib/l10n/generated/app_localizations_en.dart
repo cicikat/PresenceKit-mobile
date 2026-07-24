@@ -1793,6 +1793,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticDreamJailbreak => 'Dream jailbreak';
 
   @override
+  String get diagnosticPhoneControlTool =>
+      'Phone control · character authorized';
+
+  @override
+  String get diagnosticPhoneControlVision => 'Phone control · vision model';
+
+  @override
+  String get phoneControlTestTitle => 'Phone control test';
+
+  @override
+  String get phoneControlTestDescription =>
+      'Skips the LLM decision and in-chat confirmation, starting a phone automation task directly; danger mode must still be enabled on the backend first, or it\'s refused in safe mode.';
+
+  @override
+  String get phoneControlTestHint =>
+      'Task description, e.g. order me a bubble tea';
+
+  @override
+  String get phoneControlTestButton => 'Start test task';
+
+  @override
+  String get phoneControlTestEmptyTask => 'Describe the task to test first';
+
+  @override
   String get capabilityLastPollNone => 'Latest fallback poll: none';
 
   @override

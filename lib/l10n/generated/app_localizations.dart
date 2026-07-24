@@ -3247,6 +3247,48 @@ abstract class AppLocalizations {
   /// **'梦境破限'**
   String get diagnosticDreamJailbreak;
 
+  /// No description provided for @diagnosticPhoneControlTool.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机自动化 · 角色授权'**
+  String get diagnosticPhoneControlTool;
+
+  /// No description provided for @diagnosticPhoneControlVision.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机自动化 · 视觉模型'**
+  String get diagnosticPhoneControlVision;
+
+  /// No description provided for @phoneControlTestTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机自动化测试'**
+  String get phoneControlTestTitle;
+
+  /// No description provided for @phoneControlTestDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'跳过 LLM 判断和聊天内二次确认，直接发起一次手机自动化任务；仍然要先在后端开启危险模式，安全模式下会直接拒绝。'**
+  String get phoneControlTestDescription;
+
+  /// No description provided for @phoneControlTestHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'任务描述，例如：帮我点杯奶茶'**
+  String get phoneControlTestHint;
+
+  /// No description provided for @phoneControlTestButton.
+  ///
+  /// In zh, this message translates to:
+  /// **'发起测试任务'**
+  String get phoneControlTestButton;
+
+  /// No description provided for @phoneControlTestEmptyTask.
+  ///
+  /// In zh, this message translates to:
+  /// **'先写清楚要测试的任务'**
+  String get phoneControlTestEmptyTask;
+
   /// No description provided for @capabilityLastPollNone.
   ///
   /// In zh, this message translates to:
