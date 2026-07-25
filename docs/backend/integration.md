@@ -86,7 +86,7 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 | `GET /garden/state` | Flutter | 花园只读状态 |
 | `GET /diary/list` | Flutter | 日记列表 |
 | `GET /diary/{date}` | Flutter | 日记正文 |
-| `POST /sensor/realtime` | Flutter / Android service | 屏幕上下文上报；默认仅包名/App 名，正文仅对白名单 App 放行 |
+| `POST /sensor/realtime` | Flutter / Android service | 屏幕上下文上报；默认仅包名/App 名，独立上传开关 `screenContextUploadEnabled` 开启后上传完整正文（敏感 App/密码/关键词仍二次拦截），不再有按 App 的文本白名单 |
 | `GET /sensor/behavior/status` | 能力检查页 | 调试最近行为裁决 |
 | `POST /mobile/push` | 能力检查页 | 写入主动行为测试 |
 | `POST /phone_control/step` | Android `PhoneControlService` | 手机自动化循环：上报截屏/节点观察，换回下一步动作；契约见 `docs/protocols/phone-control-protocol.md` |

@@ -103,13 +103,6 @@ class ScreenSensorService {
       _store.captureScreenContextForUpload();
   Future<ScreenContextSnapshot?> captureForDebug() =>
       _store.captureScreenContext();
-  Future<Set<String>> loadAllowedPackages() =>
-      _store.loadScreenTextUploadAllowedPackages();
-
-  Future<void> saveAllowedPackages(Set<String> values) =>
-      _store.saveScreenTextUploadAllowedPackages(values);
-  Future<List<ScreenTextUploadAppOption>> loadAppOptions() =>
-      _store.loadScreenTextUploadAppOptions();
 
   Future<int?> readBatteryPercent() => _store.readBatteryPercent();
   Future<bool> hasActivityPermission() =>

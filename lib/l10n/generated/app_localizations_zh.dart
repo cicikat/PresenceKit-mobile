@@ -1420,24 +1420,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get capabilityScreenContextDisabled => '默认关闭；能力页仍可读取经过本机过滤的快照。';
 
   @override
-  String get capabilityWhitelistTitle => '屏幕正文上传白名单';
-
-  @override
-  String get capabilityWhitelistEmpty =>
-      '当前为空：所有 App 仅上报包名和 App 名，不上传窗口标题或可见正文。';
-
-  @override
-  String capabilityWhitelistCount(int count) {
-    return '仅勾选的 $count 个 App 可上传正文；敏感页面仍会二次拦截。';
-  }
-
-  @override
-  String get manageAction => '管理';
-
-  @override
-  String get capabilityWhitelistNoApps => '没有读取到可启动的 App。默认不会上传任何 App 的屏幕正文。';
-
-  @override
   String get capabilityDeviceAdminTitle => '设备管理器锁屏';
 
   @override

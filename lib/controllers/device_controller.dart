@@ -123,21 +123,13 @@ class DeviceController extends ChangeNotifier {
         await _backend().pushSelfFocusSignal(token: token);
         return;
       }
-      final allowed = await _screen.loadAllowedPackages();
-      await _backend().pushScreenContext(
-        snapshot,
-        token: token,
-        allowTextUpload: allowed.contains(snapshot.packageName),
-      );
+      await _backend().pushScreenContext(snapshot, token: token);
       lastError = null;
     } on BackendException catch (e) {
       lastError = e.message;
       if (!silent) notifyListeners();
     }
   }
-
-  Future<void> saveAllowedPackages(Set<String> values) =>
-      _screen.saveAllowedPackages(values);
 
   Future<void> pushSnapshot(
     ScreenContextSnapshot snapshot, {
@@ -147,12 +139,7 @@ class DeviceController extends ChangeNotifier {
     final token = _token()?.trim();
     if (token == null || token.isEmpty) return;
     try {
-      final allowed = await _screen.loadAllowedPackages();
-      await _backend().pushScreenContext(
-        snapshot,
-        token: token,
-        allowTextUpload: allowed.contains(snapshot.packageName),
-      );
+      await _backend().pushScreenContext(snapshot, token: token);
       lastError = null;
       if (!silent) notifyListeners();
     } on BackendException catch (e) {

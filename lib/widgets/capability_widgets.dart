@@ -24,7 +24,6 @@ class CapabilitySheet extends StatefulWidget {
     required this.onRequestDeviceAdmin,
     required this.onToggleBackgroundNotifications,
     required this.onToggleScreenContextUpload,
-    required this.onChangeScreenTextUploadAllowedPackages,
     required this.onTestBackend,
     required this.onPushScreenContext,
     required this.onCaptureScreenContext,
@@ -57,8 +56,6 @@ class CapabilitySheet extends StatefulWidget {
   final Future<void> Function() onRequestDeviceAdmin;
   final Future<void> Function(bool enabled) onToggleBackgroundNotifications;
   final Future<void> Function(bool enabled) onToggleScreenContextUpload;
-  final Future<void> Function(Set<String> values)
-  onChangeScreenTextUploadAllowedPackages;
   final Future<void> Function() onTestBackend;
   final Future<void> Function() onPushScreenContext;
   final Future<ScreenContextSnapshot?> Function() onCaptureScreenContext;
@@ -153,58 +150,6 @@ class _CapabilitySheetState extends State<CapabilitySheet>
     final snapshot = _screenSnapshot;
     if (snapshot == null || _acting) return;
     await _run(() => widget.onPushCapturedScreenContext(snapshot));
-  }
-
-  Future<void> _editScreenTextUploadWhitelist(CapabilityStatus status) async {
-    final selected = status.screenTextUploadAllowedPackages.toSet();
-    final updated = await showDialog<Set<String>>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          scrollable: true,
-          title: Text(context.l10n.capabilityWhitelistTitle),
-          content: SizedBox(
-            width: 520,
-            child: status.screenTextUploadAppOptions.isEmpty
-                ? Text(context.l10n.capabilityWhitelistNoApps)
-                : ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: status.screenTextUploadAppOptions.length,
-                    itemBuilder: (context, index) {
-                      final option = status.screenTextUploadAppOptions[index];
-                      return CheckboxListTile(
-                        value: selected.contains(option.packageName),
-                        title: Text(option.appLabel),
-                        subtitle: Text(option.packageName),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        onChanged: (checked) {
-                          setDialogState(() {
-                            if (checked == true) {
-                              selected.add(option.packageName);
-                            } else {
-                              selected.remove(option.packageName);
-                            }
-                          });
-                        },
-                      );
-                    },
-                  ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(context.l10n.cancelAction),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, selected),
-              child: Text(context.l10n.saveAction),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (updated == null) return;
-    await _run(() => widget.onChangeScreenTextUploadAllowedPackages(updated));
   }
 
   Future<void> _loadBehaviorStatus() async {
@@ -402,21 +347,6 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                               () => widget.onToggleScreenContextUpload(value),
                             ),
                     ),
-                  ),
-                  CapabilityRow(
-                    c: c,
-                    icon: Icons.fact_check_outlined,
-                    title: context.l10n.capabilityWhitelistTitle,
-                    subtitle: status.screenTextUploadAllowedPackages.isEmpty
-                        ? context.l10n.capabilityWhitelistEmpty
-                        : context.l10n.capabilityWhitelistCount(
-                            status.screenTextUploadAllowedPackages.length,
-                          ),
-                    enabled: status.screenTextUploadAllowedPackages.isNotEmpty,
-                    actionLabel: context.l10n.manageAction,
-                    onPressed: _acting
-                        ? null
-                        : () => _editScreenTextUploadWhitelist(status),
                   ),
                   ScreenContextDebugCard(
                     c: c,

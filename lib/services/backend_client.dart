@@ -1159,13 +1159,12 @@ class BackendClient {
   Future<void> pushScreenContext(
     ScreenContextSnapshot snapshot, {
     required String token,
-    required bool allowTextUpload,
   }) async {
     await _request(
       '/sensor/realtime',
       token: token,
       method: 'POST',
-      body: snapshot.toRealtimePayload(allowTextUpload: allowTextUpload),
+      body: snapshot.toRealtimePayload(),
       expectJson: false,
     );
   }

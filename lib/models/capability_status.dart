@@ -1,5 +1,4 @@
 ﻿import 'background_status.dart';
-import 'screen_context.dart';
 
 class CapabilityStatus {
   const CapabilityStatus({
@@ -15,8 +14,6 @@ class CapabilityStatus {
     required this.overlayErrorStatus,
     required this.ignoringBatteryOptimizations,
     required this.screenContextUploadEnabled,
-    required this.screenTextUploadAllowedPackages,
-    required this.screenTextUploadAppOptions,
     required this.backendBaseUrl,
     required this.backendReachable,
     required this.backendBusy,
@@ -35,8 +32,6 @@ class CapabilityStatus {
   final OverlayErrorStatus overlayErrorStatus;
   final bool ignoringBatteryOptimizations;
   final bool screenContextUploadEnabled;
-  final Set<String> screenTextUploadAllowedPackages;
-  final List<ScreenTextUploadAppOption> screenTextUploadAppOptions;
   final String backendBaseUrl;
   final bool backendReachable;
   final bool backendBusy;

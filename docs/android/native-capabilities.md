@@ -119,8 +119,7 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 - 原生采集层先过滤密码输入框、验证码/校验码/动态码/密码关键词，银行卡/转账/支付、病历/处方/挂号/医保/诊断等页级关键词，以及支付宝、微信、云闪付、银行、医疗/健康/挂号类应用或包名。
 - 被过滤页面只保留 `isBlocked` 和 `blockedReason`；不保留标题、正文、包名或 App 名。
 - 独立上传开关 `screenContextUploadEnabled` 默认关闭。关闭时前台定时上传、后台轮询前上传和手动推送均禁止，原生上传采集入口也不会遍历节点树；能力页调试入口单独放行，仍可查看过滤后的本机快照。
-- 屏幕正文上传使用默认空的 App 白名单 `screenTextUploadAllowedPackages`。未勾选的 App 只上报包名和 App 名，不采集或上传窗口标题、可见正文、可点击正文。
-- 白名单 App 仍需经过原有敏感 App、密码节点和页级敏感关键词二次拦截；加入白名单不代表支付、医疗等敏感页面可上传。
+- 2026-07 移除了按 App 的文本上传白名单（`screenTextUploadAllowedPackages` 及配套 UI/MethodChannel/Dart 门面已全部删除）。`screenContextUploadEnabled` 开启后即上传完整窗口标题/可见正文/可点击正文，唯一闸是这一个主开关；敏感 App、密码节点和页级敏感关键词三道内容拦截不受影响，仍然独立生效。
 
 ## PhoneControlService.kt
 

@@ -7,7 +7,6 @@ object BackendSecurityPolicy {
     const val PREFS_NAME = "yexuan_memery"
     const val ADMIN_TOKEN_KEY = "adminToken"
     const val SCREEN_CONTEXT_UPLOAD_ENABLED_KEY = "screenContextUploadEnabled"
-    const val SCREEN_TEXT_UPLOAD_ALLOWED_PACKAGES_KEY = "screenTextUploadAllowedPackages"
     const val TRUSTED_CLEARTEXT_ORIGINS_KEY = "trustedCleartextOrigins"
     const val RELAY_BASE_URL_KEY = "relayBaseUrl"
     const val RELAY_TOKEN_KEY = "relayToken"
@@ -24,18 +23,6 @@ object BackendSecurityPolicy {
 
     fun screenContextUploadEnabled(prefs: SharedPreferences): Boolean {
         return prefs.getBoolean(SCREEN_CONTEXT_UPLOAD_ENABLED_KEY, false)
-    }
-
-    fun screenTextUploadAllowedPackages(prefs: SharedPreferences): Set<String> {
-        return prefs.getStringSet(SCREEN_TEXT_UPLOAD_ALLOWED_PACKAGES_KEY, emptySet())
-            ?.map(String::trim)
-            ?.filter(String::isNotBlank)
-            ?.toSet()
-            .orEmpty()
-    }
-
-    fun screenTextUploadAllowed(prefs: SharedPreferences, packageName: String): Boolean {
-        return packageName.isNotBlank() && packageName in screenTextUploadAllowedPackages(prefs)
     }
 
     fun trustedCleartextOrigins(prefs: SharedPreferences): Set<String> {

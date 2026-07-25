@@ -98,7 +98,7 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 **位置**：`lib/controllers/device_controller.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/YexuanAccessibilityService.kt`、`MobileNotificationService.kt`
 
-原生采集层现在会过滤密码输入框，验证码、银行、支付、医疗类页级关键词，以及敏感 App/包名。屏幕上下文上传使用独立开关 `screenContextUploadEnabled`，默认关闭；正文上传另使用默认空的 App 白名单，未勾选 App 只上报包名/App 名。
+原生采集层现在会过滤密码输入框，验证码、银行、支付、医疗类页级关键词，以及敏感 App/包名。屏幕上下文上传使用独立开关 `screenContextUploadEnabled`，默认关闭；不再有额外的按 App 文本上传白名单——2026-07 移除，唯一闸就是这个主开关加上述敏感内容过滤。
 
 **状态**：已修复。过滤页面只保留 `isBlocked` 和 `blockedReason`，不保留标题、正文、包名或 App 名；Flutter 前台和 Android 后台都会跳过上传。
 

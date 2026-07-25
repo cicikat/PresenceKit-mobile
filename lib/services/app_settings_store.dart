@@ -182,46 +182,6 @@ class AppSettingsStore {
     );
   }
 
-  Future<Set<String>> loadScreenTextUploadAllowedPackages() async {
-    if (!_channelAvailable) return const {};
-    try {
-      final values = await PlatformSettingsChannel.channel
-          .invokeMethod<List<dynamic>>('getScreenTextUploadAllowedPackages');
-      return values
-              ?.map((value) => value.toString().trim())
-              .where((value) => value.isNotEmpty)
-              .toSet() ??
-          const {};
-    } on PlatformException {
-      return const {};
-    }
-  }
-
-  Future<void> saveScreenTextUploadAllowedPackages(Set<String> values) async {
-    if (!_channelAvailable) return;
-    await PlatformSettingsChannel.channel.invokeMethod<void>(
-      'setScreenTextUploadAllowedPackages',
-      {'values': values.toList(growable: false)},
-    );
-  }
-
-  Future<List<ScreenTextUploadAppOption>>
-  loadScreenTextUploadAppOptions() async {
-    if (!_channelAvailable) return const [];
-    try {
-      final values = await PlatformSettingsChannel.channel
-          .invokeMethod<List<dynamic>>('getScreenTextUploadAppOptions');
-      return values
-              ?.whereType<Map<dynamic, dynamic>>()
-              .map(ScreenTextUploadAppOption.fromPlatform)
-              .where((option) => option.packageName.isNotEmpty)
-              .toList(growable: false) ??
-          const [];
-    } on PlatformException {
-      return const [];
-    }
-  }
-
   Future<String?> loadCustomThemePalette() async {
     if (!_channelAvailable) return null;
     try {

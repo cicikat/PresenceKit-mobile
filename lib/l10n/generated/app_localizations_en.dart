@@ -1477,25 +1477,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Off by default; this page can still read a locally filtered snapshot.';
 
   @override
-  String get capabilityWhitelistTitle => 'Screen text upload allowlist';
-
-  @override
-  String get capabilityWhitelistEmpty =>
-      'Empty: apps report package and app names only, without window titles or visible text.';
-
-  @override
-  String capabilityWhitelistCount(int count) {
-    return 'Visible text is allowed for $count selected apps; sensitive pages are still blocked.';
-  }
-
-  @override
-  String get manageAction => 'Manage';
-
-  @override
-  String get capabilityWhitelistNoApps =>
-      'No launchable apps were found. Screen text is not uploaded for any app by default.';
-
-  @override
   String get capabilityDeviceAdminTitle => 'Device administrator lock';
 
   @override

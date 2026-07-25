@@ -1,22 +1,5 @@
 ﻿import 'dart:typed_data';
 
-class ScreenTextUploadAppOption {
-  const ScreenTextUploadAppOption({
-    required this.packageName,
-    required this.appLabel,
-  });
-
-  factory ScreenTextUploadAppOption.fromPlatform(Map<dynamic, dynamic> raw) {
-    return ScreenTextUploadAppOption(
-      packageName: (raw['packageName'] ?? '').toString(),
-      appLabel: (raw['appLabel'] ?? '').toString(),
-    );
-  }
-
-  final String packageName;
-  final String appLabel;
-}
-
 class PickedUploadFile {
   const PickedUploadFile({required this.name, required this.bytes});
 
@@ -85,14 +68,11 @@ class ScreenContextSnapshot {
       windowTitle.isEmpty &&
       visibleText.isEmpty;
 
-  Map<String, dynamic> toRealtimePayload({
-    int windowSeconds = 45,
-    bool allowTextUpload = false,
-  }) {
+  Map<String, dynamic> toRealtimePayload({int windowSeconds = 45}) {
     if (isBlocked) {
       throw StateError('Blocked screen context must not be uploaded');
     }
-    final includeText = textUploadAllowed && allowTextUpload;
+    final includeText = textUploadAllowed;
     final titleHint = includeText && windowTitle.isNotEmpty
         ? windowTitle
         : appLabel;

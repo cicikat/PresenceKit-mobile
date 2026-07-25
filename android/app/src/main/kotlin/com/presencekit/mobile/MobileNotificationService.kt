@@ -821,18 +821,11 @@ class MobileNotificationService : Service() {
         if (snapshot["isBlocked"] == true) return
         val packageName = snapshot["packageName"]?.toString().orEmpty()
         val appLabel = snapshot["appLabel"]?.toString().orEmpty()
-        val textUploadAllowed = snapshot["textUploadAllowed"] == true
-        val title = if (textUploadAllowed) snapshot["windowTitle"]?.toString().orEmpty() else ""
-        val visible = if (textUploadAllowed) {
-            snapshot["visibleText"] as? List<*> ?: emptyList<Any>()
-        } else {
-            emptyList<Any>()
-        }
-        val clickable = if (textUploadAllowed) {
-            snapshot["clickableText"] as? List<*> ?: emptyList<Any>()
-        } else {
-            emptyList<Any>()
-        }
+        // 不再有按 App 的文本上传白名单——唯一闸是上面的 screenContextUploadEnabled()
+        // 主开关；敏感 App/密码框/敏感关键词的内容拦截仍在 captureScreenContext() 里做。
+        val title = snapshot["windowTitle"]?.toString().orEmpty()
+        val visible = snapshot["visibleText"] as? List<*> ?: emptyList<Any>()
+        val clickable = snapshot["clickableText"] as? List<*> ?: emptyList<Any>()
         val payload = JSONObject().apply {
             put("window_seconds", 60)
             put("ts", System.currentTimeMillis() / 1000.0)

@@ -95,35 +95,27 @@ class YexuanAccessibilityService : AccessibilityService() {
                 callback(null)
                 return@post
             }
-            val snapshot = captureScreenContextOnHandler(allowDebugCapture)
-            callback(
-                if (allowDebugCapture) snapshot else snapshot?.let(::snapshotForUpload),
-            )
+            callback(captureScreenContextOnHandler())
         }
     }
 
-    private fun captureScreenContextOnHandler(allowDebugCapture: Boolean): Map<String, Any?>? {
+    // 屏幕文本上传不再有独立的按 App 白名单——唯一闸是 screenContextUploadEnabled()
+    // 主开关（在 requestScreenContextCapture() 里已经过一遍）；这里只保留敏感 App /
+    // 密码输入框 / 敏感关键词三道内容拦截，跟 allowDebugCapture 是否为调试请求无关。
+    private fun captureScreenContextOnHandler(): Map<String, Any?>? {
         val now = SystemClock.uptimeMillis()
         val root = rootInActiveWindow
         val packageName = root?.packageName?.toString()
             ?: dirtyPackageName
         val appLabel = appLabel(packageName)
-        val textUploadAllowed = screenTextUploadAllowed(packageName)
         val cached = lastSnapshot
         if (cached != null &&
             cached["packageName"] == packageName &&
-            (!allowDebugCapture || cached["textUploadAllowed"] == true) &&
             (!snapshotDirty || now - lastSnapshotAt < SNAPSHOT_MIN_INTERVAL_MS)
         ) {
             return cached
         }
 
-        if (!allowDebugCapture && !textUploadAllowed) {
-            return storeSnapshot(
-                metadataOnlySnapshot(packageName, appLabel, textUploadAllowed = false),
-                now,
-            )
-        }
         sensitiveAppReason(packageName, appLabel)?.let { reason ->
             return storeSnapshot(blockedSnapshot(reason), now)
         }
@@ -154,7 +146,7 @@ class YexuanAccessibilityService : AccessibilityService() {
             mapOf(
                 "isBlocked" to false,
                 "blockedReason" to "",
-                "textUploadAllowed" to textUploadAllowed,
+                "textUploadAllowed" to true,
                 "packageName" to packageName,
                 "appLabel" to appLabel,
                 "className" to className,
@@ -181,44 +173,6 @@ class YexuanAccessibilityService : AccessibilityService() {
     private fun screenContextUploadEnabled(): Boolean {
         val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, MODE_PRIVATE)
         return BackendSecurityPolicy.screenContextUploadEnabled(prefs)
-    }
-
-    private fun screenTextUploadAllowed(packageName: String): Boolean {
-        val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, MODE_PRIVATE)
-        return BackendSecurityPolicy.screenTextUploadAllowed(prefs, packageName)
-    }
-
-    private fun snapshotForUpload(snapshot: Map<String, Any?>): Map<String, Any?> {
-        val packageName = snapshot["packageName"]?.toString().orEmpty()
-        if (snapshot["isBlocked"] == true || screenTextUploadAllowed(packageName)) {
-            return snapshot
-        }
-        return metadataOnlySnapshot(
-            packageName,
-            snapshot["appLabel"]?.toString().orEmpty(),
-            textUploadAllowed = false,
-            capturedAt = snapshot["capturedAt"],
-        )
-    }
-
-    private fun metadataOnlySnapshot(
-        packageName: String,
-        appLabel: String,
-        textUploadAllowed: Boolean,
-        capturedAt: Any? = System.currentTimeMillis() / 1000.0,
-    ): Map<String, Any?> {
-        return mapOf(
-            "isBlocked" to false,
-            "blockedReason" to "",
-            "textUploadAllowed" to textUploadAllowed,
-            "packageName" to packageName,
-            "appLabel" to appLabel,
-            "className" to "",
-            "windowTitle" to "",
-            "visibleText" to emptyList<String>(),
-            "clickableText" to emptyList<String>(),
-            "capturedAt" to capturedAt,
-        )
     }
 
     private fun blockedSnapshot(reason: String): Map<String, Any?> {

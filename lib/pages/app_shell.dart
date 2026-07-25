@@ -409,8 +409,6 @@ class _CompanionAppState extends State<CompanionApp>
     if (enabled) unawaited(_deviceController.pushScreenContext(silent: true));
   }
 
-  Future<void> _changeScreenTextUploadAllowedPackages(Set<String> values) =>
-      _deviceController.saveAllowedPackages(values);
   Future<void> _openThemePresetManager() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -599,8 +597,6 @@ class _CompanionAppState extends State<CompanionApp>
       _relayService.loadConnectionStatus(),
       _relayService.loadNotificationGateStatus(),
       _deviceService.isIgnoringBatteryOptimizations(),
-      _screenService.loadAllowedPackages(),
-      _screenService.loadAppOptions(),
       _deviceService.loadLastOverlayError(),
     ]);
     return CapabilityStatus(
@@ -613,12 +609,9 @@ class _CompanionAppState extends State<CompanionApp>
       backgroundPollStatus: results[5] as BackgroundPollStatus,
       relayConnectionStatus: results[6] as RelayConnectionStatus,
       notificationGateStatus: results[7] as NotificationGateStatus,
-      overlayErrorStatus: results[11] as OverlayErrorStatus,
+      overlayErrorStatus: results[9] as OverlayErrorStatus,
       ignoringBatteryOptimizations: results[8] as bool,
       screenContextUploadEnabled: _deviceController.screenUploadEnabled,
-      screenTextUploadAllowedPackages: results[9] as Set<String>,
-      screenTextUploadAppOptions:
-          results[10] as List<ScreenTextUploadAppOption>,
       backendBaseUrl: _backendBaseUrl,
       backendReachable:
           _chatController.mobileActive ||
@@ -661,8 +654,6 @@ class _CompanionAppState extends State<CompanionApp>
         onRequestDeviceAdmin: _deviceService.requestDeviceAdmin,
         onToggleBackgroundNotifications: _changeBackgroundNotifications,
         onToggleScreenContextUpload: _changeScreenContextUploadEnabled,
-        onChangeScreenTextUploadAllowedPackages:
-            _changeScreenTextUploadAllowedPackages,
         onTestBackend: _testBackendConnectivity,
         onPushScreenContext: () => _pushScreenContextOnce(silent: false),
         onCaptureScreenContext: () =>

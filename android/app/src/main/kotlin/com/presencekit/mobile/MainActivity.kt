@@ -139,28 +139,6 @@ class MainActivity : FlutterActivity() {
                             .apply()
                         result.success(null)
                     }
-                    "getScreenTextUploadAllowedPackages" -> {
-                        result.success(
-                            BackendSecurityPolicy.screenTextUploadAllowedPackages(prefs).toList(),
-                        )
-                    }
-                    "setScreenTextUploadAllowedPackages" -> {
-                        val values = call.argument<List<String>>("values")
-                            .orEmpty()
-                            .map(String::trim)
-                            .filter(String::isNotBlank)
-                            .toSet()
-                        prefs.edit()
-                            .putStringSet(
-                                BackendSecurityPolicy.SCREEN_TEXT_UPLOAD_ALLOWED_PACKAGES_KEY,
-                                values,
-                            )
-                            .apply()
-                        result.success(null)
-                    }
-                    "getScreenTextUploadAppOptions" -> {
-                        result.success(screenTextUploadAppOptions())
-                    }
                     "getCustomThemePalette" -> {
                         result.success(prefs.getString("customThemePalette", null))
                     }
@@ -992,22 +970,6 @@ class MainActivity : FlutterActivity() {
             }
         }
         return false
-    }
-
-    private fun screenTextUploadAppOptions(): List<Map<String, String>> {
-        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        return packageManager.queryIntentActivities(launcherIntent, PackageManager.MATCH_ALL)
-            .map { resolveInfo ->
-                val packageName = resolveInfo.activityInfo.packageName
-                mapOf(
-                    "packageName" to packageName,
-                    "appLabel" to resolveInfo.loadLabel(packageManager).toString().ifBlank {
-                        packageName
-                    },
-                )
-            }
-            .distinctBy { it["packageName"] }
-            .sortedBy { it["appLabel"]?.lowercase() }
     }
 
     private fun openShoppingApp(target: String): Boolean {

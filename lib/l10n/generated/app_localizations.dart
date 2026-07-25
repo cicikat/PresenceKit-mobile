@@ -2695,36 +2695,6 @@ abstract class AppLocalizations {
   /// **'默认关闭；能力页仍可读取经过本机过滤的快照。'**
   String get capabilityScreenContextDisabled;
 
-  /// No description provided for @capabilityWhitelistTitle.
-  ///
-  /// In zh, this message translates to:
-  /// **'屏幕正文上传白名单'**
-  String get capabilityWhitelistTitle;
-
-  /// No description provided for @capabilityWhitelistEmpty.
-  ///
-  /// In zh, this message translates to:
-  /// **'当前为空：所有 App 仅上报包名和 App 名，不上传窗口标题或可见正文。'**
-  String get capabilityWhitelistEmpty;
-
-  /// No description provided for @capabilityWhitelistCount.
-  ///
-  /// In zh, this message translates to:
-  /// **'仅勾选的 {count} 个 App 可上传正文；敏感页面仍会二次拦截。'**
-  String capabilityWhitelistCount(int count);
-
-  /// No description provided for @manageAction.
-  ///
-  /// In zh, this message translates to:
-  /// **'管理'**
-  String get manageAction;
-
-  /// No description provided for @capabilityWhitelistNoApps.
-  ///
-  /// In zh, this message translates to:
-  /// **'没有读取到可启动的 App。默认不会上传任何 App 的屏幕正文。'**
-  String get capabilityWhitelistNoApps;
-
   /// No description provided for @capabilityDeviceAdminTitle.
   ///
   /// In zh, this message translates to:
