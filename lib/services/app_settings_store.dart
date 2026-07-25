@@ -842,6 +842,56 @@ class AppSettingsStore {
     }
   }
 
+  // ── 移动端表情包 & 语音播放设置 ───────────────────────────────────────────
+
+  Future<bool> loadStickerEnabled() async {
+    if (!_channelAvailable) return false;
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<bool>(
+            'getStickerEnabled',
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<void> saveStickerEnabled(bool value) async {
+    if (!_channelAvailable) return;
+    try {
+      await PlatformSettingsChannel.channel.invokeMethod<void>(
+        'setStickerEnabled',
+        {'value': value},
+      );
+    } on PlatformException {
+      // 表情包开关是可选的；持久化失败不影响运行时状态。
+    }
+  }
+
+  Future<bool> loadAutoPlayVoice() async {
+    if (!_channelAvailable) return false;
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<bool>(
+            'getAutoPlayVoice',
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<void> saveAutoPlayVoice(bool value) async {
+    if (!_channelAvailable) return;
+    try {
+      await PlatformSettingsChannel.channel.invokeMethod<void>(
+        'setAutoPlayVoice',
+        {'value': value},
+      );
+    } on PlatformException {
+      // 语音自动播放开关是可选的；持久化失败不影响运行时状态。
+    }
+  }
+
   // ── W9：传感器上报 ──────────────────────────────────────────────────────────
 
   Future<int?> readBatteryPercent() async {

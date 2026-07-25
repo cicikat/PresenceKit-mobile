@@ -60,6 +60,8 @@ class _CompanionAppState extends State<CompanionApp>
   AppRoute _route = AppRoute.chat;
   bool _dark = false;
   bool _backgroundNotifications = true;
+  bool _stickerEnabled = false;
+  bool _autoPlayVoice = false;
   bool _backendSyncStarted = false;
   bool _loadingPromptAssets = false;
   bool _savingPromptAssets = false;
@@ -200,9 +202,13 @@ class _CompanionAppState extends State<CompanionApp>
     final storedAvatar = await _settings.loadAvatar();
     final backgroundNotifications = await _settings
         .loadBackgroundNotificationsEnabled();
+    final stickerEnabled = await _settings.loadStickerEnabled();
+    final autoPlayVoice = await _settings.loadAutoPlayVoice();
     if (mounted) {
       setState(() {
         _backgroundNotifications = backgroundNotifications;
+        _stickerEnabled = stickerEnabled;
+        _autoPlayVoice = autoPlayVoice;
         _profileNameOverride = storedName;
         _profileAvatarBytes = storedAvatar;
       });
@@ -914,6 +920,16 @@ class _CompanionAppState extends State<CompanionApp>
                 unawaited(_deviceService.setNotificationTestMode(enabled));
               },
               onOpenCapabilities: _openCapabilityCheck,
+              stickerEnabled: _stickerEnabled,
+              autoPlayVoice: _autoPlayVoice,
+              onStickerEnabledChanged: (enabled) {
+                sheetSetState(() => _stickerEnabled = enabled);
+                unawaited(_settings.saveStickerEnabled(enabled));
+              },
+              onAutoPlayVoiceChanged: (enabled) {
+                sheetSetState(() => _autoPlayVoice = enabled);
+                unawaited(_settings.saveAutoPlayVoice(enabled));
+              },
               onToggleLorebook: (id) {
                 unawaited(() async {
                   await _promptEntries.toggleLore(id);

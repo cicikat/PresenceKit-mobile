@@ -30,6 +30,12 @@ class SettingsStore {
   Future<void> saveBackgroundNotificationsEnabled(bool value) =>
       _store.saveBackgroundNotificationsEnabled(value);
 
+  Future<bool> loadStickerEnabled() => _store.loadStickerEnabled();
+  Future<void> saveStickerEnabled(bool value) =>
+      _store.saveStickerEnabled(value);
+  Future<bool> loadAutoPlayVoice() => _store.loadAutoPlayVoice();
+  Future<void> saveAutoPlayVoice(bool value) => _store.saveAutoPlayVoice(value);
+
   Future<List<String>> loadSeenMobileMessageIds() =>
       _store.loadSeenMobileMessageIds();
   Future<void> saveSeenMobileMessageIds(List<String> ids) =>

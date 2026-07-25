@@ -639,5 +639,10 @@
   "moodSleepy": "Sleepy",
   "moodYandere": "Intense",
   "oemBackgroundGuide": "Vendor background allowlist reference:\nXiaomi: Settings → Apps → Manage apps → {appName} → Battery saver/Autostart → No restrictions and enable autostart\nOPPO: Settings → Apps → Autostart/Power usage → {appName} → Allow background activity\nvivo: Settings → Battery → Background power usage → {appName} → Allow high background power usage\nHuawei: Settings → Apps & services → App launch → {appName} → Manage manually and allow background activity",
-  "@oemBackgroundGuide": {"placeholders": {"appName": {"type": "String"}}}
+  "@oemBackgroundGuide": {"placeholders": {"appName": {"type": "String"}}},
+  "settingsChatSection": "Chat & Stickers",
+  "settingsStickerTitle": "Receive stickers",
+  "settingsStickerSubtitle": "Disable to stop receiving sticker messages",
+  "settingsAutoPlayVoiceTitle": "Auto-play voice",
+  "settingsAutoPlayVoiceSubtitle": "Enable when voice is available on the backend"
 }

@@ -50,6 +50,10 @@ class SettingsPage extends StatelessWidget {
     required this.onBackgroundNotifications,
     required this.onNotificationTestMode,
     required this.onOpenCapabilities,
+    required this.stickerEnabled,
+    required this.autoPlayVoice,
+    required this.onStickerEnabledChanged,
+    required this.onAutoPlayVoiceChanged,
   });
 
   final YxPalette c;
@@ -90,6 +94,10 @@ class SettingsPage extends StatelessWidget {
   final ValueChanged<bool> onBackgroundNotifications;
   final ValueChanged<bool> onNotificationTestMode;
   final VoidCallback onOpenCapabilities;
+  final bool stickerEnabled;
+  final bool autoPlayVoice;
+  final ValueChanged<bool> onStickerEnabledChanged;
+  final ValueChanged<bool> onAutoPlayVoiceChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -209,6 +217,25 @@ class SettingsPage extends StatelessWidget {
                 child: Switch(
                   value: notificationTestMode,
                   onChanged: onNotificationTestMode,
+                ),
+              ),
+              _SettingsSection(title: l10n.settingsChatSection),
+              SettingsRow(
+                c: c,
+                title: l10n.settingsStickerTitle,
+                subtitle: l10n.settingsStickerSubtitle,
+                child: Switch(
+                  value: stickerEnabled,
+                  onChanged: onStickerEnabledChanged,
+                ),
+              ),
+              SettingsRow(
+                c: c,
+                title: l10n.settingsAutoPlayVoiceTitle,
+                subtitle: l10n.settingsAutoPlayVoiceSubtitle,
+                child: Switch(
+                  value: autoPlayVoice,
+                  onChanged: onAutoPlayVoiceChanged,
                 ),
               ),
               _SettingsSection(title: l10n.settingsAppearanceSection),
