@@ -1945,4 +1945,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String oemBackgroundGuide(String appName) {
     return 'Vendor background allowlist reference:\nXiaomi: Settings → Apps → Manage apps → $appName → Battery saver/Autostart → No restrictions and enable autostart\nOPPO: Settings → Apps → Autostart/Power usage → $appName → Allow background activity\nvivo: Settings → Battery → Background power usage → $appName → Allow high background power usage\nHuawei: Settings → Apps & services → App launch → $appName → Manage manually and allow background activity';
   }
+
+  @override
+  String get settingsChatSection => 'Chat & Stickers';
+
+  @override
+  String get settingsStickerTitle => 'Receive stickers';
+
+  @override
+  String get settingsStickerSubtitle =>
+      'Disable to stop receiving sticker messages';
+
+  @override
+  String get settingsAutoPlayVoiceTitle => 'Auto-play voice';
+
+  @override
+  String get settingsAutoPlayVoiceSubtitle =>
+      'Enable when voice is available on the backend';
 }

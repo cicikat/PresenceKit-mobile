@@ -1871,4 +1871,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String oemBackgroundGuide(String appName) {
     return '厂商后台白名单参考：\n小米：设置 → 应用设置 → 应用管理 → $appName → 省电策略/自启动 → 无限制并开启自启动\nOPPO：设置 → 应用 → 自启动/耗电管理 → $appName → 允许后台运行\nvivo：设置 → 电池 → 后台耗电管理 → $appName → 允许后台高耗电\n华为：设置 → 应用和服务 → 应用启动管理 → $appName → 手动管理并允许后台活动';
   }
+
+  @override
+  String get settingsChatSection => '聊天与表情';
+
+  @override
+  String get settingsStickerTitle => '接收表情包';
+
+  @override
+  String get settingsStickerSubtitle => '关闭时不接收表情包消息';
+
+  @override
+  String get settingsAutoPlayVoiceTitle => '自动播放语音';
+
+  @override
+  String get settingsAutoPlayVoiceSubtitle => '需在后端已启用语音功能时开启';
 }
