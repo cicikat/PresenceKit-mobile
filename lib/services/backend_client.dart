@@ -204,6 +204,17 @@ class BackendClient {
     );
   }
 
+  Future<Map<String, dynamic>> synthesizeMobileVoice(
+    String text, {
+    required String token,
+  }) => _request(
+    '/tts/synthesize',
+    token: token,
+    method: 'POST',
+    body: {'text': text, 'emotion': 'neutral', 'scene': 'mobile'},
+    timeout: const Duration(seconds: 120),
+  );
+
   Future<BackendChatResponse> sendChat(
     String message, {
     required String token,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
 import '../models/screen_context.dart';
+import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/device_services.dart';
 
@@ -14,10 +15,16 @@ class ChatController extends ChangeNotifier {
     required String? Function() token,
     required SettingsStore settings,
     required RelayStatusService relay,
+    VoiceService? voice,
+    bool Function()? stickerEnabled,
+    bool Function()? autoPlayVoice,
   }) : _backend = backend,
        _token = token,
        _settings = settings,
-       _relay = relay {
+       _relay = relay,
+       _voice = voice ?? const VoiceService(AppSettingsStore()),
+       _stickerEnabled = stickerEnabled ?? _alwaysEnabled,
+       _autoPlayVoice = autoPlayVoice ?? _alwaysDisabled {
     scrollController.addListener(_handleScroll);
   }
 
@@ -26,10 +33,15 @@ class ChatController extends ChangeNotifier {
   // Mirrors chat_widgets.dart AnimatedRevealText (kept in sync with
   // Emerald-client/src/windows/room/useVnPresenter.ts, 40 CPS).
   static const revealCps = 40.0;
+  static bool _alwaysEnabled() => true;
+  static bool _alwaysDisabled() => false;
   final BackendClient Function() _backend;
   final String? Function() _token;
   final SettingsStore _settings;
   final RelayStatusService _relay;
+  final VoiceService _voice;
+  final bool Function() _stickerEnabled;
+  final bool Function() _autoPlayVoice;
   final ScrollController scrollController = ScrollController();
   final List<ChatMessage> history = [];
   final List<ChatMessage> sent = [];
@@ -350,8 +362,13 @@ class ChatController extends ChangeNotifier {
               : _splitSegments(message.content);
           unawaited(_appendSegments(parts, time: base.time));
         }
-        if (message.sticker != null) {
+        if (message.sticker != null && _stickerEnabled()) {
           unawaited(_appendSticker(message.sticker!, time: base.time));
+        }
+        if (message.voiceAvailable &&
+            _autoPlayVoice() &&
+            message.content.trim().isNotEmpty) {
+          unawaited(_synthesizeAndPlay(message.content));
         }
       }
       mobileActive = true;
@@ -385,6 +402,18 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     } finally {
       pollingMobile = false;
+    }
+  }
+
+  Future<void> _synthesizeAndPlay(String text) async {
+    final token = _accessToken;
+    if (token == null) return;
+    try {
+      final voice = await _backend().synthesizeMobileVoice(text, token: token);
+      final audioB64 = (voice['audio_b64'] ?? '').toString();
+      if (audioB64.isNotEmpty) await _voice.playGeneratedAudio(audioB64);
+    } catch (_) {
+      // 语音投递失败不能影响主消息收取；文字已经正常显示。
     }
   }
 

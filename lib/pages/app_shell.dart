@@ -79,6 +79,7 @@ class _CompanionAppState extends State<CompanionApp>
   late final RelayStatusService _relayService;
   late final ConnectionController _connectionController;
   late final DeviceController _deviceController;
+  late final VoiceService _voiceService;
   late final ChatController _chatController;
   late final DreamController _dreamController;
   late final GardenController _gardenController;
@@ -161,9 +162,10 @@ class _CompanionAppState extends State<CompanionApp>
       settingsStore: settingsStore,
       backendClient: widget.backendClient,
     );
+    _voiceService = VoiceService(settingsStore);
     _deviceController = DeviceController(
       device: _deviceService,
-      voice: VoiceService(settingsStore),
+      voice: _voiceService,
       screen: _screenService,
       backend: () => _backend,
       token: () => _adminToken,
@@ -173,6 +175,9 @@ class _CompanionAppState extends State<CompanionApp>
       token: () => _adminToken,
       settings: _settings,
       relay: _relayService,
+      voice: _voiceService,
+      stickerEnabled: () => _stickerEnabled,
+      autoPlayVoice: () => _autoPlayVoice,
     );
     _dreamController = DreamController(
       backend: () => _backend,

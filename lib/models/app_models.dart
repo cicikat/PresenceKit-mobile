@@ -1008,6 +1008,7 @@ class MobilePollMessage {
     required this.behaviorDelivery,
     required this.behaviorLevel,
     required this.behaviorId,
+    this.voiceAvailable = false,
     this.sticker,
   });
 
@@ -1029,6 +1030,7 @@ class MobilePollMessage {
       behaviorDelivery: (behavior['delivery'] ?? '').toString(),
       behaviorLevel: (behavior['level'] ?? '').toString(),
       behaviorId: (behavior['behavior_id'] ?? '').toString(),
+      voiceAvailable: json['voice_available'] == true,
       sticker: StickerPayload.fromJson(json['sticker']),
     );
   }
@@ -1042,6 +1044,7 @@ class MobilePollMessage {
   final String behaviorDelivery;
   final String behaviorLevel;
   final String behaviorId;
+  final bool voiceAvailable;
   final StickerPayload? sticker;
 
   ChatMessage toChatMessage() {

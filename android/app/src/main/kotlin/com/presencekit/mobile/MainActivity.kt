@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import android.provider.OpenableColumns
 import android.provider.Settings
 import android.text.TextUtils
 import android.util.Log
+import android.util.Base64
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
@@ -38,6 +40,8 @@ class MainActivity : FlutterActivity() {
     private var pendingImagesPickResult: MethodChannel.Result? = null
     private var pendingPdfPickResult: MethodChannel.Result? = null
     private val voiceRecorder by lazy { VoiceRecorder(this) }
+    private var ttsPlayer: MediaPlayer? = null
+    private var ttsAudioFile: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -505,6 +509,21 @@ class MainActivity : FlutterActivity() {
                         voiceRecorder.cancel()
                         result.success(null)
                     }
+                    "getStickerEnabled" -> result.success(prefs.getBoolean("stickerEnabled", false))
+                    "setStickerEnabled" -> {
+                        prefs.edit().putBoolean("stickerEnabled", call.argument<Boolean>("value") ?: false).apply()
+                        result.success(null)
+                    }
+                    "getAutoPlayVoice" -> result.success(prefs.getBoolean("autoPlayVoice", false))
+                    "setAutoPlayVoice" -> {
+                        prefs.edit().putBoolean("autoPlayVoice", call.argument<Boolean>("value") ?: false).apply()
+                        result.success(null)
+                    }
+                    "playTtsAudio" -> {
+                        val audioB64 = call.argument<String>("audioB64").orEmpty()
+                        if (audioB64.isBlank()) result.error("empty_audio", "Audio payload is empty", null)
+                        else playTtsAudio(audioB64, result)
+                    }
                     // ── W9：传感器上报 ────────────────────────────────────────────
                     "readBatteryPercent" -> {
                         result.success(SensorAccess.readBatteryPercent(this))
@@ -535,6 +554,37 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    private fun playTtsAudio(audioB64: String, result: MethodChannel.Result) {
+        try {
+            val audio = Base64.decode(audioB64, Base64.DEFAULT)
+            ttsPlayer?.release()
+            ttsAudioFile?.delete()
+            val file = File(cacheDir, "mobile-tts.wav")
+            file.writeBytes(audio)
+            ttsAudioFile = file
+            val player = MediaPlayer()
+            ttsPlayer = player
+            player.setDataSource(file.absolutePath)
+            player.setOnPreparedListener {
+                it.start()
+                result.success(true)
+            }
+            player.setOnCompletionListener {
+                it.release()
+                if (ttsPlayer === it) ttsPlayer = null
+            }
+            player.setOnErrorListener { failed, _, _ ->
+                failed.release()
+                if (ttsPlayer === failed) ttsPlayer = null
+                result.error("tts_playback", "Unable to play synthesized audio", null)
+                true
+            }
+            player.prepareAsync()
+        } catch (error: Exception) {
+            result.error("tts_playback", error.message ?: "Unable to prepare synthesized audio", null)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

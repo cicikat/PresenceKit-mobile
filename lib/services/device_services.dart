@@ -61,6 +61,8 @@ class VoiceService {
   Future<bool> startRecording() => _store.startVoiceRecording();
   Future<String?> stopRecording() => _store.stopVoiceRecording();
   Future<void> cancelRecording() => _store.cancelVoiceRecording();
+  Future<bool> playGeneratedAudio(String audioB64) =>
+      _store.playTtsAudio(audioB64);
 }
 
 class DeviceControlService {

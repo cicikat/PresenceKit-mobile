@@ -892,6 +892,19 @@ class AppSettingsStore {
     }
   }
 
+  Future<bool> playTtsAudio(String audioB64) async {
+    if (!_channelAvailable || audioB64.isEmpty) return false;
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<bool>(
+            'playTtsAudio',
+            {'audioB64': audioB64},
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   // ── W9：传感器上报 ──────────────────────────────────────────────────────────
 
   Future<int?> readBatteryPercent() async {
