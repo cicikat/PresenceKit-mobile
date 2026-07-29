@@ -34,7 +34,11 @@ You can also bake a default backend address into the build: `flutter build apk -
 - **`AA1打包安装到手机.bat`** — dev loop: builds a debug (or `debug`/`release`) APK and installs it to a connected device over adb. It hardcodes local `flutter`/`adb` paths at the top — edit those for your machine before running.
 - **`AA2打包发行包.bat`** — release packaging: builds a release APK and drops `dist/PresenceKit-mobile-vX.Y.Z.apk` (+ `.sha256`) for uploading to a GitHub Release. No device needed.
 
-By default the release build is signed with the debug key (fine for personal testing, not for distribution). To sign a real release: run `keytool -genkey -v -keystore presencekit-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias presencekit` from `android/`, then copy `android/key.properties.example` to `android/key.properties` and fill in the passwords/alias/`storeFile` path. Both `*.jks` and `key.properties` are gitignored — never commit them.
+Debug/dev builds use the Android debug key. A formal release build (`flutter build apk --release` or `AA2打包发行包.bat`) requires a fixed release keystore and fails before packaging if `android/key.properties`, its four fields, or its `storeFile` is absent; it never falls back to a debug-signed release APK.
+
+For a local release, create the keystore outside the repository, copy `android/key.properties.example` to the gitignored `android/key.properties`, and set its file path, passwords, and alias. Do not commit the keystore, passwords, alias, or `key.properties`. For GitHub tag releases, configure the repository secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`; the workflow materializes them only in its ephemeral runner.
+
+Android access and relay tokens are stored as Keystore-encrypted values in private app storage. The legacy `SharedPreferences("yexuan_memery")` name remains unchanged for non-sensitive settings and one-time upgrade compatibility; a legacy token is copied securely and its plaintext key is removed only after that write succeeds.
 
 Download prebuilt APKs from this repo's [GitHub Releases](https://github.com/cicikat/PresenceKit-mobile/releases). Requires a running [PresenceKit backend](https://github.com/cicikat/PresenceKit/releases) — check the release notes for the compatible backend version.
 

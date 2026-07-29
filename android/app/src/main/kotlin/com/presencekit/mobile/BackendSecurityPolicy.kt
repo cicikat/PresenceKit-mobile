@@ -13,9 +13,11 @@ object BackendSecurityPolicy {
     const val RELAY_TOPIC_KEY = "relayTopic"
     const val OWNER_USER_ID_KEY = "ownerUserId"
 
-    fun adminToken(prefs: SharedPreferences): String {
-        return prefs.getString(ADMIN_TOKEN_KEY, null)?.trim().orEmpty()
-    }
+    fun adminToken(context: android.content.Context, prefs: SharedPreferences): String =
+        CredentialMigration.readOrMigrate(ADMIN_TOKEN_KEY, AndroidKeystoreCredentialStore(context), legacy(prefs)).orEmpty()
+
+    fun replaceAdminToken(context: android.content.Context, prefs: SharedPreferences, value: String): Boolean =
+        CredentialMigration.replace(ADMIN_TOKEN_KEY, value, AndroidKeystoreCredentialStore(context), legacy(prefs))
 
     fun ownerUserId(prefs: SharedPreferences): String {
         return prefs.getString(OWNER_USER_ID_KEY, null)?.trim().orEmpty()
@@ -51,8 +53,16 @@ object BackendSecurityPolicy {
     fun relayBaseUrl(prefs: SharedPreferences): String? =
         prefs.getString(RELAY_BASE_URL_KEY, null)?.trim()?.ifEmpty { null }
 
-    fun relayToken(prefs: SharedPreferences): String? =
-        prefs.getString(RELAY_TOKEN_KEY, null)?.trim()?.ifEmpty { null }
+    fun relayToken(context: android.content.Context, prefs: SharedPreferences): String? =
+        CredentialMigration.readOrMigrate(RELAY_TOKEN_KEY, AndroidKeystoreCredentialStore(context), legacy(prefs))
+
+    fun replaceRelayToken(context: android.content.Context, prefs: SharedPreferences, value: String): Boolean =
+        CredentialMigration.replace(RELAY_TOKEN_KEY, value, AndroidKeystoreCredentialStore(context), legacy(prefs))
+
+    private fun legacy(prefs: SharedPreferences) = object : LegacyCredentialStorage {
+        override fun read(key: String): String? = prefs.getString(key, null)
+        override fun delete(key: String): Boolean = prefs.edit().remove(key).commit()
+    }
 
     fun relayTopic(prefs: SharedPreferences): String? =
         prefs.getString(RELAY_TOPIC_KEY, null)?.trim()?.ifEmpty { null }

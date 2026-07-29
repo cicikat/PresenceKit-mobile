@@ -37,10 +37,11 @@ for /f "tokens=1 delims=+" %%v in ("%PKG_VERSION%") do set "SEMVER=%%v"
 set "TAG=v%SEMVER%"
 
 if exist "android\key.properties" (
-  echo [INFO] android\key.properties found - building with release signing.
+  echo [INFO] android\key.properties found - validating release signing.
 ) else (
-  echo [WARN] android\key.properties not found - APK will use DEBUG signing.
-  echo [WARN] See android\key.properties.example to set up a real release keystore.
+  echo [ERROR] android\key.properties is required for a distributable release APK.
+  echo [ERROR] See android\key.properties.example. No debug-signed release artifact will be produced.
+  pause & exit /b 1
 )
 
 echo.

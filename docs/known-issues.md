@@ -205,15 +205,9 @@ Token 弹窗保存后已经通过父 State 更新 `_adminToken`，系统设置�
 改为 `com.presencekit.mobile`，Kotlin 源码目录和安装脚本同步迁移。legacy MethodChannel 与
 SharedPreferences 名有意保留，避免把兼容契约误当成当前项目名继续扩散。
 
-## P3：release 仍使用 debug signing
+## 已关闭：release debug signing fallback
 
-**位置**：`android/app/build.gradle.kts`
-
-`release` buildType 当前使用 `signingConfigs.getByName("debug")`。
-
-**影响**：只能用于自用内测，不适合发布或长期安装升级。
-
-**建议**：建立私有 release keystore，并把密钥路径/密码放到本机未入库配置。
+`android/app/build.gradle.kts` 现在要求任何 release task 提供完整的、本地或 CI 注入的固定 keystore；缺失时在打包前 fail-loud，不会输出 debug-signed release APK。配置、CI secrets 和剩余真机升级验收见 `docs/v1-release-readiness.md`。
 
 ## P3：通知权限在 Activity 创建时主动弹出
 

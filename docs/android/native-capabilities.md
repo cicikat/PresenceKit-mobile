@@ -1,5 +1,11 @@
 # Android 原生能力
 
+## v1 credential storage
+
+`SharedPreferences("yexuan_memery")` is the compatibility name and must not be renamed. It still holds ordinary settings: backend URL, owner ID, relay URL/topic, language, and notification settings. `adminToken` (access token) and `relayToken` are sensitive and are no longer retained as plaintext there.
+
+`AndroidKeystoreCredentialStore` encrypts values in private app preferences using a non-exportable Android Keystore key (AES-GCM on Android 6.0+, Android Keystore RSA compatibility on older supported versions). Its migration state machine is: secure value wins and removes redundant legacy plaintext; otherwise legacy is written securely and cleared only after a committed write; a failed secure write preserves the legacy value. Replacement and deletion also operate on secure storage first. Generic MethodChannel failures never include the token value. Both Flutter foreground calls and `MobileNotificationService` use this same path, so an upgraded installation keeps working without re-entering its token.
+
 Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 
 ## MainActivity.kt

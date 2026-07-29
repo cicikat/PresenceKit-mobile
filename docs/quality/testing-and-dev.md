@@ -1,5 +1,20 @@
 # 测试与开发
 
+## v1 signing and credential tests
+
+```powershell
+# Debug builds do not require a release keystore.
+flutter build apk --debug
+
+# Without android/key.properties and its referenced keystore, this must fail.
+flutter build apk --release
+
+# Kotlin migration-policy tests (run from android/).
+.\gradlew.bat testDebugUnitTest
+```
+
+`CredentialMigrationTest` covers successful legacy-to-secure migration and plaintext cleanup, failed secure writes preserving plaintext, secure precedence, idempotence, token replacement, and deletion. Android Keystore operation and installed-app recovery still require the device acceptance procedure in `docs/v1-release-readiness.md`.
+
 ## 常用命令
 
 > 以下命令在仓库根目录执行。`flutter`/`adb` 不在 PATH 时，SDK 位置以

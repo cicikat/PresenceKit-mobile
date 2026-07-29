@@ -1,4 +1,6 @@
-storePassword=changeme
-keyPassword=changeme
-keyAlias=presencekit
+# Copy to android/key.properties. These values are local-only and must never be committed.
+storePassword=<keystore-password>
+keyPassword=<key-password>
+keyAlias=<release-key-alias>
+# Relative paths are resolved from android/.
 storeFile=../presencekit-release.jks

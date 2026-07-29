@@ -65,7 +65,7 @@ class MainActivity : FlutterActivity() {
         val backendBaseUrl = prefs.getString("backendBaseUrl", null)?.trim().orEmpty()
             .ifEmpty { "http://127.0.0.1:8080" }
         if (prefs.getBoolean("backgroundNotificationsEnabled", true) &&
-            BackendSecurityPolicy.adminToken(prefs).isNotBlank() &&
+            BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             BackendSecurityPolicy.isAllowedBaseUrl(backendBaseUrl, prefs)
         ) {
             startMobileNotificationService()
@@ -103,16 +103,12 @@ class MainActivity : FlutterActivity() {
                         }
                     }
                     "getAdminToken" -> {
-                        result.success(BackendSecurityPolicy.adminToken(prefs).ifBlank { null })
+                        result.success(BackendSecurityPolicy.adminToken(this, prefs).ifBlank { null })
                     }
                     "setAdminToken" -> {
                         val value = call.argument<String>("value").orEmpty().trim()
-                        if (value.isBlank()) {
-                            prefs.edit().remove(BackendSecurityPolicy.ADMIN_TOKEN_KEY).apply()
-                        } else {
-                            prefs.edit().putString(BackendSecurityPolicy.ADMIN_TOKEN_KEY, value).apply()
-                        }
-                        result.success(null)
+                        if (BackendSecurityPolicy.replaceAdminToken(this, prefs, value)) result.success(null)
+                        else result.error("credential_write_failed", "Could not securely save credential", null)
                     }
                     "getOwnerUserId" -> {
                         result.success(BackendSecurityPolicy.ownerUserId(prefs).ifBlank { null })
@@ -465,16 +461,12 @@ class MainActivity : FlutterActivity() {
                         }
                     }
                     "getRelayToken" -> {
-                        result.success(BackendSecurityPolicy.relayToken(prefs))
+                        result.success(BackendSecurityPolicy.relayToken(this, prefs))
                     }
                     "setRelayToken" -> {
                         val value = call.argument<String>("value").orEmpty().trim()
-                        if (value.isBlank()) {
-                            prefs.edit().remove(BackendSecurityPolicy.RELAY_TOKEN_KEY).apply()
-                        } else {
-                            prefs.edit().putString(BackendSecurityPolicy.RELAY_TOKEN_KEY, value).apply()
-                        }
-                        result.success(null)
+                        if (BackendSecurityPolicy.replaceRelayToken(this, prefs, value)) result.success(null)
+                        else result.error("credential_write_failed", "Could not securely save credential", null)
                     }
                     "getRelayTopic" -> {
                         result.success(BackendSecurityPolicy.relayTopic(prefs))
@@ -779,7 +771,7 @@ class MainActivity : FlutterActivity() {
     private fun shouldRunRelayService(prefs: android.content.SharedPreferences): Boolean {
         val relayBaseUrl = BackendSecurityPolicy.relayBaseUrl(prefs) ?: return false
         return prefs.getBoolean("backgroundNotificationsEnabled", true) &&
-            BackendSecurityPolicy.adminToken(prefs).isNotBlank() &&
+            BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             BackendSecurityPolicy.relayTopic(prefs) != null &&
             BackendSecurityPolicy.isAllowedRelayUrl(relayBaseUrl, prefs)
     }

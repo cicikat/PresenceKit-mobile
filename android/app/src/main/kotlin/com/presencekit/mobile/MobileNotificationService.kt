@@ -87,7 +87,7 @@ class MobileNotificationService : Service() {
             return START_NOT_STICKY
         }
         val prefs = servicePrefs()
-        val token = BackendSecurityPolicy.adminToken(prefs)
+        val token = BackendSecurityPolicy.adminToken(this, prefs)
         val baseUrl = backendBaseUrl()
         val gateError = when {
             scheduledOneShot && !prefs.getBoolean("backgroundNotificationsEnabled", true) ->
@@ -429,7 +429,7 @@ class MobileNotificationService : Service() {
         val prefs = servicePrefs()
         val baseUrl = backendBaseUrl()
         return prefs.getBoolean("backgroundNotificationsEnabled", true) &&
-            BackendSecurityPolicy.adminToken(prefs).isNotBlank() &&
+            BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             baseUrl != null &&
             BackendSecurityPolicy.isAllowedBaseUrl(baseUrl, prefs)
     }
@@ -506,7 +506,7 @@ class MobileNotificationService : Service() {
             return true
         }
         prefs.edit().putLong("lastBackgroundPollAt", System.currentTimeMillis()).apply()
-        val token = BackendSecurityPolicy.adminToken(prefs)
+        val token = BackendSecurityPolicy.adminToken(this, prefs)
         val baseUrl = backendBaseUrl()
         if (token.isBlank()) {
             recordBackgroundError("token invalid: missing credential")
@@ -786,7 +786,7 @@ class MobileNotificationService : Service() {
         ) {
             return null
         }
-        return RelayConfig(baseUrl, topic, BackendSecurityPolicy.relayToken(prefs))
+        return RelayConfig(baseUrl, topic, BackendSecurityPolicy.relayToken(this, prefs))
     }
 
     private fun postJson(endpoint: String, payload: String, token: String) {

@@ -108,7 +108,7 @@ class PhoneControlService : Service() {
 
     private fun runLoop(taskId: String, task: String): LoopOutcome {
         val prefs = servicePrefs()
-        val token = BackendSecurityPolicy.adminToken(prefs)
+        val token = BackendSecurityPolicy.adminToken(this, prefs)
         val baseUrl = backendBaseUrl(prefs)
         if (token.isBlank() || baseUrl == null) {
             return LoopOutcome("任务已停止", "后端未连接，没法继续操作")
