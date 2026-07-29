@@ -5,7 +5,7 @@
 | 文档 | 内容 |
 |---|---|
 | `overview/project-snapshot.md` | 当前项目状态、目录和功能边界 |
-| `roadmap-notes.md` | 待梳理的路线与后续议题 |
+| `roadmap-notes.md` | 仍含未归档的路线与后续议题；不作为 current implementation authority |
 | `mobile/flutter-structure.md` | Flutter 单页应用、状态、UI 组件和拆分建议 |
 | `mobile/localization.md` | Flutter 中英文、本地化键和语言偏好持久化契约 |
 | `mobile/color-mods.md` | 多颜色预设、浏览器导出和 `mods/` 打包契约 |
@@ -20,7 +20,7 @@
 
 参考与归档（非现役规范）：
 
-- `reference/main-dart-split-plan.md`：已完成的 `lib/main.dart` 拆分计划。
+- `archive/main-dart-split-plan.md`：Historical；已完成的 `lib/main.dart` 拆分计划，现行结构见 `mobile/flutter-structure.md`。
 - `reference/push-relay-spike.md`：已封存的推送中继 Spike 结论；现行发布约定见 `protocols/relay-publish-contract.md`。
 - `reference/desktop-jsx/`：桌面端 React/JSX 视觉设计参考及其素材；仅供视觉比对，禁止将其中的组件结构、状态管理或实现逻辑复制到 Flutter/Android 源码。
 
