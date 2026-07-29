@@ -1,218 +1,87 @@
-# 多端与硬件传感器事件协议
+# 多端与硬件传感器入口协议
 
-目标：所有设备都只负责上报“客观事实”，不直接扮演角色、不直接决定行为。后端统一做评分、冷却、行为映射和记忆分层。
+> 当前事实核对：2026-07-29。本文只记录已经存在的 endpoint、真实调用方、鉴权和 payload
+> 边界；不定义统一 sensor event bus，也不把规划中的 envelope 当作当前协议。
 
-## 入口
+## 共同边界
 
-现有入口：
+设备和客户端只上报客观事实，不直接扮演角色、不直接决定行为。后端负责校验、冷却、行为
+映射和记忆分层。所有下列写入口都使用管理面 Bearer token，并要求 `sensor.write` scope；
+读取侧使用对应的 `state.read` scope。
 
-- `POST /sensor/realtime`：短窗口实时状态，给主动触发和屏幕陪伴用。当前 Android 已接入无障碍文本上下文。
-- `POST /sensor/push`：低频聚合数据，写入用户画像摘要。适合步数、电量、位置这类一天内缓慢变化的数据。
-- `POST /sensor/activity`：桌面端活动快照，偏桌宠/桌面状态。
+手机端不直接读写后端数据文件。后端物理路径以 backend 的 `docs/data-taxonomy.md` 与
+`core/data_paths.py` 为准，客户端不得依赖。
 
-建议新增或统一的逻辑入口名：
+## 当前 endpoint
 
-```text
-POST /sensor/event
-```
+### POST /sensor/push
 
-暂时不一定马上实现新接口；可以先让各端按下面的 envelope 组织数据，再由现有接口兼容接收。
+| 项目 | 当前事实 |
+|---|---|
+| 真实调用方 | mobile `lib/controllers/device_controller.dart::pushSensorData()` → `BackendClient.pushSensorData()`；启动时一次，之后每 30 分钟一次 |
+| 鉴权 | Bearer token，`sensor.write` |
+| 用途 | 低频聚合手机事实；后端更新最近快照，并按写入边界聚合到用户 profile |
+| payload | JSON object；`steps` 非负整数、`battery` 0–100 整数、`screen_sessions` 可选整数、`location` 可选字符串；字段可省略 |
+| 响应/错误 | 成功返回接收消息和归一化 data；字段非法返回 422；客户端不依赖后端物理存储 |
 
-## Event Envelope
+### POST /sensor/realtime
 
-```json
-{
-  "event_id": "uuid-or-device-ts",
-  "schema_version": "sensor_event.v1",
-  "source": {
-    "device_id": "android_phone_main",
-    "device_type": "android_phone",
-    "client": "Emerald-mobile",
-    "platform": "android",
-    "trust": "user_device"
-  },
-  "observed_at": 1779026400.0,
-  "received_at": 1779026401.2,
-  "window_seconds": 45,
-  "type": "screen_context",
-  "category": "screen",
-  "priority_hint": "normal",
-  "privacy": {
-    "tier": "ephemeral",
-    "contains_sensitive_text": false,
-    "allow_memory": false,
-    "allow_external_vision": false,
-    "retention_seconds": 180
-  },
-  "facts": {
-    "app_package": "com.sankuai.meituan",
-    "app_label": "美团",
-    "window_title": "外卖",
-    "visible_text": ["附近商家", "购物车", "去结算"],
-    "clickable_text": ["购物车", "去结算"]
-  },
-  "metrics": {
-    "confidence": 0.76,
-    "sample_count": 1
-  },
-  "dedupe_key": "android_phone_main:screen_context:com.sankuai.meituan"
-}
-```
+| 项目 | 当前事实 |
+|---|---|
+| 真实调用方 | desktop Rust sensor publisher；mobile `DeviceController.pushScreenContext()`；Android 后台 `MobileNotificationService` 在补偿 poll 前的过滤快照上报 |
+| 鉴权 | Bearer token，`sensor.write` |
+| 用途 | 短窗口实时状态，供 presence/sensor_aware 与屏幕陪伴读取；后端只保留内存中的最新快照，重启清空 |
+| payload | `window_seconds` 1–300；`ts`；`sensor_version`；`input`（非负 `keystrokes`、`mouse_clicks`、`mouse_distance_px`、`idle_seconds`）；`focus`（`app`、`title_hint`、非负 `switch_count`）；可选 `screen`（package/app/title/visible/clickable 文本数组） |
+| 隐私边界 | 敏感窗口由 producer 和 backend 双重拦截；后端对 `title_hint`、窗口标题和文本数组做边界截断；实时正文不直接进入长期记忆 |
+| 响应/错误 | 无敏感窗口时返回 `{ok:false, skipped:"sensitive_window"}`；正常返回 `{ok:true, received_at}`；schema 错误返回 422 |
 
-## 事件类型
+对应读取 endpoint 是 `GET /sensor/realtime`，需要 `state.read`，无样本时返回
+`{ "_no_data": true }`。客户端把它当作正常空状态，不将其解释为全零快照。
 
-当前可落地：
+### POST /perception/visual
 
-- `screen_context`：当前 App、窗口标题、可见文字、可点击文字。只作为实时上下文，默认不进长期记忆。
-- `foreground_app_changed`：App/类别变化，例如从工作切到外卖。
-- `late_night_active`：深夜仍活跃。
-- `long_focus`：长时间停留在同一 App/类别。
-- `focus_scattered`：短时间频繁切换。
-- `presence_left` / `presence_returned`：离开/回来。
-- `long_stillness`：久坐或长时间无明显活动。
+| 项目 | 当前事实 |
+|---|---|
+| 真实调用方 | desktop Rust `src-tauri/src/sensor/visual.rs`；mobile 当前没有调用方 |
+| 鉴权 | Bearer token，`sensor.write` |
+| 用途 | 本地视觉观察 shadow ingress；后端按 source 冷却，后台处理观察结果，不把图片落盘 |
+| payload | `multipart/form-data`：`image` 文件和 `source`（当前允许 `screen` 或 `camera`）；图片内容只作为本次处理输入 |
+| 预检 | desktop 先读 `GET /perception/visual/config`；该读取也要求 `sensor.write`，只返回 producer-safe 开关和 cooldown |
+| 响应/错误 | 接收后返回 202；关闭、冷却或处理失败均降级为 shadow trace/空结果，不改变普通聊天路径 |
 
-后续硬件可接：
+诊断读取 endpoint 是 `GET /perception/visual-trace`，需要 `state.read`，只返回 shadow
+trace，不返回图片正文或外部模型凭证。
 
-- `touch_presence`：硬件被触摸、握住、靠近。
-- `ambient_light_changed`：环境光明显变化。
-- `ambient_noise_changed`：环境噪声变化，只存分贝级别，不存录音。
-- `room_motion`：人体/毫米波/红外检测到靠近或离开。
-- `desk_pressure`：坐下、起身、趴桌等压力变化。
-- `heart_rate_summary`：心率摘要或异常趋势，来自 Apple Watch/HealthKit 时只存粗粒度。
-- `sleep_state_summary`：睡眠/起床摘要，只存阶段和时间段，不存原始健康明细。
+### POST /watch/event
 
-## 记忆策略
+| 项目 | 当前事实 |
+|---|---|
+| 真实调用方 | 外部 Watch/HealthKit/快捷指令等健康事件 producer；当前 mobile 仓库没有直接调用方 |
+| 鉴权 | Bearer token，`sensor.write` |
+| 用途 | 接收可穿戴设备健康事件，交给后端 scheduler；不是 mobile 前台聊天入口 |
+| payload | `{"type":"heart_rate","value":整数}`，或 `{"type":"sleep_end","sleep_start":"HH:MM","sleep_end":"HH:MM"}`；当前不支持的 type 返回 422 |
+| 响应/错误 | `heart_rate` 返回接收消息；`sleep_end` 先缓冲合并再处理；字段缺失/类型非法返回 422 |
 
-三层处理：
+对应读取 endpoint 是 `GET /watch/status`，需要 `state.read`，仅返回最近事件快照。
 
-```text
-raw event -> realtime candidate -> memory candidate -> profile summary
-```
+## Historical / Removed
 
-### ephemeral
+### POST /sensor/activity
 
-只用于当下评分和行为触发，不进记忆。
+当前 backend `admin/routers/sensor.py`、`perception.py`、`watch.py` 中没有该 route，desktop/mobile
+当前调用方也未找到它。因此它不属于 current endpoint，也不应被新客户端实现或继续作为协议入口
+引用。旧的跨仓审计/交接材料中若仍出现该名称，只能视为历史记录。
 
-适合：
+### POST /sensor/event
 
-- 屏幕可见文字
-- 当前 App
-- 当前页面标题
-- 可点击按钮文字
-- 支付、银行、验证码、聊天隐私页面
+本文不提出或设计该统一入口。若未来需要协议升级，必须另立版本化工单，不能由本文件把规划
+字段或 event bus 变成当前契约。
 
-处理：
+## 记忆与隐私分层
 
-- 后端内存保留 1-3 分钟。
-- 可进入 `sensor_judge` 做客观评分。
-- 不写入长期记忆和日记。
-- 默认不送外部视觉模型。
-
-### session
-
-当天或短期会话级摘要，可帮助角色理解状态，但不长期固化。
-
-适合：
-
-- “今天多次深夜活跃”
-- “下午连续工作两小时”
-- “中午多次停留外卖页面”
-- “今天手机电量长期偏低”
-
-处理：
-
-- 写入当日 sensor summary。
-- 可进入 prompt 的“今日手机感知”。
-- 过日清理或只保留低维统计。
-
-### profile
-
-长期偏好/习惯，必须从多次 session summary 提炼，不能由单次屏幕事件直接写入。
-
-适合：
-
-- “工作时容易连续专注很久”
-- “深夜容易拖延睡觉”
-- “午饭经常需要提醒”
-- “更接受轻提醒，不接受强打扰”
-
-处理：
-
-- 至少 3 次以上同类事件，且跨天出现，再进入候选。
-- 需要 LLM 归纳，但输出必须是习惯摘要，不包含原始屏幕内容。
-- 敏感源永不提升为 profile。
-
-## 行为映射
-
-行为层必须根据 `score + risk + privacy.tier + category` 一起决定：
-
-- `score < 35`：静默丢弃。
-- `35 <= score < 55`：普通通知或仅入当日摘要。
-- `55 <= score < 75`：悬浮短句，前提是非敏感页面且悬浮窗权限开启。
-- `late_night_active && score >= 50`：可弹锁屏确认，但不能自动锁屏。
-- `takeout/shopping && score >= 52`：可弹外卖/购物确认浮窗，但不能自动加购、下单、支付。
-- `risk >= 75` 或 `privacy.contains_sensitive_text=true`：只静默记录或完全丢弃。
-
-## Apple Watch 路线
-
-Android 手机不能直接读取 Apple Watch 的健康数据。
-
-可行路线：
-
-1. iPhone 快捷指令手动触发：读取健康样本，POST 到后端。最省事，但自动化弱。
-2. 自写 iOS App + HealthKit：用户授权后读取 iPhone/Apple Watch 同步到 HealthKit 的数据，再推送到后端。
-3. watchOS App：可以更贴近手表传感器，但开发和权限成本最高。
-
-建议先用快捷指令上报低风险摘要：
-
-```json
-{
-  "type": "health_summary",
-  "category": "body",
-  "privacy": {
-    "tier": "session",
-    "allow_memory": false,
-    "allow_external_vision": false
-  },
-  "facts": {
-    "steps_today": 4200,
-    "stand_hours": 5,
-    "latest_heart_rate_bucket": "normal",
-    "workout_recent": false,
-    "sleep_last_night_hours": 6.5
-  }
-}
-```
-
-不要上传：
-
-- 原始心率序列
-- ECG 原始数据
-- 精确经纬度轨迹
-- 健康诊断/用药明细
-- 任意可识别的医疗记录
-
-## 可买硬件方向
-
-低风险、好接入：
-
-- ESP32 + BLE/Wi-Fi：按钮、触摸、电容、光照、温湿度。
-- 小米/米家类传感器：如果能走 Home Assistant，再由 HA webhook 推后端。
-- Aqara/Thread/Matter：适合门磁、人体、温湿度，但生态网关成本更高。
-- 桌面压力垫/FSR：判断坐下/起身/趴桌。
-- 毫米波存在传感器：判断人在不在桌前，比摄像头隐私友好。
-
-暂缓：
-
-- 摄像头常开识别。
-- 麦克风常开录音。
-- 自动上传截图识别。
-- 与支付/下单强绑定的自动点击硬件。
-
-## Emerald-mobile 当前实现（2026-07-13）
-
-- Android 无障碍层按需采集 `packageName`、`appLabel`、`className`、`windowTitle`、`visibleText`、`clickableText`，先过滤密码、验证码、支付/银行/医疗页面和敏感应用。
-- `DeviceController` 前台每 45 秒推送一次屏幕上下文；独立上传开关 `screenContextUploadEnabled` 默认关闭，开启后即上传完整正文（不再有按 App 的文本白名单，2026-07 移除），敏感页面/关键词过滤仍独立生效。
-- `DeviceController` 每 30 分钟读取电量/步数并通过 `POST /sensor/realtime` 上报；权限未授予时不伪造步数。
-- 屏幕上下文属于 `ephemeral` 实时客观事实，手机端不把正文直接写入长期记忆；能力页调试采集与自动上传是两条独立路径。
-- Android 后台 `MobileNotificationService` 只在补偿 poll 前尝试上传过滤后的快照，上传失败不阻塞主动消息消费。
+- `/sensor/realtime` 是短窗口事实；敏感正文、图片和原始健康数据不得直接进入长期记忆。
+- `/sensor/push` 与 `/watch/event` 的 profile 聚合由后端 write envelope 和 profile writer 决定；
+  mobile 只提交 endpoint payload。
+- `/perception/visual` 是 shadow 观察；trace 仅供诊断，不等同于 prompt 或 memory source。
+- 设备端不根据单个 sensor 事件自行决定角色行为；所有主动消息和行为由 backend scheduler/
+  tool/permission gates 裁决。
