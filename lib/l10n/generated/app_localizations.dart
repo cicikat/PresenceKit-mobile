@@ -401,8 +401,8 @@ abstract class AppLocalizations {
   /// No description provided for @chatBackendStatus.
   ///
   /// In zh, this message translates to:
-  /// **'后端已接入 · {emotion} · 好感 {affection}'**
-  String chatBackendStatus(String emotion, int affection);
+  /// **'后端已接入 · {emotion}'**
+  String chatBackendStatus(String emotion);
 
   /// No description provided for @chatMobileReceived.
   ///

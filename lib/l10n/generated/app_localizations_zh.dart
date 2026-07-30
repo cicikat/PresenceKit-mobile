@@ -167,8 +167,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String chatBackendStatus(String emotion, int affection) {
-    return '后端已接入 · $emotion · 好感 $affection';
+  String chatBackendStatus(String emotion) {
+    return '后端已接入 · $emotion';
   }
 
   @override

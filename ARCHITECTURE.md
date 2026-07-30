@@ -86,7 +86,7 @@ Composer
   -> _sendMessage()
   -> BackendClient.sendChat()
   -> POST /desktop/chat
-  <- { reply, affection, level, emotion }
+  <- { reply, emotion, turn_id, msg_id }
   -> _appendHimReplySegments()
   -> ChatScene 渲染消息
 ```

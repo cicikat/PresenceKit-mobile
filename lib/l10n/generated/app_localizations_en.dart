@@ -171,8 +171,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String chatBackendStatus(String emotion, int affection) {
-    return 'Backend connected · $emotion · Affection $affection';
+  String chatBackendStatus(String emotion) {
+    return 'Backend connected · $emotion';
   }
 
   @override

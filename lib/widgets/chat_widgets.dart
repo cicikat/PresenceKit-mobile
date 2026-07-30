@@ -105,10 +105,7 @@ class ChatScene extends StatelessWidget {
       if (lastBackendReply != null && backendError == null)
         MetaLine(
           c: c,
-          text: l10n.chatBackendStatus(
-            lastBackendReply.emotion,
-            lastBackendReply.affection,
-          ),
+          text: l10n.chatBackendStatus(lastBackendReply.emotion),
         ),
       if (mobileReceivedCount > 0)
         MetaLine(c: c, text: l10n.chatMobileReceived(mobileReceivedCount)),

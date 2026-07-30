@@ -1143,8 +1143,6 @@ class StickerPayload {
 class BackendChatResponse {
   const BackendChatResponse({
     required this.reply,
-    required this.affection,
-    required this.level,
     required this.emotion,
     this.msgId,
     this.turnId,
@@ -1158,10 +1156,6 @@ class BackendChatResponse {
 
     return BackendChatResponse(
       reply: (json['reply'] ?? '').toString(),
-      affection: json['affection'] is num
-          ? (json['affection'] as num).toInt()
-          : int.tryParse((json['affection'] ?? '0').toString()) ?? 0,
-      level: (json['level'] ?? '').toString(),
       emotion: (json['emotion'] ?? 'neutral').toString(),
       msgId: toId(json['msg_id']) ?? toId(json['turn_id']),
       turnId: toId(json['turn_id']),
@@ -1169,8 +1163,6 @@ class BackendChatResponse {
   }
 
   final String reply;
-  final int affection;
-  final String level;
   final String emotion;
   final String? msgId;
   final String? turnId;

@@ -185,6 +185,50 @@ void main() {
     );
   });
 
+  test('BackendChatResponse accepts the retired-field-free chat contract', () {
+    final response = BackendChatResponse.fromJson(const {
+      'reply': 'contract reply',
+      'emotion': 'gentle',
+    });
+
+    expect(response.reply, 'contract reply');
+    expect(response.emotion, 'gentle');
+  });
+
+  testWidgets('chat status shows emotion without a retired affection display', (
+    tester,
+  ) async {
+    final settings = _ForegroundSettingsStore('http://127.0.0.1:8080');
+    final backend = _ForegroundBackendClient(
+      settings,
+      chatResponse: BackendChatResponse.fromJson(const {
+        'reply': 'status reply',
+        'emotion': 'gentle',
+      }),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: CompanionApp(settingsStore: settings, backendClient: backend),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    await tester.enterText(find.byType(TextField).last, '状态栏契约');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('后端已接入 · gentle'), findsOneWidget);
+    expect(find.textContaining('好感'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 500));
+  });
+
   testWidgets(
     'foreground persists messages before max-seq ack and reuses cursor',
     (tester) async {
