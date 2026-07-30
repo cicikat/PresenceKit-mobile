@@ -77,9 +77,9 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 | 接口 | 调用方 | 用途 |
 |---|---|---|
 | `POST /desktop/chat` | Flutter `sendChat()` | 主对话用户发消息；与 Emerald-client 桌面端共用 Reality Chat 写入入口 |
-| `POST /mobile/activate` | Flutter / Android service | 激活 mobile channel |
-| `POST /mobile/deactivate` | Flutter dispose / 切节点 | 关闭 mobile channel |
-| `GET /mobile/poll?limit=20&after=<seq>` | Flutter 前台 / Android 周期补偿 | 非销毁式读取；`after` 为本机已持久化的最大 ack seq，首次可省略 |
+| `POST /mobile/activate` | Flutter / Android service | 激活 mobile channel；即使 HTTP 200 也必须检查 JSON `ok` 与 `active`，失败时读取 `error` |
+| `POST /mobile/deactivate` | Flutter dispose / 切节点 | 关闭 mobile channel；响应同样包含 `ok`、`active` 与可选 `error` |
+| `GET /mobile/poll?limit=20&after=<seq>` | Flutter 前台 / Android 周期补偿 | 非销毁式读取；响应包含 `ok`、`active`、`error`、`messages`、`cursor`；`after` 为本机已持久化的最大 ack seq，首次可省略 |
 | `POST /mobile/ack` | Flutter 前台 / Android 周期补偿 | 消息落库/写入去重记录后提交 `{"ack_seq": <本批最大 seq>}` |
 | `GET /chat-log/dates` | Flutter | 读取聊天日志日期 |
 | `GET /chat-log/{date}` | Flutter | 读取某日聊天日志 |
@@ -128,6 +128,8 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
   `signal`，正文与 behavior 由受鉴权的 `/mobile/poll` 返回。
 - `/mobile/poll` 队列现在是有 TTL、容量上限的非销毁式补偿副本；前后台消费后通过 `/mobile/ack`
   推进共享游标，不再把队列当作实时双写消费路径。
+- 前台首次连接或切换节点时，先加载正式聊天历史，再以非动画方式 catch-up durable queue；后续实时 poll
+  仍按正常气泡 reveal 展示。历史与 queue 同时命中的同步回复按现有 `msg_id` / `turn_id` / 内容指纹去重。
 - 主动消息可以带 `behavior` metadata，手机端只消费 metadata，不自己定义触发规则。
 - 屏幕上下文当前是实时上下文，不应被手机端直接长期记忆化。独立上传开关默认关闭；原生采集层会先过滤敏感页面。
 - `/upload/ingest` 与其他后端请求一样附带 `Authorization: Bearer <token>`。

@@ -1057,6 +1057,69 @@ class MobilePollMessage {
   }
 }
 
+class MobileActivationResult {
+  const MobileActivationResult({
+    required this.ok,
+    required this.active,
+    this.error,
+  });
+
+  factory MobileActivationResult.fromJson(Map<String, dynamic> json) {
+    final error = json['error']?.toString().trim();
+    return MobileActivationResult(
+      ok: json['ok'] == true,
+      active: json['active'] == true,
+      error: error == null || error.isEmpty ? null : error,
+    );
+  }
+
+  final bool ok;
+  final bool active;
+  final String? error;
+}
+
+class MobilePollResult {
+  const MobilePollResult({
+    required this.ok,
+    required this.active,
+    required this.messages,
+    this.cursor,
+    this.error,
+  });
+
+  factory MobilePollResult.fromJson(Map<String, dynamic> json) {
+    final rawMessages = json['messages'];
+    final error = json['error']?.toString().trim();
+    return MobilePollResult(
+      ok: json['ok'] == true,
+      active: json['active'] == true,
+      messages: rawMessages is List
+          ? rawMessages
+                .whereType<Map>()
+                .map(
+                  (message) => MobilePollMessage.fromJson(
+                    Map<String, dynamic>.from(message),
+                  ),
+                )
+                .where(
+                  (message) =>
+                      message.content.trim().isNotEmpty ||
+                      message.sticker != null,
+                )
+                .toList(growable: false)
+          : const [],
+      cursor: json['cursor'] is num ? (json['cursor'] as num).toInt() : null,
+      error: error == null || error.isEmpty ? null : error,
+    );
+  }
+
+  final bool ok;
+  final bool active;
+  final List<MobilePollMessage> messages;
+  final int? cursor;
+  final String? error;
+}
+
 /// Mobile channel 的自包含表情包 payload；图片字节只在 UI 层按需解码。
 class StickerPayload {
   const StickerPayload({required this.emotion, required this.dataUrl});
@@ -1685,9 +1748,8 @@ class GroupDreamTranscriptPage {
           ? rawEntries
                 .whereType<Map>()
                 .map(
-                  (m) => GroupDreamMessage.fromJson(
-                    Map<String, dynamic>.from(m),
-                  ),
+                  (m) =>
+                      GroupDreamMessage.fromJson(Map<String, dynamic>.from(m)),
                 )
                 .toList(growable: false)
           : const [],

@@ -75,10 +75,14 @@ class _ForegroundBackendClient extends BackendClient {
   int _pollBatchIndex = 0;
 
   @override
-  Future<void> activateMobile({required String token}) async {}
+  Future<MobileActivationResult> activateMobile({
+    required String token,
+  }) async => const MobileActivationResult(ok: true, active: true);
 
   @override
-  Future<void> deactivateMobile({required String token}) async {}
+  Future<MobileActivationResult> deactivateMobile({
+    required String token,
+  }) async => const MobileActivationResult(ok: true, active: false);
 
   @override
   Future<ChatLogDates> loadChatLogDates({required String token}) async {
@@ -91,7 +95,7 @@ class _ForegroundBackendClient extends BackendClient {
   }
 
   @override
-  Future<List<MobilePollMessage>> pollMobile({
+  Future<MobilePollResult> pollMobile({
     required String token,
     int limit = 20,
     int? after,
@@ -100,32 +104,44 @@ class _ForegroundBackendClient extends BackendClient {
     pollAfters.add(after);
     final batches = pollBatches;
     if (batches != null) {
-      if (_pollBatchIndex >= batches.length) return const [];
-      return batches[_pollBatchIndex++];
+      if (_pollBatchIndex >= batches.length) {
+        return const MobilePollResult(ok: true, active: true, messages: []);
+      }
+      return MobilePollResult(
+        ok: true,
+        active: true,
+        messages: batches[_pollBatchIndex++],
+      );
     }
-    if (after != null) return const [];
-    return [
-      MobilePollMessage.fromJson({
-        'id': 'relay-foreground-contract-1',
-        'seq': 7,
-        'content': '前台契约消息一',
-        'user_id': '10001',
-        'timestamp': 1781280000,
-        'behavior': {
-          'behavior_id': 'presence_ping',
-          'kind': 'overlay_message',
-          'delivery': 'overlay',
-          'level': 'attention_grab',
-        },
-      }),
-      MobilePollMessage.fromJson({
-        'id': 'relay-foreground-contract-2',
-        'seq': 12,
-        'content': '前台契约消息二',
-        'user_id': '10001',
-        'timestamp': 1781280001,
-      }),
-    ];
+    if (after != null) {
+      return const MobilePollResult(ok: true, active: true, messages: []);
+    }
+    return MobilePollResult(
+      ok: true,
+      active: true,
+      messages: [
+        MobilePollMessage.fromJson({
+          'id': 'relay-foreground-contract-1',
+          'seq': 7,
+          'content': '前台契约消息一',
+          'user_id': '10001',
+          'timestamp': 1781280000,
+          'behavior': {
+            'behavior_id': 'presence_ping',
+            'kind': 'overlay_message',
+            'delivery': 'overlay',
+            'level': 'attention_grab',
+          },
+        }),
+        MobilePollMessage.fromJson({
+          'id': 'relay-foreground-contract-2',
+          'seq': 12,
+          'content': '前台契约消息二',
+          'user_id': '10001',
+          'timestamp': 1781280001,
+        }),
+      ],
+    );
   }
 
   @override
@@ -180,10 +196,7 @@ void main() {
           locale: const Locale('zh'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: CompanionApp(
-            settingsStore: settings,
-            backendClient: backend,
-          ),
+          home: CompanionApp(settingsStore: settings, backendClient: backend),
         ),
       );
       for (var i = 0; i < 20; i += 1) {
@@ -225,10 +238,7 @@ void main() {
           locale: const Locale('zh'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: CompanionApp(
-            settingsStore: settings,
-            backendClient: backend,
-          ),
+          home: CompanionApp(settingsStore: settings, backendClient: backend),
         ),
       );
       for (var i = 0; i < 20; i += 1) {
@@ -296,10 +306,7 @@ void main() {
         locale: const Locale('zh'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: CompanionApp(
-          settingsStore: settings,
-          backendClient: backend,
-        ),
+        home: CompanionApp(settingsStore: settings, backendClient: backend),
       ),
     );
     await tester.pump(const Duration(milliseconds: 500));
@@ -356,10 +363,7 @@ void main() {
           locale: const Locale('zh'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: CompanionApp(
-            settingsStore: settings,
-            backendClient: backend,
-          ),
+          home: CompanionApp(settingsStore: settings, backendClient: backend),
         ),
       );
       await tester.pump(const Duration(milliseconds: 500));

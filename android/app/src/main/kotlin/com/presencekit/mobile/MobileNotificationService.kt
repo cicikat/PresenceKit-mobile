@@ -527,7 +527,10 @@ class MobileNotificationService : Service() {
         try {
             Log.d(tag, "polling $baseUrl")
             postScreenContext(baseUrl, token)
-            postJson("$baseUrl/mobile/activate", "{}", token)
+            val activation = JSONObject(postJson("$baseUrl/mobile/activate", "{}", token))
+            if (!activation.optBoolean("ok") || !activation.optBoolean("active")) {
+                throw IOException(activation.optString("error", "mobile channel is not active"))
+            }
             if (pollGeneration.get() != gen ||
                 !allowRelayConnected && consumerSource == ConsumerSource.RELAY
             ) {
@@ -539,6 +542,9 @@ class MobileNotificationService : Service() {
             val afterQuery = if (lastAckedSeq == Long.MIN_VALUE) "" else "&after=$lastAckedSeq"
             val body = pollJson("$baseUrl/mobile/poll?limit=20$afterQuery", token)
             val decoded = JSONObject(body)
+            if (!decoded.optBoolean("ok") || !decoded.optBoolean("active")) {
+                throw IOException(decoded.optString("error", "mobile channel is not active"))
+            }
             val messages = decoded.optJSONArray("messages") ?: throw JSONException("messages missing")
             Log.d(tag, "received ${messages.length()} messages")
             if (pollGeneration.get() != gen) {
@@ -564,11 +570,14 @@ class MobileNotificationService : Service() {
                 }
             }
             if (batchMaxSeq != null) {
-                postJson(
+                val ack = JSONObject(postJson(
                     "$baseUrl/mobile/ack",
                     JSONObject().put("ack_seq", batchMaxSeq).toString(),
                     token,
-                )
+                ))
+                if (!ack.optBoolean("ok")) {
+                    throw IOException(ack.optString("error", "mobile acknowledgement failed"))
+                }
                 persistLastAckedSeq(batchMaxSeq)
             }
             if (!timeoutTriggered) {

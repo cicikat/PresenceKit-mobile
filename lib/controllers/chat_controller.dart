@@ -53,7 +53,9 @@ class ChatController extends ChangeNotifier {
   final Map<String, String> _recentIdsByFingerprint = {};
   Timer? _pollTimer;
   final List<List<ChatMessage>> _messageQueue = [];
+  Future<void>? _initialSync;
   bool _playingSegments = false;
+  bool _initialSyncComplete = false;
   double? _lastScrollPixels;
   bool sending = false;
   bool himTyping = false;
@@ -81,9 +83,30 @@ class ChatController extends ChangeNotifier {
 
   Future<void> start() async {
     if (_accessToken == null) return;
+    if (_initialSync != null) return _initialSync!;
+    if (_initialSyncComplete) {
+      _ensurePollTimer();
+      await pollIfBackgroundUnavailable();
+      return;
+    }
     _pollTimer?.cancel();
-    unawaited(loadHistory());
-    unawaited(activateMobile());
+    _initialSync = _startInitialSync();
+    try {
+      await _initialSync;
+    } finally {
+      _initialSync = null;
+    }
+  }
+
+  Future<void> _startInitialSync() async {
+    await loadHistory();
+    await activateMobile(catchUp: true);
+    _initialSyncComplete = true;
+    _ensurePollTimer();
+  }
+
+  void _ensurePollTimer() {
+    if (_pollTimer != null) return;
     _pollTimer = Timer.periodic(
       const Duration(seconds: 5),
       (_) => unawaited(pollIfBackgroundUnavailable()),
@@ -105,6 +128,7 @@ class ChatController extends ChangeNotifier {
     sent.clear();
     _availableDates.clear();
     _loadedDates.clear();
+    _initialSyncComplete = false;
     historyLoaded = false;
     noMoreHistory = false;
     lastBackendReply = null;
@@ -291,15 +315,21 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  Future<void> activateMobile() async {
+  Future<void> activateMobile({bool catchUp = false}) async {
     final token = _accessToken;
     if (token == null) return;
     try {
-      await _backend().activateMobile(token: token);
-      mobileActive = true;
+      final result = await _backend().activateMobile(token: token);
+      if (!result.ok || !result.active) {
+        mobileActive = false;
+        mobileError = result.error ?? 'mobile channel is not active';
+        notifyListeners();
+        return;
+      }
+      mobileActive = result.active;
       mobileError = null;
       notifyListeners();
-      await pollIfBackgroundUnavailable();
+      await pollIfBackgroundUnavailable(animate: !catchUp);
     } on BackendException catch (e) {
       mobileActive = false;
       mobileError = e.message;
@@ -311,12 +341,12 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  Future<void> pollIfBackgroundUnavailable() async {
+  Future<void> pollIfBackgroundUnavailable({bool animate = true}) async {
     if (await _relay.isBackgroundServiceRunning()) return;
-    await pollMobile();
+    await pollMobile(animate: animate);
   }
 
-  Future<void> pollMobile() async {
+  Future<void> pollMobile({bool animate = true}) async {
     final token = _accessToken;
     if (pollingMobile || token == null) return;
     pollingMobile = true;
@@ -332,18 +362,26 @@ class ChatController extends ChangeNotifier {
       while (_seenIds.length > 200) {
         _seenIds.removeAt(0);
       }
-      final messages = await _backend().pollMobile(
+      final result = await _backend().pollMobile(
         token: token,
         after: lastAckedMobileSeq,
         waitSeconds: 25,
       );
+      if (!result.ok || !result.active) {
+        mobileActive = false;
+        mobileError = result.error ?? 'mobile channel is not active';
+        notifyListeners();
+        return;
+      }
+      final messages = result.messages;
       final fresh = <MobilePollMessage>[];
       for (final message in messages) {
         if (message.id.isNotEmpty) {
           if (_seenIds.contains(message.id)) continue;
           _seenIds.add(message.id);
           if (_seenIds.length > 200) _seenIds.removeAt(0);
-          if (_syncReplyIds.contains(message.id) ||
+          if (!animate && _matchesLoadedHistory(message.content) ||
+              _syncReplyIds.contains(message.id) ||
               _isRecentReply(message.content, msgId: message.id)) {
             continue;
           }
@@ -354,24 +392,8 @@ class ChatController extends ChangeNotifier {
         }
         fresh.add(message);
       }
-      for (final message in fresh) {
-        final base = message.toChatMessage();
-        if (message.content.trim().isNotEmpty) {
-          final parts = message.behaviorKind.isNotEmpty
-              ? [message.content]
-              : _splitSegments(message.content);
-          unawaited(_appendSegments(parts, time: base.time));
-        }
-        if (message.sticker != null && _stickerEnabled()) {
-          unawaited(_appendSticker(message.sticker!, time: base.time));
-        }
-        if (message.voiceAvailable &&
-            _autoPlayVoice() &&
-            message.content.trim().isNotEmpty) {
-          unawaited(_synthesizeAndPlay(message.content));
-        }
-      }
-      mobileActive = true;
+      _appendMobileMessages(fresh, animate: animate);
+      mobileActive = result.active;
       mobileError = null;
       if (fresh.isNotEmpty) {
         mobileReceivedCount += fresh.length;
@@ -402,6 +424,60 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     } finally {
       pollingMobile = false;
+    }
+  }
+
+  void _appendMobileMessages(
+    List<MobilePollMessage> messages, {
+    required bool animate,
+  }) {
+    if (!animate) {
+      final immediate = <ChatMessage>[];
+      for (final message in messages) {
+        final base = message.toChatMessage();
+        if (message.content.trim().isNotEmpty) {
+          final parts = message.behaviorKind.isNotEmpty
+              ? [message.content]
+              : _splitSegments(message.content);
+          immediate.addAll(
+            parts.map(
+              (part) => ChatMessage(role: 'him', text: part, time: base.time),
+            ),
+          );
+        }
+        if (message.sticker != null && _stickerEnabled()) {
+          immediate.add(
+            ChatMessage(
+              role: 'him',
+              text: '',
+              time: base.time,
+              sticker: message.sticker,
+            ),
+          );
+        }
+      }
+      if (immediate.isNotEmpty) {
+        sent.addAll(immediate);
+        scrollToBottom();
+      }
+      return;
+    }
+    for (final message in messages) {
+      final base = message.toChatMessage();
+      if (message.content.trim().isNotEmpty) {
+        final parts = message.behaviorKind.isNotEmpty
+            ? [message.content]
+            : _splitSegments(message.content);
+        unawaited(_appendSegments(parts, time: base.time));
+      }
+      if (message.sticker != null && _stickerEnabled()) {
+        unawaited(_appendSticker(message.sticker!, time: base.time));
+      }
+      if (message.voiceAvailable &&
+          _autoPlayVoice() &&
+          message.content.trim().isNotEmpty) {
+        unawaited(_synthesizeAndPlay(message.content));
+      }
     }
   }
 
@@ -571,6 +647,16 @@ class ChatController extends ChangeNotifier {
     }
   }
 
+  bool _matchesLoadedHistory(String text) {
+    final parts = _splitSegments(text);
+    if (parts.isEmpty) return false;
+    final historyFingerprints = history
+        .where((message) => message.role == 'him')
+        .map((message) => _fingerprint(message.text))
+        .toSet();
+    return parts.every(historyFingerprints.contains);
+  }
+
   bool _shouldAppendSynchronousReply(BackendChatResponse response) {
     void register(String id) {
       _syncReplyIds.add(id);
@@ -710,7 +796,12 @@ class ChatController extends ChangeNotifier {
     scrollController.dispose();
     final token = _accessToken;
     if (token != null) {
-      unawaited(_backend().deactivateMobile(token: token).catchError((_) {}));
+      unawaited(
+        _backend()
+            .deactivateMobile(token: token)
+            .then<void>((_) {})
+            .catchError((_) {}),
+      );
     }
     super.dispose();
   }

@@ -36,7 +36,8 @@ import '../models/app_models.dart'
         GroupSummary,
         JailbreakEntry,
         LoreEntry,
-        MobilePollMessage,
+        MobileActivationResult,
+        MobilePollResult,
         MoodStateSnapshot,
         PhoneControlDebugResult,
         PromptAssets,
@@ -152,27 +153,31 @@ class BackendClient {
     return DiaryDetail.fromJson(await _request('/diary/$date', token: token));
   }
 
-  Future<void> activateMobile({required String token}) async {
-    await _request(
-      '/mobile/activate',
-      token: token,
-      method: 'POST',
-      body: const {},
-      expectJson: false,
+  Future<MobileActivationResult> activateMobile({required String token}) async {
+    return MobileActivationResult.fromJson(
+      await _request(
+        '/mobile/activate',
+        token: token,
+        method: 'POST',
+        body: const {},
+      ),
     );
   }
 
-  Future<void> deactivateMobile({required String token}) async {
-    await _request(
-      '/mobile/deactivate',
-      token: token,
-      method: 'POST',
-      body: const {},
-      expectJson: false,
+  Future<MobileActivationResult> deactivateMobile({
+    required String token,
+  }) async {
+    return MobileActivationResult.fromJson(
+      await _request(
+        '/mobile/deactivate',
+        token: token,
+        method: 'POST',
+        body: const {},
+      ),
     );
   }
 
-  Future<List<MobilePollMessage>> pollMobile({
+  Future<MobilePollResult> pollMobile({
     required String token,
     int limit = 20,
     int? after,
@@ -185,23 +190,22 @@ class BackendClient {
       token: token,
       timeout: Duration(seconds: waitSeconds > 0 ? waitSeconds + 10 : 20),
     );
-    final rawMessages = d['messages'];
-    if (rawMessages is! List) return const [];
-    return rawMessages
-        .whereType<Map>()
-        .map((m) => MobilePollMessage.fromJson(Map<String, dynamic>.from(m)))
-        .where((m) => m.content.trim().isNotEmpty || m.sticker != null)
-        .toList(growable: false);
+    return MobilePollResult.fromJson(d);
   }
 
   Future<void> ackMobile({required String token, required int ackSeq}) async {
-    await _request(
+    final response = await _request(
       '/mobile/ack',
       token: token,
       method: 'POST',
       body: {'ack_seq': ackSeq},
-      expectJson: false,
     );
+    if (response['ok'] != true) {
+      throw BackendException(
+        response['error']?.toString() ??
+            'mobile channel acknowledgement failed',
+      );
+    }
   }
 
   Future<Map<String, dynamic>> synthesizeMobileVoice(
@@ -281,7 +285,12 @@ class BackendClient {
   /// 否则返回 retained=true + 一句挽留台词，交给 UI 询问用户"留下"还是"还是要走"。
   Future<DreamWakeResult> dreamWake({required String token}) async {
     return DreamWakeResult.fromJson(
-      await _request('/dream/wake', token: token, method: 'POST', body: const {}),
+      await _request(
+        '/dream/wake',
+        token: token,
+        method: 'POST',
+        body: const {},
+      ),
     );
   }
 
@@ -298,7 +307,9 @@ class BackendClient {
 
   // ── W6：状态感知 ──────────────────────────────────────────────────────────
 
-  Future<ActivityCurrentState> loadActivityCurrent({required String token}) async {
+  Future<ActivityCurrentState> loadActivityCurrent({
+    required String token,
+  }) async {
     return ActivityCurrentState.fromJson(
       await _request('/activity/current', token: token),
     );
@@ -324,9 +335,7 @@ class BackendClient {
       '/settings/prompt-assets',
       token: token,
       method: 'PATCH',
-      body: {
-        if (activeCharacter != null) 'active_character': activeCharacter,
-      },
+      body: {if (activeCharacter != null) 'active_character': activeCharacter},
     );
     final active = decoded['active'];
     final current = await loadPromptAssets(token: token);
@@ -375,9 +384,7 @@ class BackendClient {
     if (entries is! List) return const [];
     return entries
         .whereType<Map>()
-        .map(
-          (item) => JailbreakEntry.fromJson(Map<String, dynamic>.from(item)),
-        )
+        .map((item) => JailbreakEntry.fromJson(Map<String, dynamic>.from(item)))
         .where((item) => item.id.isNotEmpty)
         .toList(growable: false);
   }
@@ -665,7 +672,9 @@ class BackendClient {
     }
   }
 
-  Future<List<ReadingLibraryBook>> readingLibrary({required String token}) async {
+  Future<List<ReadingLibraryBook>> readingLibrary({
+    required String token,
+  }) async {
     final decoded = await _request('/activity/reading/library', token: token);
     final books = decoded['books'];
     if (books is! List) return const [];
@@ -969,10 +978,7 @@ class BackendClient {
   }
 
   Future<DreamSeedState> dreamSeedState({required String token}) async {
-    final decoded = await _request(
-      '/activity/dream_seed/state',
-      token: token,
-    );
+    final decoded = await _request('/activity/dream_seed/state', token: token);
     return DreamSeedState.fromJson(decoded);
   }
 
@@ -1196,7 +1202,11 @@ class BackendClient {
           'mouse_distance_px': 0,
           'idle_seconds': 0,
         },
-        'focus': {'app': 'self', 'title_hint': 'presence_app', 'switch_count': 0},
+        'focus': {
+          'app': 'self',
+          'title_hint': 'presence_app',
+          'switch_count': 0,
+        },
         'screen': {
           'package_name': 'self',
           'app_label': '',
@@ -1254,14 +1264,38 @@ class BackendClient {
 
   Future<BackendDiagnostics> fetchDiagnostics({required String token}) async {
     final results = await Future.wait([
-      _request('/system/data-path', token: token).then<Object?>((d) => d).catchError((e) => e),
-      _request('/system/meta-mode', token: token).then<Object?>((d) => d).catchError((e) => e),
-      _request('/status', token: token).then<Object?>((d) => d).catchError((e) => e),
-      _request('/characters/active-info', token: token).then<Object?>((d) => d).catchError((e) => e),
-      _request('/lorebook', token: token).then<Object?>((d) => d).catchError((e) => e),
-      _request('/jailbreak-entries', token: token).then<Object?>((d) => d).catchError((e) => e),
-      _request('/dream/settings', token: token).then<Object?>((d) => d).catchError((e) => e),
-      _request('/phone_control/status', token: token).then<Object?>((d) => d).catchError((e) => e),
+      _request(
+        '/system/data-path',
+        token: token,
+      ).then<Object?>((d) => d).catchError((e) => e),
+      _request(
+        '/system/meta-mode',
+        token: token,
+      ).then<Object?>((d) => d).catchError((e) => e),
+      _request(
+        '/status',
+        token: token,
+      ).then<Object?>((d) => d).catchError((e) => e),
+      _request(
+        '/characters/active-info',
+        token: token,
+      ).then<Object?>((d) => d).catchError((e) => e),
+      _request(
+        '/lorebook',
+        token: token,
+      ).then<Object?>((d) => d).catchError((e) => e),
+      _request(
+        '/jailbreak-entries',
+        token: token,
+      ).then<Object?>((d) => d).catchError((e) => e),
+      _request(
+        '/dream/settings',
+        token: token,
+      ).then<Object?>((d) => d).catchError((e) => e),
+      _request(
+        '/phone_control/status',
+        token: token,
+      ).then<Object?>((d) => d).catchError((e) => e),
     ]);
 
     String errMsg(Object? r) =>
@@ -1271,7 +1305,8 @@ class BackendClient {
     String? dataPathError;
     bool dataPathForbidden = false;
     if (results[0] is Map<String, dynamic>) {
-      dataPath = (results[0] as Map<String, dynamic>)['data_prefix']?.toString();
+      dataPath = (results[0] as Map<String, dynamic>)['data_prefix']
+          ?.toString();
     } else if (results[0] is BackendException &&
         (results[0] as BackendException).statusCode == 403) {
       // mobile token 预期拿不到 admin-only 的 /system/data-path，见 round-鉴权分层-scoped-tokens-移动端.md §2.3
@@ -1291,7 +1326,9 @@ class BackendClient {
     BackendStatusSummary? statusSummary;
     String? statusSummaryError;
     if (results[2] is Map<String, dynamic>) {
-      statusSummary = BackendStatusSummary.fromJson(results[2] as Map<String, dynamic>);
+      statusSummary = BackendStatusSummary.fromJson(
+        results[2] as Map<String, dynamic>,
+      );
     } else {
       statusSummaryError = errMsg(results[2]);
     }
@@ -1299,7 +1336,9 @@ class BackendClient {
     BackendActiveCharacter? activeCharacter;
     String? activeCharacterError;
     if (results[3] is Map<String, dynamic>) {
-      activeCharacter = BackendActiveCharacter.fromJson(results[3] as Map<String, dynamic>);
+      activeCharacter = BackendActiveCharacter.fromJson(
+        results[3] as Map<String, dynamic>,
+      );
     } else {
       activeCharacterError = errMsg(results[3]);
     }
@@ -1325,7 +1364,9 @@ class BackendClient {
     BackendDreamSettingsSummary? dreamSettings;
     String? dreamSettingsError;
     if (results[6] is Map<String, dynamic>) {
-      dreamSettings = BackendDreamSettingsSummary.fromJson(results[6] as Map<String, dynamic>);
+      dreamSettings = BackendDreamSettingsSummary.fromJson(
+        results[6] as Map<String, dynamic>,
+      );
     } else {
       dreamSettingsError = errMsg(results[6]);
     }
@@ -1374,7 +1415,10 @@ class BackendClient {
       '/phone_control/debug/start',
       token: token,
       method: 'POST',
-      body: {'task': task, if (userId != null && userId.isNotEmpty) 'user_id': userId},
+      body: {
+        'task': task,
+        if (userId != null && userId.isNotEmpty) 'user_id': userId,
+      },
     );
     return PhoneControlDebugResult.fromJson(decoded);
   }

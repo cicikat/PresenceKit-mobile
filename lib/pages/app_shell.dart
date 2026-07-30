@@ -357,7 +357,10 @@ class _CompanionAppState extends State<CompanionApp>
     final previousBackend = _backend;
     if (_hasAdminToken) {
       unawaited(
-        previousBackend.deactivateMobile(token: _adminToken).catchError((_) {}),
+        previousBackend
+            .deactivateMobile(token: _adminToken)
+            .then<void>((_) {})
+            .catchError((_) {}),
       );
     }
     setState(() {
@@ -625,9 +628,10 @@ class _CompanionAppState extends State<CompanionApp>
       screenContextUploadEnabled: _deviceController.screenUploadEnabled,
       backendBaseUrl: _backendBaseUrl,
       backendReachable:
-          _chatController.mobileActive ||
-          _chatController.historyLoaded ||
-          _gardenController.state != null,
+          _chatController.mobileError == null &&
+          (_chatController.mobileActive ||
+              _chatController.historyLoaded ||
+              _gardenController.state != null),
       backendBusy:
           _chatController.pollingMobile ||
           _chatController.loadingHistory ||

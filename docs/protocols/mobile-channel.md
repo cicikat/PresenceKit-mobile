@@ -55,9 +55,10 @@ GET /mobile/poll?limit=20&after=<lastAckedSeq>
 
 1. 追加为 `him` 消息。
 2. 持久化 `seenMobileMessageIds`。
-3. 调用 `POST /mobile/ack {"ack_seq": <本批最大 seq>}`。
-4. ack 成功后持久化共享的 `lastAckedSeq`；失败则不推进游标，下次重收时按 `id` 去重。
-5. 不论 metadata 是否表示 overlay/direct action，都只显示在会话内，不额外弹系统通知或悬浮窗。
+3. 先检查 poll JSON 的 `ok` 与 `active`；响应始终可读取 `messages`、`cursor` 和可选 `error`。`ok:false` 或 `active:false` 不是成功，即使 HTTP 状态为 200。
+4. 调用 `POST /mobile/ack {"ack_seq": <本批最大 seq>}`。
+5. ack 成功后持久化共享的 `lastAckedSeq`；失败则不推进游标，下次重收时按 `id` 去重。
+6. 不论 metadata 是否表示 overlay/direct action，都只显示在会话内，不额外弹系统通知或悬浮窗。
 
 同步 chat 响应会记录 `msg_id`（兼容 `turn_id`）；poll 返回相同 `id` 时按 id 丢弃重复副本。
 内容指纹只用于同步响应或 poll 消息缺少 id 的旧后端兜底。
