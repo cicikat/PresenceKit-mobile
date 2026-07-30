@@ -119,7 +119,8 @@ class DeviceController extends ChangeNotifier {
     final snapshot = await _screen.captureForUpload();
     if (snapshot == null || snapshot.isBlocked) return;
     try {
-      if (snapshot.packageName == 'com.presencekit.mobile') {
+      if (snapshot.packageName == 'com.presencekit.mobile' ||
+          snapshot.packageName == 'com.presencekit.mobile.dev') {
         await _backend().pushSelfFocusSignal(token: token);
         return;
       }

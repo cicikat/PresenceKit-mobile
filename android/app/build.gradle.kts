@@ -53,6 +53,18 @@ android {
         versionName = flutter.versionName
     }
 
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "PresenceKit Dev")
+        }
+        create("prod") {
+            dimension = "environment"
+        }
+    }
+
     signingConfigs {
         if (hasReleaseKeystore) {
             create("release") {

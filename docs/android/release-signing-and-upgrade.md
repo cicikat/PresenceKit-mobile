@@ -6,6 +6,20 @@ Every public release must use one fixed, non-debug release keystore. The keystor
 
 Before publishing, record the APK filename, SHA-256, version name/code, certificate SHA-256, certificate subject, and `apksigner verify --print-certs` result. Keep the record free of private key material and passwords.
 
+## Formal release entry point
+
+Run `AA2打包发行包.bat` and provide both values when prompted:
+
+- `versionName` is the version shown to users, such as `1.0.0` or `1.0.0-rc.1`.
+- `versionCode` is Android's upgrade-comparison value. It must be a positive integer and must increase for every later Android release.
+- A release such as `1.0.0 / build 2` can upgrade `0.2.2 / build 1` when the package name and signing identity are compatible.
+
+The script confirms the requested version, current Git commit, and `prod release` build type before starting. It runs `flutter pub get` and then `flutter build apk --release --flavor prod --build-name <versionName> --build-number <versionCode>`; it does not modify `pubspec.yaml`. It also refuses missing/incomplete signing configuration, debug-signing fallback, reused artifact names, mismatched APK metadata, and a certificate other than the permanent historical PresenceKit-mobile identity:
+
+`18:69:B3:48:D9:E2:6F:13:D8:21:3F:F6:09:33:BC:F9:33:FE:6E:87:79:D1:31:98:F6:55:A4:D7:C0:79:1F:AE`
+
+The final APK, `.apk.sha256`, and `.build-info.txt` are written under `dist/release`. The keystore is only read for signing and is never copied there. GitHub publication remains a subsequent manual step; the script does not stage, commit, tag, or publish anything.
+
 ## Upgrade gate
 
 The real public APK must be installed first on a test device. Only when its signer certificate digest equals the candidate digest may the candidate be tested with `adb install -r`. The upgrade leg must retain app data and verify backend URL, owner ID, ordinary settings, admin token, relay token, secure-storage migration, token replacement/deletion, two restarts, and a second same-signed overwrite. A clean install is a separate leg. Automated migration tests and simulated same-signature tests never substitute for this real published-APK test.

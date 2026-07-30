@@ -3,10 +3,10 @@ setlocal enabledelayedexpansion
 
 cd /d %~dp0
 
-set "PACKAGE=com.presencekit.mobile"
-set "BUILD_MODE=release"
-if /I "%~1"=="debug" set "BUILD_MODE=debug"
-set "APK=build\app\outputs\flutter-apk\app-%BUILD_MODE%.apk"
+set "PACKAGE=com.presencekit.mobile.dev"
+set "FLAVOR=dev"
+set "BUILD_MODE=debug"
+set "APK=build\app\outputs\flutter-apk\app-dev-debug.apk"
 
 rem ---- Resolve flutter / adb: local.properties > env vars > PATH > legacy default ----
 set "FLUTTER="
@@ -52,8 +52,8 @@ if errorlevel 1 (
 "%ADB%" devices
 
 echo.
-echo [2/5] Building %BUILD_MODE% APK...
-call "%FLUTTER%" build apk --%BUILD_MODE%
+echo [2/5] Building %FLAVOR% %BUILD_MODE% APK...
+call "%FLUTTER%" build apk --%BUILD_MODE% --flavor %FLAVOR%
 if errorlevel 1 (
   echo [ERROR] Build failed.
   pause & exit /b 1

@@ -1,5 +1,7 @@
 # Mobile Channel 协议现状
 
+MCP is backend-only and is not part of the desktop/mobile client transport contract.
+
 mobile channel 是后端向手机端投递主动消息的通道。手机端不决定“什么时候该主动说话”，只消费后端已经裁决好的消息和 metadata。
 
 ## Scope boundary
