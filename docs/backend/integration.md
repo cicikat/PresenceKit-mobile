@@ -76,7 +76,7 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 
 | 接口 | 调用方 | 用途 |
 |---|---|---|
-| `POST /desktop/chat` | Flutter `sendChat()` | 主对话用户发消息；与 Emerald-client 桌面端共用 Reality Chat 写入入口 |
+| `POST /mobile/chat` | Flutter `sendChat()` | 手机主对话用户发消息；与桌面共用 Reality Chat Pipeline，但 provenance 为 `mobile` |
 | `POST /mobile/activate` | Flutter / Android service | 激活 mobile channel；即使 HTTP 200 也必须检查 JSON `ok` 与 `active`，失败时读取 `error` |
 | `POST /mobile/deactivate` | Flutter dispose / 切节点 | 关闭 mobile channel；响应同样包含 `ok`、`active` 与可选 `error` |
 | `GET /mobile/poll?limit=20&after=<seq>` | Flutter 前台 / Android 周期补偿 | 非销毁式读取；响应包含 `ok`、`active`、`error`、`messages`、`cursor`；`after` 为本机已持久化的最大 ack seq，首次可省略 |
@@ -110,15 +110,13 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 
 ## 数据流注意点
 
-- 主对话写入与 Emerald-client 桌面端一致，走 `/desktop/chat`。手机端不直接读写后端 `data` 文件。
+- 手机主对话走 `/mobile/chat`；桌面端保留 `/desktop/chat`。两者复用 Reality Chat Pipeline，手机端不直接读写后端 `data` 文件。
 - 主对话历史与 Emerald-client 桌面端一致，只走 `/chat-log/*`。接口由后端负责适配真实数据目录，手机端不再回退旧短期记忆路径。
 - Dream 使用 `/dream/*` 独立状态与对话接口；移动端 Dream 消息不混入主对话列表。
 - Reality Prompt Assets 严格使用 `/settings/prompt-assets`；Dream 世界书、世界层和破限严格使用 `/dream/settings`，两套配置不交叉提交。
-- `/desktop/chat` 的同步回复也可能进入 mobile channel。后端流式路径响应包含独立的 `msg_id`
-  （`_stream_msg_id`）和 `turn_id`；mobile channel fanout 用的是 `turn_id`。Flutter 前台
-  `BackendChatResponse` 同时解析 `msg_id` 和 `turn_id` 两个独立字段，并将两者都注册到
-  `_synchronousAssistantReplyIds`，使 poll 去重在两个维度上均能命中，避免同一条回复在手机
-  显示两次。旧后端或无 id 消息仍使用短时内容指纹兜底。
+- `/mobile/chat` 的同步回复与 mobile durable queue 使用同一 `turn_id`/`msg_id`。手机请求不启用 desktop stream，
+  但 durable mirror 不因 live origin 为 mobile 而取消。Flutter 前台同时解析 `msg_id` 和 `turn_id`，
+  并将两者注册到 `_synchronousAssistantReplyIds`，使 poll 去重命中；旧后端或无 id 消息仍使用短时内容指纹兜底。
 - 前台由 Flutter 每 5 秒轮询主动消息并直接写入会话流；后台中继只实时推送 signal，Android 收到后
   立即 poll 拉取正文；不再常驻长轮询，仅在中继长时间断连时由 `AlarmManager` 周期读取补偿队列。
 - 前后台共用 legacy `SharedPreferences("yexuan_memery")` 中的 `lastAckedSeq`。poll 带

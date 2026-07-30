@@ -226,7 +226,7 @@ class BackendClient {
   }) async {
     return BackendChatResponse.fromJson(
       await _request(
-        '/desktop/chat',
+        '/mobile/chat',
         token: token,
         method: 'POST',
         body: {

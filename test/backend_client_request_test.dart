@@ -174,7 +174,7 @@ void main() {
       await backend.sendChat('hello', token: 'tok-1');
 
       expect(fakeClient.method, 'POST');
-      expect(fakeClient.requestedUri, Uri.parse('$baseUrl/desktop/chat'));
+      expect(fakeClient.requestedUri, Uri.parse('$baseUrl/mobile/chat'));
       expect(jsonDecode(fakeClient.lastRequestBody), {'message': 'hello'});
     });
 

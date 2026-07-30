@@ -6,10 +6,10 @@ mobile channel 是后端向手机端投递主动消息的通道。手机端不�
 
 ## Scope boundary
 
-`/mobile/*` is the mobile activation, polling, acknowledgement, and proactive-delivery surface.
-It is **not** the foreground user-chat endpoint in the current Flutter client: `BackendClient.sendChat()`
-POSTs `/desktop/chat` with the mobile Bearer token. This is the current shared owner-chat contract;
-do not switch it to `/mobile/chat` without a separately versioned backend/client change.
+`/mobile/*` is the mobile foreground-chat, activation, polling, acknowledgement, and proactive-delivery surface.
+`BackendClient.sendChat()` POSTs `/mobile/chat` with the mobile Bearer token. It shares the owner-chat
+Pipeline with `/desktop/chat`, while retaining mobile provenance, mobile-safe probe tools, and an independent
+durable mobile mirror for the assistant reply.
 
 ## 基础消息
 
