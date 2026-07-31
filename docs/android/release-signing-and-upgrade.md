@@ -8,7 +8,9 @@ Before publishing, record the APK filename, SHA-256, version name/code, certific
 
 ## Formal release entry point
 
-Run `AA2打包发行包.bat` and provide both values when prompted:
+`AA1` creates the verified formal release artifact only. `AA3` uses the same release build, signing, metadata, and signer validation, then installs the verified APK with `adb install -r` on exactly one authorized Android device. It never installs before validation completes.
+
+Run `AA1打包发行包.bat` and provide both values when prompted:
 
 - `versionName` is the version shown to users, such as `1.0.0` or `1.0.0-rc.1`.
 - `versionCode` is Android's upgrade-comparison value. It must be a positive integer and must increase for every later Android release.

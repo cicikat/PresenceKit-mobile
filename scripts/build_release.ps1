@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$VersionName,
-    [string]$VersionCode
+    [string]$VersionCode,
+    [switch]$InstallOnDevice
 )
 
 $ErrorActionPreference = "Stop"
@@ -153,6 +154,95 @@ function Resolve-AndroidTools {
         }
     }
     Stop-ReleaseBuild "Android SDK apksigner and aapt were not found in build-tools."
+}
+
+function Resolve-Adb {
+    $localProperties = Get-LocalProperties -Path (Join-Path $AndroidRoot "local.properties")
+    $sdkCandidates = @()
+    if ($localProperties.ContainsKey("sdk.dir")) {
+        $sdkCandidates += [string]$localProperties["sdk.dir"]
+    }
+    if ($env:ANDROID_HOME) {
+        $sdkCandidates += $env:ANDROID_HOME
+    }
+    if ($env:ANDROID_SDK_ROOT) {
+        $sdkCandidates += $env:ANDROID_SDK_ROOT
+    }
+    foreach ($candidate in $sdkCandidates) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate -PathType Container)) {
+            $adb = Join-Path ([IO.Path]::GetFullPath($candidate)) "platform-tools\adb.exe"
+            if (Test-Path -LiteralPath $adb -PathType Leaf) {
+                return $adb
+            }
+        }
+    }
+    $pathCommand = Get-Command "adb.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -ne $pathCommand -and (Test-Path -LiteralPath $pathCommand.Source -PathType Leaf)) {
+        return $pathCommand.Source
+    }
+    Stop-ReleaseBuild "Android SDK adb was not found. Configure sdk.dir in android/local.properties or add adb to PATH."
+}
+
+function Invoke-AdbWithTimeout {
+    param(
+        [string]$Adb,
+        [string[]]$Arguments,
+        [int]$TimeoutSeconds = 60
+    )
+
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $Adb
+    $startInfo.Arguments = (($Arguments | ForEach-Object { '"' + ($_ -replace '"', '\\"') + '"' }) -join ' ')
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    if (-not $process.Start()) {
+        Stop-ReleaseBuild "Could not start adb."
+    }
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+        $process.Kill()
+        $process.WaitForExit()
+        Stop-ReleaseBuild ("adb " + ($Arguments -join " ") + " timed out after $TimeoutSeconds seconds.")
+    }
+    $stdout = $stdoutTask.GetAwaiter().GetResult()
+    $stderr = $stderrTask.GetAwaiter().GetResult()
+    if ($process.ExitCode -ne 0) {
+        Stop-ReleaseBuild ("adb " + ($Arguments -join " ") + " failed with exit code " + $process.ExitCode + ".")
+    }
+    return ($stdout + [Environment]::NewLine + $stderr)
+}
+
+function Install-ReleaseApk {
+    param(
+        [string]$Adb,
+        [string]$ApkPath
+    )
+
+    Write-Host "[INFO] Checking for one connected Android device..."
+    $deviceOutput = Invoke-AdbWithTimeout -Adb $Adb -Arguments @("devices") -TimeoutSeconds 30
+    $deviceLines = @($deviceOutput -split "`r?`n" | ForEach-Object { [string]$_ })
+    $devices = @($deviceLines | Where-Object { $_ -match "^\S+\s+(device|unauthorized|offline)$" } | ForEach-Object {
+        $parts = $_ -split "\s+"
+        [PSCustomObject]@{ Serial = $parts[0]; State = $parts[1] }
+    })
+    if ($devices.Count -eq 0) {
+        Stop-ReleaseBuild "No connected Android device found. Connect and authorize the phone, then retry."
+    }
+    if ($devices.Count -ne 1) {
+        Stop-ReleaseBuild ("Expected exactly one connected Android device, found " + $devices.Count + ". Disconnect other devices and retry.")
+    }
+    if ($devices[0].State -ne "device") {
+        Stop-ReleaseBuild ("Connected Android device is not authorized and ready (state: " + $devices[0].State + "). Unlock the phone and authorize USB debugging.")
+    }
+
+    Write-Host "[RUN] adb install -r <formal release APK>"
+    Invoke-AdbWithTimeout -Adb $Adb -Arguments @("-s", $devices[0].Serial, "install", "-r", $ApkPath) | Out-Null
+    Write-Host ("[DONE] Installed formal release APK on device " + $devices[0].Serial + ".")
 }
 
 function Invoke-Flutter {
@@ -365,6 +455,7 @@ try {
     [void](Get-KeyProperties -Path $KeyPropertiesPath)
     $flutter = Resolve-Flutter
     $androidTools = Resolve-AndroidTools
+    $adb = if ($InstallOnDevice) { Resolve-Adb } else { $null }
     Write-Host "[INFO] flutter and Android SDK release verification tools are ready."
     Write-Host "[INFO] flutter clean skipped; the existing formal entry point did not require it."
 
@@ -428,6 +519,10 @@ try {
     )
     Set-Content -LiteralPath $publishedHashPath -Value $hashLine -Encoding UTF8 -NoNewline
     Set-Content -LiteralPath $publishedInfoPath -Value ($info -join [Environment]::NewLine) -Encoding UTF8
+
+    if ($InstallOnDevice) {
+        Install-ReleaseApk -Adb $adb -ApkPath $publishedApkPath
+    }
 
     Write-Host ""
     Write-Host "[DONE] Formal release APK created successfully."

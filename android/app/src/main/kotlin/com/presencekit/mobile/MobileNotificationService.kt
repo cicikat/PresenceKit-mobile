@@ -798,7 +798,7 @@ class MobileNotificationService : Service() {
         return RelayConfig(baseUrl, topic, BackendSecurityPolicy.relayToken(this, prefs))
     }
 
-    private fun postJson(endpoint: String, payload: String, token: String) {
+    private fun postJson(endpoint: String, payload: String, token: String): String {
         val bytes = payload.toByteArray(Charsets.UTF_8)
         val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
@@ -817,8 +817,9 @@ class MobileNotificationService : Service() {
             } else {
                 connection.errorStream
             }
-            stream?.close()
+            val body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
             if (statusCode !in 200..299) throw IOException("HTTP $statusCode")
+            return body
         } finally {
             connection.disconnect()
         }

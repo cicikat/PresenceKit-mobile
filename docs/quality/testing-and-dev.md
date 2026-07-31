@@ -39,12 +39,14 @@ flutter build apk --debug --flavor dev
 
 ## Dev/Test 与正式包
 
+Packaging entry points: `AA2` builds and installs the Dev debug APK; `AA1` builds the formal release APK only; `AA3` builds the formal release APK and installs it on exactly one authorized Android device after all release validation passes.
+
 项目使用 Android product flavor：`dev` 与 `prod`。
 
 - `flutter run --flavor dev`：日常开发，安装为 `com.presencekit.mobile.dev`，显示名为 `PresenceKit Dev`。
-- `AAA打包测试包.bat`：构建并复制 Dev debug APK 到 `dist/dev/PresenceKit-mobile-dev.apk`，然后自动安装到唯一已授权的 Android 手机；没有设备、设备未授权或连接多个设备时明确失败，不读取正式 `android/key.properties`。
-- `AA1打包安装到手机.bat`：构建并安装 Dev debug APK，使用 Dev applicationId，避免覆盖正式安装。
-- `AA2打包发行包.bat`：调用正式发行脚本，使用 `prod` flavor 和固定 release signing identity。
+- `AA2打包测试包并给手机.bat`：构建并复制 Dev debug APK 到 `dist/dev/PresenceKit-mobile-dev.apk`，然后自动安装到唯一已授权的 Android 手机；没有设备、设备未授权或连接多个设备时明确失败，不读取正式 `android/key.properties`。
+- `AA1打包发行包.bat`：只构建正式发行 APK，使用 `prod` flavor 和固定 release signing identity。
+- `AA3打包发行包并传给手机.bat`：使用与 AA1 相同的正式校验流程，验证通过后安装到唯一已授权的 Android 设备。
 
 Dev 与正式包可以同时安装；Android 会按 applicationId 隔离应用数据、SharedPreferences、Keystore、通知 channel 和组件权限。Dev 数据不能作为正式升级迁移证据。正式 `v0.2.2 → v1` 升级必须使用正式发行包，并按 `docs/v1-release-readiness.md` 的同一 signing identity 真机流程验证。
 
