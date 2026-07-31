@@ -123,6 +123,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Connection, notifications, appearance and chat';
 
   @override
+  String drawerVersionLabel(String version) {
+    return 'Version $version';
+  }
+
+  @override
   String get drawerCurrent => 'Current';
 
   @override

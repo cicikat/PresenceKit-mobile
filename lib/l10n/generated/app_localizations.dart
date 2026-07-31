@@ -314,6 +314,12 @@ abstract class AppLocalizations {
   /// **'连接、通知、外观与对话配置'**
   String get drawerSettingsSubtitle;
 
+  /// No description provided for @drawerVersionLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'版本号 {version}'**
+  String drawerVersionLabel(String version);
+
   /// No description provided for @drawerCurrent.
   ///
   /// In zh, this message translates to:

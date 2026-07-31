@@ -37,6 +37,8 @@
   "drawerGardenSubtitle": "他今天的心境",
   "drawerSettingsTitle": "设置",
   "drawerSettingsSubtitle": "连接、通知、外观与对话配置",
+  "drawerVersionLabel": "版本号 {version}",
+  "@drawerVersionLabel": {"placeholders": {"version": {"type": "String"}}},
   "drawerCurrent": "当前",
   "presenceOnline": "在场",
   "presenceMobileOnline": "手机端在线",

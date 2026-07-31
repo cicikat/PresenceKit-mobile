@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 
@@ -173,6 +174,8 @@ class YxDrawer extends StatelessWidget {
                     active: false,
                     onTap: onOpenSettings,
                   ),
+                  const SizedBox(height: 6),
+                  _DrawerVersion(c: c),
                 ],
               ),
             ),
@@ -181,6 +184,33 @@ class YxDrawer extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DrawerVersion extends StatelessWidget {
+  const _DrawerVersion({required this.c});
+
+  final YxPalette c;
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<PackageInfo>(
+    future: PackageInfo.fromPlatform(),
+    builder: (context, snapshot) {
+      final packageInfo = snapshot.data;
+      if (packageInfo == null) return const SizedBox.shrink();
+
+      final buildNumber = packageInfo.buildNumber;
+      final version = buildNumber.isEmpty
+          ? packageInfo.version
+          : '${packageInfo.version}+$buildNumber';
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(
+          context.l10n.drawerVersionLabel(version),
+          style: mono(c, 9, color: c.characterOn.withValues(alpha: 0.45)),
+        ),
+      );
+    },
+  );
 }
 
 class _DrawerSectionLabel extends StatelessWidget {

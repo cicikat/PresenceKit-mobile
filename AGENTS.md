@@ -122,6 +122,7 @@ docs/
 8. 新领域功能必须新建 `lib/controllers/<domain>_controller.dart` 和对应 widget 文件；禁止向
    `lib/pages/app_shell.dart` 增加领域状态字段、Timer 或成组业务方法。跨域依赖通过构造注入，
    `app_shell.dart` 最终只保留组合根、路由和生命周期协调。
+9. 发布时必须更新 `pubspec.yaml` 的 `version`（格式为 `x.y.z+build`）。侧边栏“设置”下方的版本号通过 `package_info_plus` 读取安装包元数据并自动同步，发布验收时须确认其显示值与 `pubspec.yaml` 一致；不得另行硬编码版本字符串。
 
 ## 启动与调试
 

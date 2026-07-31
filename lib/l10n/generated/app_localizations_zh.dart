@@ -119,6 +119,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get drawerSettingsSubtitle => '连接、通知、外观与对话配置';
 
   @override
+  String drawerVersionLabel(String version) {
+    return '版本号 $version';
+  }
+
+  @override
   String get drawerCurrent => '当前';
 
   @override

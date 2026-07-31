@@ -37,6 +37,8 @@
   "drawerGardenSubtitle": "His state of mind today",
   "drawerSettingsTitle": "Settings",
   "drawerSettingsSubtitle": "Connection, notifications, appearance and chat",
+  "drawerVersionLabel": "Version {version}",
+  "@drawerVersionLabel": {"placeholders": {"version": {"type": "String"}}},
   "drawerCurrent": "Current",
   "presenceOnline": "Present",
   "presenceMobileOnline": "Mobile online",
