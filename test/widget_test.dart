@@ -103,6 +103,7 @@ void main() {
             dreamSettings: null,
             settingsBusy: false,
             settingsError: null,
+            promptEntriesSaving: false,
             notificationTestMode: false,
             stickerEnabled: false,
             autoPlayVoice: false,

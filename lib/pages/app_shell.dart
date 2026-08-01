@@ -11,6 +11,7 @@ import '../controllers/diary_controller.dart';
 import '../controllers/garden_controller.dart';
 import '../controllers/locale_controller.dart';
 import '../controllers/prompt_entries_controller.dart';
+import '../controllers/profile_status_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
@@ -67,9 +68,6 @@ class _CompanionAppState extends State<CompanionApp>
   bool _savingPromptAssets = false;
   String? _backendError;
   String? _promptAssetsError;
-  ActivityCurrentState? _activityCurrent;
-  MoodStateSnapshot? _moodState;
-  bool _loadingStatusSnapshot = false;
   PromptAssets? _promptAssets;
   String? _profileNameOverride;
   Uint8List? _profileAvatarBytes;
@@ -87,6 +85,7 @@ class _CompanionAppState extends State<CompanionApp>
   YxPrefs _prefs = const YxPrefs();
   late final ThemeController _themeController;
   late final PromptEntriesController _promptEntries;
+  late final ProfileStatusController _profileStatusController;
   late final LocaleController _localeController;
   late final bool _ownsLocaleController;
 
@@ -162,6 +161,11 @@ class _CompanionAppState extends State<CompanionApp>
       settingsStore: settingsStore,
       backendClient: widget.backendClient,
     );
+    _profileStatusController = ProfileStatusController(
+      backend: () => _backend,
+      token: () => _adminToken,
+    );
+    _profileStatusController.addListener(_handleProfileStatusChanged);
     _voiceService = VoiceService(settingsStore);
     _deviceController = DeviceController(
       device: _deviceService,
@@ -263,6 +267,8 @@ class _CompanionAppState extends State<CompanionApp>
     _themeController.dispose();
     _promptEntries.removeListener(_handlePromptEntriesChanged);
     _promptEntries.dispose();
+    _profileStatusController.removeListener(_handleProfileStatusChanged);
+    _profileStatusController.dispose();
     if (_ownsLocaleController) _localeController.dispose();
     super.dispose();
   }
@@ -274,6 +280,11 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   void _handlePromptEntriesChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void _handleProfileStatusChanged() {
     if (!mounted) return;
     setState(() {});
   }
@@ -704,28 +715,7 @@ class _CompanionAppState extends State<CompanionApp>
   void _openProfilePage() {
     Navigator.of(context).maybePop();
     setState(() => _route = AppRoute.profile);
-    unawaited(_loadStatusSnapshot());
-  }
-
-  // W6：状态感知——资料页"此刻"卡片，读一次当前动向 + 心情，不轮询（省电）。
-  Future<void> _loadStatusSnapshot() async {
-    if (_loadingStatusSnapshot || !_hasAdminToken) return;
-    setState(() => _loadingStatusSnapshot = true);
-    try {
-      final results = await Future.wait([
-        _backend.loadActivityCurrent(token: _requireAdminToken()),
-        _backend.loadMoodState(token: _requireAdminToken()),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        _activityCurrent = results[0] as ActivityCurrentState;
-        _moodState = results[1] as MoodStateSnapshot;
-      });
-    } catch (_) {
-      // 只读展示，失败保留旧值即可，不打扰用户
-    } finally {
-      if (mounted) setState(() => _loadingStatusSnapshot = false);
-    }
+    unawaited(_profileStatusController.load());
   }
 
   static final RegExp _safeOwnerUserIdPattern = RegExp(r'^[A-Za-z0-9_-]+$');
@@ -900,7 +890,10 @@ class _CompanionAppState extends State<CompanionApp>
                   _dreamController.loadingSettings ||
                   _dreamController.savingSettings,
               settingsError:
-                  _promptAssetsError ?? _dreamController.settingsError,
+                  _promptAssetsError ??
+                  _promptEntries.error ??
+                  _dreamController.settingsError,
+              promptEntriesSaving: _promptEntries.saving,
               onTheme: updateTheme,
               onLanguage: (language) {
                 unawaited(_localeController.setLanguage(language));
@@ -1081,7 +1074,7 @@ class _CompanionAppState extends State<CompanionApp>
       unawaited(_diaryController.load(silent: true));
     } else if (route == AppRoute.profile) {
       unawaited(_loadPromptAssets());
-      unawaited(_loadStatusSnapshot());
+      unawaited(_profileStatusController.load());
     }
   }
 
@@ -1186,10 +1179,14 @@ class _CompanionAppState extends State<CompanionApp>
           onSelectCharacter: (value) =>
               unawaited(_updatePromptAssets(activeCharacter: value)),
           onReloadPromptAssets: () => unawaited(_loadPromptAssets()),
-          activityCurrent: _activityCurrent,
-          moodState: _moodState,
-          loadingStatusSnapshot: _loadingStatusSnapshot,
-          onReloadStatusSnapshot: () => unawaited(_loadStatusSnapshot()),
+          activityCurrent: _profileStatusController.activityCurrent,
+          moodState: _profileStatusController.moodState,
+          loadingStatusSnapshot: _profileStatusController.loading,
+          statusSnapshotLastSuccessfulAt:
+              _profileStatusController.lastSuccessfulAt,
+          statusSnapshotError: _profileStatusController.error,
+          onReloadStatusSnapshot: () =>
+              unawaited(_profileStatusController.load()),
         );
       case AppRoute.diary:
         return DiaryPage(

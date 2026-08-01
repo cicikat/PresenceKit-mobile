@@ -26,6 +26,7 @@ class SettingsPage extends StatelessWidget {
     required this.dreamSettings,
     required this.settingsBusy,
     required this.settingsError,
+    required this.promptEntriesSaving,
     required this.onTheme,
     required this.onLanguage,
     required this.onManageThemes,
@@ -70,6 +71,7 @@ class SettingsPage extends StatelessWidget {
   final DreamSettings? dreamSettings;
   final bool settingsBusy;
   final String? settingsError;
+  final bool promptEntriesSaving;
   final ValueChanged<bool> onTheme;
   final ValueChanged<AppLanguage> onLanguage;
   final VoidCallback onManageThemes;
@@ -406,7 +408,7 @@ class SettingsPage extends StatelessWidget {
                     for (final entry in loreEntries)
                       if (entry.enabled) entry.id,
                   },
-                  disabled: settingsBusy,
+                  disabled: settingsBusy || promptEntriesSaving,
                   onToggle: onToggleLorebook,
                 ),
               ),
@@ -427,7 +429,7 @@ class SettingsPage extends StatelessWidget {
                     for (final entry in jailbreakEntries)
                       if (entry.enabled) entry.id,
                   },
-                  disabled: settingsBusy,
+                  disabled: settingsBusy || promptEntriesSaving,
                   onToggle: onToggleJailbreak,
                 ),
               ),

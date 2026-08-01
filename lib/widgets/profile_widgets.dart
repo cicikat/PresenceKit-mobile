@@ -84,6 +84,8 @@ class ProfilePage extends StatelessWidget {
     required this.activityCurrent,
     required this.moodState,
     required this.loadingStatusSnapshot,
+    required this.statusSnapshotLastSuccessfulAt,
+    required this.statusSnapshotError,
     required this.onReloadStatusSnapshot,
   });
 
@@ -104,12 +106,15 @@ class ProfilePage extends StatelessWidget {
   final ActivityCurrentState? activityCurrent;
   final MoodStateSnapshot? moodState;
   final bool loadingStatusSnapshot;
+  final DateTime? statusSnapshotLastSuccessfulAt;
+  final String? statusSnapshotError;
   final VoidCallback onReloadStatusSnapshot;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final hasAvatar = profileAvatarBytes != null;
+    final hasStatusSnapshot = statusSnapshotLastSuccessfulAt != null;
     return Column(
       children: [
         PageHeader(
@@ -213,32 +218,62 @@ class ProfilePage extends StatelessWidget {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                  child: loadingStatusSnapshot
-                      ? Text(
-                          l10n.loadingAction,
-                          style: mono(c, 10.5, color: c.ink3),
-                        )
-                      : Wrap(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (loadingStatusSnapshot)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            l10n.profileStatusUpdating,
+                            style: mono(c, 10.5, color: c.ink3),
+                          ),
+                        ),
+                      if (hasStatusSnapshot)
+                        Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: [
+                          YxTag(
+                            c: c,
+                            text: activityCurrent?.text.isNotEmpty == true
+                                ? activityCurrent!.text
+                                : l10n.profileNoActivity,
+                            variant: 'warm',
+                          ),
+                          if (moodState != null)
                             YxTag(
                               c: c,
-                              text: activityCurrent?.text.isNotEmpty == true
-                                  ? activityCurrent!.text
-                                  : l10n.profileNoActivity,
-                              variant: 'warm',
-                            ),
-                            if (moodState != null)
-                              YxTag(
-                                c: c,
-                                text: l10n.profileMoodStatus(
-                                  moodLabel(l10n, moodState!.current),
-                                  (moodState!.intensity * 100).round(),
-                                ),
+                              text: l10n.profileMoodStatus(
+                                moodLabel(l10n, moodState!.current),
+                                (moodState!.intensity * 100).round(),
                               ),
+                            ),
                           ],
                         ),
+                      if (statusSnapshotLastSuccessfulAt != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 7),
+                          child: Text(
+                            l10n.profileStatusLastUpdated(
+                              _formatStatusTime(
+                                context,
+                                statusSnapshotLastSuccessfulAt!,
+                              ),
+                            ),
+                            style: mono(c, 10.5, color: c.ink3),
+                          ),
+                        ),
+                      if (statusSnapshotError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 7),
+                          child: Text(
+                            l10n.profileStatusLoadError(statusSnapshotError!),
+                            style: mono(c, 10.5, color: c.danger),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 ProfileInfoRow(
                   c: c,
@@ -362,6 +397,11 @@ class ProfilePage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _formatStatusTime(BuildContext context, DateTime value) {
+    final localizations = MaterialLocalizations.of(context);
+    return '${localizations.formatShortDate(value)} ${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(value))}';
   }
 }
 

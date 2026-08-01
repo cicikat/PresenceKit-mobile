@@ -767,7 +767,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsChatLorebookSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'Reality 对话使用 · 多选'**
+  /// **'Reality 对话当前启用项 · 多选与启停，不提供编辑'**
   String get settingsChatLorebookSubtitle;
 
   /// No description provided for @settingsChatJailbreakTitle.
@@ -779,7 +779,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsChatJailbreakSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'Reality 独立破限 · 多选'**
+  /// **'Reality 当前启用项 · 多选与启停，不提供编辑'**
   String get settingsChatJailbreakSubtitle;
 
   /// No description provided for @settingsDreamLorebookTitle.
@@ -967,6 +967,24 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'暂时没有特别的动向'**
   String get profileNoActivity;
+
+  /// No description provided for @profileStatusUpdating.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在刷新状态…'**
+  String get profileStatusUpdating;
+
+  /// No description provided for @profileStatusLastUpdated.
+  ///
+  /// In zh, this message translates to:
+  /// **'最后成功更新：{time}'**
+  String profileStatusLastUpdated(String time);
+
+  /// No description provided for @profileStatusLoadError.
+  ///
+  /// In zh, this message translates to:
+  /// **'状态刷新失败，正在显示上次成功值：{error}'**
+  String profileStatusLoadError(String error);
 
   /// No description provided for @profileMoodStatus.
   ///
@@ -3234,6 +3252,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'手机自动化 · 视觉模型'**
   String get diagnosticPhoneControlVision;
+
+  /// No description provided for @capabilityDeveloperDiagnosticsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'开发者诊断'**
+  String get capabilityDeveloperDiagnosticsTitle;
+
+  /// No description provided for @capabilityDeveloperDiagnosticsSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认关闭；开启后才显示会发起测试行为的调试工具。'**
+  String get capabilityDeveloperDiagnosticsSubtitle;
 
   /// No description provided for @phoneControlTestTitle.
   ///

@@ -96,6 +96,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
   String? _diagnosticsError;
   bool _loadingDiagnostics = false;
   bool _acting = false;
+  bool _developerDiagnostics = false;
 
   @override
   void initState() {
@@ -348,43 +349,54 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                             ),
                     ),
                   ),
-                  ScreenContextDebugCard(
+                  _DeveloperDiagnosticsToggle(
                     c: c,
-                    snapshot: _screenSnapshot,
-                    acting: _acting,
-                    enabled: status.accessibilityEnabled,
-                    uploadEnabled: status.screenContextUploadEnabled,
-                    onCapture: _captureScreenContext,
-                    onPush: _pushCapturedScreenContext,
+                    enabled: _developerDiagnostics,
+                    onChanged: (value) =>
+                        setState(() => _developerDiagnostics = value),
                   ),
-                  BehaviorTestPanel(
-                    c: c,
-                    acting: _acting,
-                    onTest: (kind) =>
-                        _run(() => widget.onPushBehaviorTest(kind)),
-                  ),
-                  PhoneControlTestPanel(c: c, onTest: widget.onTestPhoneControl),
-                  BackgroundDeliveryTestPanel(
-                    c: c,
-                    acting: _acting,
-                    onTest: (kind) => _run(() async {
-                      final spec = _BackgroundDeliveryTestSpec.forKind(
-                        kind,
-                        context.l10n,
-                      );
-                      await widget.onDebugBackgroundDelivery(
-                        content: spec.content,
-                        behaviorJson: spec.behaviorJson,
-                      );
-                    }),
-                  ),
-                  BehaviorDecisionDebugCard(
-                    c: c,
-                    status: _behaviorStatus,
-                    error: _behaviorStatusError,
-                    loading: _loadingBehaviorStatus,
-                    onRefresh: _loadBehaviorStatus,
-                  ),
+                  if (_developerDiagnostics) ...[
+                    ScreenContextDebugCard(
+                      c: c,
+                      snapshot: _screenSnapshot,
+                      acting: _acting,
+                      enabled: status.accessibilityEnabled,
+                      uploadEnabled: status.screenContextUploadEnabled,
+                      onCapture: _captureScreenContext,
+                      onPush: _pushCapturedScreenContext,
+                    ),
+                    BehaviorTestPanel(
+                      c: c,
+                      acting: _acting,
+                      onTest: (kind) =>
+                          _run(() => widget.onPushBehaviorTest(kind)),
+                    ),
+                    PhoneControlTestPanel(
+                      c: c,
+                      onTest: widget.onTestPhoneControl,
+                    ),
+                    BackgroundDeliveryTestPanel(
+                      c: c,
+                      acting: _acting,
+                      onTest: (kind) => _run(() async {
+                        final spec = _BackgroundDeliveryTestSpec.forKind(
+                          kind,
+                          context.l10n,
+                        );
+                        await widget.onDebugBackgroundDelivery(
+                          content: spec.content,
+                          behaviorJson: spec.behaviorJson,
+                        );
+                      }),
+                    ),
+                    BehaviorDecisionDebugCard(
+                      c: c,
+                      status: _behaviorStatus,
+                      error: _behaviorStatusError,
+                      loading: _loadingBehaviorStatus,
+                      onRefresh: _loadBehaviorStatus,
+                    ),
+                  ],
                   CapabilityRow(
                     c: c,
                     icon: Icons.screen_lock_portrait_outlined,
@@ -1136,8 +1148,59 @@ class BehaviorDecisionDebugCard extends StatelessWidget {
   }
 }
 
+class _DeveloperDiagnosticsToggle extends StatelessWidget {
+  const _DeveloperDiagnosticsToggle({
+    required this.c,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final YxPalette c;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      decoration: BoxDecoration(
+        color: c.surface,
+        border: Border(bottom: BorderSide(color: c.surfaceEdge)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.developer_mode_outlined, color: c.ink2, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.capabilityDeveloperDiagnosticsTitle,
+                  style: serif(c, 15, weight: FontWeight.w500),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  context.l10n.capabilityDeveloperDiagnosticsSubtitle,
+                  style: mono(c, 10.5, color: c.ink3),
+                ),
+              ],
+            ),
+          ),
+          Switch(value: enabled, onChanged: onChanged),
+        ],
+      ),
+    );
+  }
+}
+
 class PhoneControlTestPanel extends StatefulWidget {
-  const PhoneControlTestPanel({super.key, required this.c, required this.onTest});
+  const PhoneControlTestPanel({
+    super.key,
+    required this.c,
+    required this.onTest,
+  });
 
   final YxPalette c;
   final Future<PhoneControlDebugResult> Function(String task) onTest;

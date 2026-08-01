@@ -91,14 +91,14 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 | `POST /mobile/push` | 能力检查页 | 写入主动行为测试 |
 | `POST /phone_control/step` | Android `PhoneControlService` | 手机自动化循环：上报截屏/节点观察，换回下一步动作；契约见 `docs/protocols/phone-control-protocol.md` |
 | `GET /phone_control/status` | 能力检查页 | 只读诊断：角色是否已授权 `phone_control` 工具 + 视觉模型是否已配置 |
-| `POST /phone_control/debug/start` | 能力检查页测试面板 | 调试用：跳过 LLM 判断和 chat 内二次确认直接发起任务，仍过 danger-mode 门禁 |
+| `POST /phone_control/debug/start` | 能力检查页的开发者诊断区域（默认关闭） | 调试用：跳过 LLM 判断和 chat 内二次确认直接发起任务，仍过 danger-mode 门禁 |
 | `POST /upload/ingest` | Flutter 文件/图片上传 | 文件投喂后端 |
 | `GET /dream/state` | Flutter Dream 页面 | 读取 Dream 独立状态 |
 | `POST /dream/enter` | Flutter Dream 页面 | 进入 Dream |
 | `POST /dream/chat` | Flutter Dream 页面 | 发送 Dream 独立对话 |
 | `POST /dream/exit` | Flutter Dream 页面 | 醒来并退出 Dream |
-| `GET /settings/prompt-assets` | 资料页 / 偏好页 | 读取 Reality 角色卡、世界书、破限可用项与当前启用项 |
-| `PATCH /settings/prompt-assets` | 资料页 / 偏好页 | 切换 Reality 角色卡、世界书或破限；仅提交发生变化的字段 |
+| `GET /settings/prompt-assets` | 资料页 / 偏好页 | 读取 Reality 角色卡、世界书、破限可用项与当前启用项；Mobile 只提供当前项选择与启停，不是完整编辑器 |
+| `PATCH /settings/prompt-assets` | 资料页 / 偏好页 | 切换 Reality 角色卡、世界书或破限；仅提交发生变化的字段，Mobile 不提供条目 CRUD |
 | `GET /dream/settings` | 偏好页 / 能力检查诊断 | 读取 Dream 独立世界书开关、世界层和破限预设 |
 | `PATCH /dream/settings` | 偏好页 | 保存 Dream 独立世界书开关、世界层或破限预设 |
 | `GET /system/data-path` | 能力检查诊断 | 读取后端当前数据目录 `data_prefix`；沙盒路径会在诊断页高亮警示 |

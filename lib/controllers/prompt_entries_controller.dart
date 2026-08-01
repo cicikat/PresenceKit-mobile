@@ -41,6 +41,8 @@ class PromptEntriesController extends ChangeNotifier {
       jailbreakEntries = results[1] as List<JailbreakEntry>;
     } on BackendException catch (e) {
       error = e.message;
+    } catch (e) {
+      error = e.toString();
     } finally {
       loading = false;
       notifyListeners();
@@ -63,6 +65,8 @@ class PromptEntriesController extends ChangeNotifier {
       loreEntries = await _backend().loadLoreEntries(token: token);
     } on BackendException catch (e) {
       error = e.message;
+    } catch (e) {
+      error = e.toString();
     } finally {
       saving = false;
       notifyListeners();
@@ -85,6 +89,8 @@ class PromptEntriesController extends ChangeNotifier {
       jailbreakEntries = await _backend().loadJailbreakEntries(token: token);
     } on BackendException catch (e) {
       error = e.message;
+    } catch (e) {
+      error = e.toString();
     } finally {
       saving = false;
       notifyListeners();

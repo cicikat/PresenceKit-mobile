@@ -382,14 +382,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsChatLorebookSubtitle =>
-      'Used by Reality chat · Multiple selection';
+      'Current Reality selections · Select and enable/disable only; no editor';
 
   @override
   String get settingsChatJailbreakTitle => 'Chat jailbreak';
 
   @override
   String get settingsChatJailbreakSubtitle =>
-      'Independent Reality jailbreak · Multiple selection';
+      'Current Reality selections · Select and enable/disable only; no editor';
 
   @override
   String get settingsDreamLorebookTitle => 'Dream lorebook';
@@ -491,6 +491,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileNoActivity => 'Nothing in particular right now';
+
+  @override
+  String get profileStatusUpdating => 'Refreshing status…';
+
+  @override
+  String profileStatusLastUpdated(String time) {
+    return 'Last successful update: $time';
+  }
+
+  @override
+  String profileStatusLoadError(String error) {
+    return 'Could not refresh status; showing the last successful values: $error';
+  }
 
   @override
   String profileMoodStatus(String label, int percent) {
@@ -1784,6 +1797,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnosticPhoneControlVision => 'Phone control · vision model';
+
+  @override
+  String get capabilityDeveloperDiagnosticsTitle => 'Developer diagnostics';
+
+  @override
+  String get capabilityDeveloperDiagnosticsSubtitle =>
+      'Off by default; enables diagnostics that can start test behavior.';
 
   @override
   String get phoneControlTestTitle => 'Phone control test';

@@ -113,13 +113,13 @@ Android 端 `MobileNotificationService.modeFor()` 已加入 `phone_control_task 
 设备侧：执行动作前必须用同一套关键词做本地二次校验（无障碍节点文本/包名），后端判断有误
 或响应被篡改时仍有兜底。两边独立判断，任一方拦截即停止，不是"后端说了算"。
 
-## 诊断与测试入口（能力检查页）
+## 诊断与测试入口（开发者诊断区域）
 
 - `GET /phone_control/status`：只读，`BackendDiagnosticsCard` 新增两行——角色是否已在
   `tool_categories` 里授权 `phone_control`、视觉模型 `base_url`/`model` 是否都已配置。
   不暴露 `api_key` 本身，只给布尔判断。
-- `POST /phone_control/debug/start`：`PhoneControlTestPanel`（能力检查页新增面板），填一句任务
-  描述直接发起，跳过 LLM 判断和 chat 内二次确认；但仍然过 danger-mode 门禁，安全模式下会原样
+- `POST /phone_control/debug/start`：`PhoneControlTestPanel` 位于能力检查页中默认关闭的开发者
+  诊断区域，填一句任务描述直接发起，跳过 LLM 判断和 chat 内二次确认；但仍然过 danger-mode 门禁，安全模式下会原样
   返回后端的拒绝文案，不是绕过安全闸的后门，只是绕过"要不要调用这个工具"的 LLM 决策环节。
 
 ## 未决事项

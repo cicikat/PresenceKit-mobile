@@ -369,13 +369,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsChatLorebookTitle => 'Chat 世界书';
 
   @override
-  String get settingsChatLorebookSubtitle => 'Reality 对话使用 · 多选';
+  String get settingsChatLorebookSubtitle => 'Reality 对话当前启用项 · 多选与启停，不提供编辑';
 
   @override
   String get settingsChatJailbreakTitle => 'Chat 破限';
 
   @override
-  String get settingsChatJailbreakSubtitle => 'Reality 独立破限 · 多选';
+  String get settingsChatJailbreakSubtitle => 'Reality 当前启用项 · 多选与启停，不提供编辑';
 
   @override
   String get settingsDreamLorebookTitle => 'Dream 世界书';
@@ -473,6 +473,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileNoActivity => '暂时没有特别的动向';
+
+  @override
+  String get profileStatusUpdating => '正在刷新状态…';
+
+  @override
+  String profileStatusLastUpdated(String time) {
+    return '最后成功更新：$time';
+  }
+
+  @override
+  String profileStatusLoadError(String error) {
+    return '状态刷新失败，正在显示上次成功值：$error';
+  }
 
   @override
   String profileMoodStatus(String label, int percent) {
@@ -1717,6 +1730,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get diagnosticPhoneControlVision => '手机自动化 · 视觉模型';
+
+  @override
+  String get capabilityDeveloperDiagnosticsTitle => '开发者诊断';
+
+  @override
+  String get capabilityDeveloperDiagnosticsSubtitle =>
+      '默认关闭；开启后才显示会发起测试行为的调试工具。';
 
   @override
   String get phoneControlTestTitle => '手机自动化测试';
