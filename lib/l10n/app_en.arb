@@ -393,8 +393,6 @@
   "attachmentDocumentSubtitle": "txt / md / docx · Up to 5 MB",
   "attachmentImage": "Images",
   "attachmentImageSubtitle": "Multiple selection · Backend vision",
-  "attachmentRecording": "Recording",
-  "attachmentRecordingSubtitle": "Hold to talk · Transcription · Coming later",
   "themeRoleSurface": "Page background",
   "themeRoleSurfaceSoft": "Input background",
   "themeRoleSurfaceDeep": "Deep background",

@@ -13,6 +13,7 @@ import '../controllers/locale_controller.dart';
 import '../controllers/prompt_entries_controller.dart';
 import '../controllers/profile_status_controller.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/voice_input_controller.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
 import '../models/capability_status.dart';
@@ -59,7 +60,6 @@ class _CompanionAppState extends State<CompanionApp>
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Timer? _sensorPushTimer;
   AppRoute _route = AppRoute.chat;
-  bool _dark = false;
   bool _backgroundNotifications = true;
   bool _stickerEnabled = false;
   bool _autoPlayVoice = false;
@@ -78,6 +78,7 @@ class _CompanionAppState extends State<CompanionApp>
   late final ConnectionController _connectionController;
   late final DeviceController _deviceController;
   late final VoiceService _voiceService;
+  late final VoiceInputController _voiceInputController;
   late final ChatController _chatController;
   late final DreamController _dreamController;
   late final GardenController _gardenController;
@@ -96,7 +97,7 @@ class _CompanionAppState extends State<CompanionApp>
   YxPalette get c {
     final custom = _themeController.activePalette;
     if (custom != null) return custom;
-    return _dark ? YxPalette.dark : YxPalette.light;
+    return _themeController.isDark ? YxPalette.dark : YxPalette.light;
   }
 
   bool get _hasAdminToken => _adminToken.trim().isNotEmpty;
@@ -169,7 +170,6 @@ class _CompanionAppState extends State<CompanionApp>
     _voiceService = VoiceService(settingsStore);
     _deviceController = DeviceController(
       device: _deviceService,
-      voice: _voiceService,
       screen: _screenService,
       backend: () => _backend,
       token: () => _adminToken,
@@ -182,6 +182,11 @@ class _CompanionAppState extends State<CompanionApp>
       voice: _voiceService,
       stickerEnabled: () => _stickerEnabled,
       autoPlayVoice: () => _autoPlayVoice,
+    );
+    _voiceInputController = VoiceInputController(
+      voice: _voiceService,
+      backend: () => _backend,
+      token: () => _adminToken,
     );
     _dreamController = DreamController(
       backend: () => _backend,
@@ -261,6 +266,7 @@ class _CompanionAppState extends State<CompanionApp>
     _diaryController.dispose();
     _sensorPushTimer?.cancel();
     _deviceController.dispose();
+    _voiceInputController.dispose();
     _chatController.dispose();
     _dreamController.dispose();
     _themeController.removeListener(_handleThemeChanged);
@@ -276,6 +282,12 @@ class _CompanionAppState extends State<CompanionApp>
   void _handleThemeChanged() {
     if (!mounted) return;
     setState(() {});
+    _applySystemUi();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    _themeController.updateSystemBrightness();
     _applySystemUi();
   }
 
@@ -434,14 +446,18 @@ class _CompanionAppState extends State<CompanionApp>
     if (enabled) unawaited(_deviceController.pushScreenContext(silent: true));
   }
 
-  Future<void> _openThemePresetManager() async {
+  Future<void> _openThemePresetManager({bool? selectingDark}) async {
     await showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) =>
-          ThemePresetManagerSheet(c: c, controller: _themeController),
+          ThemePresetManagerSheet(
+            c: c,
+            controller: _themeController,
+            selectingDark: selectingDark,
+          ),
     );
   }
 
@@ -493,10 +509,9 @@ class _CompanionAppState extends State<CompanionApp>
 
   // ── W9：语音输入 ──────────────────────────────────────────────────────────
 
-  Future<bool> _startVoiceRecording() =>
-      _deviceController.startVoiceRecording();
-  Future<String?> _stopVoiceRecordingAndTranscribe() =>
-      _deviceController.stopVoiceRecordingAndTranscribe();
+  Future<String?> _startVoiceRecording() => _voiceInputController.start();
+  Future<VoiceInputResult> _stopVoiceRecordingAndTranscribe() =>
+      _voiceInputController.stopAndTranscribe();
   Future<void> _pushScreenContextOnce({bool silent = false}) async {
     await _deviceController.pushScreenContext(silent: silent);
     if (!silent && mounted && _deviceController.lastError != null) {
@@ -860,22 +875,24 @@ class _CompanionAppState extends State<CompanionApp>
             }
 
             void updateTheme(bool dark) {
-              sheetSetState(() => _dark = dark);
-              unawaited(_themeController.select(null));
-              setState(() {});
-              _applySystemUi();
+              unawaited(
+                _themeController.setMode(
+                  dark ? AppThemeMode.dark : AppThemeMode.light,
+                ),
+              );
             }
 
-            void manageThemes() {
+            void manageThemes(bool selectingDark) {
               Navigator.pop(context);
-              unawaited(_openThemePresetManager());
+              unawaited(_openThemePresetManager(selectingDark: selectingDark));
             }
 
             return SettingsPage(
               c: c,
               language: _localeController.language,
-              dark: _dark,
-              activeThemePresetName: _themeController.activePreset?.name,
+              dark: _themeController.isDark,
+              lightThemePresetName: _themeController.lightThemePreset?.name,
+              darkThemePresetName: _themeController.darkThemePreset?.name,
               themePresetCount: _themeController.presets.length,
               prefs: _prefs,
               profileDisplayName: _profileDisplayName,
@@ -899,7 +916,8 @@ class _CompanionAppState extends State<CompanionApp>
                 unawaited(_localeController.setLanguage(language));
                 sheetSetState(() {});
               },
-              onManageThemes: manageThemes,
+              onManageThemes: () => manageThemes(_themeController.isDark),
+              onManageThemesForMode: manageThemes,
               onPrefs: updatePrefs,
               onEditProfileName: _editProfileName,
               onImportProfileAvatar: _importProfileAvatar,
@@ -1083,9 +1101,9 @@ class _CompanionAppState extends State<CompanionApp>
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: _dark ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness: _themeController.isDark ? Brightness.light : Brightness.dark,
         systemNavigationBarColor: c.surface,
-        systemNavigationBarIconBrightness: _dark
+        systemNavigationBarIconBrightness: _themeController.isDark
             ? Brightness.light
             : Brightness.dark,
       ),
@@ -1127,7 +1145,7 @@ class _CompanionAppState extends State<CompanionApp>
         return ChatScene(
           key: const ValueKey('chat'),
           c: c,
-          dark: _dark,
+          dark: _themeController.isDark,
           prefs: _prefs,
           profileDisplayName: _profileDisplayName,
           profileAvatarBytes: _profileAvatarBytes,
@@ -1135,7 +1153,7 @@ class _CompanionAppState extends State<CompanionApp>
           onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
           onOpenSettings: _openSettings,
           onOpenAttach: _openAttach,
-          onToggleTheme: () => setState(() => _dark = !_dark),
+          onToggleTheme: () => unawaited(_themeController.toggleMode()),
           onLockNow: () => unawaited(_lockScreenNow()),
           onOpenOrderAccessibility: () =>
               unawaited(_requestOrderAssistantPermission()),
@@ -1148,7 +1166,7 @@ class _CompanionAppState extends State<CompanionApp>
           onVoiceRecordStart: _startVoiceRecording,
           onVoiceRecordStop: _stopVoiceRecordingAndTranscribe,
           onVoiceRecordCancel: () =>
-              unawaited(_deviceController.cancelVoiceRecording()),
+              unawaited(_voiceInputController.cancel()),
         );
       case AppRoute.dream:
         return DreamPage(

@@ -208,6 +208,27 @@ void main() {
     controller.dispose();
   });
 
+  test('foreground recovery renders even a small backlog statically', () async {
+    final settings = _Settings();
+    final backend = _Backend(
+      settings,
+      activation: const MobileActivationResult(ok: true, active: true),
+      pollResults: [
+        const MobilePollResult(ok: true, active: true, messages: []),
+        MobilePollResult(ok: true, active: true, messages: [_message(1)]),
+      ],
+    );
+    final controller = _controller(backend, settings);
+
+    await controller.start();
+    controller.pausePolling();
+    controller.resumePolling();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.sent.single.animate, isFalse);
+    controller.dispose();
+  });
+
   test('seen persistence failure prevents acknowledgement', () async {
     final settings = _Settings(failSeenPersistence: true);
     final backend = _Backend(

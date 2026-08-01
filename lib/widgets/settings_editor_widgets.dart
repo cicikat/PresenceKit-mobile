@@ -733,12 +733,6 @@ class AttachSheet extends StatelessWidget {
         l10n.attachmentImageSubtitle,
         onUploadImages,
       ),
-      (
-        Icons.mic_none_rounded,
-        l10n.attachmentRecording,
-        l10n.attachmentRecordingSubtitle,
-        () {},
-      ),
     ];
     return Container(
       decoration: BoxDecoration(

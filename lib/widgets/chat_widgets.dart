@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/chat_controller.dart';
+import '../controllers/voice_input_controller.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 import '../services/character_naming.dart';
@@ -48,8 +49,8 @@ class ChatScene extends StatelessWidget {
   final VoidCallback onOpenMeituan;
   final VoidCallback onOpenTaobao;
   final VoidCallback onShowOrderBubble;
-  final Future<bool> Function() onVoiceRecordStart;
-  final Future<String?> Function() onVoiceRecordStop;
+  final Future<String?> Function() onVoiceRecordStart;
+  final Future<VoiceInputResult> Function() onVoiceRecordStop;
   final VoidCallback onVoiceRecordCancel;
 
   @override
@@ -1167,10 +1168,10 @@ class Composer extends StatefulWidget {
   final ValueChanged<String> onSend;
 
   /// 开始录音；返回 false 表示启动失败（如无权限），composer 会回退到未录音态。
-  final Future<bool> Function() onVoiceRecordStart;
+  final Future<String?> Function() onVoiceRecordStart;
 
   /// 停止录音并转写；返回识别文本（可能为空串），null 表示失败。
-  final Future<String?> Function() onVoiceRecordStop;
+  final Future<VoiceInputResult> Function() onVoiceRecordStop;
 
   /// 中途放弃（如长按被系统手势打断），丢弃已录内容。
   final VoidCallback onVoiceRecordCancel;
@@ -1184,14 +1185,18 @@ class _ComposerState extends State<Composer> {
   final ValueNotifier<String> _draft = ValueNotifier<String>('');
   bool _recording = false;
   bool _transcribing = false;
+  String? _voiceError;
 
   Future<void> _handleRecordStart() async {
     if (_recording || _transcribing) return;
     setState(() => _recording = true);
-    final started = await widget.onVoiceRecordStart();
+    final error = await widget.onVoiceRecordStart();
     if (!mounted) return;
-    if (!started) {
-      setState(() => _recording = false);
+    if (error != null) {
+      setState(() {
+        _recording = false;
+        _voiceError = error;
+      });
     }
   }
 
@@ -1201,10 +1206,14 @@ class _ComposerState extends State<Composer> {
       _recording = false;
       _transcribing = true;
     });
-    final text = await widget.onVoiceRecordStop();
+    final result = await widget.onVoiceRecordStop();
     if (!mounted) return;
-    setState(() => _transcribing = false);
-    if (text != null && text.trim().isNotEmpty) {
+    setState(() {
+      _transcribing = false;
+      _voiceError = result.error;
+    });
+    final text = result.text;
+    if (result.isSuccess && text != null && text.trim().isNotEmpty) {
       final trimmed = text.trim();
       _controller.text = _controller.text.isEmpty
           ? trimmed
@@ -1218,7 +1227,10 @@ class _ComposerState extends State<Composer> {
 
   void _handleRecordCancel() {
     if (!_recording) return;
-    setState(() => _recording = false);
+    setState(() {
+      _recording = false;
+      _voiceError = null;
+    });
     widget.onVoiceRecordCancel();
   }
 
@@ -1352,6 +1364,13 @@ class _ComposerState extends State<Composer> {
             ],
           ),
           const SizedBox(height: 6),
+          if (_voiceError != null) ...[
+            Text(
+              _voiceError!,
+              style: mono(widget.c, 9.5, color: widget.c.danger),
+            ),
+            const SizedBox(height: 4),
+          ],
           Row(
             children: [
               Text('', style: mono(widget.c, 9.5, color: widget.c.ink3)),

@@ -46,6 +46,24 @@ void main() {
     expect(ThemePresetSnapshot.fromJsonString(stored)?.presets, hasLength(1));
   });
 
+  test('migrates an old activeId snapshot to both day and night presets', () async {
+    String? stored = ThemePresetSnapshot(
+      lightThemePresetId: 'unused',
+      darkThemePresetId: 'unused',
+      themeMode: 'system',
+      presets: const [],
+    ).toJsonString().replaceAll('"lightThemePresetId":"unused","darkThemePresetId":"unused",', '"activeId":"legacy",');
+    final controller = ThemeController(
+      loadPersisted: () async => stored,
+      savePersisted: (value) async => stored = value,
+    );
+    await controller.restore();
+
+    final snapshot = ThemePresetSnapshot.fromJsonString(stored);
+    expect(snapshot?.lightThemePresetId, 'legacy');
+    expect(snapshot?.darkThemePresetId, 'legacy');
+  });
+
   test(
     'reset restores the selected preset base and delete removes it',
     () async {

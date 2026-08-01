@@ -393,8 +393,6 @@
   "attachmentDocumentSubtitle": "txt / md / docx · 5MB 内",
   "attachmentImage": "图片",
   "attachmentImageSubtitle": "可多选 · 走后端视觉识别",
-  "attachmentRecording": "录音",
-  "attachmentRecordingSubtitle": "长按说话 · 转写 · 待接入",
   "themeRoleSurface": "页面底色",
   "themeRoleSurfaceSoft": "输入栏底色",
   "themeRoleSurfaceDeep": "深层底色",

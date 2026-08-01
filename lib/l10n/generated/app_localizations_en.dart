@@ -1190,13 +1190,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachmentImageSubtitle => 'Multiple selection · Backend vision';
 
   @override
-  String get attachmentRecording => 'Recording';
-
-  @override
-  String get attachmentRecordingSubtitle =>
-      'Hold to talk · Transcription · Coming later';
-
-  @override
   String get themeRoleSurface => 'Page background';
 
   @override

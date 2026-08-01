@@ -1151,12 +1151,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get attachmentImageSubtitle => '可多选 · 走后端视觉识别';
 
   @override
-  String get attachmentRecording => '录音';
-
-  @override
-  String get attachmentRecordingSubtitle => '长按说话 · 转写 · 待接入';
-
-  @override
   String get themeRoleSurface => '页面底色';
 
   @override

@@ -2179,18 +2179,6 @@ abstract class AppLocalizations {
   /// **'可多选 · 走后端视觉识别'**
   String get attachmentImageSubtitle;
 
-  /// No description provided for @attachmentRecording.
-  ///
-  /// In zh, this message translates to:
-  /// **'录音'**
-  String get attachmentRecording;
-
-  /// No description provided for @attachmentRecordingSubtitle.
-  ///
-  /// In zh, this message translates to:
-  /// **'长按说话 · 转写 · 待接入'**
-  String get attachmentRecordingSubtitle;
-
   /// No description provided for @themeRoleSurface.
   ///
   /// In zh, this message translates to:

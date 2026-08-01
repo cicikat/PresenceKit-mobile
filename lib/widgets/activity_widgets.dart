@@ -102,22 +102,6 @@ class _ActivityHomePageState extends State<ActivityHomePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  _ActivityCard(
-                    c: c,
-                    icon: Icons.nightlight_round,
-                    title: l10n.activityDreamBuildTitle,
-                    subtitle: l10n.activityDreamBuildSubtitle,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => DreamSeedScreen(
-                          c: c,
-                          backend: widget.backend,
-                          requireToken: widget.requireToken,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

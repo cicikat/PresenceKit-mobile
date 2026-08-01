@@ -10,18 +10,15 @@ import '../services/device_services.dart';
 class DeviceController extends ChangeNotifier {
   DeviceController({
     required DeviceControlService device,
-    required VoiceService voice,
     required ScreenSensorService screen,
     required BackendClient Function() backend,
     required String? Function() token,
   }) : _device = device,
-       _voice = voice,
        _screen = screen,
        _backend = backend,
        _token = token;
 
   final DeviceControlService _device;
-  final VoiceService _voice;
   final ScreenSensorService _screen;
   final BackendClient Function() _backend;
   final String? Function() _token;
@@ -49,28 +46,6 @@ class DeviceController extends ChangeNotifier {
   Future<void> requestAccessibilityPermission() =>
       _device.requestAccessibilityPermission();
   Future<bool> isAccessibilityEnabled() => _device.isAccessibilityEnabled();
-  Future<bool> startVoiceRecording() async {
-    if (!await _voice.hasPermission()) {
-      await _voice.requestPermission();
-      if (!await _voice.hasPermission()) return false;
-    }
-    return _voice.startRecording();
-  }
-
-  Future<void> cancelVoiceRecording() => _voice.cancelRecording();
-  Future<String?> stopVoiceRecordingAndTranscribe() async {
-    final path = await _voice.stopRecording();
-    final token = _token()?.trim();
-    if (path == null || token == null || token.isEmpty) return null;
-    try {
-      return await _backend().transcribeAudio(filePath: path, token: token);
-    } on BackendException catch (e) {
-      lastError = e.message;
-      notifyListeners();
-      return null;
-    }
-  }
-
   void start() {
     stop();
     unawaited(pushScreenContext(silent: true));

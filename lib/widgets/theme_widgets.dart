@@ -12,10 +12,12 @@ class ThemePresetManagerSheet extends StatelessWidget {
     super.key,
     required this.c,
     required this.controller,
+    this.selectingDark,
   });
 
   final YxPalette c;
   final ThemeController controller;
+  final bool? selectingDark;
 
   @override
   Widget build(BuildContext context) {
@@ -78,11 +80,16 @@ class ThemePresetManagerSheet extends StatelessWidget {
 
   Widget _presetCard(BuildContext context, ThemeColorPreset preset) {
     final l10n = context.l10n;
-    final selected = controller.activeId == preset.id;
+    final selected = (selectingDark == null
+            ? controller.activeId
+            : selectingDark!
+            ? controller.darkThemePresetId
+            : controller.lightThemePresetId) ==
+        preset.id;
     return Material(
       color: selected ? c.characterSoft : c.surfaceSoft,
       child: InkWell(
-        onTap: () => controller.select(preset.id),
+        onTap: () => controller.select(preset.id, dark: selectingDark),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -95,8 +102,12 @@ class ThemePresetManagerSheet extends StatelessWidget {
                 children: [
                   Radio<String>(
                     value: preset.id,
-                    groupValue: controller.activeId,
-                    onChanged: controller.select,
+                    groupValue: selectingDark == null
+                        ? controller.activeId
+                        : selectingDark!
+                        ? controller.darkThemePresetId
+                        : controller.lightThemePresetId,
+                    onChanged: (id) => controller.select(id, dark: selectingDark),
                   ),
                   Expanded(
                     child: Column(

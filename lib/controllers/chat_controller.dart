@@ -9,6 +9,8 @@ import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/device_services.dart';
 
+enum ChatDeliverySource { initialSync, catchUp, live }
+
 class ChatController extends ChangeNotifier {
   ChatController({
     required BackendClient Function() backend,
@@ -100,7 +102,7 @@ class ChatController extends ChangeNotifier {
 
   Future<void> _startInitialSync() async {
     await loadHistory();
-    await activateMobile(catchUp: true);
+    await activateMobile(source: ChatDeliverySource.initialSync);
     _initialSyncComplete = true;
     _ensurePollTimer();
   }
@@ -119,7 +121,14 @@ class ChatController extends ChangeNotifier {
   }
 
   void resumePolling() {
-    if (_pollTimer == null) unawaited(start());
+    if (!_initialSyncComplete) {
+      unawaited(start());
+      return;
+    }
+    _ensurePollTimer();
+    unawaited(
+      pollIfBackgroundUnavailable(source: ChatDeliverySource.catchUp),
+    );
   }
 
   Future<void> resetForConnectionChange() async {
@@ -315,7 +324,9 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  Future<void> activateMobile({bool catchUp = false}) async {
+  Future<void> activateMobile({
+    ChatDeliverySource source = ChatDeliverySource.live,
+  }) async {
     final token = _accessToken;
     if (token == null) return;
     try {
@@ -329,7 +340,7 @@ class ChatController extends ChangeNotifier {
       mobileActive = result.active;
       mobileError = null;
       notifyListeners();
-      await pollIfBackgroundUnavailable(animate: !catchUp);
+      await pollIfBackgroundUnavailable(source: source);
     } on BackendException catch (e) {
       mobileActive = false;
       mobileError = e.message;
@@ -341,12 +352,17 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  Future<void> pollIfBackgroundUnavailable({bool animate = true}) async {
+  Future<void> pollIfBackgroundUnavailable({
+    ChatDeliverySource source = ChatDeliverySource.live,
+  }) async {
     if (await _relay.isBackgroundServiceRunning()) return;
-    await pollMobile(animate: animate);
+    await pollMobile(source: source);
   }
 
-  Future<void> pollMobile({bool animate = true}) async {
+  Future<void> pollMobile({
+    ChatDeliverySource source = ChatDeliverySource.live,
+    bool? animate,
+  }) async {
     final token = _accessToken;
     if (pollingMobile || token == null) return;
     pollingMobile = true;
@@ -380,7 +396,8 @@ class ChatController extends ChangeNotifier {
           if (_seenIds.contains(message.id)) continue;
           _seenIds.add(message.id);
           if (_seenIds.length > 200) _seenIds.removeAt(0);
-          if (!animate && _matchesLoadedHistory(message.content) ||
+          if (source != ChatDeliverySource.live &&
+                  _matchesLoadedHistory(message.content) ||
               _syncReplyIds.contains(message.id) ||
               _isRecentReply(message.content, msgId: message.id)) {
             continue;
@@ -392,7 +409,13 @@ class ChatController extends ChangeNotifier {
         }
         fresh.add(message);
       }
-      _appendMobileMessages(fresh, animate: animate);
+      // Only a turn observed while actively polling is live. Initial hydration
+      // and foreground recovery must never enter the reveal queue. A large
+      // batch is also rendered atomically as a final safety valve.
+      final shouldAnimate = source == ChatDeliverySource.live &&
+          (animate ?? true) &&
+          _staticBubbleCount(fresh) <= 10;
+      _appendMobileMessages(fresh, animate: shouldAnimate);
       mobileActive = result.active;
       mobileError = null;
       if (fresh.isNotEmpty) {
@@ -425,6 +448,19 @@ class ChatController extends ChangeNotifier {
     } finally {
       pollingMobile = false;
     }
+  }
+
+  int _staticBubbleCount(List<MobilePollMessage> messages) {
+    var count = 0;
+    for (final message in messages) {
+      if (message.content.trim().isNotEmpty) {
+        count += message.behaviorKind.isNotEmpty
+            ? 1
+            : _splitSegments(message.content).length;
+      }
+      if (message.sticker != null && _stickerEnabled()) count++;
+    }
+    return count;
   }
 
   void _appendMobileMessages(

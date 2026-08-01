@@ -89,15 +89,24 @@ class ThemeColorPreset {
 }
 
 class ThemePresetSnapshot {
-  const ThemePresetSnapshot({required this.activeId, required this.presets});
+  const ThemePresetSnapshot({
+    required this.lightThemePresetId,
+    required this.darkThemePresetId,
+    required this.themeMode,
+    required this.presets,
+  });
 
-  final String? activeId;
+  final String? lightThemePresetId;
+  final String? darkThemePresetId;
+  final String themeMode;
   final List<ThemeColorPreset> presets;
 
   String toJsonString() => jsonEncode({
     'schema': mobileColorPresetStoreSchema,
     'version': mobileColorModVersion,
-    'activeId': activeId,
+    'lightThemePresetId': lightThemePresetId,
+    'darkThemePresetId': darkThemePresetId,
+    'themeMode': themeMode,
     'presets': presets.map((preset) => preset.toModJson()).toList(),
   });
 
@@ -116,8 +125,14 @@ class ThemePresetSnapshot {
           .map(ThemeColorPreset.fromModJson)
           .whereType<ThemeColorPreset>()
           .toList(growable: false);
+      final legacyId = json['activeId']?.toString();
+      final mode = json['themeMode']?.toString();
       return ThemePresetSnapshot(
-        activeId: json['activeId']?.toString(),
+        lightThemePresetId: json['lightThemePresetId']?.toString() ?? legacyId,
+        darkThemePresetId: json['darkThemePresetId']?.toString() ?? legacyId,
+        themeMode: mode == 'light' || mode == 'dark' || mode == 'system'
+            ? mode!
+            : 'system',
         presets: presets,
       );
     } catch (_) {

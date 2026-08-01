@@ -15,7 +15,9 @@ class SettingsPage extends StatelessWidget {
     required this.c,
     required this.language,
     required this.dark,
-    required this.activeThemePresetName,
+    this.lightThemePresetName,
+    this.darkThemePresetName,
+    this.activeThemePresetName,
     required this.themePresetCount,
     required this.prefs,
     required this.profileDisplayName,
@@ -30,6 +32,7 @@ class SettingsPage extends StatelessWidget {
     required this.onTheme,
     required this.onLanguage,
     required this.onManageThemes,
+    this.onManageThemesForMode,
     required this.onPrefs,
     required this.onEditProfileName,
     required this.onImportProfileAvatar,
@@ -60,6 +63,8 @@ class SettingsPage extends StatelessWidget {
   final YxPalette c;
   final AppLanguage language;
   final bool dark;
+  final String? lightThemePresetName;
+  final String? darkThemePresetName;
   final String? activeThemePresetName;
   final int themePresetCount;
   final YxPrefs prefs;
@@ -75,6 +80,7 @@ class SettingsPage extends StatelessWidget {
   final ValueChanged<bool> onTheme;
   final ValueChanged<AppLanguage> onLanguage;
   final VoidCallback onManageThemes;
+  final ValueChanged<bool>? onManageThemesForMode;
   final ValueChanged<YxPrefs> onPrefs;
   final VoidCallback onEditProfileName;
   final VoidCallback onImportProfileAvatar;
@@ -296,12 +302,7 @@ class SettingsPage extends StatelessWidget {
               SettingsRow(
                 c: c,
                 title: l10n.settingsThemeTitle,
-                subtitle: activeThemePresetName == null
-                    ? l10n.settingsThemeBuiltInSubtitle(themePresetCount)
-                    : l10n.settingsThemePresetSubtitle(
-                        activeThemePresetName!,
-                        themePresetCount,
-                      ),
+                subtitle: l10n.settingsThemeBuiltInSubtitle(themePresetCount),
                 child: Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -309,23 +310,38 @@ class SettingsPage extends StatelessWidget {
                   children: [
                     ChoiceChip(
                       label: Text(l10n.themePaper),
-                      selected: !dark && activeThemePresetName == null,
+                      selected: !dark,
                       onSelected: (_) => onTheme(false),
                     ),
                     ChoiceChip(
                       label: Text(l10n.themeNight),
-                      selected: dark && activeThemePresetName == null,
+                      selected: dark,
                       onSelected: (_) => onTheme(true),
                     ),
                     OutlinedButton.icon(
-                      onPressed: onManageThemes,
+                      onPressed: () =>
+                          (onManageThemesForMode ?? (_) => onManageThemes())(false),
                       icon: const Icon(Icons.palette_outlined, size: 17),
                       label: Text(
-                        activeThemePresetName ??
+                        lightThemePresetName ?? activeThemePresetName ??
                             l10n.settingsColorPresets(themePresetCount),
                       ),
                     ),
                   ],
+                ),
+              ),
+              SettingsRow(
+                c: c,
+                title: l10n.themeNight,
+                subtitle: darkThemePresetName ?? activeThemePresetName ?? l10n.themeNight,
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      (onManageThemesForMode ?? (_) => onManageThemes())(true),
+                  icon: const Icon(Icons.palette_outlined, size: 17),
+                  label: Text(
+                    darkThemePresetName ?? activeThemePresetName ??
+                        l10n.settingsColorPresets(themePresetCount),
+                  ),
                 ),
               ),
               SettingsRow(
