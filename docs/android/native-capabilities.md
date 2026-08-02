@@ -23,7 +23,8 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 生命周期：
 
 - `onCreate()` 只进入沉浸式全屏，不主动弹通知权限；权限请求由能力检查页或后台通知开关触发。
-- `onResume()` 无条件停止原生服务和中继订阅，由 Flutter 前台每 5 秒轮询。
+- `onResume()` 无条件停止原生服务和中继订阅，由 Flutter 前台每 5 秒轮询。通知点击会以一次性
+  `pendingOpenLatestMessage` 标记传给 Flutter；Flutter 在凭证恢复后消费它，完成 catch-up 并定位最新消息。
 - `onStop()` 只有在后台通知开关开启、访问凭证存在且后端 origin 可信时，才启动后台前台服务。
 - `isBackgroundNotificationServiceRunning` 直接读取 `MobileNotificationService.isServiceRunning`
   的进程内生命周期真值，不再用 SharedPreferences 历史标记判断服务是否仍在运行。
@@ -42,8 +43,9 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 职责：
 
 - 作为前台服务在应用后台保持 ntfy SSE 中继订阅；应用回前台时停止。
-- 中继未配置时只执行一次非阻塞补偿拉取后退出；订阅失败或连续断线 15 分钟后，通过
-  `AlarmManager` 安排非阻塞补偿拉取，之后最多每 6 小时一次，中继恢复后取消。
+- 中继未配置时只执行一次非阻塞补偿拉取后退出；订阅失败或连续断线 1 分钟后，通过
+  `AlarmManager` 安排非阻塞补偿拉取，之后每 15 分钟一次。SSE 保持连接时也每 15 分钟执行一次
+  受鉴权安全 poll，限制单个 relay signal 丢失造成的 durable queue 延迟；应用回前台后取消。
 - 中继收到 signal-only payload 时立即请求 `/mobile/poll?limit=20&after=<lastAckedSeq>` 拉取正文；
   旧式含 `content` payload 也会忽略正文并强制回源。连续 signal 会合并为串行 poll，不直接投递空消息。
 - 屏幕上下文上传开关开启时，每次周期补偿前将原生层过滤后的快照推送到 `/sensor/realtime`。

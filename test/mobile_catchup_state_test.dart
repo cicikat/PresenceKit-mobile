@@ -208,6 +208,36 @@ void main() {
     controller.dispose();
   });
 
+  test('a delayed live poll batch is appended statically', () async {
+    final settings = _Settings();
+    final delayed = MobilePollMessage(
+      id: 'delayed-message',
+      seq: 1,
+      content: 'delayed message',
+      userId: 'owner',
+      timestamp: DateTime.now().subtract(const Duration(minutes: 1)),
+      behaviorKind: '',
+      behaviorDelivery: '',
+      behaviorLevel: '',
+      behaviorId: '',
+    );
+    final backend = _Backend(
+      settings,
+      activation: const MobileActivationResult(ok: true, active: true),
+      pollResults: [
+        const MobilePollResult(ok: true, active: true, messages: []),
+        MobilePollResult(ok: true, active: true, messages: [delayed]),
+      ],
+    );
+    final controller = _controller(backend, settings);
+
+    await controller.start();
+    await controller.pollMobile();
+
+    expect(controller.sent.single.animate, isFalse);
+    controller.dispose();
+  });
+
   test('foreground recovery renders even a small backlog statically', () async {
     final settings = _Settings();
     final backend = _Backend(

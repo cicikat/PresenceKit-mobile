@@ -32,6 +32,9 @@ class ChatController extends ChangeNotifier {
 
   static const initialVisibleMessageCount = 80;
   static const visibleMessageStep = 50;
+  static const _staleDeliveryThreshold = Duration(seconds: 15);
+  static const _foregroundCatchUpRetryDelay = Duration(milliseconds: 250);
+  static const _foregroundCatchUpAttempts = 8;
   // Mirrors chat_widgets.dart AnimatedRevealText (kept in sync with
   // Emerald-client/src/windows/room/useVnPresenter.ts, 40 CPS).
   static const revealCps = 40.0;
@@ -126,9 +129,26 @@ class ChatController extends ChangeNotifier {
       return;
     }
     _ensurePollTimer();
-    unawaited(
-      pollIfBackgroundUnavailable(source: ChatDeliverySource.catchUp),
-    );
+    unawaited(_catchUpAfterBackgroundStops());
+  }
+
+  Future<void> catchUpFromNotification() async {
+    await _catchUpAfterBackgroundStops();
+    scrollToBottom();
+  }
+
+  Future<void> _catchUpAfterBackgroundStops() async {
+    for (var attempt = 0; attempt < _foregroundCatchUpAttempts; attempt++) {
+      if (!await _relay.isBackgroundServiceRunning()) {
+        if (pollingMobile) {
+          await Future<void>.delayed(_foregroundCatchUpRetryDelay);
+          continue;
+        }
+        await pollMobile(source: ChatDeliverySource.catchUp);
+        return;
+      }
+      await Future<void>.delayed(_foregroundCatchUpRetryDelay);
+    }
   }
 
   Future<void> resetForConnectionChange() async {
@@ -412,8 +432,10 @@ class ChatController extends ChangeNotifier {
       // Only a turn observed while actively polling is live. Initial hydration
       // and foreground recovery must never enter the reveal queue. A large
       // batch is also rendered atomically as a final safety valve.
-      final shouldAnimate = source == ChatDeliverySource.live &&
+      final shouldAnimate =
+          source == ChatDeliverySource.live &&
           (animate ?? true) &&
+          !_containsStaleDelivery(fresh) &&
           _staticBubbleCount(fresh) <= 10;
       _appendMobileMessages(fresh, animate: shouldAnimate);
       mobileActive = result.active;
@@ -461,6 +483,15 @@ class ChatController extends ChangeNotifier {
       if (message.sticker != null && _stickerEnabled()) count++;
     }
     return count;
+  }
+
+  bool _containsStaleDelivery(List<MobilePollMessage> messages) {
+    final now = DateTime.now();
+    return messages.any((message) {
+      final timestamp = message.timestamp;
+      return timestamp != null &&
+          now.difference(timestamp) >= _staleDeliveryThreshold;
+    });
   }
 
   void _appendMobileMessages(

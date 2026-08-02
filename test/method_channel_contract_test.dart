@@ -100,6 +100,13 @@ void main() {
       },
     );
 
+    test('consumes a pending notification-open action once', () async {
+      reply(true);
+      expect(await store.consumePendingOpenLatestMessage(), isTrue);
+      expect(calls.single.method, 'consumePendingOpenLatestMessage');
+      expect(calls.single.arguments, isNull);
+    });
+
     test('getBackgroundPollStatus parses the platform map', () async {
       reply({
         'lastBackgroundPollAt': 1781280000000,

@@ -68,8 +68,9 @@ GET /mobile/poll?limit=20&after=<lastAckedSeq>
 
 ## 后台消费
 
-后台服务以 ntfy SSE 中继为主路径。中继明确订阅失败或连续断开 15 分钟后，通过
-`AlarmManager` 安排一次非阻塞补偿拉取；完成后最多每 6 小时续约一次，恢复中继后取消：
+后台服务以 ntfy SSE 中继为主路径。中继明确订阅失败或连续断开 1 分钟后，通过
+`AlarmManager` 安排一次非阻塞补偿拉取；完成后每 15 分钟续约。SSE 保持连接时也每 15 分钟执行一次
+安全 poll，用于限制 relay 单个 signal 丢失时 durable queue 的滞留；应用回前台后取消：
 
 ```text
 GET /mobile/poll?limit=20&after=<lastAckedSeq>

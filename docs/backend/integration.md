@@ -118,7 +118,8 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
   但 durable mirror 不因 live origin 为 mobile 而取消。Flutter 前台同时解析 `msg_id` 和 `turn_id`，
   并将两者注册到 `_synchronousAssistantReplyIds`，使 poll 去重命中；旧后端或无 id 消息仍使用短时内容指纹兜底。
 - 前台由 Flutter 每 5 秒轮询主动消息并直接写入会话流；后台中继只实时推送 signal，Android 收到后
-  立即 poll 拉取正文；不再常驻长轮询，仅在中继长时间断连时由 `AlarmManager` 周期读取补偿队列。
+  立即 poll 拉取正文。中继断线 1 分钟后由 `AlarmManager` 每 15 分钟补偿一次；中继 SSE 保持连接时也
+  每 15 分钟执行一次安全 poll，限制单个 signal 丢失造成的队列滞留。
 - 前后台共用 legacy `SharedPreferences("yexuan_memery")` 中的 `lastAckedSeq`。poll 带
   `after=<lastAckedSeq>`；消息先进入会话/通知消费管线并持久化 `seenMobileMessageIds`，然后 ack，
   ack 成功后才推进本地游标。ack 失败会让下次重收，客户端依靠 `message.id` 去重。
@@ -126,8 +127,9 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
   `signal`，正文与 behavior 由受鉴权的 `/mobile/poll` 返回。
 - `/mobile/poll` 队列现在是有 TTL、容量上限的非销毁式补偿副本；前后台消费后通过 `/mobile/ack`
   推进共享游标，不再把队列当作实时双写消费路径。
-- 前台首次连接或切换节点时，先加载正式聊天历史，再以非动画方式 catch-up durable queue；后续实时 poll
-  仍按正常气泡 reveal 展示。历史与 queue 同时命中的同步回复按现有 `msg_id` / `turn_id` / 内容指纹去重。
+- 前台首次连接、切换节点、恢复或通知打开时，先加载正式聊天历史，再以非动画方式 catch-up durable queue；
+  后续实时 poll 仍按正常气泡 reveal 展示，但服务端时间戳超过 15 秒的批次一律原子静态追加。历史与 queue
+  同时命中的同步回复按现有 `msg_id` / `turn_id` / 内容指纹去重。
 - 主动消息可以带 `behavior` metadata，手机端只消费 metadata，不自己定义触发规则。
 - 屏幕上下文当前是实时上下文，不应被手机端直接长期记忆化。独立上传开关默认关闭；原生采集层会先过滤敏感页面。
 - `/upload/ingest` 与其他后端请求一样附带 `Authorization: Bearer <token>`。

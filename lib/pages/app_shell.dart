@@ -206,6 +206,15 @@ class _CompanionAppState extends State<CompanionApp>
     unawaited(_restoreBackendAndStart());
   }
 
+  Future<void> _consumeNotificationOpen() async {
+    if (!_hasAdminToken ||
+        !await _relayService.consumePendingOpenLatestMessage()) {
+      return;
+    }
+    await _chatController.start();
+    await _chatController.catchUpFromNotification();
+  }
+
   Future<void> _restoreBackendAndStart() async {
     await Future.wait([
       _connectionController.restore(),
@@ -231,6 +240,7 @@ class _CompanionAppState extends State<CompanionApp>
     if (!mounted) return;
     if (_hasAdminToken) {
       _startBackendSync();
+      await _consumeNotificationOpen();
     } else {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => unawaited(_openAdminTokenSettings(required: true)),
@@ -252,7 +262,10 @@ class _CompanionAppState extends State<CompanionApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _applySystemUi();
-      if (_hasAdminToken) _chatController.resumePolling();
+      if (_hasAdminToken) {
+        _chatController.resumePolling();
+        unawaited(_consumeNotificationOpen());
+      }
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
       _chatController.pausePolling();
@@ -452,12 +465,11 @@ class _CompanionAppState extends State<CompanionApp>
       useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) =>
-          ThemePresetManagerSheet(
-            c: c,
-            controller: _themeController,
-            selectingDark: selectingDark,
-          ),
+      builder: (context) => ThemePresetManagerSheet(
+        c: c,
+        controller: _themeController,
+        selectingDark: selectingDark,
+      ),
     );
   }
 
@@ -1101,7 +1113,9 @@ class _CompanionAppState extends State<CompanionApp>
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: _themeController.isDark ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness: _themeController.isDark
+            ? Brightness.light
+            : Brightness.dark,
         systemNavigationBarColor: c.surface,
         systemNavigationBarIconBrightness: _themeController.isDark
             ? Brightness.light
@@ -1165,8 +1179,7 @@ class _CompanionAppState extends State<CompanionApp>
               unawaited(_showOrderBubble('meituan', context.l10n.meituanName)),
           onVoiceRecordStart: _startVoiceRecording,
           onVoiceRecordStop: _stopVoiceRecordingAndTranscribe,
-          onVoiceRecordCancel: () =>
-              unawaited(_voiceInputController.cancel()),
+          onVoiceRecordCancel: () => unawaited(_voiceInputController.cancel()),
         );
       case AppRoute.dream:
         return DreamPage(

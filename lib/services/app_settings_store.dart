@@ -398,6 +398,18 @@ class AppSettingsStore {
     }
   }
 
+  Future<bool> consumePendingOpenLatestMessage() async {
+    if (!_channelAvailable) return false;
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<bool>(
+            'consumePendingOpenLatestMessage',
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   Future<void> saveSeenMobileMessageIds(List<String> ids) async {
     if (!_channelAvailable) return;
     await PlatformSettingsChannel.channel.invokeMethod<void>(

@@ -45,9 +45,9 @@ class MobileNotificationService : Service() {
     private val messageCooldownMs = 30 * 60 * 1000L
     private val initialRetryDelayMs = 1000L
     private val maximumRetryDelayMs = 60_000L
-    private val relayFallbackThresholdMs = 15 * 60 * 1000L
+    private val relayFallbackThresholdMs = 60_000L
     private val relayReadTimeoutMs = 90_000
-    private val supplementalPollIntervalMs = 6 * 60 * 60 * 1000L
+    private val supplementalPollIntervalMs = 15 * 60 * 1000L
     private val timeoutRecoveryDelayMs = 24 * 60 * 60 * 1000L + 5 * 60 * 1000L
     @Volatile private var running = false
     @Volatile private var pollInFlight = false
@@ -110,7 +110,7 @@ class MobileNotificationService : Service() {
                 startConsumerCoordinator(startId)
             }
             if (consumerSource == ConsumerSource.RELAY) {
-                cancelSupplementalPoll()
+                runConnectedSafetyPoll()
                 return START_STICKY
             }
             runOneShotPoll(startId)
@@ -257,7 +257,7 @@ class MobileNotificationService : Service() {
         consumerSource = ConsumerSource.RELAY
         relayUnavailableSince = 0L
         activePollConnection?.disconnect()
-        cancelSupplementalPoll()
+        scheduleSupplementalPoll(supplementalPollIntervalMs)
         recordRelayStatus("connected", null)
         recordRelayHeartbeat()
         recordBackgroundError(notificationPermissionError())
@@ -421,6 +421,40 @@ class MobileNotificationService : Service() {
             }
         }.apply {
             name = "companion-mobile-one-shot-poll"
+            start()
+        }
+    }
+
+    // An open SSE socket does not prove every wake signal arrived. This
+    // bounded authenticated poll drains durable queue entries whose signal
+    // was lost without tearing down the relay connection.
+    private fun runConnectedSafetyPoll() {
+        val started = synchronized(pollStateLock) {
+            if (pollInFlight) {
+                false
+            } else {
+                pollInFlight = true
+                true
+            }
+        }
+        if (!started) {
+            scheduleSupplementalPoll(supplementalPollIntervalMs)
+            return
+        }
+        Thread {
+            try {
+                pollOnce(allowRelayFallback = true, allowRelayConnected = true)
+            } finally {
+                synchronized(pollStateLock) {
+                    pollInFlight = false
+                }
+                resumePendingRelaySignalPoll()
+                if (running && consumerSource == ConsumerSource.RELAY) {
+                    scheduleSupplementalPoll(supplementalPollIntervalMs)
+                }
+            }
+        }.apply {
+            name = "companion-mobile-relay-safety-poll"
             start()
         }
     }
@@ -971,6 +1005,8 @@ class MobileNotificationService : Service() {
     }
 
     companion object {
+        const val openLatestMessageAction = "com.presencekit.mobile.OPEN_LATEST_MESSAGE"
+
         @Volatile
         var isServiceRunning: Boolean = false
             private set
@@ -1202,9 +1238,11 @@ class MobileNotificationService : Service() {
     private fun openAppIntent(): PendingIntent {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            action = openLatestMessageAction
         }
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
         return PendingIntent.getActivity(this, 0, intent, flags)
     }
+
 }

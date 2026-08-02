@@ -45,7 +45,14 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        recordNotificationOpen(intent)
         enterFullscreen()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        recordNotificationOpen(intent)
     }
 
     override fun onResume() {
@@ -70,6 +77,14 @@ class MainActivity : FlutterActivity() {
         ) {
             startMobileNotificationService()
         }
+    }
+
+    private fun recordNotificationOpen(intent: Intent?) {
+        if (intent?.action != MobileNotificationService.openLatestMessageAction) return
+        getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean("pendingOpenLatestMessage", true)
+            .apply()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -258,6 +273,13 @@ class MainActivity : FlutterActivity() {
                                     prefs.getString("lastBackgroundError", null),
                             ),
                         )
+                    }
+                    "consumePendingOpenLatestMessage" -> {
+                        val pending = prefs.getBoolean("pendingOpenLatestMessage", false)
+                        if (pending) {
+                            prefs.edit().remove("pendingOpenLatestMessage").apply()
+                        }
+                        result.success(pending)
                     }
                     "getRelayConnectionStatus" -> {
                         result.success(

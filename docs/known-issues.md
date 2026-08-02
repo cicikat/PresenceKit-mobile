@@ -247,7 +247,7 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 
 </details>
 
-## 未修复：mobile durable queue 积压被误作实时逐条 reveal，且中继断连补偿可延后数小时
+## 已修复：mobile durable queue 积压被误作实时逐条 reveal，且中继断连补偿可延后数小时
 
 **位置**：`lib/controllers/chat_controller.dart` 的 `pollMobile()` / `_appendMessages()`；
 `android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt` 的中继断连与
@@ -272,3 +272,8 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 应等待原生服务真正停止后完成一次强制 catch-up，并原子追加、立即定位到底部。中继失败时应缩短首个和
 后续补偿间隔，并把 relay heartbeat/最近 poll/最近成功通知的时间暴露为可诊断状态。通知点击应携带
 显式 action，原生通过 channel 通知 Flutter 立即 catch-up 并跳到最新消息。
+
+**状态（2026-08-02）**：已修复。超过 15 秒的有服务端时间戳批次会原子静态追加；恢复前台会等待原生
+服务退出（最多 2 秒）后进行 catch-up。中继断线 1 分钟后开始补偿并每 15 分钟续约；即使 SSE 保持连接，
+也每 15 分钟执行一次受鉴权安全 poll。通知点击以一次性原生标记传递到 Flutter，凭证和首次历史同步完成后
+执行 catch-up 并跳到最新消息。消息 id 去重、seen 持久化、ack 后推进 cursor 的原有顺序未改变。

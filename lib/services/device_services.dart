@@ -131,6 +131,8 @@ class RelayStatusService {
       _store.loadNotificationGateStatus();
   Future<bool> isBackgroundServiceRunning() =>
       _store.isBackgroundNotificationServiceRunning();
+  Future<bool> consumePendingOpenLatestMessage() =>
+      _store.consumePendingOpenLatestMessage();
   Future<String?> loadBaseUrl() => _store.loadRelayBaseUrl();
   Future<void> saveBaseUrl(String value) => _store.saveRelayBaseUrl(value);
   Future<String?> loadToken() => _store.loadRelayToken();

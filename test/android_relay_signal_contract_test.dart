@@ -90,4 +90,34 @@ void main() {
       );
     },
   );
+
+  test('relay uses bounded fallback plus connected-socket safety polls', () {
+    expect(
+      serviceSource,
+      contains('private val relayFallbackThresholdMs = 60_000L'),
+    );
+    expect(
+      serviceSource,
+      contains('private val supplementalPollIntervalMs = 15 * 60 * 1000L'),
+    );
+    expect(serviceSource, contains('runConnectedSafetyPoll()'));
+    expect(
+      serviceSource,
+      contains('name = "companion-mobile-relay-safety-poll"'),
+    );
+  });
+
+  test('notification open is marked for a Flutter catch-up', () {
+    final activitySource = File(
+      'android/app/src/main/kotlin/com/presencekit/mobile/MainActivity.kt',
+    ).readAsStringSync();
+
+    expect(serviceSource, contains('action = openLatestMessageAction'));
+    expect(
+      activitySource,
+      contains('MobileNotificationService.openLatestMessageAction'),
+    );
+    expect(activitySource, contains('"pendingOpenLatestMessage"'));
+    expect(activitySource, contains('"consumePendingOpenLatestMessage"'));
+  });
 }
