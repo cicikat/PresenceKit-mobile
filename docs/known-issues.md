@@ -2,26 +2,12 @@
 
 > 修复前请先对照代码确认问题仍存在；修复后在本文件改状态或移到已修复区。
 
-## 当前仍存在（2026-07-16 清盘后权威清单）
+## 当前仍存在（2026-08-02 更新后的权威清单）
 
-- **ntfy 中继已配置，但后台收不到真实推送** — `open`（2026-07-24 复核，取代旧的"未配置"条目）。
-  后端 `config.yaml` 已填 `relay_base_url: https://ntfy.sh` + `relay_topic`；`data/runtime/mobile_queue.json`
-  证实今天有真实触发器消息正常入队且 `schedule_signal_publish()` 被调用（无 `[relay_publisher]` 失败告警）。
-  手动隔离测试：`curl -d "hi" https://ntfy.sh/<topic>` 服务端返回成功（ntfy 已收到并广播），但手机
-  （故意留在后台、屏幕在桌面）**没有任何反应**；能力页此时"中继连接状态"显示已停止、"最近信号"从未
-  收到、"最近中继心跳"停在几分钟前刚打开 App 那次。
-  结论：中继配置和后端发布链路都正常，卡点在手机后台——`MobileNotificationService` 的 SSE 订阅在
-  App 进入后台一段时间后似乎被杀（`recordRelayStatus("stopped", ...)` 只在 `onDestroy()` 里触发），
-  `START_STICKY` 未观察到及时把它拉回来。最可能是国产 ROM（小米/华为/OPPO/vivo 等）的后台管控杀掉了
-  前台服务，标准 Android 电池优化白名单不一定够，还需要各厂商自己的"自启动/后台运行/锁定后台"开关。
-  下一步：确认手机品牌型号，核对能力页"忽略电池优化"状态，按 ROM 补齐自启动/后台运行白名单，
-  必要时接 `adb logcat` 复现时段日志定位服务被杀的确切时机和原因（OOM / Doze / 厂商省电策略）。
-- **release keystore** — `post-v0.1`（用户动作）。只在准备对外发布时建立私有 keystore，本工单不生成或落盘密钥。
 - **设备重启后后台通道不自恢复** — `observe`。自用阶段接受，能力页能看见失活；要根治时另开 boot receiver 工单。
 - **`app_shell.dart` 剩余结构债** — `open`。下一步按 profile、theme、capability/settings、附件与弹窗协调继续拆分，保持领域状态不回流。
-- **Flutter tester 回环故障** — `open`（本机用户动作）。排查防火墙/安全软件后再跑全量 `flutter test`；当前只把 `flutter analyze` 作为本工单静态验收。
 
-本轮已关闭：外卖/购物悬浮窗硬编码示例订单已改为中性确认且不展示虚构商品/金额；通知权限不再在 `onCreate()` 弹出，改由能力检查页或首次开启后台通知触发。
+本轮已关闭：维护者已确认 Mobile ntfy 后台推送恢复；debug 与正式包已分离，正式包的版本号限制与签名升级验收已完成。`flutter test` 全量 105 项已通过。外卖/购物悬浮窗硬编码示例订单已改为中性确认且不展示虚构商品/金额；通知权限不再在 `onCreate()` 弹出，改由能力检查页或首次开启后台通知触发。
 
 ## 历史快照（已由上方权威清单覆盖）
 

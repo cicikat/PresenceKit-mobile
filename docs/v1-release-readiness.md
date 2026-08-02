@@ -1,5 +1,7 @@
 # v1 Android release readiness
 
+> **2026-08-02 后续验收更新**：下方 2026-07-29 快照只描述当时可见的 checkout。维护者随后确认 debug 与正式包已分离，正式包已满足版本号限制及同签名覆盖安装验收；因此其中“signing identity not provisioned / upgrade not verified”的阻塞结论已关闭。保留旧快照仅供追溯，不能再作为当前发布阻塞依据。
+
 ## Signing-lineage audit (2026-07-29)
 
 This audit used the APK attached to the public [v0.2.2 GitHub Release](https://github.com/cicikat/PresenceKit-mobile/releases/tag/v0.2.2), not a rebuild from the v0.2.2 source tag. The downloaded asset was `app-release.apk`; GitHub asset SHA-256 and the downloaded file SHA-256 were both `60fc680ee19ae336b2760aec9027dbbf57142395a53433774f937b85b5f37b87`.
