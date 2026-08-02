@@ -246,3 +246,29 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 **剩余**：app shell 仍包含 profile、theme、capability/settings、附件选择和可信 HTTP origin 等安全确认协调，尚未达到工单 07 的 `<=600` 行长期目标。影响主要是可维护性，不改变当前接口和安全闸门。
 
 </details>
+
+## 未修复：mobile durable queue 积压被误作实时逐条 reveal，且中继断连补偿可延后数小时
+
+**位置**：`lib/controllers/chat_controller.dart` 的 `pollMobile()` / `_appendMessages()`；
+`android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt` 的中继断连与
+`AlarmManager` 补偿路径；通知 `openAppIntent()` 与 `MainActivity.kt` 生命周期处理。
+
+**影响**：手机打开后可能把已积压的历史主动消息按气泡逐条、串行出现，较长文本与多段消息会在队列中
+等待很久，视图一段时间内停留在旧记录。中继不可用时，早晨入队的消息可能到下午才显示为系统通知；
+点击通知后也没有明确的“同步并定位到最新”动作，体验上会像打开了旧对话。
+
+**证据（2026-08-02）**：
+
+- Flutter 仅以调用来源 `source == ChatDeliverySource.live` 和气泡数 `<= 10` 判断动画；它不检查
+  `MobilePollMessage.timestamp` 是否早于当前轮询。后台服务停止与 Flutter 恢复之间的竞态会让恢复轮次
+  被 `isBackgroundServiceRunning()` 跳过，随后 5 秒 timer 的 live poll 接到旧队列，进入 `_messageQueue`。
+  `_appendMessages()` 对每个气泡按 `text.length / 40 CPS + 100-1000ms` 串行等待。
+- Android 在中继不可用满 15 分钟后才安排补偿，成功补偿后的下一轮是 6 小时；`/mobile/poll` 非销毁式
+  队列会返回所有未 ack 消息，因此延迟表现为旧消息集中弹出，而不是中继传输正文变慢。
+- 通知 `PendingIntent` 只以 `SINGLE_TOP | CLEAR_TOP` 打开 `MainActivity`，无 action/extra；
+  `MainActivity` 也未实现 `onNewIntent()` 向 Flutter 发出刷新和滚动到底部的事件。
+
+**建议方向**：将“是否动画”改为以消息时间戳和明确的恢复/积压状态判定，而不是仅看 poll 来源；恢复时
+应等待原生服务真正停止后完成一次强制 catch-up，并原子追加、立即定位到底部。中继失败时应缩短首个和
+后续补偿间隔，并把 relay heartbeat/最近 poll/最近成功通知的时间暴露为可诊断状态。通知点击应携带
+显式 action，原生通过 channel 通知 Flutter 立即 catch-up 并跳到最新消息。
