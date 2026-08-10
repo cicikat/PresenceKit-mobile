@@ -36,8 +36,16 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
       - run: flutter pub get
-      - run: flutter build apk --release
+      - name: Build signed prod APK
+        run: flutter build apk --release --flavor prod
+      - name: Verify prod artifact identity
+        run: |
+          test -f build/app/outputs/flutter-apk/app-prod-release.apk
+          BADGING=$(find "$ANDROID_HOME/build-tools" -name aapt -type f -print -quit | xargs -r -I{} {} dump badging build/app/outputs/flutter-apk/app-prod-release.apk)
+          echo "flavor=prod"
+          echo "$BADGING" | sed -n "s/^package: name='\([^']*\)' versionCode='\([^']*\)' versionName='\([^']*\)'.*/application_id=\1 version_code=\2 version_name=\3/p"
+          echo "$BADGING" | grep -q "package: name='com.presencekit.mobile'"
       - uses: actions/upload-artifact@v4
         with:
-          name: PresenceKit-mobile-${{ github.ref_name }}
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: PresenceKit-mobile-${{ github.ref_name }}-prod
+          path: build/app/outputs/flutter-apk/app-prod-release.apk
