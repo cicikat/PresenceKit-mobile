@@ -25,6 +25,7 @@ import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.BinaryMessenger
 import java.io.File
 import org.json.JSONObject
 
@@ -569,6 +570,10 @@ class MainActivity : FlutterActivity() {
                 }
             }
     }
+
+    /** Test-only bridge for instrumented MethodChannel contract checks. */
+    internal fun settingsMessengerForTesting(): BinaryMessenger? =
+        flutterEngine?.dartExecutor?.binaryMessenger
 
     private fun playTtsAudio(audioB64: String, result: MethodChannel.Result) {
         try {

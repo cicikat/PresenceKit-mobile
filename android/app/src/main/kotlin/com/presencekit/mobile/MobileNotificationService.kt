@@ -35,10 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class MobileNotificationService : Service() {
     private val tag = "CompanionMobileService"
-    private val legacyChannelId = "yexuan_mobile_channel"
-    private val legacyServiceChannelId = "yexuan_mobile_service"
-    private val serviceChannelId = "yexuan_mobile_keepalive"
-    private val messageChannelId = "yexuan_mobile_messages"
+    private val legacyChannelId = NotificationChannels.LEGACY_ID
+    private val legacyServiceChannelId = NotificationChannels.LEGACY_SERVICE_ID
+    private val serviceChannelId = NotificationChannels.SERVICE_ID
+    private val messageChannelId = NotificationChannels.MESSAGE_ID
     private val foregroundId = 10434
     private val quietStartMinute = 23 * 60 + 30
     private val quietEndMinute = 6 * 60 + 30
@@ -910,36 +910,7 @@ class MobileNotificationService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val manager = getSystemService(NotificationManager::class.java)
-        val prefs = getSharedPreferences("yexuan_memery", Context.MODE_PRIVATE)
-        if (prefs.getInt("notificationChannelVersion", 0) < 6) {
-            manager.deleteNotificationChannel(legacyChannelId)
-            manager.deleteNotificationChannel(legacyServiceChannelId)
-            manager.deleteNotificationChannel(serviceChannelId)
-            manager.deleteNotificationChannel(messageChannelId)
-            prefs.edit().putInt("notificationChannelVersion", 6).apply()
-        }
-        val serviceChannel = NotificationChannel(
-            serviceChannelId,
-            "\u540e\u53f0\u5e38\u9a7b",
-            NotificationManager.IMPORTANCE_MIN,
-        ).apply {
-            description = "\u4fdd\u6301\u540e\u53f0\u63a5\u6536\u72b6\u6001\uff0c\u4e0d\u7528\u4e8e\u6d88\u606f\u5f39\u7a97"
-            setSound(null, null)
-            enableVibration(false)
-        }
-        val messageChannel = NotificationChannel(
-            messageChannelId,
-            "\u6d88\u606f\u901a\u77e5",
-            // IMPORTANCE_DEFAULT \u53ea\u4f1a\u8fdb\u901a\u77e5\u680f\uff0c\u7cfb\u7edf\u4e0d\u4f1a\u5f39\u6a2a\u5e45(heads-up)\uff1b
-            // channel importance \u521b\u5efa\u540e\u4e0d\u53ef\u6539\uff0cversion 6 \u5f3a\u5236\u5220\u65e7\u5efa\u65b0\u4ee5\u751f\u6548\u3002
-            NotificationManager.IMPORTANCE_HIGH,
-        ).apply {
-            description = "\u540e\u53f0\u63a5\u6536\u540e\u7aef mobile channel \u4e3b\u52a8\u6d88\u606f\uff0c\u53d7\u9759\u97f3\u65f6\u6bb5\u548c\u51b7\u5374\u63a7\u5236"
-        }
-        manager.createNotificationChannel(serviceChannel)
-        manager.createNotificationChannel(messageChannel)
+        NotificationChannels.ensure(this)
     }
 
     private fun ensureForeground(text: String) {

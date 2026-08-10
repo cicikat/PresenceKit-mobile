@@ -1,0 +1,41 @@
+name: android-instrumented
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "37 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emulator-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.32.0
+          cache: true
+      - run: flutter pub get
+      - name: Run Android framework instrumented tests on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          script: cd android && ./gradlew connectedDevDebugAndroidTest --stacktrace
+      - name: Upload instrumented reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-instrumented-${{ github.sha }}
+          path: |
+            android/app/build/outputs/androidTest-results
+            android/app/build/reports/androidTests
+          if-no-files-found: warn
+          retention-days: 30
