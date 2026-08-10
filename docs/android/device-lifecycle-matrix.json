@@ -1,0 +1,115 @@
+{
+  "schema_version": "1.0.0",
+  "release_line": "v1",
+  "scope": "real_device_acceptance",
+  "status_summary": "not-run",
+  "evidence_level": "none",
+  "environment": {
+    "device_model": "",
+    "android_version": "",
+    "app_version": "",
+    "backend_sha": "",
+    "relay_identity": "",
+    "executed_at": ""
+  },
+  "cases": [
+    {
+      "id": "baseline-clean-install",
+      "area": "lifecycle",
+      "scenario": "Install the prod artifact, grant only documented permissions, start the app, and complete one foreground turn.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "background-doze",
+      "area": "lifecycle",
+      "scenario": "Send a turn, background the app, enter Doze, and verify the next poll/reconnect recovers without duplicate delivery.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "process-kill-background",
+      "area": "lifecycle",
+      "scenario": "Kill the app process while backgrounded and verify restart restores the durable queue and notification state.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "task-swipe-restart",
+      "area": "lifecycle",
+      "scenario": "Swipe the task away, relaunch, and verify the session resumes without losing or duplicating the pending turn.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "device-reboot",
+      "area": "lifecycle",
+      "scenario": "Reboot the device and verify startup registration, notification channels, secure settings, and polling recovery.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "relay-short-outage",
+      "area": "relay",
+      "scenario": "Interrupt the relay briefly and verify reconnect, bounded retry, and exactly-once client turn correlation.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "relay-long-outage",
+      "area": "relay",
+      "scenario": "Keep the relay unavailable beyond the retry window and verify the UI exposes a recoverable offline state.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "relay-dns-or-cert-failure",
+      "area": "relay",
+      "scenario": "Use a controlled DNS or certificate failure and verify the client fails closed without weakening TLS or base URL policy.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "relay-recovery",
+      "area": "relay",
+      "scenario": "Restore the relay after an outage and verify queued work drains in order and the connection becomes healthy.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "notification-deduplication",
+      "area": "notifications",
+      "scenario": "Receive repeated backend notifications and verify one logical message does not produce duplicate user-visible alerts.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "permission-denial",
+      "area": "permissions",
+      "scenario": "Deny notification, accessibility, and overlay permissions independently and verify each feature fails closed with actionable UI state.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "backend-pause-and-restart",
+      "area": "backend",
+      "scenario": "Pause and restart the backend while the mobile app is active; verify recovery without fabricated replies or lost acknowledgements.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "backend-upgrade-compatibility",
+      "area": "backend",
+      "scenario": "Run the release app against the pinned compatibility-matrix backend and verify the mobile HTTP/poll/ack contract.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "oem-background-policy",
+      "area": "oem",
+      "scenario": "Verify the documented background and battery-policy guidance on the target OEM image without treating emulator behavior as equivalent.",
+      "status": "not-run",
+      "evidence": ""
+    }
+  ]
+}
