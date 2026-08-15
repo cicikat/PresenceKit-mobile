@@ -35,7 +35,7 @@ jobs:
         with:
           name: android-instrumented-${{ github.sha }}
           path: |
-            android/app/build/outputs/androidTest-results
-            android/app/build/reports/androidTests
+            build/app/outputs/androidTest-results
+            build/app/reports/androidTests
           if-no-files-found: warn
           retention-days: 30
