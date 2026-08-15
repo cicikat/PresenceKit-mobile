@@ -16,6 +16,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Enable KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.32.0
@@ -28,7 +33,17 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
-          script: cd android && ./gradlew connectedDevDebugAndroidTest --stacktrace
+          disable-linux-hw-accel: false
+          working-directory: android
+          script: |
+            mkdir -p ../build/android-instrumented-diagnostics
+            adb logcat -c
+            set +e
+            ./gradlew connectedDevDebugAndroidTest --stacktrace
+            test_status=$?
+            adb logcat -d -v threadtime > ../build/android-instrumented-diagnostics/logcat.txt
+            adb shell dumpsys activity processes > ../build/android-instrumented-diagnostics/activity-processes.txt || true
+            exit $test_status
       - name: Upload instrumented reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -37,5 +52,6 @@ jobs:
           path: |
             build/app/outputs/androidTest-results
             build/app/reports/androidTests
+            build/android-instrumented-diagnostics
           if-no-files-found: warn
           retention-days: 30
