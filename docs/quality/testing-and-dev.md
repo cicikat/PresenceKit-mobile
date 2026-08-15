@@ -31,6 +31,10 @@ $env:DART_SUPPRESS_ANALYTICS='true'
 $env:APPDATA="$PWD\.tool-home"
 flutter test
 
+# 协议 fixture 测试默认读取同级 Emerald-presence 仓库；非同级布局可显式指定
+$env:PRESENCEKIT_PROTOCOL_FIXTURES='D:\path\to\Emerald-presence\tests\protocol_fixtures\v1'
+flutter test test/protocol_fixtures_test.dart
+
 # Debug APK（ANDROID_HOME 按本机 SDK 位置设置，或省略让 gradle 读 local.properties）
 $env:DART_SUPPRESS_ANALYTICS='true'
 $env:APPDATA="$PWD\.tool-home"

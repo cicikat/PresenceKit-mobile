@@ -9,8 +9,15 @@ on:
 jobs:
   flutter:
     runs-on: ubuntu-latest
+    env:
+      PRESENCEKIT_PROTOCOL_FIXTURES: ${{ github.workspace }}/Emerald-presence/tests/protocol_fixtures/v1
     steps:
       - uses: actions/checkout@v4
+      - name: Check out canonical protocol fixtures
+        uses: actions/checkout@v4
+        with:
+          repository: cicikat/PresenceKit
+          path: Emerald-presence
       - uses: subosito/flutter-action@v2
         with:
           # Keep CI aligned with the project's Flutter 3.32 / Dart 3.8 baseline.
