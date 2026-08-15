@@ -13,7 +13,7 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 职责：
 
 - 注册兼容旧安装契约的 `MethodChannel('presence_mobile/settings')`；Dart 侧通过 `PlatformSettingsChannel` 共享该通道。`yexuan_memery` 仅是历史 `SharedPreferences` 存储名，不是当前 channel 名。
-- 读写兼容键 `SharedPreferences("yexuan_memery")`：后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、后台通知开关、头像和 Flutter 语言偏好。语言通过 `getAppLanguage` / `setAppLanguage` 读写 `appLanguage`，只接受 `system`、`zh-CN`、`en-US`。该存储名有意不随项目改名。
+- 读写兼容键 `SharedPreferences("yexuan_memery")`：后端节点、owner id、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、后台通知开关、头像和 Flutter 语言偏好。admin/relay token 不再作为明文保存在这些键中，而由 `BackendSecurityPolicy` 委托 `AndroidKeystoreCredentialStore` 管理；语言通过 `getAppLanguage` / `setAppLanguage` 读写 `appLanguage`，只接受 `system`、`zh-CN`、`en-US`。该存储名有意不随项目改名。
 - 检查通知、悬浮窗、设备管理器、无障碍权限；通知权限只在能力检查页显式请求，或用户首次开启后台通知时请求。
 - 检查并引导用户授予电池优化豁免；能力页同时提供常见 OEM 自启动/后台白名单路径。
 - 启动/停止 `MobileNotificationService` 和 `FloatingBubbleService`。
@@ -68,7 +68,7 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 
 注意：
 
-- 服务每轮轮询前从 legacy `SharedPreferences("yexuan_memery", MODE_PRIVATE)` 重新读取访问凭证；缺失时停止服务。当前尚未接入 Android Keystore。
+- 服务每轮轮询前通过 `BackendSecurityPolicy.adminToken()` 读取访问凭证；缺失时停止服务。该策略优先使用 Android Keystore，并对旧 `SharedPreferences` token 执行安全迁移。
 - 服务每轮请求前校验后端 origin；不可信 HTTP 不会建立连接，也不会发送凭证。
 - 中继订阅使用独立的 `relayBaseUrl`、`relayTopic`、`relayToken`，复用 origin 信任策略，
   通过 `/<topic>/sse` 接收 ntfy 事件。

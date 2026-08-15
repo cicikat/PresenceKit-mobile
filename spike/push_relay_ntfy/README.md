@@ -60,7 +60,7 @@ Set the same IP in NtfySpikeActivity when you start the relay.
 
 1. Copy `android/*.kt` into `android/app/src/main/kotlin/com/presencekit/mobile/spike/`
 2. Apply the additions described in `android/manifest_additions.xml` to the real manifest.
-3. Build & install: `flutter build apk --debug && adb install build/app/outputs/flutter-apk/app-debug.apk`
+3. Build & install: `flutter build apk --debug --flavor dev && adb install build/app/outputs/flutter-apk/app-dev-debug.apk`
 4. Launch spike activity:
    ```
    adb shell am start -n com.presencekit.mobile/.spike.NtfySpikeActivity

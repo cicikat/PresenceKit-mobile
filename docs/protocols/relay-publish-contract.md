@@ -205,8 +205,9 @@ relay_token     : String?   订阅凭证，Bearer token，不混入后端 admin-
 
 三项均可为 null（中继功能未配置）；Flutter 前台仍每 5 秒轮询，Android 后台仅做周期补偿。
 
-存储位置：`SharedPreferences("yexuan_memery", MODE_PRIVATE)`，key 分别为
-`relayBaseUrl`、`relayTopic`、`relayToken`。
+存储位置：`relayBaseUrl`、`relayTopic` 仍在 `SharedPreferences("yexuan_memery", MODE_PRIVATE)`；
+`relayToken` 通过 `BackendSecurityPolicy` 使用 `AndroidKeystoreCredentialStore` 保存，旧明文键只
+作为一次性迁移来源。
 
 Android 后台服务在中继连接成功时只消费 SSE；订阅失败或连续断线超过 15 分钟后通过
 `AlarmManager` 执行一次非阻塞补偿，恢复连接时取消待执行补偿并通过共享 generation

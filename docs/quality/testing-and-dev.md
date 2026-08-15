@@ -1,19 +1,19 @@
 # 测试与开发
 
-## v1 signing and credential tests
+## v1 签名与凭据测试
 
 ```powershell
-# Dev debug builds do not require a release keystore.
+# Dev 调试包不需要正式签名 keystore。
 flutter build apk --debug --flavor dev
 
-# Without android/key.properties and its referenced keystore, this must fail.
+# 没有 android/key.properties 或其引用的 keystore 时，该命令必须失败。
 flutter build apk --release --flavor prod
 
-# Kotlin migration-policy tests (run from android/).
+# Kotlin 凭据迁移策略测试（在 android/ 目录执行）。
 .\gradlew.bat testDebugUnitTest
 ```
 
-`CredentialMigrationTest` covers successful legacy-to-secure migration and plaintext cleanup, failed secure writes preserving plaintext, secure precedence, idempotence, token replacement, and deletion. Android Keystore operation and installed-app recovery still require the device acceptance procedure in `docs/v1-release-readiness.md`.
+`CredentialMigrationTest` 覆盖 legacy 到 secure 的成功迁移与明文清理、安全写入失败时保留明文、secure 优先级、幂等性、token 替换和删除。Android Keystore 的真实操作及已安装应用恢复，仍需按 `docs/v1-release-readiness.md` 的真机流程验收。
 
 ## 常用命令
 
@@ -39,7 +39,7 @@ flutter build apk --debug --flavor dev
 
 ## Dev/Test 与正式包
 
-Packaging entry points: `AA2` builds and installs the Dev debug APK; `AA1` builds the formal release APK only; `AA3` builds the formal release APK and installs it on exactly one authorized Android device after all release validation passes.
+打包入口：`AA2` 构建并安装 Dev 调试 APK；`AA1` 只构建正式发行 APK；`AA3` 在全部发行验证通过后构建正式发行 APK，并只安装到一台已授权的 Android 设备。
 
 项目使用 Android product flavor：`dev` 与 `prod`。
 
@@ -78,7 +78,29 @@ Flutter Web 已可编译。双击仓库根目录的 `电脑浏览器预览.bat`�
 
 ## 当前测试覆盖
 
-`test/` 下共 14 个文件，按覆盖内容分组如下（逐文件列出实际断言范围，而不是笼统的"能不能覆盖某个大类"）：
+截至 2026-08-10，`test/` 下有 17 个 Dart 测试文件，`android/app/src/test/` 下有 1 个 Kotlin 单元测试文件。下面先列出完整清单，再按覆盖内容说明实际断言范围；文件数量是源码盘点，不代表本轮已执行通过。
+
+完整 Dart 清单：
+
+- `android_relay_signal_contract_test.dart`
+- `app_shell_structure_test.dart`
+- `backend_client_error_test.dart`
+- `backend_client_request_test.dart`
+- `background_status_test.dart`
+- `chat_reveal_test.dart`
+- `foreground_mobile_delivery_contract_test.dart`
+- `locale_controller_test.dart`
+- `localization_contract_test.dart`
+- `method_channel_contract_test.dart`
+- `mobile_catchup_state_test.dart`
+- `mobile_poll_lifecycle_test.dart`
+- `no_hardcoded_qq_number_test.dart`
+- `profile_status_controller_test.dart`
+- `sticker_message_test.dart`
+- `theme_controller_test.dart`
+- `widget_test.dart`
+
+Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/CredentialMigrationTest.kt`。
 
 ### UI / 模型基础
 
@@ -135,9 +157,25 @@ Flutter Web 已可编译。双击仓库根目录的 `电脑浏览器预览.bat`�
 - Android 原生代码（Kotlin）本身的运行时行为（通知闸门、无障碍采集、悬浮窗确认、设备管理器锁屏）完全没有测试；`android_relay_signal_contract_test.dart` 只是对源码文本做字符串断言，不是真实运行 Kotlin 代码。这类覆盖需要 Android instrumented test，`flutter test` 覆盖不到。
 - 后台原生 poll 与前台 `_pollMobile` 的交接时机（`isBackgroundNotificationServiceRunning() == true` 时前台跳过 poll）目前只在 Dart 侧假设为真，没有场景化测试验证切换瞬间的行为。
 
-## 最近一次本机验证（2026-07-19）
+## 上一次本机验证记录（2026-07-19；非本轮结果）
+
+本轮只更新文档，未重新执行以下命令；这些结果不能作为 2026-08-10 的最新通过证据。
 
 - `flutter analyze`：通过，0 issues。
 - `flutter test test/localization_contract_test.dart test/locale_controller_test.dart test/method_channel_contract_test.dart test/widget_test.dart`：Flutter tester 启动阶段持续无输出，未进入任何断言后人工终止；与本机既有 tester 回环环境故障属于同一测试器不可用边界，不能记为测试通过或断言失败。
 - `flutter build web --no-pub`：通过，产物为 `build/web`。
-- `flutter build apk --debug`：通过，产物为 `build/app/outputs/flutter-apk/app-debug.apk`。
+- `flutter build apk --debug --flavor dev`：通过，产物为 `build/app/outputs/flutter-apk/app-dev-debug.apk`。
+
+## CI、发布与真机边界
+
+`.github/workflows/ci.yml` 当前执行 `flutter pub get`、`flutter gen-l10n`、`flutter analyze` 和 `flutter test`，但没有执行 `android/gradlew.bat testDebugUnitTest`，也没有 Android instrumented test job。因此 CI 不覆盖 Kotlin 原生运行时、通知权限、无障碍、悬浮窗、设备管理器、Doze、进程被杀或重启恢复。
+
+`.github/workflows/release.yml` 当前仍执行无 flavor 的 `flutter build apk --release`，而 `android/app/build.gradle.kts` 定义了 `dev` / `prod` flavor。正式发布应以 `prod` flavor 和实际生成的产物路径为准；在 workflow 对齐前，不得把该 release job 的产物当作正式包验收证据。这是 CI 配置缺口，不是 Flutter 单测缺口。
+
+仍需补充或保留为发布前人工验收的范围：
+
+- Android instrumented test：通知闸门、无障碍过滤、悬浮窗确认、设备管理器锁屏、Keystore 迁移与安装后恢复；
+- 后台 relay 在 Doze、进程被杀、设备重启、网络断开/恢复时的真机矩阵；
+- 前台 poll 与后台服务交接瞬间的场景化测试；
+- 正式签名包的安装、同包升级、替换/删除凭据和失败回滚；
+- `/mobile/chat`、poll/ack 与后端、桌面端固定 commit 的跨仓协议兼容测试。

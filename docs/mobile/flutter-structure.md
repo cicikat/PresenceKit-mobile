@@ -50,4 +50,4 @@
 
 ## 验证
 
-常用门禁为 `flutter analyze`、`flutter test`、`flutter build apk --debug`。本机若在测试套件启动前出现 `HttpException: Connection closed before full header was received` 且目标为随机 `127.0.0.1` 端口，应记录为 Flutter tester 回环环境故障；不能据此把断言标成通过。
+常用门禁为 `flutter analyze`、`flutter test`、`flutter build apk --debug --flavor dev`。本机若在测试套件启动前出现 `HttpException: Connection closed before full header was received` 且目标为随机 `127.0.0.1` 端口，应记录为 Flutter tester 回环环境故障；不能据此把断言标成通过。

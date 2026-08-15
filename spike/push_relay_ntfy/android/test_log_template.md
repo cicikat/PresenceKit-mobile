@@ -1,21 +1,21 @@
-# ntfy Relay Spike — Test Log
+# ntfy Relay Spike — 测试记录
 
-Fill in one row per observed publish → receive event.  
-`latency_s` = time between publish timestamp in loop_publish.sh output and notification appearing on device.
+每个观察到的 publish → receive 事件填写一行。
+`latency_s` = `loop_publish.sh` 输出中的 publish timestamp 到设备上出现通知之间的时间。
 
-## Device
+## 设备
 
-| Field | Value |
+| 字段 | 值 |
 |-------|-------|
 | Model | |
 | Android version | |
 | ROM / OEM skin | |
-| Battery mode | (default / unrestricted / restricted) |
+| Battery mode | （default / unrestricted / restricted） |
 | test run date | |
 
-## Baseline: MobileNotificationService long-poll
+## Baseline：MobileNotificationService long-poll
 
-| # | publish_ts | receive_ts | latency_s | device state at publish | notes |
+| # | publish_ts | receive_ts | latency_s | publish 时设备状态 | 备注 |
 |---|-----------|------------|-----------|------------------------|-------|
 | 1 | | | | screen-on | |
 | 2 | | | | screen-off 5 min | |
@@ -24,9 +24,9 @@ Fill in one row per observed publish → receive event.
 | 5 | | | | swiped from recents | |
 | 6 | | | | after reboot | |
 
-## Spike: NtfyRelayService SSE
+## Spike：NtfyRelayService SSE
 
-| # | publish_ts | receive_ts | latency_s | device state at publish | notes |
+| # | publish_ts | receive_ts | latency_s | publish 时设备状态 | 备注 |
 |---|-----------|------------|-----------|------------------------|-------|
 | 1 | | | | screen-on | |
 | 2 | | | | screen-off 5 min | |
@@ -35,20 +35,20 @@ Fill in one row per observed publish → receive event.
 | 5 | | | | swiped from recents | |
 | 6 | | | | after reboot | |
 
-## Observations
+## 观察项
 
-- Did the SSE socket survive 30 min Doze without reconnect? Y / N
-- Did the SSE socket survive 60 min Doze without reconnect? Y / N
-- Did OEM kill the foreground service? (check `adb logcat | grep NtfyRelaySpike`) Y / N
-- How many reconnects in 1 h? (count "SSE connecting" lines in logcat)
-- Was battery optimization exemption required to survive? Y / N / not tested
+- SSE socket 是否在 30 分钟 Doze 中保持连接且无需重连？Y / N
+- SSE socket 是否在 60 分钟 Doze 中保持连接且无需重连？Y / N
+- OEM 是否杀掉 foreground service？（检查 `adb logcat | grep NtfyRelaySpike`）Y / N
+- 1 小时内重连了多少次？（统计 logcat 中的 `SSE connecting` 行）
+- 是否需要 battery optimization exemption 才能保持连接？Y / N / 未测试
 
-## logcat capture commands
+## logcat 采集命令
 
 ```bash
-# Connect device, run during test:
+# 连接设备，在测试期间运行：
 adb logcat -v time NtfyRelaySpike:V *:S 2>&1 | tee ntfy_spike_logcat.txt
 
-# Separate terminal — long-poll baseline:
+# 另一个终端 —— long-poll baseline：
 adb logcat -v time mobile-poll:V *:S 2>&1 | tee longpoll_logcat.txt
 ```

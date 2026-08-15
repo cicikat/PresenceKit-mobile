@@ -12,6 +12,7 @@
 | `mobile/background-notification-design.md` | 后台通知与前台服务的设计说明 |
 | `android/native-capabilities.md` | Android 原生权限、MethodChannel、服务和安全边界 |
 | `backend/integration.md` | 后端接口、鉴权、轮询、数据流 |
+| `../../Emerald-presence/docs/three-repo-interface-catalog.md` | 三仓接口、跨端设置/观测和调用链总账（通常与本仓同级） |
 | `protocols/mobile-channel.md` | mobile channel 主动消息和 behavior metadata |
 | `protocols/relay-publish-contract.md` | 推送中继发布契约与信号语义 |
 | `protocols/sensor-event-protocol.md` | 多端与硬件传感器事件协议草案 |
@@ -32,6 +33,7 @@
 维护约定：
 
 - 改接口、字段、鉴权或轮询路径时，同步更新 `backend/integration.md` 和 `protocols/mobile-channel.md`。
+- 跨仓接口、设置/观测或调用链变化时，同步更新 `Emerald-presence/docs/three-repo-interface-catalog.md`。
 - 改 Android 权限、服务、悬浮窗、无障碍或锁屏逻辑时，同步更新 `android/native-capabilities.md`。
 - 改 Flutter 页面结构或准备拆分 `lib/main.dart` 时，同步更新 `mobile/flutter-structure.md`。
 - 新增或修改 Flutter 可见文案时，同步维护中英文 ARB；改变语言持久化契约时同步更新 `mobile/localization.md`。
@@ -41,10 +43,10 @@
 
 | 工单 | 当前仓库状态 | 现状依据 |
 |---|---|---|
-| `cc-tasks/07-app_shell结构债审计与拆分.md` | T1、T2、T3 当前阶段已完成；T4 文档与守则已同步；app shell 仍有 profile/theme/capability/settings/附件协调结构债 | `lib/controllers/`、`lib/services/device_services.dart`、`docs/mobile/flutter-structure.md` |
+| 旧工单 07（正文未随当前工作树提供） | T1、T2、T3 当前阶段已完成；T4 文档与守则已同步；app shell 仍有 profile/theme/capability/settings/附件协调结构债 | `lib/controllers/`、`lib/services/device_services.dart`、`docs/mobile/flutter-structure.md` |
 | 其他编号工单 | 当前工作树未提供可审计的工单正文，不推断为已完成 | 先查 `git log -- cc-tasks` 或外部仓库对应工单，再补实现状态 |
 
-当前 `cc-tasks/` 目录只保留工单 07；历史工单文件若在工作树中显示为用户删除，文档审计不会擅自恢复。新增领域施工必须先建立对应工单或在现有工单追加“目标、代码落点、验证、遗留问题”四项，避免只改代码不留接力记录。
+当前工作树中的 `cc-tasks/` 以实际文件为准；旧工单 07 正文不在本仓库，不能继续作为链接目标。新增领域施工必须先建立对应工单或在现有工单追加“目标、代码落点、验证、遗留问题”四项，避免只改代码不留接力记录。
 
 ## 文档维护闭环
 

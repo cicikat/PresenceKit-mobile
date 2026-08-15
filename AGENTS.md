@@ -18,9 +18,9 @@
 
 - Flutter 主界面已经实现主对话、资料、日记、花园、能力检查、后端节点设置和主题编辑。
 - `lib/main.dart` 已完成重构，现在只有约 164 行入口代码；之前提到的 8k+ 行已拆分完毕。
-- `lib/pages/app_shell.dart` 当前约 1196 行，已迁出连接、聊天、设备、Dream、Garden、Diary 的领域状态与 Timer，并将资料、Dream、Token、节点和中继的纯 UI 对话框下沉至 `widgets/`；仍保留组合根、路由以及 profile/theme/capability/settings 等 UI 协调。结构债状态见 `cc-tasks/07-app_shell结构债审计与拆分.md`。
+- `lib/pages/app_shell.dart` 当前约 1196 行，已迁出连接、聊天、设备、Dream、Garden、Diary 的领域状态与 Timer，并将资料、Dream、Token、节点和中继的纯 UI 对话框下沉至 `widgets/`；仍保留组合根、路由以及 profile/theme/capability/settings 等 UI 协调。结构债状态以 `docs/mobile/flutter-structure.md` 为准。
 - `lib/pages/chat_page.dart`、`lib/widgets/api_service.dart`、`lib/services/message_bubble.dart` **已废弃/不再使用**，上述路径已不存在或为空壳。
-- 主对话发送消息与 Emerald-client 桌面端一致，走 `POST /desktop/chat`；聊天历史只读 `/chat-log/*`。
+- 主对话发送消息走 `POST /mobile/chat`；桌面端使用 `/desktop/chat`；聊天历史只读 `/chat-log/*`。
 - Dream 是独立页面和消息流，走 `GET /dream/state`、`POST /dream/enter|chat|exit`。
 - 主动消息前台走 `GET /mobile/poll` 每 5 秒轮询；后台由 Android `MobileNotificationService` 订阅 ntfy SSE signal，并在中继断线时用 `AlarmManager` 做非阻塞 poll 补偿。
 - Android 原生侧负责通知、前台服务、悬浮窗、无障碍屏幕上下文、设备管理器锁屏和文件/图片选择。
@@ -49,6 +49,7 @@
 | 改 Flutter UI / 状态 | `docs/mobile/flutter-structure.md` |
 | 改 Android 原生能力 | `docs/android/native-capabilities.md` |
 | 改后端接口 / mobile channel | `docs/backend/integration.md` |
+| 整理或修改三仓接口、跨端设置/观测、调用链 | `Emerald-presence/docs/three-repo-interface-catalog.md`；本仓细节仍见 `docs/backend/integration.md` |
 | 改 sensor / 多端协议 | `docs/protocols/sensor-event-protocol.md` |
 | 查风险和技术债 | `docs/known-issues.md` |
 | 跑构建、测试、安装 | `docs/quality/testing-and-dev.md` |
@@ -101,7 +102,7 @@ docs/
 - 后端项目：`Emerald-presence` 仓库（通常与本仓库同级）
 - 默认节点：`http://127.0.0.1:8080`
 - 插线调试：`adb reverse tcp:8080 tcp:8080`
-- 主对话发消息：`POST /desktop/chat`
+- 主对话发消息：`POST /mobile/chat`
 - Dream：`GET /dream/state`、`POST /dream/enter`、`POST /dream/chat`、`POST /dream/exit`
 - 主动消息：`POST /mobile/activate`、`GET /mobile/poll`
 - 花园：`GET /garden/state`
@@ -124,6 +125,9 @@ docs/
    `app_shell.dart` 最终只保留组合根、路由和生命周期协调。
 9. 发布时必须更新 `pubspec.yaml` 的 `version`（格式为 `x.y.z+build`）。侧边栏“设置”下方的版本号通过 `package_info_plus` 读取安装包元数据并自动同步，发布验收时须确认其显示值与 `pubspec.yaml` 一致；不得另行硬编码版本字符串。
 
+10. 现在这个阶段，新增、删除或修改任何小功能都必须做三面闭环检查：查后端管理面板是否需要设置开关、默认值、effective state、只读观测或审计；查桌面前端和本手机端是否需要同步功能设置、能力检查、权限、降级或后台服务；再沿输入/触发器 → 后端接口/队列 → Flutter/Android → UI/通知的原调用链核对鉴权、字段、关联键、去重、ack、TTL、生命周期和 fallback，确认不会使原调用链或相邻功能失效。
+11. 新增落盘状态、trace、队列或台账时，观测端点必须同单提供；未做全的功能要写入本仓 `docs/known-issues.md`，并同步 `Emerald-presence/docs/three-repo-interface-catalog.md` 标明 `open`/`roadmap`/`observe`，不得把“接口存在”写成“功能完成”。
+
 ## 启动与调试
 
 ```powershell
@@ -137,7 +141,7 @@ flutter analyze
 flutter test
 
 # Debug APK
-flutter build apk --debug
+flutter build apk --debug --flavor dev
 ```
 
 若 `flutter`/`adb` 不在 PATH：SDK 位置以 `android/local.properties` 里的 `flutter.sdk` 和 `sdk.dir` 为准（机器本地文件，不入库）。根目录的 `mobile_dev_control.bat` 和 `AA1打包安装到手机.bat` 会自动按 local.properties → 环境变量 → PATH 的顺序探测，无需改脚本。

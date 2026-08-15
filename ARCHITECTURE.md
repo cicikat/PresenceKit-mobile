@@ -41,7 +41,7 @@ Flutter 入口 `lib/main.dart` 约 164 行：
 - `services/backend_client.dart` 直接用 `dart:io` `HttpClient` 调后端 HTTP。
 - `models/` 保存数据/config 定义，`widgets/` 按聊天、能力、设置、日记、花园等领域保存 Flutter UI。
 
-Dart `part` 结构已移除，models/services/controllers/pages/widgets 通过普通 import 建立独立 library 边界。controller 与设备门面已接入；资料、Dream、Token、节点和中继的纯 UI 对话框已在 `widgets/`，剩余 UI 协调结构债见工单 07。
+Dart `part` 结构已移除，models/services/controllers/pages/widgets 通过普通 import 建立独立 library 边界。controller 与设备门面已接入；资料、Dream、Token、节点和中继的纯 UI 对话框已在 `widgets/`，剩余 UI 协调结构债以 `docs/mobile/flutter-structure.md` 为准。
 
 Android 原生入口是 `MainActivity.kt`：
 
@@ -50,7 +50,7 @@ Android 原生入口是 `MainActivity.kt`：
 - `presence_mobile/settings` MethodChannel 与 `SharedPreferences("yexuan_memery")` 仅作为历史兼容契约；前者是当前 channel 名，后者是历史存储名
   契约保留，不代表当前项目名；未经数据迁移不得改名。
 
-- 持久化后端节点、访问凭证、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、头像和后台通知开关到 legacy `SharedPreferences("yexuan_memery")`。
+- 普通设置（后端节点、owner id、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、头像和后台通知开关）持久化到 legacy `SharedPreferences("yexuan_memery")`；admin/relay 访问凭证通过 `BackendSecurityPolicy` 走 `AndroidKeystoreCredentialStore`，旧 token 只作为一次性迁移来源。
 - 提供通知、悬浮窗、设备管理器、无障碍权限检查和跳转。
 - 提供图片/文件选择、头像保存、屏幕上下文采集和打开购物 App。
 - `onStop()` 仅在后台通知开启、访问凭证存在且 origin 可信时启动 `MobileNotificationService`；
@@ -85,7 +85,7 @@ Android 原生入口是 `MainActivity.kt`：
 Composer
   -> _sendMessage()
   -> BackendClient.sendChat()
-  -> POST /desktop/chat
+  -> POST /mobile/chat
   <- { reply, emotion, turn_id, msg_id }
   -> _appendHimReplySegments()
   -> ChatScene 渲染消息
@@ -161,7 +161,7 @@ YexuanAccessibilityService
 ## 当前主要风险
 
 - Flutter 已形成独立 library/import 边界；连接、聊天、设备、Dream、Garden、Diary controller 已落地。app shell 仍有 profile/theme/capability/settings UI 协调待继续下沉。
-- owner/user id 已可在连接设置中配置；访问凭证和 owner id 仍由 legacy `SharedPreferences("yexuan_memery")` 本机存储，尚未接入 Android Keystore。
+- owner/user id 已可在连接设置中配置并保存在普通设置存储；访问凭证由 `BackendSecurityPolicy` 优先从 Android Keystore 读取，legacy `SharedPreferences("yexuan_memery")` 仅保留兼容迁移语义。
 - 无障碍敏感过滤已接入，但仍需结合实际安装应用持续扩充包名和页级关键词，并补自动化测试。
 - 中继与补偿队列仍依赖后端落实 A1 同 id、补偿 TTL/容量上限和发布失败告警。
 - HTTP origin 已限制为 HTTPS、loopback、Tailscale 或用户确认过的 RFC1918 精确 IPv4 origin；前后台请求拒绝自动重定向。
@@ -179,4 +179,4 @@ YexuanAccessibilityService
 | `DreamController` / `GardenController` / `DiaryController` | 各自页面状态与刷新/轮询 | 对应页面直接监听 |
 | `ThemeController` | 多颜色预设、旧单色盘迁移、内置 mod、Web 持久化与导出 | 设置页颜色预设管理器 |
 
-`app_shell.dart` 仍是组合根，不得新增领域字段、Timer 或成组业务方法；当前未下沉的 profile、theme、capability/settings、附件协调，以及可信 HTTP origin 等安全确认列为工单 07 后续结构债。
+`app_shell.dart` 仍是组合根，不得新增领域字段、Timer 或成组业务方法；当前未下沉的 profile、theme、capability/settings、附件协调，以及可信 HTTP origin 等安全确认列为 `docs/mobile/flutter-structure.md` 记录的后续结构债。

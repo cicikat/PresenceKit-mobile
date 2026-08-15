@@ -25,7 +25,7 @@ adb reverse tcp:8080 tcp:8080
 - 防火墙允许手机访问 8080。
 - 公网节点必须使用 HTTPS；明文 HTTP 仅允许 loopback、Tailscale 或用户确认过的 RFC1918 私网精确 IPv4 origin。
 
-也可以在打包时预置后端地址：`flutter build apk --release --dart-define=BACKEND_BASE_URL=http://192.168.1.100:8080`。
+也可以在 production variant 打包时预置后端地址：`flutter build apk --release --flavor prod --dart-define=BACKEND_BASE_URL=http://192.168.1.100:8080`。
 
 ---
 
@@ -34,7 +34,7 @@ adb reverse tcp:8080 tcp:8080
 - **`AA1打包安装到手机.bat`** —— 开发调试用：构建 debug（或 `debug`/`release`）APK 并通过 adb 安装到已连接设备。脚本开头硬编码了本机的 `flutter`/`adb` 路径，运行前请先改成你自己的路径。
 - **`AA2打包发行包.bat`** —— 出发行包用：构建 release APK，产出 `dist/PresenceKit-mobile-vX.Y.Z.apk`（附 `.sha256`），用于上传 GitHub Release。不需要连接设备。
 
-release 包默认用 debug key 签名（仅适合自用内测，不用于正式分发）。要签正式发行版：在 `android/` 目录下执行 `keytool -genkey -v -keystore presencekit-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias presencekit`，然后把 `android/key.properties.example` 复制为 `android/key.properties` 并填好密码/别名/`storeFile` 路径。`*.jks` 和 `key.properties` 均已 gitignore——切勿入库。
+正式 release task 要求配置完整的固定 keystore；缺少 `android/key.properties`、字段不完整或 keystore 文件不存在时会在打包前 fail-loud，不会回退为 debug-signed release APK。要签正式发行版：在 `android/` 目录下执行 `keytool -genkey -v -keystore presencekit-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias presencekit`，然后把 `android/key.properties.example` 复制为 `android/key.properties` 并填好密码/别名/`storeFile` 路径。`*.jks` 和 `key.properties` 均已 gitignore——切勿入库。
 
 预编译 APK 见本仓 [GitHub Releases](https://github.com/cicikat/PresenceKit-mobile/releases)。需要配套运行中的 [PresenceKit 后端](https://github.com/cicikat/PresenceKit/releases)——兼容版本见对应 Release notes。
 

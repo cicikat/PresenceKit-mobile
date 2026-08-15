@@ -1,6 +1,8 @@
 # 后端集成
 
 后端核心在 `Emerald-presence` 仓库（通常与本仓库同级）。手机端只通过 HTTP 接口交互，不直接读写后端数据文件。
+三仓接口、WebSocket、Tauri IPC、Android channel、relay 和设置/观测闭环总账见
+`Emerald-presence/docs/three-repo-interface-catalog.md`；本页保留手机端调用细节。
 
 ## 连接方式
 
@@ -26,7 +28,7 @@ adb reverse tcp:8080 tcp:8080
 
 ## 鉴权
 
-访问凭证不再内置于 Flutter 或 Android 原生代码。首次启动时由用户手动填写，使用隐藏输入框，并保存到 legacy `SharedPreferences("yexuan_memery", MODE_PRIVATE)`。Android 后台服务每轮轮询前重新读取凭证。当前尚未接入 Android Keystore，因此这仍是本机私有明文存储，只适合自用内测。
+访问凭证不再内置于 Flutter 或 Android 原生代码。首次启动时由用户手动填写，使用隐藏输入框；Android 通过 `BackendSecurityPolicy` 将 admin/relay token 写入 `AndroidKeystoreCredentialStore`，并在每轮后台请求前经同一策略读取。legacy `SharedPreferences("yexuan_memery", MODE_PRIVATE)` 只作为一次性迁移来源，普通节点/owner 设置仍保存在其中。
 
 owner/user id 不再硬编码，改为在「后端节点」设置对话框中填写（与 backend base URL 同一个弹窗），保存到本机 `SharedPreferences`（`getOwnerUserId`/`setOwnerUserId` method channel），默认空字符串（占位符 `<owner_user_id>`）。仅支持 `[A-Za-z0-9_-]` 字符，与后端 `safe_user_id()` 校验规则一致。
 
@@ -87,12 +89,14 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 | `GET /diary/list` | Flutter | 日记列表 |
 | `GET /diary/{date}` | Flutter | 日记正文 |
 | `POST /sensor/realtime` | Flutter / Android service | 屏幕上下文上报；默认仅包名/App 名，独立上传开关 `screenContextUploadEnabled` 开启后上传完整正文（敏感 App/密码/关键词仍二次拦截），不再有按 App 的文本白名单 |
+| `POST /sensor/push` | Flutter `BackendClient.pushSensorData()` | 手机周期性上报步数、电量、亮屏次数等 objective sensor；与 `/sensor/realtime` 的实时上下文契约分开 |
 | `GET /sensor/behavior/status` | 能力检查页 | 调试最近行为裁决 |
 | `POST /mobile/push` | 能力检查页 | 写入主动行为测试 |
 | `POST /phone_control/step` | Android `PhoneControlService` | 手机自动化循环：上报截屏/节点观察，换回下一步动作；契约见 `docs/protocols/phone-control-protocol.md` |
 | `GET /phone_control/status` | 能力检查页 | 只读诊断：角色是否已授权 `phone_control` 工具 + 视觉模型是否已配置 |
 | `POST /phone_control/debug/start` | 能力检查页的开发者诊断区域（默认关闭） | 调试用：跳过 LLM 判断和 chat 内二次确认直接发起任务，仍过 danger-mode 门禁 |
 | `POST /upload/ingest` | Flutter 文件/图片上传 | 文件投喂后端 |
+| `POST /tts/synthesize` | Flutter / Android 播放链路 | 按场景合成移动端语音；provider 配置仍由后端管理面维护 |
 | `GET /dream/state` | Flutter Dream 页面 | 读取 Dream 独立状态 |
 | `POST /dream/enter` | Flutter Dream 页面 | 进入 Dream |
 | `POST /dream/chat` | Flutter Dream 页面 | 发送 Dream 独立对话 |
@@ -107,6 +111,11 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 | `GET /characters/active-info` | 能力检查诊断 | 读取当前加载的角色卡 `char_id` 和 `name` |
 | `GET /lorebook` | 能力检查诊断 | 读取世界书条目列表（取 `entries` 数组长度） |
 | `GET /jailbreak-entries` | 能力检查诊断 | 读取破限条目列表（取 `entries` 数组长度） |
+
+活动、群聊和群梦调用也已在 `BackendClient` 接通：`/activity/reading/*`、
+`/activity/gomoku/*`、`/activity/chess/*`、`/activity/dream_seed/*`、`/group/*` 以及
+`/group/{id}/dream/state|enter|send|exit|transcript`；字段和状态机以三仓总账及后端
+`/openapi.json` 为准，不在本页复制第二份完整 schema。
 
 ## 数据流注意点
 

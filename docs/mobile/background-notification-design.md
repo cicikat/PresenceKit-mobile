@@ -2,7 +2,7 @@
 
 > 从旧版 README 迁移而来的设计说明，描述当前已实现的行为，不是待办事项。
 
-手机主对话发送走 `POST /desktop/chat`，不会占用桌宠的 `/ws/desktop`；主动消息由前台 `GET /mobile/poll` 每 5 秒检查接收。
+手机主对话发送走 `POST /mobile/chat`，不会占用桌宠的 `/ws/desktop`；主动消息由前台 `GET /mobile/poll` 每 5 秒检查接收。
 
 ## Android 后台通知
 

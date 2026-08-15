@@ -25,7 +25,7 @@ This forwards the phone's `http://127.0.0.1:8080` to the backend running on your
 - Your firewall allows the phone to reach port 8080.
 - Public-network nodes must use HTTPS; plaintext HTTP is only allowed for loopback, Tailscale, or a user-confirmed exact RFC1918 private IPv4 origin.
 
-You can also bake a default backend address into the build: `flutter build apk --release --dart-define=BACKEND_BASE_URL=http://192.168.1.100:8080`.
+You can also bake a default backend address into the production build: `flutter build apk --release --flavor prod --dart-define=BACKEND_BASE_URL=http://192.168.1.100:8080`.
 
 ---
 
@@ -34,7 +34,7 @@ You can also bake a default backend address into the build: `flutter build apk -
 - **`AA1打包安装到手机.bat`** — dev loop: builds a debug (or `debug`/`release`) APK and installs it to a connected device over adb. It hardcodes local `flutter`/`adb` paths at the top — edit those for your machine before running.
 - **`AA2打包发行包.bat`** — release packaging: builds a release APK and drops `dist/PresenceKit-mobile-vX.Y.Z.apk` (+ `.sha256`) for uploading to a GitHub Release. No device needed.
 
-Debug/dev builds use the Android debug key. A formal release build (`flutter build apk --release` or `AA2打包发行包.bat`) requires a fixed release keystore and fails before packaging if `android/key.properties`, its four fields, or its `storeFile` is absent; it never falls back to a debug-signed release APK.
+Debug/dev builds use the Android debug key. A formal release build (`flutter build apk --release --flavor prod` or `AA2打包发行包.bat`) requires a fixed release keystore and fails before packaging if `android/key.properties`, its four fields, or its `storeFile` is absent; it never falls back to a debug-signed release APK.
 
 For a local release, create the keystore outside the repository, copy `android/key.properties.example` to the gitignored `android/key.properties`, and set its file path, passwords, and alias. Do not commit the keystore, passwords, alias, or `key.properties`. For GitHub tag releases, configure the repository secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`; the workflow materializes them only in its ephemeral runner.
 

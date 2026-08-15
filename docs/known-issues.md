@@ -7,7 +7,7 @@
 - **设备重启后后台通道不自恢复** — `observe`。自用阶段接受，能力页能看见失活；要根治时另开 boot receiver 工单。
 - **`app_shell.dart` 剩余结构债** — `open`。下一步按 profile、theme、capability/settings、附件与弹窗协调继续拆分，保持领域状态不回流。
 
-本轮已关闭：维护者已确认 Mobile ntfy 后台推送恢复；debug 与正式包已分离，正式包的版本号限制与签名升级验收已完成。`flutter test` 全量 105 项已通过。外卖/购物悬浮窗硬编码示例订单已改为中性确认且不展示虚构商品/金额；通知权限不再在 `onCreate()` 弹出，改由能力检查页或首次开启后台通知触发。
+本轮已关闭：维护者已确认 Mobile ntfy 后台推送恢复；debug 与正式包已分离，正式包的版本号限制与签名升级验收已完成。历史记录曾写有“`flutter test` 全量 105 项已通过”，但当前测试说明记录 tester 在断言前断开，因此该数字不能作为现行通过证据；以 [`docs/quality/testing-and-dev.md`](quality/testing-and-dev.md) 的带日期验证记录和当前重跑结果为准。外卖/购物悬浮窗硬编码示例订单已改为中性确认且不展示虚构商品/金额；通知权限不再在 `onCreate()` 弹出，改由能力检查页或首次开启后台通知触发。
 
 ## 历史快照（已由上方权威清单覆盖）
 
@@ -102,11 +102,11 @@ Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻
 
 **位置**：`lib/controllers/connection_controller.dart`、`android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt`
 
-访问凭证已从 Flutter 和 Android 原生源码移除。首次启动时由用户手动填写，并保存到 legacy `SharedPreferences("yexuan_memery", MODE_PRIVATE)`；后台服务每轮重新读取。
+访问凭证已从 Flutter 和 Android 原生源码移除。首次启动时由用户手动填写；Android 通过 `BackendSecurityPolicy` 写入并读取 `AndroidKeystoreCredentialStore`，后台服务每轮经同一策略重新读取。旧 `SharedPreferences` token 只在迁移期间读取，成功写入 secure storage 后删除。
 
 **状态**：已修复访问凭证硬编码；owner/user id 已可在连接设置中配置，并由 ConnectionController 管理。
 
-**后续建议**：评估 Android Keystore 加密存储。当前 token 与 owner id 仍使用 legacy 私有 SharedPreferences。
+**后续验证**：继续覆盖已安装旧版本的迁移、替换/删除和安全写入失败回滚；owner id 等普通设置仍保留在 legacy `SharedPreferences`，不属于敏感 token。
 
 ## 已修复：`/upload/ingest` 请求未附带 `Authorization` header
 
@@ -168,7 +168,7 @@ Token 弹窗保存后已经通过父 State 更新 `_adminToken`，系统设置�
 
 **位置**：`lib/controllers/chat_controller.dart` `sendMessage()` / `pollMobile()`
 
-手机主对话改用 `/desktop/chat` 后，后端同步响应与 mobile channel 可能携带同一条助手回复。手机前台此前会分别追加两次，而桌面客户端已有自己的同步响应 / WebSocket 去重逻辑，因此只有手机出现双发。现已为 Flutter 前台增加 45 秒短时回复指纹去重，同一回复无论先从同步响应还是 `/mobile/poll` 到达，都只显示一次。
+手机主对话的同步响应与 mobile channel 可能携带同一条助手回复。手机前台此前会分别追加两次，而桌面客户端已有自己的同步响应 / WebSocket 去重逻辑，因此只有手机出现双发。现已为 Flutter 前台增加 45 秒短时回复指纹去重，同一回复无论先从同步响应还是 `/mobile/poll` 到达，都只显示一次。
 
 ## 已修复：后台服务状态由 SharedPreferences 标记，可能与真实服务状态漂移
 

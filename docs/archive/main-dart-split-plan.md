@@ -61,8 +61,8 @@ lib/
 ```powershell
 $env:NO_PROXY="localhost,127.0.0.1,::1"
 $env:DART_SUPPRESS_ANALYTICS="true"
-$env:APPDATA="D:\ai\yexuan_memery\.tool-home"
-D:\soft3\flutter\bin\flutter.bat test --reporter expanded test\widget_test.dart
+$env:APPDATA="<task-local-tool-home>"
+<flutter-sdk>\bin\flutter.bat test --reporter expanded test\widget_test.dart
 ```
 
 结果：5 个测试全部通过。
