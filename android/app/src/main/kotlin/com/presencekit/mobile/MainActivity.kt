@@ -24,8 +24,8 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.BinaryMessenger
 import java.io.File
 import org.json.JSONObject
 
@@ -91,9 +91,12 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, settingsChannel)
-            .setMethodCallHandler { call, result ->
-                val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
-                when (call.method) {
+            .setMethodCallHandler(::handleSettingsMethodCall)
+    }
+
+    private fun handleSettingsMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
+        when (call.method) {
                     "getAppLanguage" -> {
                         result.success(prefs.getString("appLanguage", null))
                     }
@@ -566,14 +569,16 @@ class MainActivity : FlutterActivity() {
                             result.success(steps)
                         }
                     }
-                    else -> result.notImplemented()
-                }
-            }
+            else -> result.notImplemented()
+        }
     }
 
-    /** Test-only bridge for instrumented MethodChannel contract checks. */
-    internal fun settingsMessengerForTesting(): BinaryMessenger? =
-        flutterEngine?.dartExecutor?.binaryMessenger
+    /** Invokes the production settings handler without routing a message through Dart. */
+    internal fun handleSettingsMethodCallForTesting(
+        method: String,
+        arguments: Map<String, Any?>,
+        result: MethodChannel.Result,
+    ) = handleSettingsMethodCall(MethodCall(method, arguments), result)
 
     private fun playTtsAudio(audioB64: String, result: MethodChannel.Result) {
         try {
