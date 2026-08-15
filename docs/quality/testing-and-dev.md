@@ -172,7 +172,7 @@ Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/Creden
 
 ## CI、发布与真机边界
 
-`.github/workflows/ci.yml` 当前执行 `flutter pub get`、`flutter gen-l10n`、`flutter analyze` 和 `flutter test`，但没有执行 `android/gradlew.bat testDebugUnitTest`，也没有 Android instrumented test job。因此 CI 不覆盖 Kotlin 原生运行时、通知权限、无障碍、悬浮窗、设备管理器、Doze、进程被杀或重启恢复。
+`.github/workflows/ci.yml` 当前执行 `flutter pub get`、`flutter gen-l10n`、`flutter analyze` 和 `flutter test`，但没有执行 `android/gradlew.bat testDebugUnitTest`。独立的 `.github/workflows/android-instrumented.yml` 会在 API 35 模拟器执行 `connectedDevDebugAndroidTest`，覆盖部分 Android 框架级契约；它不覆盖 OEM 权限页面、真实通知投递、Doze、进程被杀、设备重启或网络恢复等真机生命周期场景。
 
 `.github/workflows/release.yml` 当前仍执行无 flavor 的 `flutter build apk --release`，而 `android/app/build.gradle.kts` 定义了 `dev` / `prod` flavor。正式发布应以 `prod` flavor 和实际生成的产物路径为准；在 workflow 对齐前，不得把该 release job 的产物当作正式包验收证据。这是 CI 配置缺口，不是 Flutter 单测缺口。
 
