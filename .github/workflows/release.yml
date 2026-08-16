@@ -66,7 +66,10 @@ jobs:
       - name: Verify prod artifact identity
         run: |
           test -f build/app/outputs/flutter-apk/app-prod-release.apk
-          BADGING=$(find "$ANDROID_HOME/build-tools" -name aapt -type f -print -quit | xargs -r -I{} {} dump badging build/app/outputs/flutter-apk/app-prod-release.apk)
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          AAPT2="$(find "$SDK_ROOT/build-tools" -type f -name aapt2 -perm -u+x -print -quit)"
+          test -n "$AAPT2"
+          BADGING=$("$AAPT2" dump badging build/app/outputs/flutter-apk/app-prod-release.apk)
           echo "flavor=prod"
           echo "$BADGING" | sed -n "s/^package: name='\([^']*\)' versionCode='\([^']*\)' versionName='\([^']*\)'.*/application_id=\1 version_code=\2 version_name=\3/p"
           echo "$BADGING" | grep -q "package: name='com.presencekit.mobile'"
