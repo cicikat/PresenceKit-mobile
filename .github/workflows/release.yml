@@ -32,7 +32,11 @@ jobs:
             SDKMANAGER="$(find "$SDK_ROOT" -type f -name sdkmanager -perm -u+x -print -quit)"
           fi
           test -n "$SDKMANAGER"
+          set +e
           yes | "$SDKMANAGER" --licenses >/dev/null
+          LICENSE_STATUS=${PIPESTATUS[1]}
+          set -e
+          test "$LICENSE_STATUS" -eq 0
           "$SDKMANAGER" --install "ndk;30.0.14904198"
       - name: Require release-signing secrets
         env:
