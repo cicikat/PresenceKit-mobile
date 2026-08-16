@@ -167,4 +167,4 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 - Accessibility service
 - Device admin receiver
 
-`android:usesCleartextTraffic="true"` 仍用于本机/LAN HTTP 调试，但应用层会在 Flutter 和 Android 后台服务建立请求前校验 origin，并关闭自动重定向。允许 loopback、Tailscale `100.64.0.0/10`、HTTPS，以及用户明确确认过的 RFC1918 私网精确 IPv4 HTTP origin；公网 HTTP 会直接拒绝。
+`android:usesCleartextTraffic="true"` 仍用于本机/LAN HTTP 调试，但应用层会在 Flutter 和 Android 后台服务建立请求前校验 origin，并关闭自动重定向。允许 loopback、Tailscale `100.64.0.0/10`、HTTPS，以及用户明确确认过的 RFC1918 私网精确 IPv4 或 Tailscale MagicDNS `*.ts.net` HTTP origin；公网 HTTP 会直接拒绝。

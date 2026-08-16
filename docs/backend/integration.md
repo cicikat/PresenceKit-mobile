@@ -21,7 +21,7 @@ adb reverse tcp:8080 tcp:8080
 脱线调试：
 
 - 在 App 后端节点里填电脑局域网 IP，例如 `http://192.168.10.154:8080`。
-- 对 RFC1918 私网 HTTP origin，App 会要求用户明确确认，并只保存确认过的精确 IPv4 origin。
+- 对 RFC1918 私网 IPv4 和 Tailscale MagicDNS `*.ts.net` HTTP origin，App 会要求用户明确确认，并只保存确认过的精确 origin。
 - 公网 HTTP origin 会直接拒绝；公网节点必须使用 HTTPS。
 - 后端需监听 `0.0.0.0:8080` 或对应网卡地址。
 - Windows 防火墙需允许手机访问 8080。
@@ -39,7 +39,7 @@ owner/user id 不再硬编码，改为在「后端节点」设置对话框中填
 - 允许 `https://`。
 - 允许 `http://127.0.0.1`、`http://localhost`。
 - 允许 `http://100.64.0.0/10` Tailscale 地址。
-- 允许用户明确确认过的 RFC1918 私网精确 IPv4 HTTP origin。
+- 允许用户明确确认过的 RFC1918 私网精确 IPv4 和 Tailscale MagicDNS `*.ts.net` HTTP origin。
 - 拒绝公网 HTTP origin，即使用户曾确认过也不会发送访问凭证。
 - 拒绝带 userinfo、query、fragment 或路径的 origin。
 - 前后台请求均关闭自动重定向；`3xx` 不会绕过 origin 校验。

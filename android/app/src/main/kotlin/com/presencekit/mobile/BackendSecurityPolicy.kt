@@ -98,11 +98,15 @@ object BackendSecurityPolicy {
 
     fun isConfirmablePrivateCleartextOrigin(origin: String): Boolean {
         val host = runCatching { URL(origin).host.lowercase() }.getOrNull() ?: return false
+        if (isTailscaleMagicDnsHost(host)) return true
         val parts = ipv4Parts(host) ?: return false
         return parts[0] == 10 ||
             (parts[0] == 172 && parts[1] in 16..31) ||
             (parts[0] == 192 && parts[1] == 168)
     }
+
+    private fun isTailscaleMagicDnsHost(host: String): Boolean =
+        host.length > ".ts.net".length && host.endsWith(".ts.net")
 
     private fun ipv4Parts(host: String): List<Int>? {
         val parts = host.split('.').map { it.toIntOrNull() }
