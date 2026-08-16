@@ -111,6 +111,20 @@ docs/
 - 屏幕上下文：`POST /sensor/realtime`
 - 主动行为状态：`GET /sensor/behavior/status`
 
+## Android 正式发行签名凭据（发布前必查）
+
+- 任何正式 APK、GitHub Release 或 release CI 重跑，先读取
+  `docs/android/release-signing-and-upgrade.md`、`docs/quality/testing-and-dev.md`，再检查本仓
+  `android/key.properties` 和 `android/key.properties.example`。
+- 先按 `android/key.properties` 的 `storeFile` 解析实际 keystore；如果它指向仓库外，或本仓找不到
+  配置，继续检查同一工作区的相邻 `Emerald-presence`/后端仓库、其发布文档以及维护者指定的本地凭据/密码文件。
+  不要因为 mobile 仓库里没有 `.jks`/`.keystore` 就直接生成新 key；已有 public APK 的升级必须复用历史 identity。
+- 如果只是缺少本地密码配置文件，从 `android/key.properties.example` 创建本地
+  `android/key.properties`，只填写本机路径、alias 和密码；该文件必须保持 ignored。找不到匹配的历史 keystore
+  时应 fail-loud 并报告阻塞，不能用新 key 或 debug key 冒充正式发行身份。
+- 在写入 GitHub Actions Secrets 前，用 `keytool`/`apksigner` 核对 alias、certificate SHA-256 与历史 public APK；
+  keystore、`android/key.properties`、本地密码/凭据说明、base64 内容和 token 都不得 commit 或上传。
+
 ## 强制规则
 
 1. 后端仍是业务真值。手机端只展示、输入、上报客观上下文和执行用户确认后的本机动作。
