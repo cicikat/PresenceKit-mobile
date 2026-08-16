@@ -174,7 +174,7 @@ Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/Creden
 
 `.github/workflows/ci.yml` 当前执行 `flutter pub get`、`flutter gen-l10n`、`flutter analyze` 和 `flutter test`，但没有执行 `android/gradlew.bat testDebugUnitTest`。独立的 `.github/workflows/android-instrumented.yml` 会在 API 35 模拟器执行 `connectedDevDebugAndroidTest`，覆盖部分 Android 框架级契约；它不覆盖 OEM 权限页面、真实通知投递、Doze、进程被杀、设备重启或网络恢复等真机生命周期场景。
 
-`.github/workflows/release.yml` 当前仍执行无 flavor 的 `flutter build apk --release`，而 `android/app/build.gradle.kts` 定义了 `dev` / `prod` flavor。正式发布应以 `prod` flavor 和实际生成的产物路径为准；在 workflow 对齐前，不得把该 release job 的产物当作正式包验收证据。这是 CI 配置缺口，不是 Flutter 单测缺口。
+`.github/workflows/release.yml` 当前使用 `prod` flavor，并在构建前接受 Android SDK license、安装项目要求的 `ndk;30.0.14904198`；它要求四个 GitHub Actions signing secrets（`ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`），构建后校验 `com.presencekit.mobile`，并将 APK 上传为 Actions artifact。它仍不会自动把 APK 挂到 GitHub Release，正式 Release 的 APK 附件仍需按发行指南手动上传。该 workflow 支持 tag push 和 `workflow_dispatch`，可用已存在的 v1 tag 重跑。
 
 仍需补充或保留为发布前人工验收的范围：
 

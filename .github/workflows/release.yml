@@ -3,6 +3,7 @@ name: signed-release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 jobs:
   apk:
@@ -13,6 +14,11 @@ jobs:
         with:
           flutter-version: 3.32.0
           cache: true
+      - name: Accept Android SDK licenses and install required NDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager --install "ndk;30.0.14904198"
       - name: Require release-signing secrets
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
