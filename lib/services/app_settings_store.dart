@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+import '../models/app_models.dart';
 import '../models/background_status.dart';
 import '../models/screen_context.dart';
 import 'platform_settings_channel.dart';
@@ -269,6 +270,17 @@ class AppSettingsStore {
     }
   }
 
+  Future<Uint8List?> pickChatBackgroundImage() async {
+    if (!_channelAvailable) return null;
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<Uint8List>(
+        'pickChatBackgroundImage',
+      );
+    } on PlatformException {
+      return null;
+    }
+  }
+
   Future<PickedUploadFile?> pickUploadFile() async {
     if (!_channelAvailable) return null;
     try {
@@ -360,6 +372,53 @@ class AppSettingsStore {
       );
     } on PlatformException {
       // Optional local avatar; ignore failed delete attempts.
+    }
+  }
+
+  Future<ChatAppearanceSettings> loadChatAppearance() async {
+    if (!_channelAvailable) return const ChatAppearanceSettings();
+    try {
+      final raw = await PlatformSettingsChannel.channel
+          .invokeMethod<Map<dynamic, dynamic>>('getChatAppearance');
+      if (raw == null) return const ChatAppearanceSettings();
+      final bytes = raw['bytes'];
+      final blur = raw['blur'];
+      final opacity = raw['opacity'];
+      return ChatAppearanceSettings(
+        background: bytes is Uint8List ? bytes : null,
+        blur: blur is num ? blur.toDouble() : 0,
+        opacity: opacity is num ? opacity.toDouble() : 0.94,
+      );
+    } on PlatformException {
+      return const ChatAppearanceSettings();
+    }
+  }
+
+  Future<bool> saveChatAppearance(ChatAppearanceSettings value) async {
+    if (!_channelAvailable) return false;
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<bool>(
+            'saveChatAppearance',
+            {
+              'bytes': value.background,
+              'blur': value.blur,
+              'opacity': value.opacity,
+            },
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<void> deleteChatAppearance() async {
+    if (!_channelAvailable) return;
+    try {
+      await PlatformSettingsChannel.channel.invokeMethod<void>(
+        'deleteChatAppearance',
+      );
+    } on PlatformException {
+      // Cosmetic local settings are non-fatal if storage is unavailable.
     }
   }
 

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../models/background_status.dart';
+import '../models/app_models.dart';
 import '../models/screen_context.dart';
 import 'app_settings_store.dart';
 
@@ -24,6 +25,11 @@ class SettingsStore {
   Future<Uint8List?> loadAvatar() => _store.loadProfileAvatar();
   Future<bool> saveAvatar(Uint8List value) => _store.saveProfileAvatar(value);
   Future<void> deleteAvatar() => _store.deleteProfileAvatar();
+  Future<ChatAppearanceSettings> loadChatAppearance() =>
+      _store.loadChatAppearance();
+  Future<bool> saveChatAppearance(ChatAppearanceSettings value) =>
+      _store.saveChatAppearance(value);
+  Future<void> deleteChatAppearance() => _store.deleteChatAppearance();
 
   Future<bool> loadBackgroundNotificationsEnabled() =>
       _store.loadBackgroundNotificationsEnabled();
@@ -48,6 +54,8 @@ class SettingsStore {
       _store.saveCustomThemePalette(value);
   Future<void> deleteCustomThemePalette() => _store.deleteCustomThemePalette();
   Future<Uint8List?> pickProfileImage() => _store.pickProfileImage();
+  Future<Uint8List?> pickChatBackgroundImage() =>
+      _store.pickChatBackgroundImage();
   Future<PickedUploadFile?> pickUploadFile() => _store.pickUploadFile();
   Future<List<PickedUploadFile>> pickUploadImages() =>
       _store.pickUploadImages();

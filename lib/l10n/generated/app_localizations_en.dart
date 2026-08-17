@@ -1143,6 +1143,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get avatarCropTitle => 'Crop avatar';
 
   @override
+  String get chatBackgroundEditorTitle => 'Chat background';
+
+  @override
+  String get chatBackgroundCropHelp =>
+      'Drag to reposition and pinch or gesture to zoom. The background stays on this device.';
+
+  @override
+  String get chatBackgroundBlurLabel => 'Background blur';
+
+  @override
+  String get chatBubbleOpacityLabel => 'Chat box opacity';
+
+  @override
+  String get settingsChatBackgroundTitle => 'Chat background';
+
+  @override
+  String get settingsChatBackgroundSubtitle =>
+      'Import, crop, blur, and tune chat box opacity';
+
+  @override
+  String get settingsImportChatBackgroundTooltip => 'Import chat background';
+
+  @override
+  String get settingsResetChatBackgroundTooltip => 'Reset chat background';
+
+  @override
+  String get chatBackgroundSaveFailed => 'Could not save chat background';
+
+  @override
   String get avatarCropHelp =>
       'Drag to reposition and pinch or gesture to zoom. The saved avatar remains local to mobile.';
 

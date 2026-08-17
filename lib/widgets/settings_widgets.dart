@@ -22,6 +22,7 @@ class SettingsPage extends StatelessWidget {
     required this.prefs,
     required this.profileDisplayName,
     required this.profileAvatarBytes,
+    this.chatBackground,
     required this.promptAssets,
     required this.loreEntries,
     required this.jailbreakEntries,
@@ -37,6 +38,8 @@ class SettingsPage extends StatelessWidget {
     required this.onEditProfileName,
     required this.onImportProfileAvatar,
     required this.onResetProfileAvatar,
+    this.onImportChatBackground,
+    this.onResetChatBackground,
     required this.onOpenProfile,
     required this.onToggleLorebook,
     required this.onToggleJailbreak,
@@ -70,6 +73,7 @@ class SettingsPage extends StatelessWidget {
   final YxPrefs prefs;
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
+  final Uint8List? chatBackground;
   final PromptAssets? promptAssets;
   final List<LoreEntry> loreEntries;
   final List<JailbreakEntry> jailbreakEntries;
@@ -85,6 +89,8 @@ class SettingsPage extends StatelessWidget {
   final VoidCallback onEditProfileName;
   final VoidCallback onImportProfileAvatar;
   final VoidCallback onResetProfileAvatar;
+  final VoidCallback? onImportChatBackground;
+  final VoidCallback? onResetChatBackground;
   final VoidCallback onOpenProfile;
   final ValueChanged<String> onToggleLorebook;
   final ValueChanged<String> onToggleJailbreak;
@@ -327,6 +333,43 @@ class SettingsPage extends StatelessWidget {
                             l10n.settingsColorPresets(themePresetCount),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              SettingsRow(
+                c: c,
+                title: l10n.settingsChatBackgroundTitle,
+                subtitle: l10n.settingsChatBackgroundSubtitle,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (chatBackground != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.memory(
+                          chatBackground!,
+                          width: 64,
+                          height: 40,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    YxIconButton(
+                      c: c,
+                      icon: Icons.add_photo_alternate_outlined,
+                      onPressed: onImportChatBackground ?? () {},
+                      tooltip: l10n.settingsImportChatBackgroundTooltip,
+                      size: 30,
+                    ),
+                    if (chatBackground != null)
+                      YxIconButton(
+                        c: c,
+                        icon: Icons.restore_rounded,
+                        onPressed: onResetChatBackground ?? () {},
+                        tooltip: l10n.settingsResetChatBackgroundTooltip,
+                        size: 30,
+                      ),
                   ],
                 ),
               ),

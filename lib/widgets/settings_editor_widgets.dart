@@ -19,6 +19,235 @@ class AvatarCropDialog extends StatefulWidget {
   State<AvatarCropDialog> createState() => _AvatarCropDialogState();
 }
 
+class ChatBackgroundDraft {
+  const ChatBackgroundDraft({
+    required this.bytes,
+    required this.blur,
+    required this.opacity,
+  });
+
+  final Uint8List bytes;
+  final double blur;
+  final double opacity;
+}
+
+class ChatBackgroundEditorDialog extends StatefulWidget {
+  const ChatBackgroundEditorDialog({
+    super.key,
+    required this.c,
+    required this.bytes,
+    required this.initialBlur,
+    required this.initialOpacity,
+  });
+
+  final YxPalette c;
+  final Uint8List bytes;
+  final double initialBlur;
+  final double initialOpacity;
+
+  @override
+  State<ChatBackgroundEditorDialog> createState() =>
+      _ChatBackgroundEditorDialogState();
+}
+
+class _ChatBackgroundEditorDialogState
+    extends State<ChatBackgroundEditorDialog> {
+  final GlobalKey _cropKey = GlobalKey();
+  final TransformationController _controller = TransformationController();
+  late double _blur;
+  late double _opacity;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _blur = widget.initialBlur.clamp(0, 24);
+    _opacity = widget.initialOpacity.clamp(0.35, 1);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      final boundary = _cropKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 2.2);
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (!mounted || data == null) return;
+      Navigator.pop(
+        context,
+        ChatBackgroundDraft(
+          bytes: data.buffer.asUint8List(),
+          blur: _blur,
+          opacity: _opacity,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.c;
+    final l10n = context.l10n;
+    return Dialog(
+      backgroundColor: c.surface,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.chatBackgroundEditorTitle,
+                    style: serif(c, 20, weight: FontWeight.w500),
+                  ),
+                ),
+                YxIconButton(
+                  c: c,
+                  icon: Icons.close_rounded,
+                  onPressed: () => Navigator.pop(context),
+                  tooltip: l10n.closeTooltip,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: RepaintBoundary(
+                key: _cropKey,
+                child: SizedBox(
+                  width: 320,
+                  height: 220,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: InteractiveViewer(
+                      transformationController: _controller,
+                      minScale: 1,
+                      maxScale: 5,
+                      boundaryMargin: const EdgeInsets.all(120),
+                      child: Image.memory(
+                        widget.bytes,
+                        width: 320,
+                        height: 220,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(l10n.chatBackgroundCropHelp, style: mono(c, 11, color: c.ink3)),
+            const SizedBox(height: 14),
+            _BackgroundSlider(
+              label: l10n.chatBackgroundBlurLabel,
+              valueLabel: '${_blur.round()} px',
+              value: _blur,
+              min: 0,
+              max: 24,
+              divisions: 24,
+              onChanged: (value) => setState(() => _blur = value),
+              c: c,
+            ),
+            _BackgroundSlider(
+              label: l10n.chatBubbleOpacityLabel,
+              valueLabel: '${(_opacity * 100).round()}%',
+              value: _opacity,
+              min: 0.35,
+              max: 1,
+              divisions: 13,
+              onChanged: (value) => setState(() => _opacity = value),
+              c: c,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () => _controller.value = Matrix4.identity(),
+                  child: Text(l10n.resetAction),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: _saving ? null : () => Navigator.pop(context),
+                  child: Text(l10n.cancelAction),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check_rounded, size: 18),
+                  label: Text(l10n.saveAction),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BackgroundSlider extends StatelessWidget {
+  const _BackgroundSlider({
+    required this.label,
+    required this.valueLabel,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.divisions,
+    required this.onChanged,
+    required this.c,
+  });
+
+  final String label;
+  final String valueLabel;
+  final double value;
+  final double min;
+  final double max;
+  final int divisions;
+  final ValueChanged<double> onChanged;
+  final YxPalette c;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Text(label, style: mono(c, 11, color: c.ink2)),
+          const Spacer(),
+          Text(valueLabel, style: mono(c, 11, color: c.ink3)),
+        ],
+      ),
+      Slider(
+        value: value,
+        min: min,
+        max: max,
+        divisions: divisions,
+        activeColor: c.character,
+        onChanged: onChanged,
+      ),
+    ],
+  );
+}
+
 class _AvatarCropDialogState extends State<AvatarCropDialog> {
   final GlobalKey _cropKey = GlobalKey();
   final TransformationController _controller = TransformationController();

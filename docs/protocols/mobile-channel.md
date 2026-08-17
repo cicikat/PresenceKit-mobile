@@ -2,6 +2,13 @@
 
 MCP is backend-only and is not part of the desktop/mobile client transport contract.
 
+## 本机外观设置通道
+
+`presence_mobile/settings` 还承载不进入后端的本机外观设置。Flutter 通过
+`pickChatBackgroundImage` 选择图片，裁切后的 PNG 与 `blur`（0-24）和 `opacity`
+（0.35-1）由 `saveChatAppearance` 保存；`getChatAppearance` 启动时读取，
+`deleteChatAppearance` 恢复默认。图片保存在 Android `filesDir`，不会上传到后端。
+
 mobile channel 是后端向手机端投递主动消息的通道。手机端不决定“什么时候该主动说话”，只消费后端已经裁决好的消息和 metadata。
 
 三仓接口总账（含 `/mobile/*`、`/sensor/*`、relay、桌面 WS、Tauri IPC 和设置/观测闭环）见

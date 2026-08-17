@@ -1107,6 +1107,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String get avatarCropTitle => '裁切头像';
 
   @override
+  String get chatBackgroundEditorTitle => '聊天背景';
+
+  @override
+  String get chatBackgroundCropHelp => '拖动调整位置，双指或手势缩放；背景仅保存在本机。';
+
+  @override
+  String get chatBackgroundBlurLabel => '背景模糊';
+
+  @override
+  String get chatBubbleOpacityLabel => '聊天框透明度';
+
+  @override
+  String get settingsChatBackgroundTitle => '聊天背景';
+
+  @override
+  String get settingsChatBackgroundSubtitle => '导入图片、裁切并调整模糊与聊天框透明度';
+
+  @override
+  String get settingsImportChatBackgroundTooltip => '导入聊天背景';
+
+  @override
+  String get settingsResetChatBackgroundTooltip => '恢复默认聊天背景';
+
+  @override
+  String get chatBackgroundSaveFailed => '聊天背景保存失败';
+
+  @override
   String get avatarCropHelp => '拖动调整位置，双指或手势缩放。保存后只作为手机端本地头像。';
 
   @override

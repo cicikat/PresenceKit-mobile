@@ -2095,6 +2095,60 @@ abstract class AppLocalizations {
   /// **'裁切头像'**
   String get avatarCropTitle;
 
+  /// No description provided for @chatBackgroundEditorTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天背景'**
+  String get chatBackgroundEditorTitle;
+
+  /// No description provided for @chatBackgroundCropHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'拖动调整位置，双指或手势缩放；背景仅保存在本机。'**
+  String get chatBackgroundCropHelp;
+
+  /// No description provided for @chatBackgroundBlurLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'背景模糊'**
+  String get chatBackgroundBlurLabel;
+
+  /// No description provided for @chatBubbleOpacityLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天框透明度'**
+  String get chatBubbleOpacityLabel;
+
+  /// No description provided for @settingsChatBackgroundTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天背景'**
+  String get settingsChatBackgroundTitle;
+
+  /// No description provided for @settingsChatBackgroundSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入图片、裁切并调整模糊与聊天框透明度'**
+  String get settingsChatBackgroundSubtitle;
+
+  /// No description provided for @settingsImportChatBackgroundTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入聊天背景'**
+  String get settingsImportChatBackgroundTooltip;
+
+  /// No description provided for @settingsResetChatBackgroundTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复默认聊天背景'**
+  String get settingsResetChatBackgroundTooltip;
+
+  /// No description provided for @chatBackgroundSaveFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天背景保存失败'**
+  String get chatBackgroundSaveFailed;
+
   /// No description provided for @avatarCropHelp.
   ///
   /// In zh, this message translates to:

@@ -1,7 +1,4 @@
 import 'dart:convert';
-
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../l10n/l10n.dart';
@@ -154,6 +151,9 @@ class YxPrefs {
     this.showYouAvatar = false,
     this.proactiveRate = 'mid',
     this.nightSilent = true,
+    this.chatBackground,
+    this.chatBackgroundBlur = 0,
+    this.chatBubbleOpacity = 0.94,
   });
 
   final bool infoStrip;
@@ -161,6 +161,9 @@ class YxPrefs {
   final bool showYouAvatar;
   final String proactiveRate;
   final bool nightSilent;
+  final Uint8List? chatBackground;
+  final double chatBackgroundBlur;
+  final double chatBubbleOpacity;
 
   YxPrefs copyWith({
     bool? infoStrip,
@@ -168,6 +171,9 @@ class YxPrefs {
     bool? showYouAvatar,
     String? proactiveRate,
     bool? nightSilent,
+    Uint8List? chatBackground,
+    double? chatBackgroundBlur,
+    double? chatBubbleOpacity,
   }) {
     return YxPrefs(
       infoStrip: infoStrip ?? this.infoStrip,
@@ -175,8 +181,23 @@ class YxPrefs {
       showYouAvatar: showYouAvatar ?? this.showYouAvatar,
       proactiveRate: proactiveRate ?? this.proactiveRate,
       nightSilent: nightSilent ?? this.nightSilent,
+      chatBackground: chatBackground ?? this.chatBackground,
+      chatBackgroundBlur: chatBackgroundBlur ?? this.chatBackgroundBlur,
+      chatBubbleOpacity: chatBubbleOpacity ?? this.chatBubbleOpacity,
     );
   }
+}
+
+class ChatAppearanceSettings {
+  const ChatAppearanceSettings({
+    this.background,
+    this.blur = 0,
+    this.opacity = 0.94,
+  });
+
+  final Uint8List? background;
+  final double blur;
+  final double opacity;
 }
 
 class YxPalette {

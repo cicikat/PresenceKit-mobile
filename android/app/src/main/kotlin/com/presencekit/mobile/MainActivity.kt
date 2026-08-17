@@ -199,6 +199,9 @@ class MainActivity : FlutterActivity() {
                     "pickProfileImage" -> {
                         pickProfileImage(result)
                     }
+                    "pickChatBackgroundImage" -> {
+                        pickProfileImage(result)
+                    }
                     "pickUploadFile" -> {
                         pickUploadFile(result)
                     }
@@ -221,6 +224,42 @@ class MainActivity : FlutterActivity() {
                     }
                     "deleteProfileAvatar" -> {
                         avatarFile().delete()
+                        result.success(null)
+                    }
+                    "getChatAppearance" -> {
+                        val background = chatBackgroundFile()
+                        result.success(
+                            mapOf(
+                                "bytes" to if (background.exists()) background.readBytes() else null,
+                                "blur" to prefs.getFloat("chatBackgroundBlur", 0f).toDouble(),
+                                "opacity" to prefs.getFloat("chatBubbleOpacity", 0.94f).toDouble(),
+                            ),
+                        )
+                    }
+                    "saveChatAppearance" -> {
+                        val bytes = call.argument<ByteArray>("bytes")
+                        val blur = (call.argument<Number>("blur")?.toFloat() ?: 0f)
+                            .coerceIn(0f, 24f)
+                        val opacity = (call.argument<Number>("opacity")?.toFloat() ?: 0.94f)
+                            .coerceIn(0.35f, 1f)
+                        val saved = runCatching {
+                            if (bytes != null && bytes.isNotEmpty()) {
+                                chatBackgroundFile().writeBytes(bytes)
+                            }
+                            prefs.edit()
+                                .putFloat("chatBackgroundBlur", blur)
+                                .putFloat("chatBubbleOpacity", opacity)
+                                .apply()
+                            true
+                        }.getOrDefault(false)
+                        result.success(saved)
+                    }
+                    "deleteChatAppearance" -> {
+                        chatBackgroundFile().delete()
+                        prefs.edit()
+                            .remove("chatBackgroundBlur")
+                            .remove("chatBubbleOpacity")
+                            .apply()
                         result.success(null)
                     }
                     "getBackgroundNotificationsEnabled" -> {
@@ -975,6 +1014,10 @@ class MainActivity : FlutterActivity() {
 
     private fun avatarFile(): File {
         return File(filesDir, "profile_avatar.png")
+    }
+
+    private fun chatBackgroundFile(): File {
+        return File(filesDir, "chat_background.png")
     }
 
     private fun loadProfileAvatar(): ByteArray? {

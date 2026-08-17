@@ -1,5 +1,10 @@
 # 后端集成
 
+聊天背景属于本机外观设置，不进入后端接口或 mobile channel 消息队列。Flutter 通过
+`presence_mobile/settings` 的 `pickChatBackgroundImage`、`getChatAppearance`、
+`saveChatAppearance`、`deleteChatAppearance` 管理裁切后的图片、模糊度和聊天框透明度；
+Android 将图片保存在应用私有目录，后端无需配置开关、鉴权或观测端点。
+
 后端核心在 `Emerald-presence` 仓库（通常与本仓库同级）。手机端只通过 HTTP 接口交互，不直接读写后端数据文件。
 三仓接口、WebSocket、Tauri IPC、Android channel、relay 和设置/观测闭环总账见
 `Emerald-presence/docs/three-repo-interface-catalog.md`；本页保留手机端调用细节。

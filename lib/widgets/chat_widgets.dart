@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -116,6 +117,20 @@ class ChatScene extends StatelessWidget {
         metaItems.length + visibleMessageCount + (himTyping ? 1 : 0);
     return Stack(
       children: [
+        if (prefs.chatBackground != null)
+          Positioned.fill(
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(
+                sigmaX: prefs.chatBackgroundBlur,
+                sigmaY: prefs.chatBackgroundBlur,
+              ),
+              child: Image.memory(
+                prefs.chatBackground!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            ),
+          ),
         Column(
           children: [
             if (prefs.infoStrip)
@@ -193,6 +208,7 @@ class ChatScene extends StatelessWidget {
               ),
             Composer(
               c: c,
+              bubbleOpacity: prefs.chatBubbleOpacity,
               sending: backendBusy,
               onOpenAttach: onOpenAttach,
               onSend: controller.send,
@@ -660,7 +676,9 @@ class _HimMessageState extends State<HimMessage> {
                     constraints: const BoxConstraints(maxWidth: 300),
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
                     decoration: BoxDecoration(
-                      color: c.surfaceSoft,
+                      color: c.surfaceSoft.withValues(
+                        alpha: widget.prefs.chatBubbleOpacity,
+                      ),
                       border: Border.all(
                         color: widget.highlight ? c.warn : c.surfaceEdge,
                         width: widget.highlight ? 2 : 1,
@@ -858,7 +876,9 @@ class TypingHimMessage extends StatelessWidget {
                   constraints: const BoxConstraints(maxWidth: 300),
                   padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
                   decoration: BoxDecoration(
-                    color: c.surfaceSoft,
+                    color: c.surfaceSoft.withValues(
+                      alpha: prefs.chatBubbleOpacity,
+                    ),
                     border: Border.all(color: c.surfaceEdge),
                     borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(6),
@@ -1019,7 +1039,9 @@ class _YouMessageState extends State<YouMessage> {
                     constraints: const BoxConstraints(maxWidth: 280),
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
                     decoration: BoxDecoration(
-                      color: c.userBubble,
+                      color: c.userBubble.withValues(
+                        alpha: prefs.chatBubbleOpacity,
+                      ),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: attachment != null
@@ -1154,6 +1176,7 @@ class Composer extends StatefulWidget {
   const Composer({
     super.key,
     required this.c,
+    required this.bubbleOpacity,
     required this.sending,
     required this.onOpenAttach,
     required this.onSend,
@@ -1163,6 +1186,7 @@ class Composer extends StatefulWidget {
   });
 
   final YxPalette c;
+  final double bubbleOpacity;
   final bool sending;
   final VoidCallback onOpenAttach;
   final ValueChanged<String> onSend;
@@ -1246,7 +1270,7 @@ class _ComposerState extends State<Composer> {
     final l10n = context.l10n;
     final placeholder = l10n.composerPlaceholder;
     return Container(
-      color: widget.c.surfaceSoft,
+      color: widget.c.surfaceSoft.withValues(alpha: widget.bubbleOpacity),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1274,7 +1298,9 @@ class _ComposerState extends State<Composer> {
                     vertical: 7,
                   ),
                   decoration: BoxDecoration(
-                    color: widget.c.surface,
+                    color: widget.c.surface.withValues(
+                      alpha: widget.bubbleOpacity,
+                    ),
                     border: Border.all(color: widget.c.surfaceEdge),
                     borderRadius: BorderRadius.circular(4),
                   ),

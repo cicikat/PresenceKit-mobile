@@ -223,6 +223,7 @@ class _CompanionAppState extends State<CompanionApp>
     ]);
     final storedName = await _settings.loadProfileName();
     final storedAvatar = await _settings.loadAvatar();
+    final chatAppearance = await _settings.loadChatAppearance();
     final backgroundNotifications = await _settings
         .loadBackgroundNotificationsEnabled();
     final stickerEnabled = await _settings.loadStickerEnabled();
@@ -234,6 +235,11 @@ class _CompanionAppState extends State<CompanionApp>
         _autoPlayVoice = autoPlayVoice;
         _profileNameOverride = storedName;
         _profileAvatarBytes = storedAvatar;
+        _prefs = _prefs.copyWith(
+          chatBackground: chatAppearance.background,
+          chatBackgroundBlur: chatAppearance.blur,
+          chatBubbleOpacity: chatAppearance.opacity,
+        );
       });
       _syncCachedCharacterDisplayName();
     }
@@ -638,6 +644,57 @@ class _CompanionAppState extends State<CompanionApp>
     setState(() => _profileAvatarBytes = null);
   }
 
+  Future<void> _importChatBackground() async {
+    final sourceBytes = await _settings.pickChatBackgroundImage();
+    if (!mounted || sourceBytes == null) return;
+    final draft = await showDialog<ChatBackgroundDraft>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ChatBackgroundEditorDialog(
+        c: c,
+        bytes: sourceBytes,
+        initialBlur: _prefs.chatBackgroundBlur,
+        initialOpacity: _prefs.chatBubbleOpacity,
+      ),
+    );
+    if (!mounted || draft == null) return;
+    final saved = await _settings.saveChatAppearance(
+      ChatAppearanceSettings(
+        background: draft.bytes,
+        blur: draft.blur,
+        opacity: draft.opacity,
+      ),
+    );
+    if (!mounted) return;
+    if (saved) {
+      setState(() {
+        _prefs = _prefs.copyWith(
+          chatBackground: draft.bytes,
+          chatBackgroundBlur: draft.blur,
+          chatBubbleOpacity: draft.opacity,
+        );
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.chatBackgroundSaveFailed)),
+      );
+    }
+  }
+
+  Future<void> _resetChatBackground() async {
+    await _settings.deleteChatAppearance();
+    if (!mounted) return;
+    setState(() {
+      _prefs = YxPrefs(
+        infoStrip: _prefs.infoStrip,
+        fontSize: _prefs.fontSize,
+        showYouAvatar: _prefs.showYouAvatar,
+        proactiveRate: _prefs.proactiveRate,
+        nightSilent: _prefs.nightSilent,
+      );
+    });
+  }
+
   Future<CapabilityStatus> _loadCapabilityStatus() async {
     final results = await Future.wait<dynamic>([
       _deviceService.areNotificationsEnabled(),
@@ -909,6 +966,7 @@ class _CompanionAppState extends State<CompanionApp>
               prefs: _prefs,
               profileDisplayName: _profileDisplayName,
               profileAvatarBytes: _profileAvatarBytes,
+              chatBackground: _prefs.chatBackground,
               promptAssets: _promptAssets,
               loreEntries: _promptEntries.loreEntries,
               jailbreakEntries: _promptEntries.jailbreakEntries,
@@ -934,6 +992,8 @@ class _CompanionAppState extends State<CompanionApp>
               onEditProfileName: _editProfileName,
               onImportProfileAvatar: _importProfileAvatar,
               onResetProfileAvatar: _resetProfileAvatar,
+              onImportChatBackground: _importChatBackground,
+              onResetChatBackground: _resetChatBackground,
               onOpenProfile: _openProfilePage,
               hasAdminToken: _hasAdminToken,
               backgroundNotifications: _backgroundNotifications,
