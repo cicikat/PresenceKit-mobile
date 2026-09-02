@@ -224,6 +224,7 @@ class _CompanionAppState extends State<CompanionApp>
     final storedName = await _settings.loadProfileName();
     final storedAvatar = await _settings.loadAvatar();
     final chatAppearance = await _settings.loadChatAppearance();
+    final appearancePrefs = await _settings.loadAppearancePrefs();
     final backgroundNotifications = await _settings
         .loadBackgroundNotificationsEnabled();
     final stickerEnabled = await _settings.loadStickerEnabled();
@@ -235,7 +236,7 @@ class _CompanionAppState extends State<CompanionApp>
         _autoPlayVoice = autoPlayVoice;
         _profileNameOverride = storedName;
         _profileAvatarBytes = storedAvatar;
-        _prefs = _prefs.copyWith(
+        _prefs = appearancePrefs.copyWith(
           chatBackground: chatAppearance.background,
           chatBackgroundBlur: chatAppearance.blur,
           chatBubbleOpacity: chatAppearance.opacity,
@@ -963,6 +964,7 @@ class _CompanionAppState extends State<CompanionApp>
             void updatePrefs(YxPrefs prefs) {
               sheetSetState(() => _prefs = prefs);
               setState(() {});
+              unawaited(_settings.saveAppearancePrefs(prefs));
             }
 
             void updateTheme(bool dark) {

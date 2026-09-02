@@ -422,6 +422,44 @@ class AppSettingsStore {
     }
   }
 
+  Future<YxPrefs> loadAppearancePrefs() async {
+    if (!_channelAvailable) return const YxPrefs();
+    try {
+      final raw = await PlatformSettingsChannel.channel
+          .invokeMethod<Map<dynamic, dynamic>>('getAppearancePrefs');
+      if (raw == null) return const YxPrefs();
+      return YxPrefs(
+        infoStrip: raw['infoStrip'] != false,
+        fontSize:
+            ((raw['fontSize'] is num
+                            ? (raw['fontSize'] as num).toDouble()
+                            : 16.0)
+                        .clamp(14.0, 20.0)
+                    as num)
+                .toDouble(),
+        showYouAvatar: raw['showYouAvatar'] == true,
+        nightSilent: raw['nightSilent'] != false,
+      );
+    } on PlatformException {
+      return const YxPrefs();
+    }
+  }
+
+  Future<void> saveAppearancePrefs(YxPrefs value) async {
+    if (!_channelAvailable) return;
+    try {
+      await PlatformSettingsChannel.channel
+          .invokeMethod<void>('setAppearancePrefs', {
+            'infoStrip': value.infoStrip,
+            'fontSize': value.fontSize,
+            'showYouAvatar': value.showYouAvatar,
+            'nightSilent': value.nightSilent,
+          });
+    } on PlatformException {
+      // Cosmetic preferences remain active for this session if persistence fails.
+    }
+  }
+
   Future<bool> loadBackgroundNotificationsEnabled() async {
     if (!_channelAvailable) return false;
     try {

@@ -9,6 +9,8 @@ Android 将图片保存在应用私有目录，后端无需配置开关、鉴权
 三仓接口、WebSocket、Tauri IPC、Android channel、relay 和设置/观测闭环总账见
 `Emerald-presence/docs/three-repo-interface-catalog.md`；本页保留手机端调用细节。
 
+Appearance preferences use `presence_mobile/settings` methods `getAppearancePrefs` / `setAppearancePrefs` for `infoStrip`, `fontSize`, `showYouAvatar`, and `nightSilent`; they are local-only and do not enter backend APIs. `proactiveRate` is not exposed because no backend scheduler consumer exists.
+
 ## 连接方式
 
 默认：

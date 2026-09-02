@@ -14,6 +14,8 @@ mobile channel 是后端向手机端投递主动消息的通道。手机端不�
 三仓接口总账（含 `/mobile/*`、`/sensor/*`、relay、桌面 WS、Tauri IPC 和设置/观测闭环）见
 `Emerald-presence/docs/three-repo-interface-catalog.md`。
 
+Appearance preferences use the same `presence_mobile/settings` channel via `getAppearancePrefs` / `setAppearancePrefs`: `infoStrip`, `fontSize` (14-20), `showYouAvatar`, and `nightSilent`. `nightSilent` controls native notification quiet hours from 23:30 to 06:30. `proactiveRate` is intentionally not exposed because there is no backend scheduler field or local consumer.
+
 ## Scope boundary
 
 `/mobile/*` is the mobile foreground-chat, activation, polling, acknowledgement, and proactive-delivery surface.

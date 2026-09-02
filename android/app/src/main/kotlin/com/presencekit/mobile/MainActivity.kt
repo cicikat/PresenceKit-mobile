@@ -576,6 +576,26 @@ class MainActivity : FlutterActivity() {
                         prefs.edit().putBoolean("autoPlayVoice", call.argument<Boolean>("value") ?: false).apply()
                         result.success(null)
                     }
+                    "getAppearancePrefs" -> {
+                        result.success(
+                            mapOf(
+                                "infoStrip" to prefs.getBoolean("infoStrip", true),
+                                "fontSize" to prefs.getFloat("fontSize", 16f).toDouble(),
+                                "showYouAvatar" to prefs.getBoolean("showYouAvatar", false),
+                                "nightSilent" to prefs.getBoolean("nightSilent", true),
+                            ),
+                        )
+                    }
+                    "setAppearancePrefs" -> {
+                        val fontSize = call.argument<Number>("fontSize")?.toFloat()?.coerceIn(14f, 20f) ?: 16f
+                        prefs.edit()
+                            .putBoolean("infoStrip", call.argument<Boolean>("infoStrip") ?: true)
+                            .putFloat("fontSize", fontSize)
+                            .putBoolean("showYouAvatar", call.argument<Boolean>("showYouAvatar") ?: false)
+                            .putBoolean("nightSilent", call.argument<Boolean>("nightSilent") ?: true)
+                            .apply()
+                        result.success(null)
+                    }
                     "playTtsAudio" -> {
                         val audioB64 = call.argument<String>("audioB64").orEmpty()
                         if (audioB64.isBlank()) result.error("empty_audio", "Audio payload is empty", null)

@@ -233,6 +233,16 @@ class SettingsPage extends StatelessWidget {
                   onChanged: onNotificationTestMode,
                 ),
               ),
+              SettingsRow(
+                c: c,
+                title: l10n.settingsNightSilentTitle,
+                subtitle: l10n.settingsNightSilentSubtitle,
+                child: Switch(
+                  value: prefs.nightSilent,
+                  onChanged: (value) =>
+                      onPrefs(prefs.copyWith(nightSilent: value)),
+                ),
+              ),
               _SettingsSection(title: l10n.settingsChatSection),
               SettingsRow(
                 c: c,
@@ -326,10 +336,25 @@ class SettingsPage extends StatelessWidget {
                     ),
                     OutlinedButton.icon(
                       onPressed: () =>
-                          (onManageThemesForMode ?? (_) => onManageThemes())(false),
+                          (onManageThemesForMode ?? (_) => onManageThemes())(
+                            false,
+                          ),
                       icon: const Icon(Icons.palette_outlined, size: 17),
                       label: Text(
-                        lightThemePresetName ?? activeThemePresetName ??
+                        lightThemePresetName ??
+                            activeThemePresetName ??
+                            l10n.settingsColorPresets(themePresetCount),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          (onManageThemesForMode ?? (_) => onManageThemes())(
+                            true,
+                          ),
+                      icon: const Icon(Icons.palette_outlined, size: 17),
+                      label: Text(
+                        darkThemePresetName ??
+                            activeThemePresetName ??
                             l10n.settingsColorPresets(themePresetCount),
                       ),
                     ),
@@ -375,20 +400,6 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
-                title: l10n.themeNight,
-                subtitle: darkThemePresetName ?? activeThemePresetName ?? l10n.themeNight,
-                child: OutlinedButton.icon(
-                  onPressed: () =>
-                      (onManageThemesForMode ?? (_) => onManageThemes())(true),
-                  icon: const Icon(Icons.palette_outlined, size: 17),
-                  label: Text(
-                    darkThemePresetName ?? activeThemePresetName ??
-                        l10n.settingsColorPresets(themePresetCount),
-                  ),
-                ),
-              ),
-              SettingsRow(
-                c: c,
                 title: l10n.settingsInfoStripTitle,
                 subtitle: l10n.settingsInfoStripSubtitle,
                 child: Switch(
@@ -422,31 +433,6 @@ class SettingsPage extends StatelessWidget {
                   value: prefs.showYouAvatar,
                   onChanged: (value) =>
                       onPrefs(prefs.copyWith(showYouAvatar: value)),
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsProactiveRateTitle,
-                subtitle: l10n.settingsProactiveRateSubtitle,
-                child: SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment(value: 'low', label: Text(l10n.rateLow)),
-                    ButtonSegment(value: 'mid', label: Text(l10n.rateMedium)),
-                    ButtonSegment(value: 'high', label: Text(l10n.rateHigh)),
-                  ],
-                  selected: {prefs.proactiveRate},
-                  onSelectionChanged: (value) =>
-                      onPrefs(prefs.copyWith(proactiveRate: value.first)),
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsNightSilentTitle,
-                subtitle: l10n.settingsNightSilentSubtitle,
-                child: Switch(
-                  value: prefs.nightSilent,
-                  onChanged: (value) =>
-                      onPrefs(prefs.copyWith(nightSilent: value)),
                 ),
               ),
               _SettingsSection(title: l10n.settingsChatContentSection),

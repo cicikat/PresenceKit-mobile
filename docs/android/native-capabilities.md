@@ -10,6 +10,8 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 
 ## MainActivity.kt
 
+The `presence_mobile/settings` channel also persists mobile appearance preferences through `getAppearancePrefs` and `setAppearancePrefs`. `nightSilent` gates native notification quiet hours from 23:30 to 06:30. Proactive message frequency is not exposed until a backend consumer exists.
+
 职责：
 
 - 注册兼容旧安装契约的 `MethodChannel('presence_mobile/settings')`；Dart 侧通过 `PlatformSettingsChannel` 共享该通道。`yexuan_memery` 仅是历史 `SharedPreferences` 存储名，不是当前 channel 名。

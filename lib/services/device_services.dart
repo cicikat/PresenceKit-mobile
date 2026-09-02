@@ -30,6 +30,9 @@ class SettingsStore {
   Future<bool> saveChatAppearance(ChatAppearanceSettings value) =>
       _store.saveChatAppearance(value);
   Future<void> deleteChatAppearance() => _store.deleteChatAppearance();
+  Future<YxPrefs> loadAppearancePrefs() => _store.loadAppearancePrefs();
+  Future<void> saveAppearancePrefs(YxPrefs value) =>
+      _store.saveAppearancePrefs(value);
 
   Future<bool> loadBackgroundNotificationsEnabled() =>
       _store.loadBackgroundNotificationsEnabled();

@@ -232,6 +232,7 @@ class ChatScene extends StatelessWidget {
             Composer(
               c: c,
               bubbleOpacity: prefs.chatBubbleOpacity,
+              fontSize: prefs.fontSize,
               sending: backendBusy,
               onOpenAttach: onOpenAttach,
               onSend: controller.send,
@@ -1358,6 +1359,7 @@ class Composer extends StatefulWidget {
     super.key,
     required this.c,
     required this.bubbleOpacity,
+    required this.fontSize,
     required this.sending,
     required this.onOpenAttach,
     required this.onSend,
@@ -1368,6 +1370,7 @@ class Composer extends StatefulWidget {
 
   final YxPalette c;
   final double bubbleOpacity;
+  final double fontSize;
   final bool sending;
   final VoidCallback onOpenAttach;
   final ValueChanged<String> onSend;
@@ -1489,10 +1492,14 @@ class _ComposerState extends State<Composer> {
                     controller: _controller,
                     minLines: 1,
                     maxLines: 3,
-                    style: serif(widget.c, 15),
+                    style: serif(widget.c, widget.fontSize),
                     decoration: InputDecoration.collapsed(
                       hintText: placeholder,
-                      hintStyle: serif(widget.c, 15, color: widget.c.ink3),
+                      hintStyle: serif(
+                        widget.c,
+                        widget.fontSize,
+                        color: widget.c.ink3,
+                      ),
                     ),
                     onChanged: (value) => _draft.value = value,
                   ),

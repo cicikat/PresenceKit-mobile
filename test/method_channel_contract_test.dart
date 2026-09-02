@@ -8,6 +8,7 @@
 // behaviour, which only ever runs on a real Android device.
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:presencekit_mobile/models/app_models.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 
 void main() {
@@ -60,6 +61,41 @@ void main() {
       throwPlatformError();
       expect(await store.loadAppLanguage(), isNull);
       await store.saveAppLanguage('en-US');
+    });
+  });
+
+  group('外观偏好', () {
+    test('loads appearance prefs from the stable channel', () async {
+      reply({
+        'infoStrip': false,
+        'fontSize': 18.0,
+        'showYouAvatar': true,
+        'nightSilent': false,
+      });
+      final prefs = await store.loadAppearancePrefs();
+      expect(calls.single.method, 'getAppearancePrefs');
+      expect(prefs.infoStrip, isFalse);
+      expect(prefs.fontSize, 18);
+      expect(prefs.showYouAvatar, isTrue);
+      expect(prefs.nightSilent, isFalse);
+    });
+
+    test('saves appearance prefs with the complete payload', () async {
+      await store.saveAppearancePrefs(
+        const YxPrefs(
+          infoStrip: false,
+          fontSize: 19,
+          showYouAvatar: true,
+          nightSilent: false,
+        ),
+      );
+      expect(calls.single.method, 'setAppearancePrefs');
+      expect(calls.single.arguments, {
+        'infoStrip': false,
+        'fontSize': 19.0,
+        'showYouAvatar': true,
+        'nightSilent': false,
+      });
     });
   });
 

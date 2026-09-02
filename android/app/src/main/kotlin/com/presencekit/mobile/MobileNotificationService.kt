@@ -1091,6 +1091,7 @@ class MobileNotificationService : Service() {
     }
 
     private fun isQuietMinute(minute: Int): Boolean {
+        if (!servicePrefs().getBoolean("nightSilent", true)) return false
         return minute >= quietStartMinute || minute < quietEndMinute
     }
 
