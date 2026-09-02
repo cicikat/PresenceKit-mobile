@@ -471,14 +471,21 @@ class ChatMessage {
   ChatMessage({
     required this.role,
     required this.text,
-    required this.time,
+    required String time,
     this.sticker,
     this.animate = false,
     this.segments,
     DateTime? timestamp,
     int? id,
+    this.dateKey,
+    this.quotedText,
+    this.quotedLabel,
+    this.failed = false,
   }) : id = id ?? _nextId++,
-       timestamp = timestamp ?? DateTime.now();
+       timestamp = timestamp ?? DateTime.now(),
+       time = time == '现在'
+           ? _formatDateTime(timestamp ?? DateTime.now())
+           : time;
 
   static int _nextId = 0;
 
@@ -489,6 +496,10 @@ class ChatMessage {
   final StickerPayload? sticker;
   final bool animate;
   final List<NarrativeSegment>? segments;
+  final String? dateKey;
+  final String? quotedText;
+  final String? quotedLabel;
+  final bool failed;
 
   /// 用于「回复」引用(reply_to.ts);历史消息没有真实 epoch,退化为加载时刻——
   /// 只影响后端相对时间前缀的措辞("今天"而非准确日期),不影响功能正确性。
@@ -503,6 +514,30 @@ class ChatMessage {
     sticker: sticker,
     segments: segments,
     timestamp: timestamp,
+    dateKey: dateKey,
+    quotedText: quotedText,
+    quotedLabel: quotedLabel,
+    failed: failed,
+  );
+
+  ChatMessage copyWith({
+    bool? failed,
+    String? time,
+    String? quotedText,
+    String? quotedLabel,
+  }) => ChatMessage(
+    id: id,
+    role: role,
+    text: text,
+    time: time ?? this.time,
+    sticker: sticker,
+    animate: animate,
+    segments: segments,
+    timestamp: timestamp,
+    dateKey: dateKey,
+    quotedText: quotedText ?? this.quotedText,
+    quotedLabel: quotedLabel ?? this.quotedLabel,
+    failed: failed ?? this.failed,
   );
 }
 
@@ -1072,6 +1107,7 @@ class MobilePollMessage {
     return ChatMessage(
       role: 'him',
       text: content,
+      dateKey: timestamp == null ? null : _chatDateKey(timestamp!),
       time: timestamp == null ? '刚才' : _formatDateTime(timestamp!),
       sticker: sticker,
     );
@@ -1867,3 +1903,6 @@ String _formatDateTime(DateTime date) {
   final minute = date.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
 }
+
+String _chatDateKey(DateTime date) =>
+    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';

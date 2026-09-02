@@ -527,9 +527,31 @@ class _CompanionAppState extends State<CompanionApp>
 
   // ── W9：语音输入 ──────────────────────────────────────────────────────────
 
-  Future<String?> _startVoiceRecording() => _voiceInputController.start();
-  Future<VoiceInputResult> _stopVoiceRecordingAndTranscribe() =>
-      _voiceInputController.stopAndTranscribe();
+  Future<String?> _startVoiceRecording() async {
+    final error = await _voiceInputController.start();
+    return error == null ? null : _localizeVoiceError(error);
+  }
+
+  Future<VoiceInputResult> _stopVoiceRecordingAndTranscribe() async {
+    final result = await _voiceInputController.stopAndTranscribe();
+    return VoiceInputResult(
+      text: result.text,
+      error: result.error == null ? null : _localizeVoiceError(result.error!),
+    );
+  }
+
+  String _localizeVoiceError(String error) {
+    final l10n = context.l10n;
+    if (error.contains('正在录音')) return l10n.voiceRecordingActive;
+    if (error.contains('权限')) return l10n.voicePermissionDenied;
+    if (error.contains('开始录音')) return l10n.voiceStartFailed;
+    if (error.contains('没有正在')) return l10n.voiceNotActive;
+    if (error == '录音失败') return l10n.voiceRecordingFailed;
+    if (error.contains('访问凭证')) return l10n.voiceCredentialRequired;
+    if (error.contains('转写')) return l10n.voiceTranscriptionFailed;
+    return error;
+  }
+
   Future<void> _pushScreenContextOnce({bool silent = false}) async {
     await _deviceController.pushScreenContext(silent: silent);
     if (!silent && mounted && _deviceController.lastError != null) {

@@ -185,6 +185,61 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatTyping => '正在输入';
 
   @override
+  String get chatRoleHim => '他';
+
+  @override
+  String get chatRoleYou => '我';
+
+  @override
+  String get chatTodayDivider => '今天';
+
+  @override
+  String get chatYesterdayDivider => '昨天';
+
+  @override
+  String chatReplyTo(Object name) {
+    return '回复 $name';
+  }
+
+  @override
+  String get chatRetry => '重试';
+
+  @override
+  String get chatSendFailed => '发送失败';
+
+  @override
+  String chatUnreadCount(Object count) {
+    return '$count 条未读';
+  }
+
+  @override
+  String get chatVoiceHint => '按住说话，松手填入';
+
+  @override
+  String get chatVoiceCancelled => '已取消';
+
+  @override
+  String get voiceRecordingActive => '正在录音，请先松手';
+
+  @override
+  String get voicePermissionDenied => '麦克风权限未开启';
+
+  @override
+  String get voiceStartFailed => '无法开始录音';
+
+  @override
+  String get voiceNotActive => '当前没有正在进行的录音';
+
+  @override
+  String get voiceRecordingFailed => '录音失败';
+
+  @override
+  String get voiceCredentialRequired => '语音转写需要先配置访问凭证';
+
+  @override
+  String get voiceTranscriptionFailed => '语音转写失败';
+
+  @override
   String get drawerTooltip => '抽屉';
 
   @override

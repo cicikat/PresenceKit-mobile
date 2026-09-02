@@ -78,6 +78,7 @@ class ChatScene extends StatelessWidget {
     final visibleMessageLimit = controller.visibleMessageLimit;
     final scrollController = controller.scrollController;
     final showJumpToLatest = controller.showJumpToLatest;
+    final unreadHimCount = controller.unreadHimCount;
     final presence = PresenceSnapshot.current(l10n);
     final totalMessageCount = historyMessages.length + sentMessages.length;
     final hiddenMessageCount = math.max(
@@ -105,10 +106,7 @@ class ChatScene extends StatelessWidget {
       if (backendError != null)
         MetaLine(c: c, text: l10n.chatBackendError(backendError)),
       if (lastBackendReply != null && backendError == null)
-        MetaLine(
-          c: c,
-          text: l10n.chatBackendStatus(lastBackendReply.emotion),
-        ),
+        MetaLine(c: c, text: l10n.chatBackendStatus(lastBackendReply.emotion)),
       if (mobileReceivedCount > 0)
         MetaLine(c: c, text: l10n.chatMobileReceived(mobileReceivedCount)),
       const SizedBox(height: 14),
@@ -173,6 +171,15 @@ class ChatScene extends StatelessWidget {
                       ? historyMessages[globalMessageIndex]
                       : sentMessages[globalMessageIndex -
                             historyMessages.length];
+                  final previous = globalMessageIndex > 0
+                      ? (globalMessageIndex - 1 < historyMessages.length
+                            ? historyMessages[globalMessageIndex - 1]
+                            : sentMessages[globalMessageIndex -
+                                  1 -
+                                  historyMessages.length])
+                      : null;
+                  final showDateDivider =
+                      m.dateKey != null && m.dateKey != previous?.dateKey;
                   return RepaintBoundary(
                     key: ValueKey('chat-${m.id}'),
                     child: m.role == 'you'
@@ -181,6 +188,11 @@ class ChatScene extends StatelessWidget {
                             time: m.time,
                             prefs: prefs,
                             text: m.text,
+                            quotedText: m.quotedText,
+                            failed: m.failed,
+                            onRetry: () => controller.retryMessage(m),
+                            showDateDivider: showDateDivider,
+                            dateKey: m.dateKey,
                           )
                         : HimMessage(
                             c: c,
@@ -189,12 +201,18 @@ class ChatScene extends StatelessWidget {
                             profileDisplayName: profileDisplayName,
                             profileAvatarBytes: profileAvatarBytes,
                             text: m.text,
+                            quotedText: m.quotedText,
+                            showDateDivider: showDateDivider,
+                            dateKey: m.dateKey,
+                            onReply: () => controller.setReplyTarget(m),
                             sticker: m.sticker,
                             animate: m.animate,
                             onRevealStarted: m.animate
                                 ? () => controller.markRevealStarted(m)
                                 : null,
-                            onReply: () => controller.setReplyTarget(m),
+                            onRevealSkipped: m.animate
+                                ? controller.skipReveal
+                                : null,
                           ),
                   );
                 },
@@ -204,6 +222,11 @@ class ChatScene extends StatelessWidget {
               ReplyPreviewBar(
                 c: c,
                 text: controller.replyTarget!.text,
+                label: l10n.chatReplyTo(
+                  controller.replyTarget!.role == 'you'
+                      ? l10n.chatRoleYou
+                      : profileDisplayName,
+                ),
                 onCancel: controller.clearReplyTarget,
               ),
             Composer(
@@ -232,6 +255,7 @@ class ChatScene extends StatelessWidget {
             child: Center(
               child: JumpToLatestButton(
                 c: c,
+                unreadCount: unreadHimCount,
                 onPressed: controller.scrollToBottom,
               ),
             ),
@@ -246,10 +270,12 @@ class JumpToLatestButton extends StatelessWidget {
     super.key,
     required this.c,
     required this.onPressed,
+    this.unreadCount = 0,
   });
 
   final YxPalette c;
   final VoidCallback onPressed;
+  final int unreadCount;
 
   @override
   Widget build(BuildContext context) {
@@ -273,10 +299,39 @@ class JumpToLatestButton extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: c.characterOn,
-            size: 28,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: c.characterOn,
+                size: 28,
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -18,
+                  top: -12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: c.warn,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$unreadCount',
+                      style: mono(
+                        c,
+                        9,
+                        color: c.characterOn,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -523,11 +578,13 @@ class ReplyPreviewBar extends StatelessWidget {
     super.key,
     required this.c,
     required this.text,
+    required this.label,
     required this.onCancel,
   });
 
   final YxPalette c;
   final String text;
+  final String label;
   final VoidCallback onCancel;
 
   @override
@@ -544,11 +601,17 @@ class ReplyPreviewBar extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: mono(c, 11, color: c.ink3),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: mono(c, 9.5, color: c.character)),
+                  Text(
+                    text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: mono(c, 11, color: c.ink3),
+                  ),
+                ],
               ),
             ),
             YxIconButton(
@@ -560,6 +623,68 @@ class ReplyPreviewBar extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _QuoteBar extends StatelessWidget {
+  const _QuoteBar({required this.c, required this.text, this.dark = false});
+  final YxPalette c;
+  final String text;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: 7),
+    padding: const EdgeInsets.only(left: 7),
+    decoration: BoxDecoration(
+      border: Border(
+        left: BorderSide(color: dark ? c.characterOn : c.character, width: 2),
+      ),
+    ),
+    child: Text(
+      text,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: mono(
+        c,
+        10,
+        color: dark ? c.userBubbleText.withValues(alpha: .7) : c.ink3,
+      ),
+    ),
+  );
+}
+
+class _ChatDateDivider extends StatelessWidget {
+  const _ChatDateDivider({
+    required this.c,
+    required this.dateKey,
+    required this.role,
+  });
+  final YxPalette c;
+  final String dateKey;
+  final String role;
+
+  @override
+  Widget build(BuildContext context) {
+    final parsed = DateTime.tryParse(dateKey);
+    final now = DateTime.now();
+    final label = parsed == null
+        ? dateKey
+        : (parsed.year == now.year &&
+                  parsed.month == now.month &&
+                  parsed.day == now.day
+              ? context.l10n.chatTodayDivider
+              : (parsed.year == now.year &&
+                        parsed.month == now.month &&
+                        parsed.day == now.day - 1
+                    ? context.l10n.chatYesterdayDivider
+                    : dateKey));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6, top: 5),
+      child: Center(
+        child: Text(label, style: mono(c, 9.5, color: c.ink3)),
       ),
     );
   }
@@ -580,7 +705,11 @@ class HimMessage extends StatefulWidget {
     this.highlight = false,
     this.animate = false,
     this.onRevealStarted,
+    this.onRevealSkipped,
     this.onReply,
+    this.quotedText,
+    this.showDateDivider = false,
+    this.dateKey,
   });
 
   final YxPalette c;
@@ -595,9 +724,13 @@ class HimMessage extends StatefulWidget {
   final Uint8List? profileAvatarBytes;
   final bool animate;
   final VoidCallback? onRevealStarted;
+  final VoidCallback? onRevealSkipped;
 
   /// 长按菜单「回复」;仅角色气泡传入,气泡分段场景下引用目标是这一段本身。
   final VoidCallback? onReply;
+  final String? quotedText;
+  final bool showDateDivider;
+  final String? dateKey;
 
   @override
   State<HimMessage> createState() => _HimMessageState();
@@ -648,10 +781,16 @@ class _HimMessageState extends State<HimMessage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (widget.showDateDivider && widget.dateKey != null)
+                  _ChatDateDivider(
+                    c: c,
+                    dateKey: widget.dateKey!,
+                    role: context.l10n.chatRoleHim,
+                  ),
                 Row(
                   children: [
                     Text(
-                      'HIM · ${widget.time}',
+                      '${context.l10n.chatRoleHim}  ${widget.time}',
                       style: mono(c, 9.5, color: c.ink3),
                     ),
                     if (widget.tag != null) ...[
@@ -704,11 +843,19 @@ class _HimMessageState extends State<HimMessage> {
                               widget.text,
                               style: serif(c, widget.prefs.fontSize),
                             )
-                          : AnimatedRevealText(
-                              text: widget.text,
-                              animate: widget.animate,
-                              style: serif(c, widget.prefs.fontSize),
-                              onRevealStarted: widget.onRevealStarted,
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (widget.quotedText != null)
+                                  _QuoteBar(c: c, text: widget.quotedText!),
+                                AnimatedRevealText(
+                                  text: widget.text,
+                                  animate: widget.animate,
+                                  style: serif(c, widget.prefs.fontSize),
+                                  onRevealStarted: widget.onRevealStarted,
+                                  onRevealSkipped: widget.onRevealSkipped,
+                                ),
+                              ],
                             ),
                     ),
                   ),
@@ -764,12 +911,14 @@ class AnimatedRevealText extends StatefulWidget {
     required this.animate,
     required this.style,
     this.onRevealStarted,
+    this.onRevealSkipped,
   });
 
   final String text;
   final bool animate;
   final TextStyle style;
   final VoidCallback? onRevealStarted;
+  final VoidCallback? onRevealSkipped;
 
   @override
   State<AnimatedRevealText> createState() => _AnimatedRevealTextState();
@@ -815,6 +964,7 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
     onTap: () => setState(() {
       _skipped = true;
       _controller.value = 1;
+      widget.onRevealSkipped?.call();
     }),
     child: AnimatedBuilder(
       animation: _controller,
@@ -870,7 +1020,10 @@ class TypingHimMessage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('HIM · $time', style: mono(c, 9.5, color: c.ink3)),
+                Text(
+                  '${context.l10n.chatRoleHim}  $time',
+                  style: mono(c, 9.5, color: c.ink3),
+                ),
                 const SizedBox(height: 4),
                 Container(
                   constraints: const BoxConstraints(maxWidth: 300),
@@ -976,12 +1129,22 @@ class YouMessage extends StatefulWidget {
     required this.time,
     required this.text,
     required this.prefs,
+    this.quotedText,
+    this.failed = false,
+    this.onRetry,
+    this.showDateDivider = false,
+    this.dateKey,
   });
 
   final YxPalette c;
   final String time;
   final String text;
   final YxPrefs prefs;
+  final String? quotedText;
+  final bool failed;
+  final VoidCallback? onRetry;
+  final bool showDateDivider;
+  final String? dateKey;
 
   @override
   State<YouMessage> createState() => _YouMessageState();
@@ -1025,8 +1188,14 @@ class _YouMessageState extends State<YouMessage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                if (widget.showDateDivider && widget.dateKey != null)
+                  _ChatDateDivider(
+                    c: c,
+                    dateKey: widget.dateKey!,
+                    role: context.l10n.chatRoleYou,
+                  ),
                 Text(
-                  'YOU · ${widget.time}',
+                  '${context.l10n.chatRoleYou}  ${widget.time}',
                   style: mono(c, 9.5, color: c.ink3),
                 ),
                 const SizedBox(height: 4),
@@ -1069,6 +1238,14 @@ class _YouMessageState extends State<YouMessage> {
                           ),
                   ),
                 ),
+                if (widget.quotedText != null)
+                  _QuoteBar(c: c, text: widget.quotedText!, dark: true),
+                if (widget.failed)
+                  TextButton.icon(
+                    onPressed: widget.onRetry,
+                    icon: const Icon(Icons.refresh_rounded, size: 14),
+                    label: Text(context.l10n.chatRetry),
+                  ),
               ],
             ),
           ),
@@ -1076,7 +1253,11 @@ class _YouMessageState extends State<YouMessage> {
             const SizedBox(width: 8),
             Padding(
               padding: const EdgeInsets.only(top: 18),
-              child: YxAvatar(c: c, text: 'Y', size: 28),
+              child: YxAvatar(
+                c: c,
+                text: context.l10n.chatRoleYou.characters.first,
+                size: 28,
+              ),
             ),
           ],
         ],

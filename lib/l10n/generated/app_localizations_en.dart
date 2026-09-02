@@ -189,6 +189,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatTyping => 'Typing';
 
   @override
+  String get chatRoleHim => 'Him';
+
+  @override
+  String get chatRoleYou => 'Me';
+
+  @override
+  String get chatTodayDivider => 'Today';
+
+  @override
+  String get chatYesterdayDivider => 'Yesterday';
+
+  @override
+  String chatReplyTo(Object name) {
+    return 'Reply to $name';
+  }
+
+  @override
+  String get chatRetry => 'Retry';
+
+  @override
+  String get chatSendFailed => 'Send failed';
+
+  @override
+  String chatUnreadCount(Object count) {
+    return '$count unread';
+  }
+
+  @override
+  String get chatVoiceHint => 'Hold to talk, release to fill';
+
+  @override
+  String get chatVoiceCancelled => 'Cancelled';
+
+  @override
+  String get voiceRecordingActive => 'Recording is already in progress';
+
+  @override
+  String get voicePermissionDenied => 'Microphone permission is not enabled';
+
+  @override
+  String get voiceStartFailed => 'Could not start recording';
+
+  @override
+  String get voiceNotActive => 'No recording is currently active';
+
+  @override
+  String get voiceRecordingFailed => 'Recording failed';
+
+  @override
+  String get voiceCredentialRequired =>
+      'An access credential is required for transcription';
+
+  @override
+  String get voiceTranscriptionFailed => 'Transcription failed';
+
+  @override
   String get drawerTooltip => 'Drawer';
 
   @override

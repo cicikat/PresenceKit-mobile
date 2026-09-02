@@ -27,19 +27,19 @@ class VoiceInputController extends ChangeNotifier {
   bool _recording = false;
 
   Future<String?> start() async {
-    if (_recording) return 'Recording is already in progress.';
+    if (_recording) return '正在录音，请先松手';
     try {
       if (!await _voice.hasPermission()) {
         await _voice.requestPermission();
         if (!await _voice.hasPermission()) {
-          return 'Microphone permission was denied.';
+          return '麦克风权限未开启';
         }
       }
-      if (!await _voice.startRecording()) return 'Could not start recording.';
+      if (!await _voice.startRecording()) return '无法开始录音';
       _recording = true;
       return null;
     } catch (_) {
-      return 'Could not start recording.';
+      return '无法开始录音';
     }
   }
 
@@ -51,19 +51,17 @@ class VoiceInputController extends ChangeNotifier {
 
   Future<VoiceInputResult> stopAndTranscribe() async {
     if (!_recording) {
-      return const VoiceInputResult(error: 'Recording is not active.');
+      return const VoiceInputResult(error: '当前没有正在进行的录音');
     }
     _recording = false;
     try {
       final path = await _voice.stopRecording();
       final token = _token()?.trim();
       if (path == null || path.isEmpty) {
-        return const VoiceInputResult(error: 'Recording failed.');
+        return const VoiceInputResult(error: '录音失败');
       }
       if (token == null || token.isEmpty) {
-        return const VoiceInputResult(
-          error: 'An access credential is required for transcription.',
-        );
+        return const VoiceInputResult(error: '语音转写需要先配置访问凭证');
       }
       return VoiceInputResult(
         text: await _backend().transcribeAudio(filePath: path, token: token),
@@ -71,7 +69,7 @@ class VoiceInputController extends ChangeNotifier {
     } on BackendException catch (e) {
       return VoiceInputResult(error: e.message);
     } catch (_) {
-      return const VoiceInputResult(error: 'Transcription failed.');
+      return const VoiceInputResult(error: '语音转写失败');
     }
   }
 }

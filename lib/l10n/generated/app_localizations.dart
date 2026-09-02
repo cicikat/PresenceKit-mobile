@@ -422,6 +422,108 @@ abstract class AppLocalizations {
   /// **'正在输入'**
   String get chatTyping;
 
+  /// No description provided for @chatRoleHim.
+  ///
+  /// In zh, this message translates to:
+  /// **'他'**
+  String get chatRoleHim;
+
+  /// No description provided for @chatRoleYou.
+  ///
+  /// In zh, this message translates to:
+  /// **'我'**
+  String get chatRoleYou;
+
+  /// No description provided for @chatTodayDivider.
+  ///
+  /// In zh, this message translates to:
+  /// **'今天'**
+  String get chatTodayDivider;
+
+  /// No description provided for @chatYesterdayDivider.
+  ///
+  /// In zh, this message translates to:
+  /// **'昨天'**
+  String get chatYesterdayDivider;
+
+  /// No description provided for @chatReplyTo.
+  ///
+  /// In zh, this message translates to:
+  /// **'回复 {name}'**
+  String chatReplyTo(Object name);
+
+  /// No description provided for @chatRetry.
+  ///
+  /// In zh, this message translates to:
+  /// **'重试'**
+  String get chatRetry;
+
+  /// No description provided for @chatSendFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送失败'**
+  String get chatSendFailed;
+
+  /// No description provided for @chatUnreadCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 条未读'**
+  String chatUnreadCount(Object count);
+
+  /// No description provided for @chatVoiceHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'按住说话，松手填入'**
+  String get chatVoiceHint;
+
+  /// No description provided for @chatVoiceCancelled.
+  ///
+  /// In zh, this message translates to:
+  /// **'已取消'**
+  String get chatVoiceCancelled;
+
+  /// No description provided for @voiceRecordingActive.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在录音，请先松手'**
+  String get voiceRecordingActive;
+
+  /// No description provided for @voicePermissionDenied.
+  ///
+  /// In zh, this message translates to:
+  /// **'麦克风权限未开启'**
+  String get voicePermissionDenied;
+
+  /// No description provided for @voiceStartFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法开始录音'**
+  String get voiceStartFailed;
+
+  /// No description provided for @voiceNotActive.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前没有正在进行的录音'**
+  String get voiceNotActive;
+
+  /// No description provided for @voiceRecordingFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'录音失败'**
+  String get voiceRecordingFailed;
+
+  /// No description provided for @voiceCredentialRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'语音转写需要先配置访问凭证'**
+  String get voiceCredentialRequired;
+
+  /// No description provided for @voiceTranscriptionFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'语音转写失败'**
+  String get voiceTranscriptionFailed;
+
   /// No description provided for @drawerTooltip.
   ///
   /// In zh, this message translates to:

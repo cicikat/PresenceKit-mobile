@@ -56,6 +56,7 @@ class ChatController extends ChangeNotifier {
   final Set<String> _syncReplyIds = {};
   final Map<String, DateTime> _recentReplies = {};
   final Map<String, String> _recentIdsByFingerprint = {};
+  final List<({String text, ReplyTarget? replyTo})> _pendingSends = [];
   Timer? _pollTimer;
   final List<List<ChatMessage>> _messageQueue = [];
   Future<void>? _initialSync;
@@ -73,6 +74,7 @@ class ChatController extends ChangeNotifier {
   bool showJumpToLatest = false;
   int visibleMessageLimit = initialVisibleMessageCount;
   int mobileReceivedCount = 0;
+  int unreadHimCount = 0;
   int? lastAckedMobileSeq;
   String? backendError;
   String? historyError;
@@ -168,17 +170,28 @@ class ChatController extends ChangeNotifier {
     await start();
   }
 
-  void send(String text) {
+  void send(String text, {ReplyTarget? replyToOverride}) {
     final value = text.trim();
-    if (value.isEmpty || sending || _accessToken == null) return;
-    final replyTo = replyTarget == null
-        ? null
-        : ReplyTarget.fromMessage(replyTarget!);
-    replyTarget = null;
+    if (value.isEmpty || _accessToken == null) return;
+    final replyTo =
+        replyToOverride ??
+        (replyTarget == null ? null : ReplyTarget.fromMessage(replyTarget!));
+    if (replyToOverride == null) replyTarget = null;
+    if (sending) {
+      _pendingSends.add((text: value, replyTo: replyTo));
+      notifyListeners();
+      return;
+    }
     sending = true;
     himTyping = true;
     backendError = null;
     sent.add(ChatMessage(role: 'you', text: value, time: '现在'));
+    if (sent.isNotEmpty && replyTo != null) {
+      sent[sent.length - 1] = sent.last.copyWith(
+        quotedText: replyTo.text,
+        quotedLabel: 'reply',
+      );
+    }
     notifyListeners();
     scrollToBottom();
     unawaited(_send(value, replyTo: replyTo));
@@ -187,6 +200,18 @@ class ChatController extends ChangeNotifier {
   void setReplyTarget(ChatMessage message) {
     replyTarget = message;
     notifyListeners();
+  }
+
+  void retryMessage(ChatMessage message) {
+    if (sending || message.role != 'you' || !message.failed) return;
+    final index = sent.indexWhere((item) => item.id == message.id);
+    if (index < 0) return;
+    sent[index] = message.copyWith(failed: false, time: _nowLabel());
+    sending = true;
+    himTyping = true;
+    backendError = null;
+    notifyListeners();
+    unawaited(_send(message.text));
   }
 
   void clearReplyTarget() {
@@ -214,24 +239,48 @@ class ChatController extends ChangeNotifier {
       }
     } on BackendException catch (e) {
       backendError = e.message;
-      sent.add(
+      _markLastSendFailed();
+      /*
         ChatMessage(
           role: 'him',
           text: '（手机端暂时连不上后端：${e.message}）',
           time: _nowLabel(),
         ),
-      );
+      ); */
       scrollToBottom();
     } catch (e) {
       backendError = e.toString();
-      sent.add(
+      _markLastSendFailed();
+      /* sent.add(
         ChatMessage(role: 'him', text: '（手机端遇到一个未预期错误：$e）', time: _nowLabel()),
-      );
+      ); */
       scrollToBottom();
     } finally {
       sending = false;
       himTyping = false;
       notifyListeners();
+      if (_pendingSends.isNotEmpty) {
+        final next = _pendingSends.removeAt(0);
+        send(next.text, replyToOverride: next.replyTo);
+      }
+    }
+  }
+
+  void skipReveal() {
+    if (_messageQueue.isEmpty) return;
+    final pending = _messageQueue.expand((batch) => batch).toList();
+    _messageQueue.clear();
+    if (pending.isNotEmpty) sent.addAll(pending.map((m) => m.settled()));
+    himTyping = false;
+    notifyListeners();
+  }
+
+  void _markLastSendFailed() {
+    for (var i = sent.length - 1; i >= 0; i--) {
+      if (sent[i].role == 'you' && !sent[i].failed) {
+        sent[i] = sent[i].copyWith(failed: true);
+        return;
+      }
     }
   }
 
@@ -443,7 +492,12 @@ class ChatController extends ChangeNotifier {
       if (fresh.isNotEmpty) {
         mobileReceivedCount += fresh.length;
         lastMobileContent = fresh.last.content;
-        scrollToBottom();
+        if (_isAtBottom) {
+          scrollToBottom();
+        } else {
+          showJumpToLatest = true;
+          unreadHimCount += fresh.length;
+        }
       }
       notifyListeners();
       if (_seenIds.isNotEmpty) {
@@ -508,7 +562,12 @@ class ChatController extends ChangeNotifier {
               : _splitSegments(message.content);
           immediate.addAll(
             parts.map(
-              (part) => ChatMessage(role: 'him', text: part, time: base.time),
+              (part) => ChatMessage(
+                role: 'him',
+                text: part,
+                time: base.time,
+                dateKey: _dateKey(base.timestamp),
+              ),
             ),
           );
         }
@@ -518,6 +577,7 @@ class ChatController extends ChangeNotifier {
               role: 'him',
               text: '',
               time: base.time,
+              dateKey: _dateKey(base.timestamp),
               sticker: message.sticker,
             ),
           );
@@ -585,23 +645,25 @@ class ChatController extends ChangeNotifier {
       }
     } on BackendException catch (e) {
       backendError = e.message;
-      sent.add(
+      _markLastSendFailed();
+      /*
         ChatMessage(
           role: 'him',
           text: '（$failureLabel没有送过去：${e.message}）',
           time: _nowLabel(),
         ),
-      );
+      ); */
       scrollToBottom();
     } catch (e) {
       backendError = e.toString();
-      sent.add(
+      _markLastSendFailed();
+      /* sent.add(
         ChatMessage(
           role: 'him',
           text: '（$failureLabel上传遇到一个未预期错误：$e）',
           time: _nowLabel(),
         ),
-      );
+      ); */
       scrollToBottom();
     } finally {
       sending = false;
@@ -644,6 +706,7 @@ class ChatController extends ChangeNotifier {
 
   Future<void> _appendMessages(List<ChatMessage> messages) async {
     if (messages.isEmpty) return;
+    final wasAtBottom = _isAtBottom;
     _messageQueue.add(messages);
     if (_playingSegments) return;
     _playingSegments = true;
@@ -655,7 +718,11 @@ class ChatController extends ChangeNotifier {
           himTyping = false;
           sent.add(batch[i]);
           notifyListeners();
-          scrollToBottom();
+          if (wasAtBottom) {
+            scrollToBottom();
+          } else if (batch[i].role == 'him') {
+            unreadHimCount++;
+          }
           final hasNext = i < batch.length - 1 || _messageQueue.isNotEmpty;
           if (hasNext) {
             himTyping = true;
@@ -676,6 +743,12 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  bool get _isAtBottom =>
+      !scrollController.hasClients ||
+      scrollController.position.maxScrollExtent -
+              scrollController.position.pixels <=
+          260;
 
   List<String> _splitSegments(String text) {
     final value = text.trim();
@@ -754,9 +827,19 @@ class ChatController extends ChangeNotifier {
   List<ChatMessage> _messagesFromDay(ChatLogDay day) => [
     for (final entry in day.entries) ...[
       for (final part in _splitHistory(entry.user))
-        ChatMessage(role: 'you', text: part, time: entry.time),
+        ChatMessage(
+          role: 'you',
+          text: part,
+          time: entry.time,
+          dateKey: day.date,
+        ),
       for (final part in _splitHistory(entry.assistant))
-        ChatMessage(role: 'him', text: part, time: entry.time),
+        ChatMessage(
+          role: 'him',
+          text: part,
+          time: entry.time,
+          dateKey: day.date,
+        ),
     ],
   ];
   List<String> _splitHistory(String text) {
@@ -833,6 +916,7 @@ class ChatController extends ChangeNotifier {
   void scrollToBottom() {
     if (showJumpToLatest) {
       showJumpToLatest = false;
+      unreadHimCount = 0;
       notifyListeners();
     }
     void scroll({bool animate = true}) {

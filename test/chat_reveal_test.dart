@@ -35,6 +35,27 @@ void main() {
     controller.dispose();
   });
 
+  test('settling a message preserves its IM metadata', () {
+    final message = ChatMessage(
+      role: 'you',
+      text: 'reply',
+      time: '10:24',
+      dateKey: '2026-09-02',
+      quotedText: 'quoted message',
+      quotedLabel: 'him',
+      failed: true,
+      animate: true,
+    );
+
+    final settled = message.settled();
+
+    expect(settled.animate, isFalse);
+    expect(settled.dateKey, message.dateKey);
+    expect(settled.quotedText, message.quotedText);
+    expect(settled.quotedLabel, message.quotedLabel);
+    expect(settled.failed, isTrue);
+  });
+
   testWidgets('an in-progress reveal survives consuming its one-shot flag', (
     tester,
   ) async {
