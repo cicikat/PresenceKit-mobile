@@ -133,7 +133,12 @@ class ChatScene extends StatelessWidget {
           children: [
             if (prefs.infoStrip)
               ChatTopBar(
-                c: c,
+                c: dark
+                    ? c.copyWith(
+                        characterDeep: const Color(0xFF090A09),
+                        characterOn: const Color(0xFFF0E9DD),
+                      )
+                    : c,
                 dark: dark,
                 presence: presence,
                 prefs: prefs,
