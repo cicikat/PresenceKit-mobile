@@ -47,6 +47,8 @@ class SettingsStore {
 
   Future<List<String>> loadSeenMobileMessageIds() =>
       _store.loadSeenMobileMessageIds();
+  Future<List<String>> consumePendingMobileContents() =>
+      _store.consumePendingMobileContents();
   Future<void> saveSeenMobileMessageIds(List<String> ids) =>
       _store.saveSeenMobileMessageIds(ids);
   Future<int?> loadLastAckedMobileSeq() => _store.loadLastAckedMobileSeq();

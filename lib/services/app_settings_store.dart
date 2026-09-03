@@ -515,6 +515,18 @@ class AppSettingsStore {
     );
   }
 
+  Future<List<String>> consumePendingMobileContents() async {
+    if (!_channelAvailable) return const [];
+    try {
+      final values = await PlatformSettingsChannel.channel
+          .invokeMethod<List<dynamic>>('consumePendingMobileContents');
+      return values?.map((value) => value.toString()).toList(growable: false) ??
+          const [];
+    } on PlatformException {
+      return const [];
+    }
+  }
+
   Future<List<String>> loadSeenMobileMessageIds() async {
     if (!_channelAvailable) return const [];
     final values = await PlatformSettingsChannel.channel

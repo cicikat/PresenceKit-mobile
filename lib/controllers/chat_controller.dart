@@ -135,6 +135,17 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> catchUpFromNotification() async {
+    final pending = await _settings.consumePendingMobileContents();
+    if (pending.isNotEmpty) {
+      sent.addAll(
+        pending.where((text) => text.trim().isNotEmpty).map(
+          (text) => ChatMessage(role: 'him', text: text, time: '刚刚'),
+        ),
+      );
+      mobileReceivedCount += pending.length;
+      lastMobileContent = pending.last;
+      notifyListeners();
+    }
     await _catchUpAfterBackgroundStops();
     scrollToBottom();
   }

@@ -795,7 +795,10 @@ class MobileNotificationService : Service() {
                     .commit()
                 if (!persisted) throw IOException("could not persist seen mobile message ids")
             }
-            deliverBackgroundMessage(content, item.optJSONObject("behavior"))
+            'val pending = runCatching { JSONArray(servicePrefs().getString("pendingMobileContents", "[]")) }.getOrElse { JSONArray() }
+            pending.put(content)
+            while (pending.length() > 20) pending.remove(0)
+            servicePrefs().edit().putString("pendingMobileContents", pending.toString()).apply()'\n            deliverBackgroundMessage(content, item.optJSONObject("behavior"))
         }
         return true
     }
