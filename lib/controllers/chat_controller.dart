@@ -450,7 +450,7 @@ class ChatController extends ChangeNotifier {
       final result = await _backend().pollMobile(
         token: token,
         after: lastAckedMobileSeq,
-        waitSeconds: 25,
+        waitSeconds: 5,
       );
       if (!result.ok || !result.active) {
         mobileActive = false;
