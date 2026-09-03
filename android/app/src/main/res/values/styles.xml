@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">陪伴</string>
+    <string name="app_name">Pt</string>
     <string name="device_admin_label">陪伴锁屏确认</string>
     <string name="device_admin_description">允许陪伴在你确认后执行系统锁屏。</string>
     <string name="accessibility_service_label">陪伴操作助手</string>

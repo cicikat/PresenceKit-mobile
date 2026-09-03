@@ -59,7 +59,7 @@ android {
         create("dev") {
             dimension = "environment"
             applicationIdSuffix = ".dev"
-            resValue("string", "app_name", "PresenceKit Dev")
+            resValue("string", "app_name", "Pt")
         }
         create("prod") {
             dimension = "environment"
