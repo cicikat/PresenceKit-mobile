@@ -404,6 +404,16 @@ class SettingsPage extends StatelessWidget {
               ),
               SettingsRow(
                 c: c,
+                title: '${l10n.settingsChatBackgroundTitle} · Dream',
+                subtitle: l10n.settingsChatBackgroundSubtitle,
+                child: Wrap(spacing: 8, children: [
+                  if (prefs.dreamBackground != null) ClipRRect(borderRadius: BorderRadius.circular(4), child: Image.memory(prefs.dreamBackground!, width: 64, height: 40, fit: BoxFit.cover)),
+                  YxIconButton(c: c, icon: Icons.add_photo_alternate_outlined, onPressed: onImportDreamBackground ?? () {}, tooltip: l10n.settingsImportChatBackgroundTooltip, size: 30),
+                  if (prefs.dreamBackground != null) YxIconButton(c: c, icon: Icons.restore_rounded, onPressed: onResetDreamBackground ?? () {}, tooltip: l10n.settingsResetChatBackgroundTooltip, size: 30),
+                ]),
+              ),
+              SettingsRow(
+                c: c,
                 title: l10n.settingsInfoStripTitle,
                 subtitle: l10n.settingsInfoStripSubtitle,
                 child: Switch(
