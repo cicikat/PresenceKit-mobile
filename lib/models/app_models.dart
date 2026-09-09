@@ -152,6 +152,7 @@ class YxPrefs {
     this.proactiveRate = 'mid',
     this.nightSilent = true,
     this.chatBackground,
+    this.dreamBackground,
     this.chatBackgroundBlur = 0,
     this.chatBubbleOpacity = 0.94,
   });
@@ -162,6 +163,8 @@ class YxPrefs {
   final String proactiveRate;
   final bool nightSilent;
   final Uint8List? chatBackground;
+  /// Local-only Dream scene backdrop; never sent to the backend.
+  final Uint8List? dreamBackground;
   final double chatBackgroundBlur;
   final double chatBubbleOpacity;
 
@@ -172,6 +175,7 @@ class YxPrefs {
     String? proactiveRate,
     bool? nightSilent,
     Uint8List? chatBackground,
+    Uint8List? dreamBackground,
     double? chatBackgroundBlur,
     double? chatBubbleOpacity,
   }) {
@@ -182,6 +186,7 @@ class YxPrefs {
       proactiveRate: proactiveRate ?? this.proactiveRate,
       nightSilent: nightSilent ?? this.nightSilent,
       chatBackground: chatBackground ?? this.chatBackground,
+      dreamBackground: dreamBackground ?? this.dreamBackground,
       chatBackgroundBlur: chatBackgroundBlur ?? this.chatBackgroundBlur,
       chatBubbleOpacity: chatBubbleOpacity ?? this.chatBubbleOpacity,
     );
