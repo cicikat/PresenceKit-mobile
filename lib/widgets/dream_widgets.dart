@@ -397,10 +397,6 @@ class DreamSegmentedMessage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 36, bottom: 4),
-            child: Text('HIM · $time', style: mono(c, 9.5, color: c.ink3)),
-          ),
           for (final segment in segments) _buildSegment(segment),
         ],
       ),
