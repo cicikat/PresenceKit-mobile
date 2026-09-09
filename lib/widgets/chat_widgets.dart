@@ -56,6 +56,7 @@ class ChatScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageBytes = attachment.isImage ? _decodeDataImage(attachment.filename) : null;
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) => _build(context),
@@ -1309,7 +1310,9 @@ class UserAttachmentCard extends StatelessWidget {
                 color: c.userBubbleText.withValues(alpha: 0.18),
               ),
             ),
-            child: Icon(icon, color: c.userBubbleText, size: 19),
+            child: imageBytes == null
+                ? Icon(icon, color: c.userBubbleText, size: 19)
+                : ClipRRect(borderRadius: BorderRadius.circular(5), child: Image.memory(imageBytes, fit: BoxFit.cover)),
           ),
           const SizedBox(width: 10),
           Flexible(
@@ -1358,6 +1361,12 @@ class UserAttachmentCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Uint8List? _decodeDataImage(String value) {
+  final i = value.indexOf('base64,');
+  if (i < 0) return null;
+  try { return base64Decode(value.substring(i + 7)); } catch (_) { return null; }
 }
 
 class Composer extends StatefulWidget {
