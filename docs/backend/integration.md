@@ -1,5 +1,14 @@
 # 后端集成
 
+## API 思考存档（2026-09-09）
+
+后端默认独立保存 API 返回的思考，提供 admin-only
+`GET /observability/llm-reasoning`（limit/before/model 元数据分页）和
+`GET /observability/llm-reasoning/{call_id}`（parts 正文）。标准 mobile token 无权访问，
+手机暂不消费，也无展开 UI。call_id 仅标记一次 API 尝试，尚未关联聊天 turn_id。
+存储与 thinking.enabled 生成开关独立，无手机存储开关；未来展开属于展示偏好，需先
+补适当的读取权限和关联键。既有 mobile/chat、poll、ack、通知和中继路径不变。
+
 2026-09-09 外观跟进：图片预览缩小、附言气泡和底部安全区只调整 Flutter 展示，不新增后端/桌面开关、权限、持久化或协议字段。图片选择 → 原字节 multipart 上传 → 当前会话预览/原图查看和附件重试沿用现有链路；mobile ack、TTL、后台服务和后端 effective state 不受影响。
 
 2026-09-09 交互修复闭环核对：聊天边缘刷新复用 `/mobile/activate`、`/chat-log/*` 和
