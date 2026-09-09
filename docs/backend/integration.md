@@ -167,3 +167,7 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 - 主动消息可以带 `behavior` metadata，手机端只消费 metadata，不自己定义触发规则。
 - 屏幕上下文当前是实时上下文，不应被手机端直接长期记忆化。独立上传开关默认关闭；原生采集层会先过滤敏感页面。
 - `/upload/ingest` 与其他后端请求一样附带 `Authorization: Bearer <token>`。
+
+## Model streaming compatibility settings audit (2026-09-09)
+
+Backend admin Preset editing owns force_stream (default false, Chat Completions only). Model requests including tool decisions are buffered from SSE; mobile receives the original complete `/mobile/chat` JSON without new SSE/WS, scopes, background services or local settings. Request transport is independent of typing animation. Real gateway and admin browser verification remain observe in the backend interface catalog.
