@@ -262,6 +262,12 @@ class MainActivity : FlutterActivity() {
                             .apply()
                         result.success(null)
                     }
+                    "getDreamBackground" -> result.success(dreamBackgroundFile().let { if (it.exists()) it.readBytes() else null })
+                    "saveDreamBackground" -> {
+                        val bytes = call.argument<ByteArray>("bytes")
+                        result.success(runCatching { if (bytes != null) dreamBackgroundFile().writeBytes(bytes); true }.getOrDefault(false))
+                    }
+                    "deleteDreamBackground" -> { dreamBackgroundFile().delete(); result.success(null) }
                     "getBackgroundNotificationsEnabled" -> {
                         result.success(prefs.getBoolean("backgroundNotificationsEnabled", true))
                     }
@@ -1039,6 +1045,7 @@ class MainActivity : FlutterActivity() {
     private fun chatBackgroundFile(): File {
         return File(filesDir, "chat_background.png")
     }
+    private fun dreamBackgroundFile(): File = File(filesDir, "dream_background.png")
 
     private fun loadProfileAvatar(): ByteArray? {
         val file = avatarFile()
