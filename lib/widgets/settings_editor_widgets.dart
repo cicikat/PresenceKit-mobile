@@ -140,7 +140,7 @@ class _ChatBackgroundEditorDialogState
                       transformationController: _controller,
                       minScale: 1,
                       maxScale: 5,
-                      boundaryMargin: EdgeInsets.zero,
+                      boundaryMargin: const EdgeInsets.all(24),
                       child: Image.memory(
                         widget.bytes,
                         width: stageWidth,
