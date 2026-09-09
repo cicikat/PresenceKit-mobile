@@ -507,7 +507,7 @@ class ChatController extends ChangeNotifier {
           scrollToBottom();
         } else {
           showJumpToLatest = true;
-          unreadHimCount += fresh.where((m) => m.role == 'him').length;
+          unreadHimCount += fresh.length;
         }
       }
       notifyListeners();
