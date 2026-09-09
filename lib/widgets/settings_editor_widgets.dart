@@ -130,7 +130,8 @@ class _ChatBackgroundEditorDialogState
                 child: SizedBox(
                   width: 320,
                   height: 220,
-                  child: ClipRRect(
+                  child: Stack(
+                    children: [ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: InteractiveViewer(
                       transformationController: _controller,
@@ -144,7 +145,7 @@ class _ChatBackgroundEditorDialogState
                         fit: BoxFit.cover,
                       ),
                     ),
-                  ),
+                  ), Positioned.fill(child: IgnorePointer(child: DecoratedBox(decoration: BoxDecoration(border: Border.all(color: c.characterOn.withValues(alpha: .85), width: 2), borderRadius: BorderRadius.circular(6)))))]),
                 ),
               ),
             ),
