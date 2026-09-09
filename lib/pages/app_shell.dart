@@ -714,7 +714,7 @@ class _CompanionAppState extends State<CompanionApp>
     if (await _settings.saveDreamBackground(draft.bytes)) setState(() => _prefs = _prefs.copyWith(dreamBackground: draft.bytes));
   }
 
-  Future<void> _resetDreamBackground() async { await _settings.deleteDreamBackground(); if (mounted) setState(() => _prefs = _prefs.copyWith(dreamBackground: null)); }
+  Future<void> _resetDreamBackground() async { await _settings.deleteDreamBackground(); if (mounted) setState(() => _prefs = _prefs.copyWith(clearDreamBackground: true)); }
 
   Future<void> _resetChatBackground() async {
     await _settings.deleteChatAppearance();

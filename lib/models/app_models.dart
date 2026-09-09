@@ -176,6 +176,7 @@ class YxPrefs {
     bool? nightSilent,
     Uint8List? chatBackground,
     Uint8List? dreamBackground,
+    bool clearDreamBackground = false,
     double? chatBackgroundBlur,
     double? chatBubbleOpacity,
   }) {
@@ -186,7 +187,7 @@ class YxPrefs {
       proactiveRate: proactiveRate ?? this.proactiveRate,
       nightSilent: nightSilent ?? this.nightSilent,
       chatBackground: chatBackground ?? this.chatBackground,
-      dreamBackground: dreamBackground ?? this.dreamBackground,
+      dreamBackground: clearDreamBackground ? null : (dreamBackground ?? this.dreamBackground),
       chatBackgroundBlur: chatBackgroundBlur ?? this.chatBackgroundBlur,
       chatBubbleOpacity: chatBubbleOpacity ?? this.chatBubbleOpacity,
     );
