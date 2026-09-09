@@ -1233,6 +1233,7 @@ class _CompanionAppState extends State<CompanionApp>
             : Brightness.dark,
       ),
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         key: _scaffoldKey,
         drawer: YxDrawer(
           c: c,
