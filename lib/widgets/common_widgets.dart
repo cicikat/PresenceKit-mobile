@@ -53,24 +53,20 @@ TextStyle mono(YxPalette c, double size, {Color? color, FontWeight? weight}) {
   );
 }
 
-class NavPill extends StatelessWidget {
-  const NavPill({super.key, required this.c});
+/// Paint only the system-owned bottom inset; the keyboard already occupies
+/// this space while visible, so MediaQuery.padding.bottom becomes zero.
+class BottomSystemInset extends StatelessWidget {
+  const BottomSystemInset({super.key, required this.color});
 
-  final YxPalette c;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 22,
-      child: Center(
-        child: Container(
-          width: 108,
-          height: 4,
-          decoration: BoxDecoration(
-            color: c.ink1.withValues(alpha: 0.38),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
+    return ColoredBox(
+      color: color,
+      child: SizedBox(
+        width: double.infinity,
+        height: MediaQuery.paddingOf(context).bottom,
       ),
     );
   }

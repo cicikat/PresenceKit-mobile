@@ -1207,6 +1207,9 @@ class _YouMessageState extends State<YouMessage> {
     final text = widget.text;
     final prefs = widget.prefs;
     final attachment = AttachmentPlaceholder.parse(text);
+    final hasImages =
+        widget.attachments.any((file) => file.isImage) ||
+        attachment?.isImage == true;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -1235,11 +1238,10 @@ class _YouMessageState extends State<YouMessage> {
                       : null,
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 280),
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
-                    decoration:
-                        attachment != null &&
-                            attachment.isImage &&
-                            attachment.note.isEmpty
+                    padding: hasImages
+                        ? EdgeInsets.zero
+                        : const EdgeInsets.fromLTRB(14, 10, 14, 11),
+                    decoration: hasImages
                         ? null
                         : BoxDecoration(
                             color: c.userBubble.withValues(
@@ -1268,14 +1270,21 @@ class _YouMessageState extends State<YouMessage> {
                                         ),
                                 ),
                               if (widget.uploadNote.isNotEmpty)
-                                Text(
-                                  widget.uploadNote,
-                                  style: serif(
-                                    c,
-                                    prefs.fontSize,
-                                    color: c.userBubbleText,
-                                  ),
-                                ),
+                                hasImages
+                                    ? _ImageCaptionBubble(
+                                        c: c,
+                                        text: widget.uploadNote,
+                                        fontSize: prefs.fontSize,
+                                        opacity: prefs.chatBubbleOpacity,
+                                      )
+                                    : Text(
+                                        widget.uploadNote,
+                                        style: serif(
+                                          c,
+                                          prefs.fontSize,
+                                          color: c.userBubbleText,
+                                        ),
+                                      ),
                             ],
                           )
                         : attachment != null
@@ -1283,6 +1292,7 @@ class _YouMessageState extends State<YouMessage> {
                             c: c,
                             attachment: attachment,
                             fontSize: prefs.fontSize,
+                            bubbleOpacity: prefs.chatBubbleOpacity,
                           )
                         : _selectable
                         ? SelectableText(
@@ -1331,17 +1341,43 @@ class _YouMessageState extends State<YouMessage> {
   }
 }
 
+class _ImageCaptionBubble extends StatelessWidget {
+  const _ImageCaptionBubble({
+    required this.c,
+    required this.text,
+    required this.fontSize,
+    required this.opacity,
+  });
+  final YxPalette c;
+  final String text;
+  final double fontSize;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    key: const ValueKey('image-caption-bubble'),
+    padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
+    decoration: BoxDecoration(
+      color: c.userBubble.withValues(alpha: opacity),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Text(text, style: serif(c, fontSize, color: c.userBubbleText)),
+  );
+}
+
 class UserAttachmentCard extends StatelessWidget {
   const UserAttachmentCard({
     super.key,
     required this.c,
     required this.attachment,
     required this.fontSize,
+    this.bubbleOpacity = .94,
   });
 
   final YxPalette c;
   final AttachmentPlaceholder attachment;
   final double fontSize;
+  final double bubbleOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -1351,12 +1387,18 @@ class UserAttachmentCard extends StatelessWidget {
     if (imageBytes != null) {
       return Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           ChatImage(bytes: imageBytes),
           if (attachment.note.isNotEmpty)
-            Text(
-              attachment.note,
-              style: serif(c, fontSize, color: c.userBubbleText),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: _ImageCaptionBubble(
+                c: c,
+                text: attachment.note,
+                fontSize: fontSize,
+                opacity: bubbleOpacity,
+              ),
             ),
         ],
       );
@@ -1667,30 +1709,28 @@ class _ComposerState extends State<Composer> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
           if (_voiceError != null) ...[
+            const SizedBox(height: 6),
             Text(
               _voiceError!,
               style: mono(widget.c, 9.5, color: widget.c.danger),
             ),
             const SizedBox(height: 4),
           ],
-          Row(
-            children: [
-              Text('', style: mono(widget.c, 9.5, color: widget.c.ink3)),
-              Text('', style: mono(widget.c, 9.5, color: widget.c.ink3)),
-              Text('', style: mono(widget.c, 9.5, color: widget.c.ink3)),
-              const Spacer(),
-              ValueListenableBuilder<String>(
-                valueListenable: _draft,
-                builder: (context, draft, _) {
-                  return Text(
-                    draft.isEmpty ? '—' : l10n.characterCount(draft.length),
-                    style: mono(widget.c, 9.5, color: widget.c.ink3),
-                  );
-                },
-              ),
-            ],
+          ValueListenableBuilder<String>(
+            valueListenable: _draft,
+            builder: (context, draft, _) => draft.isEmpty
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        l10n.characterCount(draft.length),
+                        style: mono(widget.c, 9.5, color: widget.c.ink3),
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),

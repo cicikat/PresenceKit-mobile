@@ -346,9 +346,29 @@ void main() {
     expect(find.text('caption'), findsOneWidget);
     expect(find.text('internal filenames'), findsNothing);
     expect(find.text('one.png'), findsNothing);
+    for (final preview in find.byType(ChatImage).evaluate()) {
+      final size = tester.getSize(find.byWidget(preview.widget));
+      expect(size.width, closeTo(126, .01));
+      expect(size.height, closeTo(63, .01));
+    }
+    final caption = find.byKey(const ValueKey('image-caption-bubble'));
+    expect(
+      find.descendant(of: caption, matching: find.text('caption')),
+      findsOneWidget,
+    );
+    final bubble = tester.widget<Container>(caption);
+    expect(
+      (bubble.decoration as BoxDecoration).color,
+      YxPalette.light.userBubble.withValues(alpha: .94),
+    );
+    expect(
+      tester.getRect(caption).top,
+      greaterThan(tester.getRect(find.byType(ChatImage).last).bottom),
+    );
     await tester.tap(find.byType(ChatImage).first);
     await tester.pumpAndSettle();
     expect(find.byType(InteractiveViewer), findsOneWidget);
+    expect(tester.getSize(find.byType(Image).last).width, greaterThan(126));
     final images = tester.widgetList<Image>(find.byType(Image));
     expect(
       images.every((image) => (image.image as MemoryImage).bytes == bytes),

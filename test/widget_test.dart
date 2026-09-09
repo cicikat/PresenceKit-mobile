@@ -73,6 +73,57 @@ void main() {
     expect(find.text('对他说些什么…'), findsOneWidget);
   });
 
+  testWidgets(
+    'composer hugs the system inset and keyboard without a fake navigation row',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPadding);
+      addTearDown(tester.view.resetViewPadding);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpWidget(const MyApp());
+      final emptyHeight = tester.getSize(find.byType(Composer)).height;
+      for (final inset in [0.0, 24.0, 48.0]) {
+        tester.view.padding = FakeViewPadding(bottom: inset);
+        tester.view.viewPadding = FakeViewPadding(bottom: inset);
+        await tester.pump();
+        final footer = find.byType(BottomSystemInset);
+        expect(tester.getSize(footer).height, inset);
+        expect(tester.widget<BottomSystemInset>(footer).color, Colors.black);
+        expect(
+          tester.getRect(find.byType(Composer)).bottom,
+          closeTo(800 - inset, .01),
+        );
+        expect(
+          tester.getSize(find.byType(Composer)).height,
+          closeTo(emptyHeight, .01),
+        );
+      }
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      tester.view.padding = FakeViewPadding.zero;
+      await tester.pump();
+      expect(tester.getSize(find.byType(BottomSystemInset)).height, 0);
+      expect(tester.getRect(find.byType(Composer)).bottom, closeTo(500, .01));
+      await tester.enterText(find.byType(TextField).first, 'hello');
+      await tester.pump();
+      expect(tester.getRect(find.byType(Composer)).bottom, closeTo(500, .01));
+      await tester.enterText(find.byType(TextField).first, '');
+      await tester.pump();
+      expect(
+        tester.getSize(find.byType(Composer)).height,
+        closeTo(emptyHeight, .01),
+      );
+      expect(
+        tester.getRect(find.byType(Composer)).bottom -
+            tester.getRect(find.byType(TextField).first).bottom,
+        closeTo(18, .01),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('settings page puts language above token', (
     WidgetTester tester,
   ) async {

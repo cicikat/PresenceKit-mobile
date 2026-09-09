@@ -30,6 +30,8 @@
 - `image_crop_viewport.dart` 使用原图坐标进行有界裁切，供头像和背景编辑共用；导出不截取 UI。
 - `SceneBackground` 在 app shell 的 Scaffold 外绘制主聊天/Dream 背景，避免 IME 压缩背景画布。
 - `ChatMessage.attachments` / `uploadNote` 是当前会话的上传预览及重试载荷，`chat_image.dart` 负责原图查看；不作为后端历史或本地长期存储。
+- 图片预览最大宽高为 126×170（原预览宽高各减半），点开仍查看原图；附言单独使用用户气泡颜色、字体和透明度。
+- `BottomSystemInset` 仅占用 `MediaQuery.padding.bottom`，替代固定 22px 的仿导航条。主聊天/Dream 的系统底部区域填黑，IME 显示时不重复预留导航高度；空草稿不显示计数字符占位行。
 
 - `ChatScene` 直接通过 `AnimatedBuilder` 监听 `ChatController`。
 - `DreamPage`、`GardenPage`、`DiaryPage` 直接监听各自 controller；app shell 不再展开传递领域状态、加载标记和刷新回调。

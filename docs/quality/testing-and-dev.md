@@ -1,5 +1,11 @@
 # 测试与开发
 
+## 外观跟进验证（2026-09-09）
+
+- 图片预览宽高各缩小 50%，附言独立气泡；删除仿导航条和空草稿占位行，系统底部安全区按实际 inset 填色。
+- `flutter analyze --no-pub`：0 issues；`flutter test --no-pub test/chat_interaction_regression_test.dart test/widget_test.dart test/chat_recovery_upload_test.dart`：21 项通过。检查了缩小后的预览尺寸、附言气泡颜色/位置、原图查看，以及实际 App 壳在 0/24/48px 底部 inset 和 300px 键盘下的输入栏位置。
+- `flutter build apk --debug --flavor dev --no-pub` 通过；更新 `build/app/outputs/flutter-apk/app-dev-debug.apk`。未安装到真机。
+
 ## 本轮验证（2026-09-09：聊天交互修复）
 
 - `flutter gen-l10n`、`flutter analyze --no-pub` 通过，静态分析 0 issues。

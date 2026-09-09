@@ -1231,14 +1231,16 @@ class _CompanionAppState extends State<CompanionApp>
 
   @override
   Widget build(BuildContext context) {
+    final conversation = _route == AppRoute.chat || _route == AppRoute.dream;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: _themeController.isDark
             ? Brightness.light
             : Brightness.dark,
-        systemNavigationBarColor: c.surface,
-        systemNavigationBarIconBrightness: _themeController.isDark
+        systemNavigationBarColor: conversation ? Colors.black : c.surface,
+        systemNavigationBarIconBrightness:
+            conversation || _themeController.isDark
             ? Brightness.light
             : Brightness.dark,
       ),
@@ -1267,6 +1269,7 @@ class _CompanionAppState extends State<CompanionApp>
             color: Colors.transparent,
             child: SafeArea(
               top: false,
+              bottom: false,
               child: Column(
                 children: [
                   Expanded(
@@ -1275,7 +1278,9 @@ class _CompanionAppState extends State<CompanionApp>
                       child: _buildRoute(),
                     ),
                   ),
-                  NavPill(c: c),
+                  BottomSystemInset(
+                    color: conversation ? Colors.black : c.surface,
+                  ),
                 ],
               ),
             ),

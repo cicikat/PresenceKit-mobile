@@ -1,5 +1,7 @@
 # 后端集成
 
+2026-09-09 外观跟进：图片预览缩小、附言气泡和底部安全区只调整 Flutter 展示，不新增后端/桌面开关、权限、持久化或协议字段。图片选择 → 原字节 multipart 上传 → 当前会话预览/原图查看和附件重试沿用现有链路；mobile ack、TTL、后台服务和后端 effective state 不受影响。
+
 2026-09-09 交互修复闭环核对：聊天边缘刷新复用 `/mobile/activate`、`/chat-log/*` 和
 `/mobile/poll`，catch-up poll 使用 `wait=0`，仍经过原有去重 → 持久化 seen → ack → 游标流程。
 健康历史不因手动刷新被全量重载。上传继续使用 `/upload/ingest` 的 Bearer、`files`、`message`、

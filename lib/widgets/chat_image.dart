@@ -52,7 +52,7 @@ class ChatImage extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(6),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 252, maxHeight: 340),
+          constraints: const BoxConstraints(maxWidth: 126, maxHeight: 170),
           child: Image.memory(
             bytes,
             fit: BoxFit.contain,
@@ -61,8 +61,8 @@ class ChatImage extends StatelessWidget {
                 frame != null || synchronous
                 ? child
                 : const SizedBox(
-                    width: 200,
-                    height: 140,
+                    width: 100,
+                    height: 70,
                     child: Center(child: CircularProgressIndicator()),
                   ),
             errorBuilder: (_, _, _) => Padding(
