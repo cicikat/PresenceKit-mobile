@@ -98,6 +98,9 @@ class _ChatBackgroundEditorDialogState
   Widget build(BuildContext context) {
     final c = widget.c;
     final l10n = context.l10n;
+    final screen = MediaQuery.sizeOf(context);
+    final stageWidth = (screen.width - 32).clamp(240.0, 420.0);
+    final stageHeight = (stageWidth * screen.height / screen.width).clamp(320.0, 620.0);
     return Dialog(
       backgroundColor: c.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -128,8 +131,8 @@ class _ChatBackgroundEditorDialogState
               child: RepaintBoundary(
                 key: _cropKey,
                 child: SizedBox(
-                  width: 320,
-                  height: 220,
+                  width: stageWidth,
+                  height: stageHeight,
                   child: Stack(
                     children: [ClipRRect(
                     borderRadius: BorderRadius.circular(6),
@@ -140,8 +143,8 @@ class _ChatBackgroundEditorDialogState
                       boundaryMargin: const EdgeInsets.all(120),
                       child: Image.memory(
                         widget.bytes,
-                        width: 320,
-                        height: 220,
+                        width: stageWidth,
+                        height: stageHeight,
                         fit: BoxFit.contain,
                         alignment: Alignment.center,
                         color: Colors.black.withValues(alpha: 0.08),
