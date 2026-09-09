@@ -308,10 +308,11 @@ class JumpToLatestButton extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: c.characterOn,
-                size: 28,
+              Positioned.fill(
+                child: Center(
+                  child: Icon(Icons.keyboard_arrow_down_rounded,
+                      color: c.characterOn, size: 24),
+                ),
               ),
               if (unreadCount > 0)
                 Positioned(
@@ -1559,21 +1560,17 @@ class _ComposerState extends State<Composer> {
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
-                      onPressed: widget.sending
-                          ? null
-                          : () {
+                      onPressed: () {
                               widget.onSend(_controller.text);
                               _controller.clear();
                               _draft.value = '';
                             },
                       icon: Icon(
-                        widget.sending
-                            ? Icons.hourglass_top_rounded
-                            : Icons.send_rounded,
+                        Icons.send_rounded,
                         size: 15,
                       ),
                       label: Text(
-                        widget.sending ? l10n.waitAction : l10n.sendAction,
+                        l10n.sendAction,
                         style: mono(widget.c, 11, color: widget.c.surface),
                       ),
                     ),
