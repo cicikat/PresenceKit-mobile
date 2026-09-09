@@ -520,7 +520,7 @@ class _DreamComposerState extends State<DreamComposer> {
           Expanded(
             child: TextField(
               controller: _controller,
-              enabled: widget.enabled && !widget.sending,
+              enabled: widget.enabled,
               minLines: 1,
               maxLines: 3,
               onChanged: (_) => setState(() {}),
@@ -546,9 +546,7 @@ class _DreamComposerState extends State<DreamComposer> {
           const SizedBox(width: 8),
           FilledButton(
             onPressed:
-                widget.enabled &&
-                    !widget.sending &&
-                    _controller.text.trim().isNotEmpty
+                widget.enabled && _controller.text.trim().isNotEmpty
                 ? _send
                 : null,
             child: Text(
