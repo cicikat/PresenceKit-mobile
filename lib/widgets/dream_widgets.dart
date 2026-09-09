@@ -547,6 +547,8 @@ class _DreamComposerState extends State<DreamComposer> {
             ),
           ),
           const SizedBox(width: 8),
+          if (_controller.text.trim().isEmpty)
+            IconButton(onPressed: widget.enabled ? () {} : null, icon: const Icon(Icons.mic_none_rounded)),
           FilledButton(
             onPressed:
                 widget.enabled && _controller.text.trim().isNotEmpty
