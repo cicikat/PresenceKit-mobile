@@ -161,7 +161,6 @@ class DreamController extends ChangeNotifier {
         final next = _pending.removeAt(0);
         sending = false;
         send(next);
-        return;
       }
     }
   }
