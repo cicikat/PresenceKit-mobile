@@ -633,8 +633,9 @@ class ChatController extends ChangeNotifier {
 
   Future<void> uploadFiles(
     List<PickedUploadFile> files, {
-    required String preview,
-    required String failureLabel,
+      required String preview,
+      required String failureLabel,
+      String message = '',
   }) async {
     final token = _accessToken;
     if (sending || token == null || files.isEmpty) return;
@@ -649,6 +650,7 @@ class ChatController extends ChangeNotifier {
         files: files,
         token: token,
         channel: 'mobile',
+        message: message,
       );
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {

@@ -1176,10 +1176,22 @@ class _CompanionAppState extends State<CompanionApp>
       names: names,
       hasMore: picked.length > 3,
     );
+    final message = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('图片说明'),
+          content: TextField(controller: controller, maxLines: 3, autofocus: true, decoration: const InputDecoration(hintText: '可选：和图片一起发送的文字')),
+          actions: [TextButton(onPressed: () => Navigator.pop(context, ''), child: const Text('跳过')), FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('发送'))],
+        );
+      },
+    );
     await _chatController.uploadFiles(
       picked,
       preview: preview,
       failureLabel: UploadFeedback.imageFailureLabel(context),
+      message: message ?? '',
     );
   }
 
