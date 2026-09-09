@@ -1331,7 +1331,7 @@ class UserAttachmentCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  attachment.filename,
+                  imageBytes != null ? context.l10n.imageAttachment : attachment.filename,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: serif(
