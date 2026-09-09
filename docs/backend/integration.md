@@ -171,3 +171,7 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 ## Model streaming compatibility settings audit (2026-09-09)
 
 Backend admin Preset editing owns force_stream (default false, Chat Completions only). Model requests including tool decisions are buffered from SSE; mobile receives the original complete `/mobile/chat` JSON without new SSE/WS, scopes, background services or local settings. Request transport is independent of typing animation. Real gateway and admin browser verification remain observe in the backend interface catalog.
+
+## Inline display delivery (2026-09-09)
+
+Reality HTTP chat/upload replies and turn-sink poll messages consume optional display_text; reply/content stays canonical for voice, notification, quotation and dedup. Phone validates copy text equality, then renders hl/big/sm in animation and selection with desktop proportions and the theme red color. Existing font-size/theme settings apply; no backend feature switch, new client setting, native permission or service is needed. Backend queue poll is the existing read-only observation surface. Old history style recovery and independent Dream/group display transport remain roadmap; real-device visual verification remains observe.

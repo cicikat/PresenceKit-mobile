@@ -53,6 +53,18 @@ class _Backend extends BackendClient {
   int ackCalls = 0;
 
   @override
+  Future<BackendChatResponse> sendChat(
+    String message, {
+    required String token,
+    ReplyTarget? replyTo,
+  }) async => const BackendChatResponse(
+    reply: 'styled',
+    displayText: '<hl>styled</hl>',
+    emotion: 'neutral',
+    msgId: 'styled-id',
+  );
+
+  @override
   Future<MobileActivationResult> activateMobile({
     required String token,
   }) async => activation;
@@ -109,6 +121,57 @@ MobilePollMessage _message(int index) => MobilePollMessage(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  for (final animate in [false, true]) {
+    test(
+      'poll keeps display styling and deduplicates HTTP echo animate=$animate',
+      () async {
+        final settings = _Settings();
+        final message = MobilePollMessage.fromJson({
+          'id': 'styled-id',
+          'seq': 1,
+          'content': 'styled',
+          'display_text': '<hl>styled</hl>',
+        });
+        final backend = _Backend(
+          settings,
+          activation: const MobileActivationResult(ok: true, active: true),
+          pollResults: [
+            MobilePollResult(ok: true, active: true, messages: [message]),
+          ],
+        );
+        final controller = _controller(backend, settings);
+        await controller.pollMobile(animate: animate);
+        await Future<void>.delayed(Duration.zero);
+        expect(controller.sent.single.text, 'styled');
+        expect(controller.sent.single.displayText, '<hl>styled</hl>');
+        expect(backend.ackCalls, 1);
+        controller.send('hello');
+        await Future<void>.delayed(Duration.zero);
+        expect(controller.sent.where((m) => m.role == 'him').length, 1);
+        expect(controller.sending, isFalse);
+        controller.dispose();
+      },
+    );
+  }
+
+  test('synchronous reply carries styles through controller', () async {
+    final settings = _Settings();
+    final backend = _Backend(
+      settings,
+      activation: const MobileActivationResult(ok: true, active: true),
+      pollResults: [],
+    );
+    final controller = _controller(backend, settings);
+    controller.send('hello');
+    await Future<void>.delayed(Duration.zero);
+    final reply = controller.sent.singleWhere((m) => m.role == 'him');
+    expect(reply.text, 'styled');
+    expect(reply.displayText, '<hl>styled</hl>');
+    controller.markRevealStarted(reply);
+    expect(controller.sent.last.displayText, '<hl>styled</hl>');
+    controller.dispose();
+  });
 
   test('activate business failure never marks mobile active', () async {
     final settings = _Settings();

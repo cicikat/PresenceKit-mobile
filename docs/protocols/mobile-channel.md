@@ -147,3 +147,9 @@ behavior_id 或 kind 不在上述白名单中，且结构字段也无法匹配�
 - 锁屏必须用户点击确认。
 - 购物/外卖可以打开 App 或尝试进购物车，但不自动支付、不提交订单。
 - 截图/OCR/视觉识别未接入；未来接入必须是明确开关或手动确认。
+
+## Optional inline display text (2026-09-09)
+
+Mobile `/mobile/chat` and upload responses add optional `display_text` alongside plain `reply`; poll items add the same optional field alongside plain `content`. The copy contains desktop-compatible hl/big/sm tags. Missing, wrong-type or mismatching display copies fall back to canonical text. `BackendChatResponse` and `MobilePollMessage` carry the optional string; `ChatMessage` preserves it across settling/copying. Copy, reply-to, TTS, notification and fingerprints continue using canonical text. IDs, ack/cursor persistence, TTL and relay are unchanged. Legacy clients may ignore this field. No native MethodChannel change or extra permission is required.
+
+The Flutter parser mirrors desktop paired-tag rules (up to 200 characters, no nested angle brackets); hl uses the theme red color (danger palette slot) at weight 600, big uses 1.18x, sm .85x with .8 alpha. Parsing before reveal prevents half tags flashing. Paragraph slicing preserves styles spanning newlines. Old plain-text history has no display copy; Dream/group transport is not extended by this reality contract.

@@ -58,3 +58,7 @@
 ## 验证
 
 常用门禁为 `flutter analyze`、`flutter test`、`flutter build apk --debug --flavor dev`。本机若在测试套件启动前出现 `HttpException: Connection closed before full header was received` 且目标为随机 `127.0.0.1` 端口，应记录为 Flutter tester 回环环境故障；不能据此把断言标成通过。
+
+## Inline chat typography (2026-09-09)
+
+`models/inline_display.dart` owns the desktop-compatible paired-tag parser, canonical-text validation and paragraph style slicing. `widgets/inline_display_text.dart` builds TextSpans with theme red emphasis and font-size scaling. `ChatController` carries optional displayText through HTTP replies and live/catch-up polling without changing dedup/ack/voice logic. `HimMessage` and `AnimatedRevealText` use rich text for display and selection; copy/reply use canonical text. No state is added to app_shell.

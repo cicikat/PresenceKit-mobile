@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../models/app_models.dart';
+import '../models/inline_display.dart';
 import '../models/screen_context.dart';
 import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
@@ -272,7 +273,7 @@ class ChatController extends ChangeNotifier {
       );
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
-        await _appendReply(response.reply);
+        await _appendReply(response.reply, displayText: response.displayText);
       }
     } on BackendException catch (e) {
       backendError = e.message;
@@ -597,11 +598,17 @@ class ChatController extends ChangeNotifier {
           final parts = message.behaviorKind.isNotEmpty
               ? [message.content]
               : _splitSegments(message.content);
+          final displayParts = inlineDisplayParts(
+            message.content,
+            message.displayText,
+            parts,
+          );
           immediate.addAll(
-            parts.map(
-              (part) => ChatMessage(
+            parts.asMap().entries.map(
+              (entry) => ChatMessage(
                 role: 'him',
-                text: part,
+                text: entry.value,
+                displayText: displayParts[entry.key],
                 time: base.time,
                 dateKey: _dateKey(base.timestamp),
               ),
@@ -632,7 +639,17 @@ class ChatController extends ChangeNotifier {
         final parts = message.behaviorKind.isNotEmpty
             ? [message.content]
             : _splitSegments(message.content);
-        unawaited(_appendSegments(parts, time: base.time));
+        unawaited(
+          _appendSegments(
+            parts,
+            time: base.time,
+            displayParts: inlineDisplayParts(
+              message.content,
+              message.displayText,
+              parts,
+            ),
+          ),
+        );
       }
       if (message.sticker != null && _stickerEnabled()) {
         unawaited(_appendSticker(message.sticker!, time: base.time));
@@ -700,7 +717,7 @@ class ChatController extends ChangeNotifier {
       );
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
-        await _appendReply(response.reply);
+        await _appendReply(response.reply, displayText: response.displayText);
       }
     } on BackendException catch (e) {
       backendError = e.message;
@@ -719,8 +736,12 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  Future<void> _appendReply(String reply) async {
-    await _appendSegments(_splitSegments(reply));
+  Future<void> _appendReply(String reply, {String? displayText}) async {
+    final parts = _splitSegments(reply);
+    await _appendSegments(
+      parts,
+      displayParts: inlineDisplayParts(reply, displayText, parts),
+    );
   }
 
   /// 逐条追加分段气泡，供同步回复路径与 mobile poll 路径共用。
@@ -728,13 +749,18 @@ class ChatController extends ChangeNotifier {
   /// 若前一批分段仍在播放，新分段追加到同一队列尾部顺序播放（不并行）；
   /// 每条气泡等上一条 reveal 动画播完（按 [revealCps] 估算）再出现，
   /// 期间维持 [himTyping] = true。
-  Future<void> _appendSegments(List<String> parts, {String? time}) async {
+  Future<void> _appendSegments(
+    List<String> parts, {
+    String? time,
+    List<String?>? displayParts,
+  }) async {
     if (parts.isEmpty) return;
     await _appendMessages([
-      for (final part in parts)
+      for (final entry in parts.asMap().entries)
         ChatMessage(
           role: 'him',
-          text: part,
+          text: entry.value,
+          displayText: displayParts?[entry.key],
           time: time ?? _nowLabel(),
           animate: true,
         ),

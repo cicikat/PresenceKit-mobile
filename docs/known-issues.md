@@ -300,3 +300,7 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 服务退出（最多 2 秒）后进行 catch-up。中继断线 1 分钟后开始补偿并每 15 分钟续约；即使 SSE 保持连接，
 也每 15 分钟执行一次受鉴权安全 poll。通知点击以一次性原生标记传递到 Flutter，凭证和首次历史同步完成后
 执行 catch-up 并跳到最新消息。消息 id 去重、seen 持久化、ack 后推进 cursor 的原有顺序未改变。
+
+## Inline typography history and visual verification (2026-09-09)
+
+`observe`: reality HTTP/poll rendering now supports hl/big/sm, including typing and selection. Widget/controller regressions and a Dev APK validate implementation; physical-device visual verification remains pending. `roadmap`: backend chat-log history is plain text, so a reload cannot recover discarded styles. Independent Dream/group transport is not extended by this reality change. No new settings, permissions, queue or notification behavior are introduced.

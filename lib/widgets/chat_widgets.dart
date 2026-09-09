@@ -12,6 +12,7 @@ import '../services/character_naming.dart';
 import '../widgets/common_widgets.dart';
 import 'edge_refresh.dart';
 import 'chat_image.dart';
+import 'inline_display_text.dart';
 import '../models/screen_context.dart';
 
 class ChatScene extends StatelessWidget {
@@ -220,6 +221,7 @@ class ChatScene extends StatelessWidget {
                               profileDisplayName: profileDisplayName,
                               profileAvatarBytes: profileAvatarBytes,
                               text: m.text,
+                              displayText: m.displayText,
                               quotedText: m.quotedText,
                               showDateDivider: showDateDivider,
                               dateKey: m.dateKey,
@@ -721,6 +723,7 @@ class HimMessage extends StatefulWidget {
     required this.c,
     required this.time,
     required this.text,
+    this.displayText,
     required this.prefs,
     this.sticker,
     this.profileDisplayName = kFallbackCharacterDisplayName,
@@ -740,6 +743,7 @@ class HimMessage extends StatefulWidget {
   final YxPalette c;
   final String time;
   final String text;
+  final String? displayText;
   final StickerPayload? sticker;
   final String? tag;
   final String tagVariant;
@@ -864,8 +868,13 @@ class _HimMessageState extends State<HimMessage> {
                       child: widget.sticker != null
                           ? StickerImage(sticker: widget.sticker!)
                           : _selectable
-                          ? SelectableText(
-                              widget.text,
+                          ? SelectableText.rich(
+                              inlineDisplaySpan(
+                                text: widget.text,
+                                displayText: widget.displayText,
+                                style: serif(c, widget.prefs.fontSize),
+                                accent: c.danger,
+                              ),
                               style: serif(c, widget.prefs.fontSize),
                             )
                           : Column(
@@ -875,6 +884,8 @@ class _HimMessageState extends State<HimMessage> {
                                   _QuoteBar(c: c, text: widget.quotedText!),
                                 AnimatedRevealText(
                                   text: widget.text,
+                                  displayText: widget.displayText,
+                                  accent: c.danger,
                                   animate: widget.animate,
                                   style: serif(c, widget.prefs.fontSize),
                                   onRevealStarted: widget.onRevealStarted,
@@ -933,6 +944,8 @@ class AnimatedRevealText extends StatefulWidget {
   const AnimatedRevealText({
     super.key,
     required this.text,
+    this.displayText,
+    this.accent,
     required this.animate,
     required this.style,
     this.onRevealStarted,
@@ -940,6 +953,8 @@ class AnimatedRevealText extends StatefulWidget {
   });
 
   final String text;
+  final String? displayText;
+  final Color? accent;
   final bool animate;
   final TextStyle style;
   final VoidCallback? onRevealStarted;
@@ -996,13 +1011,19 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
       builder: (context, _) {
         final count = (_controller.value * widget.text.characters.length)
             .floor();
-        final visible = _skipped || !_animate
-            ? widget.text
-            : widget.text.characters.take(count).toString();
         final cursor = _animate && !_skipped && _controller.value < 1
             ? '▍'
             : '';
-        return Text('$visible$cursor', style: widget.style);
+        return Text.rich(
+          inlineDisplaySpan(
+            text: widget.text,
+            displayText: widget.displayText,
+            style: widget.style,
+            accent: widget.accent ?? Theme.of(context).colorScheme.primary,
+            visibleCharacters: _skipped || !_animate ? null : count,
+            cursor: cursor,
+          ),
+        );
       },
     ),
   );

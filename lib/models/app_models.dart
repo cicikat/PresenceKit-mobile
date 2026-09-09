@@ -481,6 +481,7 @@ class ChatMessage {
   ChatMessage({
     required this.role,
     required this.text,
+    this.displayText,
     required String time,
     this.sticker,
     this.animate = false,
@@ -504,6 +505,7 @@ class ChatMessage {
   final int id;
   final String role;
   final String text;
+  final String? displayText;
   final String time;
   final StickerPayload? sticker;
   final bool animate;
@@ -524,6 +526,7 @@ class ChatMessage {
     id: id,
     role: role,
     text: text,
+    displayText: displayText,
     time: time,
     sticker: sticker,
     segments: segments,
@@ -545,6 +548,7 @@ class ChatMessage {
     id: id,
     role: role,
     text: text,
+    displayText: displayText,
     time: time ?? this.time,
     sticker: sticker,
     animate: animate,
@@ -1086,6 +1090,7 @@ class MobilePollMessage {
     required this.id,
     required this.seq,
     required this.content,
+    this.displayText,
     required this.userId,
     required this.timestamp,
     required this.behaviorKind,
@@ -1106,6 +1111,9 @@ class MobilePollMessage {
       id: (json['id'] ?? '').toString(),
       seq: json['seq'] is num ? (json['seq'] as num).toInt() : null,
       content: (json['content'] ?? '').toString(),
+      displayText: json['display_text'] is String
+          ? json['display_text'] as String
+          : null,
       userId: (json['user_id'] ?? '').toString(),
       timestamp: rawTimestamp is num
           ? DateTime.fromMillisecondsSinceEpoch((rawTimestamp * 1000).round())
@@ -1122,6 +1130,7 @@ class MobilePollMessage {
   final String id;
   final int? seq;
   final String content;
+  final String? displayText;
   final String userId;
   final DateTime? timestamp;
   final String behaviorKind;
@@ -1135,6 +1144,7 @@ class MobilePollMessage {
     return ChatMessage(
       role: 'him',
       text: content,
+      displayText: displayText,
       dateKey: timestamp == null ? null : _chatDateKey(timestamp!),
       time: timestamp == null ? '刚才' : _formatDateTime(timestamp!),
       sticker: sticker,
@@ -1228,6 +1238,7 @@ class StickerPayload {
 class BackendChatResponse {
   const BackendChatResponse({
     required this.reply,
+    this.displayText,
     required this.emotion,
     this.msgId,
     this.turnId,
@@ -1241,6 +1252,9 @@ class BackendChatResponse {
 
     return BackendChatResponse(
       reply: (json['reply'] ?? '').toString(),
+      displayText: json['display_text'] is String
+          ? json['display_text'] as String
+          : null,
       emotion: (json['emotion'] ?? 'neutral').toString(),
       msgId: toId(json['msg_id']) ?? toId(json['turn_id']),
       turnId: toId(json['turn_id']),
@@ -1248,6 +1262,7 @@ class BackendChatResponse {
   }
 
   final String reply;
+  final String? displayText;
   final String emotion;
   final String? msgId;
   final String? turnId;

@@ -197,3 +197,7 @@ Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/Creden
 - 前台 poll 与后台服务交接瞬间的场景化测试；
 - 正式签名包的安装、同包升级、替换/删除凭据和失败回滚；
 - `/mobile/chat`、poll/ack 与后端、桌面端固定 commit 的跨仓协议兼容测试。
+
+## Inline typography validation (2026-09-09)
+
+Flutter analyze --no-pub passed with zero issues. Focused widget/controller/protocol tests passed (67 tests), including style ratios/accent, grapheme reveal, paragraph slicing, malformed-copy fallback, HTTP/poll dedup, catch-up/ack and existing upload/sticker paths. Backend focused delivery tests passed (48 tests). Dev debug APK is built with the existing dev flavor; no production signing/version/release changes or device installation are part of this task. Physical-device visual verification remains pending.
