@@ -40,6 +40,8 @@ class SettingsPage extends StatelessWidget {
     required this.onResetProfileAvatar,
     this.onImportChatBackground,
     this.onResetChatBackground,
+    this.onImportDreamBackground,
+    this.onResetDreamBackground,
     required this.onOpenProfile,
     required this.onToggleLorebook,
     required this.onToggleJailbreak,
@@ -91,6 +93,8 @@ class SettingsPage extends StatelessWidget {
   final VoidCallback onResetProfileAvatar;
   final VoidCallback? onImportChatBackground;
   final VoidCallback? onResetChatBackground;
+  final VoidCallback? onImportDreamBackground;
+  final VoidCallback? onResetDreamBackground;
   final VoidCallback onOpenProfile;
   final ValueChanged<String> onToggleLorebook;
   final ValueChanged<String> onToggleJailbreak;

@@ -224,6 +224,7 @@ class _CompanionAppState extends State<CompanionApp>
     final storedName = await _settings.loadProfileName();
     final storedAvatar = await _settings.loadAvatar();
     final chatAppearance = await _settings.loadChatAppearance();
+    final dreamBackground = await _settings.loadDreamBackground();
     final appearancePrefs = await _settings.loadAppearancePrefs();
     final backgroundNotifications = await _settings
         .loadBackgroundNotificationsEnabled();
@@ -240,6 +241,7 @@ class _CompanionAppState extends State<CompanionApp>
           chatBackground: chatAppearance.background,
           chatBackgroundBlur: chatAppearance.blur,
           chatBubbleOpacity: chatAppearance.opacity,
+          dreamBackground: dreamBackground,
         );
       });
       _syncCachedCharacterDisplayName();
@@ -704,6 +706,16 @@ class _CompanionAppState extends State<CompanionApp>
     }
   }
 
+  Future<void> _importDreamBackground() async {
+    final bytes = await _settings.pickChatBackgroundImage();
+    if (!mounted || bytes == null) return;
+    final draft = await showDialog<ChatBackgroundDraft>(context: context, barrierDismissible: false, builder: (_) => ChatBackgroundEditorDialog(c: c, bytes: bytes, initialBlur: 0, initialOpacity: 1));
+    if (!mounted || draft == null) return;
+    if (await _settings.saveDreamBackground(draft.bytes)) setState(() => _prefs = _prefs.copyWith(dreamBackground: draft.bytes));
+  }
+
+  Future<void> _resetDreamBackground() async { await _settings.deleteDreamBackground(); if (mounted) setState(() => _prefs = _prefs.copyWith(dreamBackground: null)); }
+
   Future<void> _resetChatBackground() async {
     await _settings.deleteChatAppearance();
     if (!mounted) return;
@@ -1018,6 +1030,8 @@ class _CompanionAppState extends State<CompanionApp>
               onResetProfileAvatar: _resetProfileAvatar,
               onImportChatBackground: _importChatBackground,
               onResetChatBackground: _resetChatBackground,
+              onImportDreamBackground: _importDreamBackground,
+              onResetDreamBackground: _resetDreamBackground,
               onOpenProfile: _openProfilePage,
               hasAdminToken: _hasAdminToken,
               backgroundNotifications: _backgroundNotifications,
