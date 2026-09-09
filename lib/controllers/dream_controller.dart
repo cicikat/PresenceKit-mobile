@@ -28,6 +28,7 @@ class DreamController extends ChangeNotifier {
   bool sending = false;
   bool loadingSettings = false;
   bool savingSettings = false;
+  final List<String> _pending = [];
 
   String? get _accessToken {
     final value = _token()?.trim();
@@ -102,7 +103,8 @@ class DreamController extends ChangeNotifier {
 
   void send(String text) {
     final message = text.trim();
-    if (message.isEmpty || sending || state?.isActive != true) return;
+    if (message.isEmpty || state?.isActive != true) return;
+    if (sending) { _pending.add(message); messages.add(ChatMessage(role: 'you', text: message, time: _nowLabel())); notifyListeners(); return; }
     sending = true;
     error = null;
     messages.add(ChatMessage(role: 'you', text: message, time: _nowLabel()));
@@ -155,6 +157,12 @@ class DreamController extends ChangeNotifier {
     } finally {
       sending = false;
       notifyListeners();
+      if (_pending.isNotEmpty && state?.isActive == true) {
+        final next = _pending.removeAt(0);
+        sending = false;
+        send(next);
+        return;
+      }
     }
   }
 
