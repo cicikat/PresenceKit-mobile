@@ -81,7 +81,9 @@ class DreamPage extends StatelessWidget {
     final messages = controller.messages;
     final scrollController = controller.scrollController;
     final active = state?.isActive == true;
-    return Column(
+    return Container(
+      decoration: prefs.dreamBackground == null ? null : BoxDecoration(image: DecorationImage(image: MemoryImage(prefs.dreamBackground!), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .28), BlendMode.darken))),
+      child: Column(
       children: [
         Container(
           color: c.characterDeep,
@@ -221,6 +223,7 @@ class DreamPage extends StatelessWidget {
           onSend: controller.send,
         ),
       ],
+      ),
     );
   }
 }
