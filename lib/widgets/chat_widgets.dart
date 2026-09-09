@@ -56,7 +56,6 @@ class ChatScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageBytes = attachment.isImage ? _decodeDataImage(attachment.filename) : null;
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) => _build(context),
@@ -1288,6 +1287,7 @@ class UserAttachmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageBytes = attachment.isImage ? _decodeDataImage(attachment.filename) : null;
     final icon = attachment.isImage
         ? Icons.image_outlined
         : Icons.attach_file_rounded;
