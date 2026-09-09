@@ -26,6 +26,11 @@
 
 ## 状态所有权
 
+- `edge_refresh.dart` 只持有边缘拖动动画，恢复逻辑属于 `ChatController.refreshConnection`。
+- `image_crop_viewport.dart` 使用原图坐标进行有界裁切，供头像和背景编辑共用；导出不截取 UI。
+- `SceneBackground` 在 app shell 的 Scaffold 外绘制主聊天/Dream 背景，避免 IME 压缩背景画布。
+- `ChatMessage.attachments` / `uploadNote` 是当前会话的上传预览及重试载荷，`chat_image.dart` 负责原图查看；不作为后端历史或本地长期存储。
+
 - `ChatScene` 直接通过 `AnimatedBuilder` 监听 `ChatController`。
 - `DreamPage`、`GardenPage`、`DiaryPage` 直接监听各自 controller；app shell 不再展开传递领域状态、加载标记和刷新回调。
 - 资料页的本机备注名编辑弹窗属于纯 UI，位于 `profile_widgets.dart`；app shell 只负责保存编辑结果和更新组合状态。

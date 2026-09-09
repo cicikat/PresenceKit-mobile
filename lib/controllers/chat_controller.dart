@@ -60,6 +60,7 @@ class ChatController extends ChangeNotifier {
   Timer? _pollTimer;
   final List<List<ChatMessage>> _messageQueue = [];
   Future<void>? _initialSync;
+  Future<void>? _refresh;
   bool _playingSegments = false;
   bool _initialSyncComplete = false;
   double? _lastScrollPixels;
@@ -138,9 +139,9 @@ class ChatController extends ChangeNotifier {
     final pending = await _settings.consumePendingMobileContents();
     if (pending.isNotEmpty) {
       sent.addAll(
-        pending.where((text) => text.trim().isNotEmpty).map(
-          (text) => ChatMessage(role: 'him', text: text, time: '刚刚'),
-        ),
+        pending
+            .where((text) => text.trim().isNotEmpty)
+            .map((text) => ChatMessage(role: 'him', text: text, time: '刚刚')),
       );
       mobileReceivedCount += pending.length;
       lastMobileContent = pending.last;
@@ -148,6 +149,19 @@ class ChatController extends ChangeNotifier {
     }
     await _catchUpAfterBackgroundStops();
     scrollToBottom();
+  }
+
+  Future<void> refreshConnection() =>
+      _refresh ??= _refreshConnection().whenComplete(() => _refresh = null);
+
+  Future<void> _refreshConnection() async {
+    if (_accessToken == null) return;
+    if (_initialSync != null) await _initialSync;
+    if (!historyLoaded || historyError != null) await loadHistory();
+    await activateMobile(source: ChatDeliverySource.catchUp);
+    if (mobileActive && mobileError == null) backendError = null;
+    _ensurePollTimer();
+    notifyListeners();
   }
 
   Future<void> _catchUpAfterBackgroundStops() async {
@@ -217,6 +231,18 @@ class ChatController extends ChangeNotifier {
     if (sending || message.role != 'you' || !message.failed) return;
     final index = sent.indexWhere((item) => item.id == message.id);
     if (index < 0) return;
+    if (message.attachments.isNotEmpty) {
+      unawaited(
+        uploadFiles(
+          message.attachments,
+          preview: message.text,
+          failureLabel: '',
+          message: message.uploadNote,
+          retryOf: message,
+        ),
+      );
+      return;
+    }
     sent[index] = message.copyWith(failed: false, time: _nowLabel());
     sending = true;
     himTyping = true;
@@ -461,7 +487,7 @@ class ChatController extends ChangeNotifier {
       final result = await _backend().pollMobile(
         token: token,
         after: lastAckedMobileSeq,
-        waitSeconds: 5,
+        waitSeconds: source == ChatDeliverySource.live ? 5 : 0,
       );
       if (!result.ok || !result.active) {
         mobileActive = false;
@@ -633,16 +659,36 @@ class ChatController extends ChangeNotifier {
 
   Future<void> uploadFiles(
     List<PickedUploadFile> files, {
-      required String preview,
-      required String failureLabel,
-      String message = '',
+    required String preview,
+    required String failureLabel,
+    String message = '',
+    ChatMessage? retryOf,
   }) async {
     final token = _accessToken;
     if (sending || token == null || files.isEmpty) return;
     sending = true;
     himTyping = true;
     backendError = null;
-    sent.add(ChatMessage(role: 'you', text: preview, time: '现在'));
+    final outgoing =
+        retryOf?.copyWith(failed: false, time: _nowLabel()) ??
+        ChatMessage(
+          role: 'you',
+          text: preview,
+          time: '现在',
+          attachments: List.unmodifiable(files),
+          uploadNote: message,
+        );
+    if (retryOf == null) {
+      sent.add(outgoing);
+    } else {
+      final index = sent.indexWhere((item) => item.id == retryOf.id);
+      if (index < 0) {
+        sending = false;
+        himTyping = false;
+        return;
+      }
+      sent[index] = outgoing;
+    }
     notifyListeners();
     scrollToBottom();
     try {
@@ -658,25 +704,13 @@ class ChatController extends ChangeNotifier {
       }
     } on BackendException catch (e) {
       backendError = e.message;
-      _markLastSendFailed();
-      /*
-        ChatMessage(
-          role: 'him',
-          text: '（$failureLabel没有送过去：${e.message}）',
-          time: _nowLabel(),
-        ),
-      ); */
+      final index = sent.indexWhere((item) => item.id == outgoing.id);
+      if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
       scrollToBottom();
     } catch (e) {
       backendError = e.toString();
-      _markLastSendFailed();
-      /* sent.add(
-        ChatMessage(
-          role: 'him',
-          text: '（$failureLabel上传遇到一个未预期错误：$e）',
-          time: _nowLabel(),
-        ),
-      ); */
+      final index = sent.indexWhere((item) => item.id == outgoing.id);
+      if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
       scrollToBottom();
     } finally {
       sending = false;

@@ -1,5 +1,12 @@
 # 后端集成
 
+2026-09-09 交互修复闭环核对：聊天边缘刷新复用 `/mobile/activate`、`/chat-log/*` 和
+`/mobile/poll`，catch-up poll 使用 `wait=0`，仍经过原有去重 → 持久化 seen → ack → 游标流程。
+健康历史不因手动刷新被全量重载。上传继续使用 `/upload/ingest` 的 Bearer、`files`、`message`、
+`channel=mobile` 契约；原始图片字节仅作为当前会话 UI 附件保留，失败重试发送同一文件和附言。
+本轮未新增协议字段、服务端配置、权限、队列或落盘状态，无需管理面板/桌面设置开关；背景和
+裁切属于本机 UI。历史原图跨端读取仍为 open，边界及后端入口证据见 `docs/known-issues.md`。
+
 聊天背景属于本机外观设置，不进入后端接口或 mobile channel 消息队列。Flutter 通过
 `presence_mobile/settings` 的 `pickChatBackgroundImage`、`getChatAppearance`、
 `saveChatAppearance`、`deleteChatAppearance` 管理裁切后的图片、模糊度和聊天框透明度；

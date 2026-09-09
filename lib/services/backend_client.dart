@@ -94,7 +94,10 @@ class BackendClient {
         request.write(jsonEncode(body));
       }
       final response = await request.close().timeout(timeout);
-      final responseBody = await response.transform(utf8.decoder).join();
+      final responseBody = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(timeout);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw BackendException(
           _extractError(responseBody, response.statusCode),

@@ -1,10 +1,15 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
 class PickedUploadFile {
   const PickedUploadFile({required this.name, required this.bytes});
 
   final String name;
   final Uint8List bytes;
+
+  bool get isImage => RegExp(
+    r'\.(jpe?g|png|gif|webp|heic|heif|bmp)$',
+    caseSensitive: false,
+  ).hasMatch(name);
 }
 
 class ScreenContextSnapshot {

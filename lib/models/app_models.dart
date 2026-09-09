@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 import '../l10n/l10n.dart';
+import 'screen_context.dart';
 
 class BehaviorTestSpec {
   const BehaviorTestSpec({
@@ -163,6 +164,7 @@ class YxPrefs {
   final String proactiveRate;
   final bool nightSilent;
   final Uint8List? chatBackground;
+
   /// Local-only Dream scene backdrop; never sent to the backend.
   final Uint8List? dreamBackground;
   final double chatBackgroundBlur;
@@ -187,7 +189,9 @@ class YxPrefs {
       proactiveRate: proactiveRate ?? this.proactiveRate,
       nightSilent: nightSilent ?? this.nightSilent,
       chatBackground: chatBackground ?? this.chatBackground,
-      dreamBackground: clearDreamBackground ? null : (dreamBackground ?? this.dreamBackground),
+      dreamBackground: clearDreamBackground
+          ? null
+          : (dreamBackground ?? this.dreamBackground),
       chatBackgroundBlur: chatBackgroundBlur ?? this.chatBackgroundBlur,
       chatBubbleOpacity: chatBubbleOpacity ?? this.chatBubbleOpacity,
     );
@@ -487,6 +491,8 @@ class ChatMessage {
     this.quotedText,
     this.quotedLabel,
     this.failed = false,
+    this.attachments = const [],
+    this.uploadNote = '',
   }) : id = id ?? _nextId++,
        timestamp = timestamp ?? DateTime.now(),
        time = time == '现在'
@@ -506,6 +512,8 @@ class ChatMessage {
   final String? quotedText;
   final String? quotedLabel;
   final bool failed;
+  final List<PickedUploadFile> attachments;
+  final String uploadNote;
 
   /// 用于「回复」引用(reply_to.ts);历史消息没有真实 epoch,退化为加载时刻——
   /// 只影响后端相对时间前缀的措辞("今天"而非准确日期),不影响功能正确性。
@@ -524,6 +532,8 @@ class ChatMessage {
     quotedText: quotedText,
     quotedLabel: quotedLabel,
     failed: failed,
+    attachments: attachments,
+    uploadNote: uploadNote,
   );
 
   ChatMessage copyWith({
@@ -544,6 +554,8 @@ class ChatMessage {
     quotedText: quotedText ?? this.quotedText,
     quotedLabel: quotedLabel ?? this.quotedLabel,
     failed: failed ?? this.failed,
+    attachments: attachments,
+    uploadNote: uploadNote,
   );
 }
 
@@ -804,10 +816,20 @@ class AttachmentPlaceholder {
   final String note;
   final String kind;
 
-  bool get isImage => kind == 'image' || _looksLikeImage(filename);
+  bool get isImage =>
+      kind == 'image' ||
+      filename.startsWith('data:image/') ||
+      _looksLikeImage(filename);
 
   static AttachmentPlaceholder? parse(String text) {
     final normalized = text.trim().replaceAll('\r\n', '\n');
+    if (normalized.startsWith('data:image/')) {
+      return AttachmentPlaceholder(
+        filename: normalized,
+        note: '',
+        kind: 'image',
+      );
+    }
     final match = RegExp(
       '^📎\\s*(.+?)(?:\\n([\\s\\S]*))?\$',
     ).firstMatch(normalized);

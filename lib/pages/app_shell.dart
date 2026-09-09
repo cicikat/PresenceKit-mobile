@@ -16,6 +16,7 @@ import '../controllers/theme_controller.dart';
 import '../controllers/voice_input_controller.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
+import '../widgets/scene_background.dart';
 import '../models/capability_status.dart';
 import '../models/screen_context.dart';
 import '../l10n/l10n.dart';
@@ -709,12 +710,28 @@ class _CompanionAppState extends State<CompanionApp>
   Future<void> _importDreamBackground() async {
     final bytes = await _settings.pickChatBackgroundImage();
     if (!mounted || bytes == null) return;
-    final draft = await showDialog<ChatBackgroundDraft>(context: context, barrierDismissible: false, builder: (_) => ChatBackgroundEditorDialog(c: c, bytes: bytes, initialBlur: 0, initialOpacity: 1));
+    final draft = await showDialog<ChatBackgroundDraft>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ChatBackgroundEditorDialog(
+        c: c,
+        bytes: bytes,
+        initialBlur: 0,
+        initialOpacity: 1,
+      ),
+    );
     if (!mounted || draft == null) return;
-    if (await _settings.saveDreamBackground(draft.bytes)) setState(() => _prefs = _prefs.copyWith(dreamBackground: draft.bytes));
+    if (await _settings.saveDreamBackground(draft.bytes)) {
+      setState(() => _prefs = _prefs.copyWith(dreamBackground: draft.bytes));
+    }
   }
 
-  Future<void> _resetDreamBackground() async { await _settings.deleteDreamBackground(); if (mounted) setState(() => _prefs = _prefs.copyWith(clearDreamBackground: true)); }
+  Future<void> _resetDreamBackground() async {
+    await _settings.deleteDreamBackground();
+    if (mounted) {
+      setState(() => _prefs = _prefs.copyWith(clearDreamBackground: true));
+    }
+  }
 
   Future<void> _resetChatBackground() async {
     await _settings.deleteChatAppearance();
@@ -1178,21 +1195,14 @@ class _CompanionAppState extends State<CompanionApp>
     );
     final message = await showDialog<String>(
       context: context,
-      builder: (context) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('图片说明'),
-          content: TextField(controller: controller, maxLines: 3, autofocus: true, decoration: const InputDecoration(hintText: '可选：和图片一起发送的文字')),
-          actions: [TextButton(onPressed: () => Navigator.pop(context, ''), child: const Text('跳过')), FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('发送'))],
-        );
-      },
+      builder: (context) => const ImageCaptionDialog(),
     );
-    if (!mounted) return;
+    if (!mounted || message == null) return;
     await _chatController.uploadFiles(
       picked,
       preview: preview,
       failureLabel: UploadFeedback.imageFailureLabel(context),
-      message: message ?? '',
+      message: message,
     );
   }
 
@@ -1232,31 +1242,42 @@ class _CompanionAppState extends State<CompanionApp>
             ? Brightness.light
             : Brightness.dark,
       ),
-      child: Scaffold(
-        key: _scaffoldKey,
-        drawer: YxDrawer(
-          c: c,
-          route: _route,
-          profileDisplayName: _profileDisplayName,
-          profileAvatarBytes: _profileAvatarBytes,
-          onRoute: _pickRoute,
-          onOpenSettings: _openSettings,
-        ),
-        body: AnimatedContainer(
-          duration: const Duration(milliseconds: 240),
-          color: c.surface,
-          child: SafeArea(
-            top: false,
-            child: Column(
-              children: [
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    child: _buildRoute(),
+      child: SceneBackground(
+        bytes: _route == AppRoute.chat
+            ? _prefs.chatBackground
+            : _route == AppRoute.dream
+            ? _prefs.dreamBackground
+            : null,
+        color: c.surface,
+        blur: _route == AppRoute.chat ? _prefs.chatBackgroundBlur : 0,
+        darken: _route == AppRoute.dream,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          key: _scaffoldKey,
+          drawer: YxDrawer(
+            c: c,
+            route: _route,
+            profileDisplayName: _profileDisplayName,
+            profileAvatarBytes: _profileAvatarBytes,
+            onRoute: _pickRoute,
+            onOpenSettings: _openSettings,
+          ),
+          body: AnimatedContainer(
+            duration: const Duration(milliseconds: 240),
+            color: Colors.transparent,
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: _buildRoute(),
+                    ),
                   ),
-                ),
-                NavPill(c: c),
-              ],
+                  NavPill(c: c),
+                ],
+              ),
             ),
           ),
         ),

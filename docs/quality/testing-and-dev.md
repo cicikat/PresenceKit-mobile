@@ -1,5 +1,13 @@
 # 测试与开发
 
+## 本轮验证（2026-09-09：聊天交互修复）
+
+- `flutter gen-l10n`、`flutter analyze --no-pub` 通过，静态分析 0 issues。
+- `flutter test --no-pub`：131 项通过。新增 12 项回归包含短列表双向边缘拖动、长列表底部上拉、离线启动后的手动恢复与合并刷新、原附件重试、原图查看、legacy data URI、裁切手势/像素边界、窄屏/横向小窗布局和键盘/弹窗背景几何稳定。
+- `flutter build apk --debug --flavor dev --no-pub` 通过，产物 `build/app/outputs/flutter-apk/app-dev-debug.apk`。Kotlin 跨盘增量缓存报错后 fallback 编译成功，不影响最终 APK 产出。
+- 这是 Dev 调试包，没有发布正式 APK、修改发行版本或安装到手机。真机补验：列表底部继续上拉松手、断网恢复、双指裁切、输入法/系统自由小窗切换、相册多图发送及点击原图。
+- 历史原图跨重启读取仍为 open，见 `docs/known-issues.md`，不属于本轮已通过的 UI 原图显示范围。
+
 ## v1 签名与凭据测试
 
 ```powershell

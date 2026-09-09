@@ -81,9 +81,7 @@ class DreamPage extends StatelessWidget {
     final messages = controller.messages;
     final scrollController = controller.scrollController;
     final active = state?.isActive == true;
-    return Container(
-      decoration: prefs.dreamBackground == null ? null : BoxDecoration(image: DecorationImage(image: MemoryImage(prefs.dreamBackground!), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: .28), BlendMode.darken))),
-      child: Column(
+    return Column(
       children: [
         Container(
           color: c.characterDeep,
@@ -223,7 +221,6 @@ class DreamPage extends StatelessWidget {
           onSend: controller.send,
         ),
       ],
-      ),
     );
   }
 }
@@ -399,9 +396,7 @@ class DreamSegmentedMessage extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final segment in segments) _buildSegment(segment),
-        ],
+        children: [for (final segment in segments) _buildSegment(segment)],
       ),
     );
   }
@@ -548,10 +543,12 @@ class _DreamComposerState extends State<DreamComposer> {
           ),
           const SizedBox(width: 8),
           if (_controller.text.trim().isEmpty)
-            IconButton(onPressed: widget.enabled ? () {} : null, icon: const Icon(Icons.mic_none_rounded)),
+            IconButton(
+              onPressed: widget.enabled ? () {} : null,
+              icon: const Icon(Icons.mic_none_rounded),
+            ),
           FilledButton(
-            onPressed:
-                widget.enabled && _controller.text.trim().isNotEmpty
+            onPressed: widget.enabled && _controller.text.trim().isNotEmpty
                 ? _send
                 : null,
             child: Text(

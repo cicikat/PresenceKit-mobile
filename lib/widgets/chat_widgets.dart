@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +10,9 @@ import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 import '../services/character_naming.dart';
 import '../widgets/common_widgets.dart';
+import 'edge_refresh.dart';
+import 'chat_image.dart';
+import '../models/screen_context.dart';
 
 class ChatScene extends StatelessWidget {
   const ChatScene({
@@ -105,6 +107,8 @@ class ChatScene extends StatelessWidget {
       if (backendBusy) MetaLine(c: c, text: l10n.chatWaitingReply),
       if (backendError != null)
         MetaLine(c: c, text: l10n.chatBackendError(backendError)),
+      if (controller.mobileError != null)
+        MetaLine(c: c, text: l10n.chatBackendError(controller.mobileError!)),
       if (lastBackendReply != null && backendError == null)
         MetaLine(c: c, text: l10n.chatBackendStatus(lastBackendReply.emotion)),
       if (mobileReceivedCount > 0)
@@ -115,20 +119,6 @@ class ChatScene extends StatelessWidget {
         metaItems.length + visibleMessageCount + (himTyping ? 1 : 0);
     return Stack(
       children: [
-        if (prefs.chatBackground != null)
-          Positioned.fill(
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(
-                sigmaX: prefs.chatBackgroundBlur,
-                sigmaY: prefs.chatBackgroundBlur,
-              ),
-              child: Image.memory(
-                prefs.chatBackground!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-              ),
-            ),
-          ),
         Column(
           children: [
             if (prefs.infoStrip)
@@ -149,80 +139,102 @@ class ChatScene extends StatelessWidget {
                 onOpenSettings: onOpenSettings,
               ),
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async { await controller.start(); },
-                child: ListView.builder(
-                controller: scrollController,
-                cacheExtent: 720,
-                padding: EdgeInsets.fromLTRB(
-                  12,
-                  prefs.infoStrip ? 14 : topInset + 58,
-                  12,
-                  92,
-                ),
-                itemCount: itemCount,
-                itemBuilder: (context, index) {
-                  if (index < metaItems.length) return metaItems[index];
-                  final messageIndex = index - metaItems.length;
-                  if (messageIndex >= visibleMessageCount) {
-                    return TypingHimMessage(
-                      c: c,
-                      time: l10n.chatTyping,
-                      prefs: prefs,
-                      profileDisplayName: profileDisplayName,
-                      profileAvatarBytes: profileAvatarBytes,
-                    );
-                  }
-                  final globalMessageIndex = hiddenMessageCount + messageIndex;
-                  final m = globalMessageIndex < historyMessages.length
-                      ? historyMessages[globalMessageIndex]
-                      : sentMessages[globalMessageIndex -
-                            historyMessages.length];
-                  final previous = globalMessageIndex > 0
-                      ? (globalMessageIndex - 1 < historyMessages.length
-                            ? historyMessages[globalMessageIndex - 1]
-                            : sentMessages[globalMessageIndex -
-                                  1 -
-                                  historyMessages.length])
-                      : null;
-                  final showDateDivider =
-                      m.dateKey != null && m.dateKey != previous?.dateKey;
-                  return RepaintBoundary(
-                    key: ValueKey('chat-${m.id}'),
-                    child: m.role == 'you'
-                        ? YouMessage(
-                            c: c,
-                            time: m.time,
-                            prefs: prefs,
-                            text: m.text,
-                            quotedText: m.quotedText,
-                            failed: m.failed,
-                            onRetry: () => controller.retryMessage(m),
-                            showDateDivider: showDateDivider,
-                            dateKey: m.dateKey,
-                          )
-                        : HimMessage(
-                            c: c,
-                            time: m.time,
-                            prefs: prefs,
-                            profileDisplayName: profileDisplayName,
-                            profileAvatarBytes: profileAvatarBytes,
-                            text: m.text,
-                            quotedText: m.quotedText,
-                            showDateDivider: showDateDivider,
-                            dateKey: m.dateKey,
-                            onReply: () => controller.setReplyTarget(m),
-                            sticker: m.sticker,
-                            animate: m.animate,
-                            onRevealStarted: m.animate
-                                ? () => controller.markRevealStarted(m)
-                                : null,
-                            onRevealSkipped: m.animate
-                                ? controller.skipReveal
-                                : null,
-                          ),
+              child: EdgeRefresh(
+                onRefresh: () async {
+                  await controller.refreshConnection();
+                  if (!context.mounted) return;
+                  final error =
+                      controller.mobileError ?? controller.historyError;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        error != null
+                            ? l10n.chatBackendError(error)
+                            : controller.mobileActive
+                            ? l10n.chatRefreshComplete
+                            : l10n.chatRefreshUnavailable,
+                      ),
+                    ),
                   );
                 },
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: ClampingScrollPhysics(),
+                  ),
+                  controller: scrollController,
+                  cacheExtent: 720,
+                  padding: EdgeInsets.fromLTRB(
+                    12,
+                    prefs.infoStrip ? 14 : topInset + 58,
+                    12,
+                    92,
+                  ),
+                  itemCount: itemCount,
+                  itemBuilder: (context, index) {
+                    if (index < metaItems.length) return metaItems[index];
+                    final messageIndex = index - metaItems.length;
+                    if (messageIndex >= visibleMessageCount) {
+                      return TypingHimMessage(
+                        c: c,
+                        time: l10n.chatTyping,
+                        prefs: prefs,
+                        profileDisplayName: profileDisplayName,
+                        profileAvatarBytes: profileAvatarBytes,
+                      );
+                    }
+                    final globalMessageIndex =
+                        hiddenMessageCount + messageIndex;
+                    final m = globalMessageIndex < historyMessages.length
+                        ? historyMessages[globalMessageIndex]
+                        : sentMessages[globalMessageIndex -
+                              historyMessages.length];
+                    final previous = globalMessageIndex > 0
+                        ? (globalMessageIndex - 1 < historyMessages.length
+                              ? historyMessages[globalMessageIndex - 1]
+                              : sentMessages[globalMessageIndex -
+                                    1 -
+                                    historyMessages.length])
+                        : null;
+                    final showDateDivider =
+                        m.dateKey != null && m.dateKey != previous?.dateKey;
+                    return RepaintBoundary(
+                      key: ValueKey('chat-${m.id}'),
+                      child: m.role == 'you'
+                          ? YouMessage(
+                              c: c,
+                              time: m.time,
+                              prefs: prefs,
+                              text: m.text,
+                              attachments: m.attachments,
+                              uploadNote: m.uploadNote,
+                              quotedText: m.quotedText,
+                              failed: m.failed,
+                              onRetry: () => controller.retryMessage(m),
+                              showDateDivider: showDateDivider,
+                              dateKey: m.dateKey,
+                            )
+                          : HimMessage(
+                              c: c,
+                              time: m.time,
+                              prefs: prefs,
+                              profileDisplayName: profileDisplayName,
+                              profileAvatarBytes: profileAvatarBytes,
+                              text: m.text,
+                              quotedText: m.quotedText,
+                              showDateDivider: showDateDivider,
+                              dateKey: m.dateKey,
+                              onReply: () => controller.setReplyTarget(m),
+                              sticker: m.sticker,
+                              animate: m.animate,
+                              onRevealStarted: m.animate
+                                  ? () => controller.markRevealStarted(m)
+                                  : null,
+                              onRevealSkipped: m.animate
+                                  ? controller.skipReveal
+                                  : null,
+                            ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -313,8 +325,11 @@ class JumpToLatestButton extends StatelessWidget {
             children: [
               Positioned.fill(
                 child: Center(
-                  child: Icon(Icons.keyboard_arrow_down_rounded,
-                      color: c.characterOn, size: 24),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: c.characterOn,
+                    size: 24,
+                  ),
                 ),
               ),
               if (unreadCount > 0)
@@ -1144,6 +1159,8 @@ class YouMessage extends StatefulWidget {
     this.onRetry,
     this.showDateDivider = false,
     this.dateKey,
+    this.attachments = const [],
+    this.uploadNote = '',
   });
 
   final YxPalette c;
@@ -1155,6 +1172,8 @@ class YouMessage extends StatefulWidget {
   final VoidCallback? onRetry;
   final bool showDateDivider;
   final String? dateKey;
+  final List<PickedUploadFile> attachments;
+  final String uploadNote;
 
   @override
   State<YouMessage> createState() => _YouMessageState();
@@ -1217,10 +1236,49 @@ class _YouMessageState extends State<YouMessage> {
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 280),
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
-                    decoration: attachment != null && attachment.isImage && attachment.note.isEmpty
+                    decoration:
+                        attachment != null &&
+                            attachment.isImage &&
+                            attachment.note.isEmpty
                         ? null
-                        : BoxDecoration(color: c.userBubble.withValues(alpha: prefs.chatBubbleOpacity), borderRadius: BorderRadius.circular(6)),
-                    child: attachment != null
+                        : BoxDecoration(
+                            color: c.userBubble.withValues(
+                              alpha: prefs.chatBubbleOpacity,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                    child: widget.attachments.isNotEmpty
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              for (final file in widget.attachments)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: file.isImage
+                                      ? ChatImage(bytes: file.bytes)
+                                      : UserAttachmentCard(
+                                          c: c,
+                                          attachment: AttachmentPlaceholder(
+                                            filename: file.name,
+                                            note: '',
+                                            kind: 'file',
+                                          ),
+                                          fontSize: prefs.fontSize,
+                                        ),
+                                ),
+                              if (widget.uploadNote.isNotEmpty)
+                                Text(
+                                  widget.uploadNote,
+                                  style: serif(
+                                    c,
+                                    prefs.fontSize,
+                                    color: c.userBubbleText,
+                                  ),
+                                ),
+                            ],
+                          )
+                        : attachment != null
                         ? UserAttachmentCard(
                             c: c,
                             attachment: attachment,
@@ -1287,7 +1345,22 @@ class UserAttachmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageBytes = attachment.isImage ? _decodeDataImage(attachment.filename) : null;
+    final imageBytes = attachment.isImage
+        ? _decodeDataImage(attachment.filename)
+        : null;
+    if (imageBytes != null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ChatImage(bytes: imageBytes),
+          if (attachment.note.isNotEmpty)
+            Text(
+              attachment.note,
+              style: serif(c, fontSize, color: c.userBubbleText),
+            ),
+        ],
+      );
+    }
     final icon = attachment.isImage
         ? Icons.image_outlined
         : Icons.attach_file_rounded;
@@ -1312,7 +1385,10 @@ class UserAttachmentCard extends StatelessWidget {
             ),
             child: imageBytes == null
                 ? Icon(icon, color: c.userBubbleText, size: 19)
-                : ClipRRect(borderRadius: BorderRadius.circular(5), child: Image.memory(imageBytes, fit: BoxFit.cover)),
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(5),
+                    child: Image.memory(imageBytes, fit: BoxFit.cover),
+                  ),
           ),
           const SizedBox(width: 10),
           Flexible(
@@ -1331,7 +1407,9 @@ class UserAttachmentCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  imageBytes != null ? context.l10n.imageAttachment : attachment.filename,
+                  attachment.filename.startsWith('data:')
+                      ? context.l10n.imageDecodeFailed
+                      : attachment.filename,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: serif(
@@ -1366,7 +1444,11 @@ class UserAttachmentCard extends StatelessWidget {
 Uint8List? _decodeDataImage(String value) {
   final i = value.indexOf('base64,');
   if (i < 0) return null;
-  try { return base64Decode(value.substring(i + 7)); } catch (_) { return null; }
+  try {
+    return base64Decode(value.substring(i + 7));
+  } catch (_) {
+    return null;
+  }
 }
 
 class Composer extends StatefulWidget {
@@ -1570,14 +1652,11 @@ class _ComposerState extends State<Composer> {
                         ),
                       ),
                       onPressed: () {
-                              widget.onSend(_controller.text);
-                              _controller.clear();
-                              _draft.value = '';
-                            },
-                      icon: Icon(
-                        Icons.send_rounded,
-                        size: 15,
-                      ),
+                        widget.onSend(_controller.text);
+                        _controller.clear();
+                        _draft.value = '';
+                      },
+                      icon: Icon(Icons.send_rounded, size: 15),
                       label: Text(
                         l10n.sendAction,
                         style: mono(widget.c, 11, color: widget.c.surface),

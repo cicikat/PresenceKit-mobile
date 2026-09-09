@@ -40,3 +40,39 @@ class UploadFeedback {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
+
+class ImageCaptionDialog extends StatefulWidget {
+  const ImageCaptionDialog({super.key});
+  @override
+  State<ImageCaptionDialog> createState() => _ImageCaptionDialogState();
+}
+
+class _ImageCaptionDialogState extends State<ImageCaptionDialog> {
+  final _controller = TextEditingController();
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(context.l10n.imageCaptionTitle),
+    content: TextField(
+      controller: _controller,
+      maxLines: 3,
+      autofocus: true,
+      decoration: InputDecoration(hintText: context.l10n.imageCaptionHint),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: Text(context.l10n.cancelAction),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, _controller.text),
+        child: Text(context.l10n.sendAction),
+      ),
+    ],
+  );
+}
