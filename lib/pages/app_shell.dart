@@ -1168,9 +1168,6 @@ class _CompanionAppState extends State<CompanionApp>
       UploadFeedback.imageTooLarge(context);
       return;
     }
-    final names = picked.length == 1
-        ? picked.first.name
-        : picked.take(3).map((file) => file.name).join('、');
     final preview = '📸 data:image/${picked.first.name.toLowerCase().endsWith('.png') ? 'png' : 'jpeg'};base64,${base64Encode(picked.first.bytes)}';
     /* final preview = UploadFeedback.imagePreview(
       context,
