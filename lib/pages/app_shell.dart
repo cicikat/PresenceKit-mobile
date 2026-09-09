@@ -1187,6 +1187,7 @@ class _CompanionAppState extends State<CompanionApp>
         );
       },
     );
+    if (!mounted) return;
     await _chatController.uploadFiles(
       picked,
       preview: preview,
