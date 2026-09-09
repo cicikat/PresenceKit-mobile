@@ -422,6 +422,21 @@ class AppSettingsStore {
     }
   }
 
+  Future<Uint8List?> loadDreamBackground() async {
+    if (!_channelAvailable) return null;
+    try { return await PlatformSettingsChannel.channel.invokeMethod<Uint8List>('getDreamBackground'); } on PlatformException { return null; }
+  }
+
+  Future<bool> saveDreamBackground(Uint8List bytes) async {
+    if (!_channelAvailable) return false;
+    try { return await PlatformSettingsChannel.channel.invokeMethod<bool>('saveDreamBackground', {'bytes': bytes}) ?? false; } on PlatformException { return false; }
+  }
+
+  Future<void> deleteDreamBackground() async {
+    if (!_channelAvailable) return;
+    try { await PlatformSettingsChannel.channel.invokeMethod<void>('deleteDreamBackground'); } on PlatformException {}
+  }
+
   Future<YxPrefs> loadAppearancePrefs() async {
     if (!_channelAvailable) return const YxPrefs();
     try {
