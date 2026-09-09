@@ -149,7 +149,9 @@ class ChatScene extends StatelessWidget {
                 onOpenSettings: onOpenSettings,
               ),
             Expanded(
-              child: ListView.builder(
+              child: RefreshIndicator(
+                onRefresh: () async { await controller.start(); },
+                child: ListView.builder(
                 controller: scrollController,
                 cacheExtent: 720,
                 padding: EdgeInsets.fromLTRB(
@@ -221,6 +223,7 @@ class ChatScene extends StatelessWidget {
                           ),
                   );
                 },
+                ),
               ),
             ),
             if (controller.replyTarget != null)
