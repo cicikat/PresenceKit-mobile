@@ -1214,12 +1214,9 @@ class _YouMessageState extends State<YouMessage> {
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 280),
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
-                    decoration: BoxDecoration(
-                      color: c.userBubble.withValues(
-                        alpha: prefs.chatBubbleOpacity,
-                      ),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+                    decoration: attachment != null && attachment.isImage && attachment.note.isEmpty
+                        ? null
+                        : BoxDecoration(color: c.userBubble.withValues(alpha: prefs.chatBubbleOpacity), borderRadius: BorderRadius.circular(6)),
                     child: attachment != null
                         ? UserAttachmentCard(
                             c: c,
