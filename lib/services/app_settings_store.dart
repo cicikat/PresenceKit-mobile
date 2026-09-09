@@ -434,7 +434,7 @@ class AppSettingsStore {
 
   Future<void> deleteDreamBackground() async {
     if (!_channelAvailable) return;
-    try { await PlatformSettingsChannel.channel.invokeMethod<void>('deleteDreamBackground'); } on PlatformException {}
+    try { await PlatformSettingsChannel.channel.invokeMethod<void>('deleteDreamBackground'); } on PlatformException catch (_) { return; }
   }
 
   Future<YxPrefs> loadAppearancePrefs() async {
