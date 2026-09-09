@@ -1987,4 +1987,28 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsAutoPlayVoiceSubtitle => '需在后端已启用语音功能时开启';
+
+  @override
+  String get chatPullRefresh => '继续拉动刷新连接';
+
+  @override
+  String get chatReleaseRefresh => '松手刷新';
+
+  @override
+  String get chatRefreshing => '正在刷新连接…';
+
+  @override
+  String get chatRefreshComplete => '连接状态已刷新';
+
+  @override
+  String get chatRefreshUnavailable => '暂时无法连接，请检查后端节点和访问 Token。';
+
+  @override
+  String get imageDecodeFailed => '无法显示此图片，请尝试 PNG 或 JPEG 格式。';
+
+  @override
+  String get imageCaptionTitle => '图片说明';
+
+  @override
+  String get imageCaptionHint => '可选：和图片一起发送的文字';
 }

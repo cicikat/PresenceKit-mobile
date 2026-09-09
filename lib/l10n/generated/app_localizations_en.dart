@@ -2065,4 +2065,29 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsAutoPlayVoiceSubtitle =>
       'Enable when voice is available on the backend';
+
+  @override
+  String get chatPullRefresh => 'Pull to refresh connection';
+
+  @override
+  String get chatReleaseRefresh => 'Release to refresh';
+
+  @override
+  String get chatRefreshing => 'Refreshing connection…';
+
+  @override
+  String get chatRefreshComplete => 'Connection refreshed';
+
+  @override
+  String get chatRefreshUnavailable =>
+      'Unable to connect. Check your backend node and access token.';
+
+  @override
+  String get imageDecodeFailed => 'Cannot display this image. Try PNG or JPEG.';
+
+  @override
+  String get imageCaptionTitle => 'Image caption';
+
+  @override
+  String get imageCaptionHint => 'Optional message to send with the images';
 }

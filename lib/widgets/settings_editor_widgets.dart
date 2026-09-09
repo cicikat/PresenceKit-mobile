@@ -1,13 +1,13 @@
 import 'dart:async';
-import 'dart:ui' as ui;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import '../models/app_models.dart';
 import '../l10n/l10n.dart';
 import '../services/character_naming.dart';
 import '../widgets/common_widgets.dart';
+import 'image_crop_viewport.dart';
 
 class AvatarCropDialog extends StatefulWidget {
   const AvatarCropDialog({super.key, required this.c, required this.bytes});
@@ -52,8 +52,7 @@ class ChatBackgroundEditorDialog extends StatefulWidget {
 
 class _ChatBackgroundEditorDialogState
     extends State<ChatBackgroundEditorDialog> {
-  final GlobalKey _cropKey = GlobalKey();
-  final TransformationController _controller = TransformationController();
+  final _cropKey = GlobalKey<ImageCropViewportState>();
   late double _blur;
   late double _opacity;
   bool _saving = false;
@@ -65,29 +64,15 @@ class _ChatBackgroundEditorDialogState
     _opacity = widget.initialOpacity.clamp(0.35, 1);
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   Future<void> _save() async {
     if (_saving) return;
     setState(() => _saving = true);
     try {
-      final boundary = _cropKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) return;
-      final image = await boundary.toImage(pixelRatio: 2.2);
-      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      final data = await _cropKey.currentState?.crop();
       if (!mounted || data == null) return;
       Navigator.pop(
         context,
-        ChatBackgroundDraft(
-          bytes: data.buffer.asUint8List(),
-          blur: _blur,
-          opacity: _opacity,
-        ),
+        ChatBackgroundDraft(bytes: data, blur: _blur, opacity: _opacity),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -99,12 +84,11 @@ class _ChatBackgroundEditorDialogState
     final c = widget.c;
     final l10n = context.l10n;
     final screen = MediaQuery.sizeOf(context);
-    final stageWidth = (screen.width - 32).clamp(240.0, 420.0);
-    final stageHeight = (stageWidth * screen.height / screen.width).clamp(320.0, 620.0);
+    final aspect = screen.width / screen.height;
     return Dialog(
       backgroundColor: c.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: SingleChildScrollView(
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -127,88 +111,115 @@ class _ChatBackgroundEditorDialogState
               ],
             ),
             const SizedBox(height: 12),
-            Center(
-              child: RepaintBoundary(
-                key: _cropKey,
-                child: SizedBox(
-                  width: stageWidth,
-                  height: stageHeight,
-                  child: Stack(
-                    children: [ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: InteractiveViewer(
-                      transformationController: _controller,
-                      minScale: 1,
-                      maxScale: 5,
-                      boundaryMargin: const EdgeInsets.all(24),
-                      child: Image.memory(
-                        widget.bytes,
-                        width: stageWidth,
-                        height: stageHeight,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.center,
-                        color: Colors.black.withValues(alpha: 0.08),
-                        colorBlendMode: BlendMode.darken,
-                      ),
-                    ),
-                  ), Positioned.fill(child: IgnorePointer(child: DecoratedBox(decoration: BoxDecoration(border: Border.all(color: c.characterOn.withValues(alpha: .85), width: 2), borderRadius: BorderRadius.circular(6)))))]),
-                ),
+            Flexible(
+              flex: 3,
+              child: _ResponsiveCropArea(
+                cropKey: _cropKey,
+                bytes: widget.bytes,
+                aspect: aspect,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(l10n.chatBackgroundCropHelp, style: mono(c, 11, color: c.ink3)),
-            const SizedBox(height: 14),
-            _BackgroundSlider(
-              label: l10n.chatBackgroundBlurLabel,
-              valueLabel: '${_blur.round()} px',
-              value: _blur,
-              min: 0,
-              max: 24,
-              divisions: 24,
-              onChanged: (value) => setState(() => _blur = value),
-              c: c,
-            ),
-            _BackgroundSlider(
-              label: l10n.chatBubbleOpacityLabel,
-              valueLabel: '${(_opacity * 100).round()}%',
-              value: _opacity,
-              min: 0.35,
-              max: 1,
-              divisions: 13,
-              onChanged: (value) => setState(() => _opacity = value),
-              c: c,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () => _controller.value = Matrix4.identity(),
-                  child: Text(l10n.resetAction),
+            Flexible(
+              flex: 2,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.chatBackgroundCropHelp,
+                      style: mono(c, 11, color: c.ink3),
+                    ),
+                    const SizedBox(height: 14),
+                    _BackgroundSlider(
+                      label: l10n.chatBackgroundBlurLabel,
+                      valueLabel: '${_blur.round()} px',
+                      value: _blur,
+                      min: 0,
+                      max: 24,
+                      divisions: 24,
+                      onChanged: (value) => setState(() => _blur = value),
+                      c: c,
+                    ),
+                    _BackgroundSlider(
+                      label: l10n.chatBubbleOpacityLabel,
+                      valueLabel: '${(_opacity * 100).round()}%',
+                      value: _opacity,
+                      min: 0.35,
+                      max: 1,
+                      divisions: 13,
+                      onChanged: (value) => setState(() => _opacity = value),
+                      c: c,
+                    ),
+                    const SizedBox(height: 8),
+                    OverflowBar(
+                      alignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => _cropKey.currentState?.reset(),
+                          child: Text(l10n.resetAction),
+                        ),
+                        TextButton(
+                          onPressed: _saving
+                              ? null
+                              : () => Navigator.pop(context),
+                          child: Text(l10n.cancelAction),
+                        ),
+                        FilledButton.icon(
+                          onPressed: _saving ? null : _save,
+                          icon: _saving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.check_rounded, size: 18),
+                          label: Text(l10n.saveAction),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                TextButton(
-                  onPressed: _saving ? null : () => Navigator.pop(context),
-                  child: Text(l10n.cancelAction),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: _saving ? null : _save,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check_rounded, size: 18),
-                  label: Text(l10n.saveAction),
-                ),
-              ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class _ResponsiveCropArea extends StatelessWidget {
+  const _ResponsiveCropArea({
+    required this.cropKey,
+    required this.bytes,
+    required this.aspect,
+  });
+  final GlobalKey<ImageCropViewportState> cropKey;
+  final Uint8List bytes;
+  final double aspect;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final width = math.min(
+        math.min(420.0, constraints.maxWidth),
+        math.max(1.0, constraints.maxHeight - 48) * aspect,
+      );
+      return Align(
+        alignment: Alignment.topCenter,
+        child: SizedBox(
+          width: width,
+          child: ImageCropViewport(
+            key: cropKey,
+            bytes: bytes,
+            aspectRatio: aspect,
+          ),
+        ),
+      );
+    },
+  );
 }
 
 class _BackgroundSlider extends StatelessWidget {
@@ -256,38 +267,23 @@ class _BackgroundSlider extends StatelessWidget {
 }
 
 class _AvatarCropDialogState extends State<AvatarCropDialog> {
-  final GlobalKey _cropKey = GlobalKey();
-  final TransformationController _controller = TransformationController();
+  final _cropKey = GlobalKey<ImageCropViewportState>();
   bool _saving = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   Future<void> _save() async {
     if (_saving) return;
     setState(() => _saving = true);
     try {
-      final cropContext = _cropKey.currentContext;
-      final boundary =
-          cropContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) {
-        if (mounted) Navigator.pop(context);
-        return;
-      }
-      final image = await boundary.toImage(pixelRatio: 2.4);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (!mounted) return;
-      Navigator.pop(context, byteData?.buffer.asUint8List());
+      final bytes = await _cropKey.currentState?.crop(maxDimension: 768);
+      if (!mounted || bytes == null) return;
+      Navigator.pop(context, bytes);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   void _resetView() {
-    _controller.value = Matrix4.identity();
+    _cropKey.currentState?.reset();
   }
 
   @override
@@ -296,7 +292,7 @@ class _AvatarCropDialogState extends State<AvatarCropDialog> {
     return Dialog(
       backgroundColor: c.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
-      child: SingleChildScrollView(
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -318,75 +314,61 @@ class _AvatarCropDialogState extends State<AvatarCropDialog> {
               ],
             ),
             const SizedBox(height: 12),
-            Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  RepaintBoundary(
-                    key: _cropKey,
-                    child: ClipOval(
-                      child: SizedBox(
-                        width: 236,
-                        height: 236,
-                        child: InteractiveViewer(
-                          transformationController: _controller,
-                          minScale: 1,
-                          maxScale: 5,
-                          boundaryMargin: const EdgeInsets.all(96),
-                          child: Image.memory(
-                            widget.bytes,
-                            width: 236,
-                            height: 236,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  IgnorePointer(
-                    child: Container(
-                      width: 236,
-                      height: 236,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: c.character, width: 2),
-                      ),
-                    ),
-                  ),
-                ],
+            Flexible(
+              flex: 3,
+              child: _ResponsiveCropArea(
+                cropKey: _cropKey,
+                bytes: widget.bytes,
+                aspect: 1,
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              context.l10n.avatarCropHelp,
-              style: mono(c, 11, color: c.ink3),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                TextButton.icon(
-                  onPressed: _resetView,
-                  icon: const Icon(Icons.center_focus_strong_rounded, size: 18),
-                  label: Text(context.l10n.resetAction),
+            Flexible(
+              flex: 2,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    Text(
+                      context.l10n.avatarCropHelp,
+                      style: mono(c, 11, color: c.ink3),
+                    ),
+                    const SizedBox(height: 14),
+                    OverflowBar(
+                      alignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _resetView,
+                          icon: const Icon(
+                            Icons.center_focus_strong_rounded,
+                            size: 18,
+                          ),
+                          label: Text(context.l10n.resetAction),
+                        ),
+                        TextButton(
+                          onPressed: _saving
+                              ? null
+                              : () => Navigator.pop(context),
+                          child: Text(context.l10n.cancelAction),
+                        ),
+                        FilledButton.icon(
+                          onPressed: _saving ? null : _save,
+                          icon: _saving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.check_rounded, size: 18),
+                          label: Text(context.l10n.saveAction),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                TextButton(
-                  onPressed: _saving ? null : () => Navigator.pop(context),
-                  child: Text(context.l10n.cancelAction),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: _saving ? null : _save,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check_rounded, size: 18),
-                  label: Text(context.l10n.saveAction),
-                ),
-              ],
+              ),
             ),
           ],
         ),

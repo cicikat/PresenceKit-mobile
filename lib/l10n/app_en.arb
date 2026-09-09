@@ -677,5 +677,13 @@
   "settingsStickerTitle": "Receive stickers",
   "settingsStickerSubtitle": "Disable to stop receiving sticker messages",
   "settingsAutoPlayVoiceTitle": "Auto-play voice",
-  "settingsAutoPlayVoiceSubtitle": "Enable when voice is available on the backend"
+  "settingsAutoPlayVoiceSubtitle": "Enable when voice is available on the backend",
+  "chatPullRefresh": "Pull to refresh connection",
+  "chatReleaseRefresh": "Release to refresh",
+  "chatRefreshing": "Refreshing connection…",
+  "chatRefreshComplete": "Connection refreshed",
+  "chatRefreshUnavailable": "Unable to connect. Check your backend node and access token.",
+  "imageDecodeFailed": "Cannot display this image. Try PNG or JPEG.",
+  "imageCaptionTitle": "Image caption",
+  "imageCaptionHint": "Optional message to send with the images"
 }

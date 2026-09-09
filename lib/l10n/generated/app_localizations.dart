@@ -3702,6 +3702,54 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'需在后端已启用语音功能时开启'**
   String get settingsAutoPlayVoiceSubtitle;
+
+  /// No description provided for @chatPullRefresh.
+  ///
+  /// In zh, this message translates to:
+  /// **'继续拉动刷新连接'**
+  String get chatPullRefresh;
+
+  /// No description provided for @chatReleaseRefresh.
+  ///
+  /// In zh, this message translates to:
+  /// **'松手刷新'**
+  String get chatReleaseRefresh;
+
+  /// No description provided for @chatRefreshing.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在刷新连接…'**
+  String get chatRefreshing;
+
+  /// No description provided for @chatRefreshComplete.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接状态已刷新'**
+  String get chatRefreshComplete;
+
+  /// No description provided for @chatRefreshUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法连接，请检查后端节点和访问 Token。'**
+  String get chatRefreshUnavailable;
+
+  /// No description provided for @imageDecodeFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法显示此图片，请尝试 PNG 或 JPEG 格式。'**
+  String get imageDecodeFailed;
+
+  /// No description provided for @imageCaptionTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片说明'**
+  String get imageCaptionTitle;
+
+  /// No description provided for @imageCaptionHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'可选：和图片一起发送的文字'**
+  String get imageCaptionHint;
 }
 
 class _AppLocalizationsDelegate
