@@ -7,6 +7,9 @@ import 'app_settings_store.dart';
 
 /// Domain facade for persisted app preferences and identity fields.
 class SettingsStore {
+  Future<Uint8List?> loadDreamBackground() => _store.loadDreamBackground();
+  Future<bool> saveDreamBackground(Uint8List bytes) => _store.saveDreamBackground(bytes);
+  Future<void> deleteDreamBackground() => _store.deleteDreamBackground();
   const SettingsStore(this._store);
   final AppSettingsStore _store;
 
