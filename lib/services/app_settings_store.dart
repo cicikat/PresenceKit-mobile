@@ -484,6 +484,7 @@ class AppSettingsStore {
         dreamActionColor: (raw['dreamActionColor'] as num?)?.toInt(),
         showReasoning: raw['showReasoning'] != false,
         expandReasoning: raw['expandReasoning'] == true,
+        reasoningOpacity: (raw['reasoningOpacity'] as num?)?.toDouble().clamp(0, 1) ?? 0.85,
         infoStrip: raw['infoStrip'] != false,
         fontSize:
             ((raw['fontSize'] is num
@@ -515,6 +516,7 @@ class AppSettingsStore {
             'dreamActionColor': value.dreamActionColor,
             'showReasoning': value.showReasoning,
             'expandReasoning': value.expandReasoning,
+            'reasoningOpacity': value.reasoningOpacity,
             'fontSize': value.fontSize,
             'showYouAvatar': value.showYouAvatar,
             'showChatTime': value.showChatTime,

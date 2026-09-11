@@ -47,6 +47,7 @@ class ThemePresetManagerSheet extends StatelessWidget {
                       ),
                     ),
                     FilledButton.icon(
+                    style: FilledButton.styleFrom(shape: const RoundedRectangleBorder()),
                       onPressed: () => _create(context),
                       icon: const Icon(Icons.add_rounded, size: 18),
                       label: Text(l10n.newAction),
@@ -55,6 +56,7 @@ class ThemePresetManagerSheet extends StatelessWidget {
                 ),
               ),
               TextButton.icon(
+                    style: TextButton.styleFrom(shape: const RoundedRectangleBorder()),
                 onPressed: () async {
                   final ok = await controller.importFile(dark: selectingDark);
                   if (!ok && context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.themeImportFailed)));
@@ -71,7 +73,7 @@ class ThemePresetManagerSheet extends StatelessWidget {
               Expanded(child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 18),
                 itemCount: controller.presets.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                separatorBuilder: (_, _) => Divider(height: 1, color: c.surfaceEdge.withValues(alpha: 0.4)),
                 itemBuilder: (context, index) => _presetCard(context, controller.presets[index]),
               )),
             ],
@@ -89,104 +91,39 @@ class ThemePresetManagerSheet extends StatelessWidget {
             ? controller.darkThemePresetId
             : controller.lightThemePresetId) ==
         preset.id;
-    return Material(
-      color: selected ? c.characterSoft : c.surfaceSoft,
-      child: InkWell(
-        onTap: () => controller.select(preset.id, dark: selectingDark),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border.all(color: selected ? c.character : c.surfaceEdge),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Radio<String>(
-                    value: preset.id,
-                    groupValue: selectingDark == null
-                        ? controller.activeId
-                        : selectingDark!
-                        ? controller.darkThemePresetId
-                        : controller.lightThemePresetId,
-                    onChanged: (id) => controller.select(id, dark: selectingDark),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          preset.name,
-                          style: serif(c, 16, weight: FontWeight.w600),
-                        ),
-                        Text(
-                          preset.bundled
-                              ? l10n.themeBundledReadOnly
-                              : l10n.themeLocalPreset(
-                                  preset.base == 'dark'
-                                      ? l10n.themeNight
-                                      : l10n.themePaper,
-                                ),
-                          style: mono(c, 9.5, color: c.ink3),
-                        ),
-                      ],
-                    ),
-                  ),
-                  for (final color in [
-                    preset.palette.surface,
-                    preset.palette.character,
-                    preset.palette.send,
-                    preset.palette.ink1,
-                  ])
-                    _ColorDot(color: color, border: c.surfaceEdge),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                alignment: WrapAlignment.end,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: () => _edit(context, preset),
-                    icon: Icon(
-                      preset.bundled ? Icons.copy_rounded : Icons.tune_rounded,
-                      size: 16,
-                    ),
-                    label: Text(
-                      preset.bundled ? l10n.themeCopyEdit : l10n.editAction,
-                    ),
-                  ),
-                  if (!preset.bundled)
-                    OutlinedButton.icon(
-                      onPressed: () => controller.reset(preset.id),
-                      icon: const Icon(Icons.restart_alt_rounded, size: 16),
-                      label: Text(l10n.themeResetColors),
-                    ),
-                  OutlinedButton.icon(
-                      onPressed: () => _export(context, preset),
-                      icon: const Icon(Icons.download_rounded, size: 16),
-                      label: Text(l10n.themeExportMod),
-                    ),
-                  if (!preset.bundled)
-                    TextButton.icon(
-                      onPressed: () => _delete(context, preset),
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        size: 16,
-                        color: c.danger,
-                      ),
-                      label: Text(
-                        l10n.deleteAction,
-                        style: TextStyle(color: c.danger),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      selected: selected,
+      selectedTileColor: c.characterSoft.withValues(alpha: 0.4),
+      leading: Icon(selected ? Icons.check_circle_outline : Icons.circle_outlined,
+        size: 20, color: selected ? c.character : c.ink4),
+      title: Text(preset.name, style: serif(c, 16, weight: FontWeight.w500)),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Row(children: [
+          for (final color in [preset.palette.surface, preset.palette.character, preset.palette.ink1, preset.palette.userBubble])
+            _ColorDot(color: color, border: c.surfaceEdge),
+        ]),
+      ),
+      onTap: () => controller.select(preset.id, dark: selectingDark),
+      trailing: PopupMenuButton<String>(
+        icon: Icon(Icons.more_horiz, color: c.ink3),
+        shape: const RoundedRectangleBorder(),
+        onSelected: (action) async {
+          switch (action) {
+            case 'edit': await _edit(context, preset);
+            case 'reset': await controller.reset(preset.id);
+            case 'export': await _export(context, preset);
+            case 'delete': await _delete(context, preset);
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(value: 'edit', child: Text(preset.bundled ? l10n.themeCopyEdit : l10n.editAction)),
+          if (!preset.bundled) PopupMenuItem(value: 'reset', child: Text(l10n.themeResetColors)),
+          const PopupMenuDivider(),
+          PopupMenuItem(value: 'export', child: Text(l10n.themeExportMod)),
+          if (!preset.bundled) PopupMenuItem(value: 'delete', child: Text(l10n.deleteAction, style: TextStyle(color: c.danger))),
+        ],
       ),
     );
   }
@@ -447,6 +384,7 @@ class _ThemeColorEditorSheetState extends State<ThemeColorEditorSheet> {
                   ),
                   const SizedBox(width: 8),
                   FilledButton.icon(
+                    style: FilledButton.styleFrom(shape: const RoundedRectangleBorder()),
                     onPressed: _saving ? null : _save,
                     icon: _saving
                         ? const SizedBox(

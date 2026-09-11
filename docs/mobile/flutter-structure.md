@@ -1,5 +1,9 @@
 # Flutter 结构
 
+外观设置拆成日间/夜间两个独立列表项；预设使用名称、色块、选中标记和更多菜单，编辑/重置/复制/导出不再堆叠按钮。侧栏用户头像通过 image_picker 的 gallery 来源打开相册，选图后缩至最长边 1024 并在本机保存；不新增上传、后端开关或权限。
+
+思考旁白：正文左对齐，按钮居中；两者共享主题 surfaceSoft 底面。外边距上下从 10px 改为 0，设置中 `reasoningOpacity` 可调底面不透明度（0–100%，默认 85%），经既有 appearance prefs 通道保存。仅改变本机外观，管理面/桌面无需同步业务配置，reasoning 读取、鉴权、消息关联、poll/ack 与通知链路不变。
+
 下拉刷新现在无条件重读最新聊天历史，再执行 mobile catch-up；按角色、日期、时间、正文逐条对账，保留本地消息标识与正在发送/失败/附件消息。旧日志缺少稳定 ID 时这一兼容对账不等同于后端精确关联。主题管理支持 JSON 文件导入/导出，导入校验完整 schema，始终新增本机副本，不覆盖同名 ID。
 
 `PersonalizationController` 管理本机字体与用户资料，`personalization_widgets.dart` 提供侧栏编辑和字体选择。`ReasoningController`/`reasoning_widgets.dart` 管理单回合读取与旁白展示；不新增组合根领域 Timer。主题与字体恢复不阻塞聊天连接初始化。

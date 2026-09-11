@@ -201,7 +201,7 @@ class ChatScene extends StatelessWidget {
                         m.dateKey != null && m.dateKey != previous?.dateKey;
                     if (m.role == 'reasoning') {
                       if (!prefs.showReasoning) return const SizedBox.shrink();
-                      return ReasoningPanel(key: ValueKey('reasoning-${m.id}'), c: c, turnId: m.text, unavailable: m.failed, name: profileDisplayName, initiallyExpanded: prefs.expandReasoning, load: controller.loadReasoning);
+                      return ReasoningPanel(key: ValueKey('reasoning-${m.id}'), c: c, turnId: m.text, unavailable: m.failed, name: profileDisplayName, initiallyExpanded: prefs.expandReasoning, opacity: prefs.reasoningOpacity, load: controller.loadReasoning);
                     }
                     return RepaintBoundary(
                       key: ValueKey('chat-${m.id}'),

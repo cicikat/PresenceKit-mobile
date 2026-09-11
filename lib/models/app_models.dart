@@ -164,6 +164,7 @@ class YxPrefs {
     this.dreamActionColor,
     this.showReasoning = true,
     this.expandReasoning = false,
+    this.reasoningOpacity = 0.85,
     this.fontSize = 16,
     this.showYouAvatar = false,
     this.showChatTime = true,
@@ -184,6 +185,7 @@ class YxPrefs {
   final int? dreamActionColor;
   final bool showReasoning;
   final bool expandReasoning;
+  final double reasoningOpacity;
   final double fontSize;
   final bool showYouAvatar;
   final bool showChatTime;
@@ -206,6 +208,7 @@ class YxPrefs {
     int? dreamActionColor,
     bool? showReasoning,
     bool? expandReasoning,
+    double? reasoningOpacity,
     double? fontSize,
     bool? showYouAvatar,
     bool? showChatTime,
@@ -227,6 +230,7 @@ class YxPrefs {
       dreamActionColor: dreamActionColor ?? this.dreamActionColor,
       showReasoning: showReasoning ?? this.showReasoning,
       expandReasoning: expandReasoning ?? this.expandReasoning,
+      reasoningOpacity: reasoningOpacity ?? this.reasoningOpacity,
       fontSize: fontSize ?? this.fontSize,
       showYouAvatar: showYouAvatar ?? this.showYouAvatar,
       showChatTime: showChatTime ?? this.showChatTime,

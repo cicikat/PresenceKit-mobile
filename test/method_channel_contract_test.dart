@@ -98,6 +98,7 @@ void main() {
         'fontSize': 19.0,
         'showReasoning': true,
         'expandReasoning': false,
+        'reasoningOpacity': 0.85,
         'dreamNarrationSize': 16.0,
         'dreamChatSize': 16.0,
         'dreamActionSize': 16.0,

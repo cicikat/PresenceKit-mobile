@@ -2364,4 +2364,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get themeImportFailed => '主题导入失败：请选择完整的手机主题 JSON（256 KB 以内）';
+
+  @override
+  String get reasoningOpacity => '思考底面不透明度';
+
+  @override
+  String get dayAppearanceTheme => '日间外观主题';
+
+  @override
+  String get nightAppearanceTheme => '夜间外观主题';
 }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import '../services/app_settings_store.dart';
@@ -71,8 +72,9 @@ class PersonalizationController extends ChangeNotifier {
   }
 
   Future<void> pickAvatar() async {
-    final bytes = await store.pickProfileImage();
-    if (bytes == null || _directory == null) return;
+    final image = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1024, maxHeight: 1024, requestFullMetadata: false);
+    if (image == null || _directory == null) return;
+    final bytes = await image.readAsBytes();
     await File('${_directory!.path}/avatar').writeAsBytes(bytes, flush: true);
     avatar = bytes;
     notifyListeners();

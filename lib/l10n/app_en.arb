@@ -1337,5 +1337,8 @@
   "importFont": "Import font (TTF / OTF / TTC)",
   "fontImportFailed": "Import failed. Choose a valid font up to 20 MB; at most 10 fonts can be stored.",
   "themeImportJson": "Import theme JSON",
-  "themeImportFailed": "Import failed. Choose a complete mobile theme JSON file up to 256 KB."
+  "themeImportFailed": "Import failed. Choose a complete mobile theme JSON file up to 256 KB.",
+  "reasoningOpacity": "Thought background opacity",
+  "dayAppearanceTheme": "Day appearance theme",
+  "nightAppearanceTheme": "Night appearance theme"
 }

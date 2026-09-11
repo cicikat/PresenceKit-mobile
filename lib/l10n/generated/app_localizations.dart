@@ -4440,6 +4440,24 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'主题导入失败：请选择完整的手机主题 JSON（256 KB 以内）'**
   String get themeImportFailed;
+
+  /// No description provided for @reasoningOpacity.
+  ///
+  /// In zh, this message translates to:
+  /// **'思考底面不透明度'**
+  String get reasoningOpacity;
+
+  /// No description provided for @dayAppearanceTheme.
+  ///
+  /// In zh, this message translates to:
+  /// **'日间外观主题'**
+  String get dayAppearanceTheme;
+
+  /// No description provided for @nightAppearanceTheme.
+  ///
+  /// In zh, this message translates to:
+  /// **'夜间外观主题'**
+  String get nightAppearanceTheme;
 }
 
 class _AppLocalizationsDelegate

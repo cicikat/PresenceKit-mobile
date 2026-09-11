@@ -753,6 +753,7 @@ class _CompanionAppState extends State<CompanionApp>
         dreamActionColor: _prefs.dreamActionColor,
         showReasoning: _prefs.showReasoning,
         expandReasoning: _prefs.expandReasoning,
+        reasoningOpacity: _prefs.reasoningOpacity,
         fontSize: _prefs.fontSize,
         showYouAvatar: _prefs.showYouAvatar,
         showChatTime: _prefs.showChatTime,

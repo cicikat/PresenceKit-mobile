@@ -2475,4 +2475,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get themeImportFailed =>
       'Import failed. Choose a complete mobile theme JSON file up to 256 KB.';
+
+  @override
+  String get reasoningOpacity => 'Thought background opacity';
+
+  @override
+  String get dayAppearanceTheme => 'Day appearance theme';
+
+  @override
+  String get nightAppearanceTheme => 'Night appearance theme';
 }
