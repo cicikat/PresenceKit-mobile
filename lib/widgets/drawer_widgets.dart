@@ -132,14 +132,6 @@ class YxDrawer extends StatelessWidget {
                       active: route == AppRoute.activity,
                       onTap: () => onRoute(AppRoute.activity),
                     ),
-                    DrawerItem(
-                      c: c,
-                      icon: Icons.groups_outlined,
-                      title: l10n.drawerGroupTitle,
-                      subtitle: l10n.drawerGroupSubtitle,
-                      active: route == AppRoute.group,
-                      onTap: () => onRoute(AppRoute.group),
-                    ),
                     _DrawerSectionDivider(c: c),
                     _DrawerSectionLabel(c: c, label: l10n.drawerGrowthSection),
                     DrawerItem(

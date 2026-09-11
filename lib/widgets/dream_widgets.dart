@@ -459,7 +459,7 @@ class DreamSegmentedMessage extends StatelessWidget {
                   weak ? prefs.fontSize - 1 : prefs.fontSize,
                   color: weak ? c.ink3 : c.ink2,
                 ).copyWith(
-                  fontStyle: FontStyle.italic,
+                  fontStyle: FontStyle.normal,
                   letterSpacing: weak ? 0.4 : null,
                 ),
           ),

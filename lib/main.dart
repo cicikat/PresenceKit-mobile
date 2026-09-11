@@ -22,7 +22,6 @@ export 'widgets/drawer_widgets.dart';
 export 'widgets/dream_widgets.dart';
 export 'widgets/garden_widgets.dart';
 export 'widgets/gomoku_widgets.dart';
-export 'widgets/group_widgets.dart';
 export 'widgets/profile_widgets.dart';
 export 'widgets/reading_widgets.dart';
 export 'widgets/settings_editor_widgets.dart';

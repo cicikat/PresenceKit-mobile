@@ -33,7 +33,6 @@ import '../widgets/diary_widgets.dart';
 import '../widgets/drawer_widgets.dart';
 import '../widgets/dream_widgets.dart';
 import '../widgets/garden_widgets.dart';
-import '../widgets/group_widgets.dart';
 import '../widgets/profile_widgets.dart';
 import '../widgets/settings_dialog_widgets.dart';
 import '../widgets/settings_editor_widgets.dart';
@@ -1420,14 +1419,7 @@ class _CompanionAppState extends State<CompanionApp>
           requireToken: _requireAdminToken,
           onBack: () => setState(() => _route = AppRoute.chat),
         );
-      case AppRoute.group:
-        return GroupListScreen(
-          key: const ValueKey('group'),
-          c: c,
-          backend: _backend,
-          requireToken: _requireAdminToken,
-          onBack: () => setState(() => _route = AppRoute.chat),
-        );
+
     }
   }
 }
