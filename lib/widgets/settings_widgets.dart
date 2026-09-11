@@ -1,3 +1,5 @@
+import '../controllers/personalization_controller.dart';
+import 'personalization_widgets.dart';
 import 'package:flutter/material.dart';
 import 'theme_widgets.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +13,7 @@ import '../widgets/settings_editor_widgets.dart';
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
+    this.personalization,
     required this.c,
     required this.language,
     required this.dark,
@@ -64,6 +67,7 @@ class SettingsPage extends StatelessWidget {
     required this.onAutoPlayVoiceChanged,
   });
 
+  final PersonalizationController? personalization;
   final YxPalette c;
   final AppLanguage language;
   final bool dark;
@@ -459,6 +463,9 @@ class SettingsPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (personalization != null) FontSettings(controller: personalization!),
+                  SettingsRow(c: c, title: l10n.showReasoning, subtitle: l10n.reasoningLocal, child: Switch(value: prefs.showReasoning, onChanged: (value) => onPrefs(prefs.copyWith(showReasoning: value)))),
+                  SettingsRow(c: c, title: l10n.expandReasoning, subtitle: l10n.reasoningLocal, child: Switch(value: prefs.expandReasoning, onChanged: (value) => onPrefs(prefs.copyWith(expandReasoning: value)))),
                   SettingsRow(c: c, title: l10n.dreamNarrationSize, subtitle: l10n.themeComponentColors, child: TextButton(onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: SingleChildScrollView(child: FreeColorPicker(c: c, color: prefs.dreamNarrationColor == null ? c.ink2 : Color(prefs.dreamNarrationColor!), onChanged: (value) => onPrefs(prefs.copyWith(dreamNarrationColor: value.toARGB32()))))))), child: Text('Aa', style: TextStyle(color: prefs.dreamNarrationColor == null ? c.ink2 : Color(prefs.dreamNarrationColor!), fontSize: 22)))),
                   SettingsRow(c: c, title: l10n.dreamChatSize, subtitle: l10n.themeComponentColors, child: TextButton(onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: SingleChildScrollView(child: FreeColorPicker(c: c, color: prefs.dreamChatColor == null ? c.ink2 : Color(prefs.dreamChatColor!), onChanged: (value) => onPrefs(prefs.copyWith(dreamChatColor: value.toARGB32()))))))), child: Text('Aa', style: TextStyle(color: prefs.dreamChatColor == null ? c.ink2 : Color(prefs.dreamChatColor!), fontSize: 22)))),
                   SettingsRow(c: c, title: l10n.dreamActionSize, subtitle: l10n.themeComponentColors, child: TextButton(onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: SingleChildScrollView(child: FreeColorPicker(c: c, color: prefs.dreamActionColor == null ? c.ink2 : Color(prefs.dreamActionColor!), onChanged: (value) => onPrefs(prefs.copyWith(dreamActionColor: value.toARGB32()))))))), child: Text('Aa', style: TextStyle(color: prefs.dreamActionColor == null ? c.ink2 : Color(prefs.dreamActionColor!), fontSize: 22)))),

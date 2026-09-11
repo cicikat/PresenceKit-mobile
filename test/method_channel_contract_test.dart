@@ -96,6 +96,8 @@ void main() {
       expect(calls.single.arguments, {
         'infoStrip': false,
         'fontSize': 19.0,
+        'showReasoning': true,
+        'expandReasoning': false,
         'dreamNarrationSize': 16.0,
         'dreamChatSize': 16.0,
         'dreamActionSize': 16.0,

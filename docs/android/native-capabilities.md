@@ -1,5 +1,7 @@
 # Android 原生能力
 
+本机外观通过 `localPresentationDirectory` 返回私有 `filesDir/presentation`，保存字体、用户头像及昵称/签名/字号选择；不上传。`exportThemeJson` 使用 ACTION_CREATE_DOCUMENT 系统保存器，用户选择保存位置，无存储权限新增；导入复用已有用户文件选择器，Dart 验证 JSON schema/完整颜色及 256 KiB 上限。字体最多 10 个，每个不超过 20 MiB。
+
 外观 prefs 新增 Dream 三类字号与可空 ARGB 颜色；字号保存为 Float，颜色为 Long。默认跟随原主题色。没有新增权限、服务或上传路径。
 
 ## 生活记录的拍照与后台补传（2026-09-11）

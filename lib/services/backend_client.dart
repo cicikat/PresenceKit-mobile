@@ -218,6 +218,17 @@ class BackendClient {
     timeout: const Duration(seconds: 120),
   );
 
+  Future<String> loadTurnReasoning(String turnId, {required String token}) async {
+    final result = await _request('/chat/turns/${Uri.encodeComponent(turnId)}/reasoning', token: token);
+    if (result['turn_id'] != turnId) throw const BackendException('Invalid reasoning response');
+    final entries = result['entries'];
+    if (entries is! List) return '';
+    return entries.whereType<Map>().expand((entry) =>
+      (entry['parts'] is List ? entry['parts'] as List : const []).whereType<Map>())
+      .map((part) => part['text'] is String ? part['text'] as String : '')
+      .where((text) => text.trim().isNotEmpty).join('\n\n');
+  }
+
   Future<BackendChatResponse> sendChat(
     String message, {
     required String token,

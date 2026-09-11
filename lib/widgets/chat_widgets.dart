@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'reasoning_widgets.dart';
 import 'package:flutter/services.dart';
 import '../controllers/chat_controller.dart';
 import '../controllers/voice_input_controller.dart';
@@ -198,6 +199,10 @@ class ChatScene extends StatelessWidget {
                         : null;
                     final showDateDivider =
                         m.dateKey != null && m.dateKey != previous?.dateKey;
+                    if (m.role == 'reasoning') {
+                      if (!prefs.showReasoning) return const SizedBox.shrink();
+                      return ReasoningPanel(key: ValueKey('reasoning-${m.id}'), c: c, turnId: m.text, unavailable: m.failed, name: profileDisplayName, initiallyExpanded: prefs.expandReasoning, load: controller.loadReasoning);
+                    }
                     return RepaintBoundary(
                       key: ValueKey('chat-${m.id}'),
                       child: m.role == 'you'
@@ -874,10 +879,10 @@ class _HimMessageState extends State<HimMessage> {
                               inlineDisplaySpan(
                                 text: widget.text,
                                 displayText: widget.displayText,
-                                style: serif(c, widget.prefs.fontSize),
+                                style: contentSerif(c, widget.prefs.fontSize),
                                 accent: c.danger,
                               ),
-                              style: serif(c, widget.prefs.fontSize),
+                              style: contentSerif(c, widget.prefs.fontSize),
                             )
                           : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -889,7 +894,7 @@ class _HimMessageState extends State<HimMessage> {
                                   displayText: widget.displayText,
                                   accent: c.danger,
                                   animate: widget.animate,
-                                  style: serif(c, widget.prefs.fontSize),
+                                  style: contentSerif(c, widget.prefs.fontSize),
                                   onRevealStarted: widget.onRevealStarted,
                                   onRevealSkipped: widget.onRevealSkipped,
                                 ),
@@ -1304,7 +1309,7 @@ class _YouMessageState extends State<YouMessage> {
                                       )
                                     : Text(
                                         widget.uploadNote,
-                                        style: serif(
+                                        style: contentSerif(
                                           c,
                                           prefs.fontSize,
                                           color: c.userBubbleText,
@@ -1322,7 +1327,7 @@ class _YouMessageState extends State<YouMessage> {
                         : _selectable
                         ? SelectableText(
                             text,
-                            style: serif(
+                            style: contentSerif(
                               c,
                               prefs.fontSize,
                               color: c.userBubbleText,
@@ -1330,7 +1335,7 @@ class _YouMessageState extends State<YouMessage> {
                           )
                         : Text(
                             text,
-                            style: serif(
+                            style: contentSerif(
                               c,
                               prefs.fontSize,
                               color: c.userBubbleText,
@@ -1386,7 +1391,7 @@ class _ImageCaptionBubble extends StatelessWidget {
       color: c.userBubble.withValues(alpha: opacity),
       borderRadius: BorderRadius.circular(6),
     ),
-    child: Text(text, style: serif(c, fontSize, color: c.userBubbleText)),
+    child: Text(text, style: contentSerif(c, fontSize, color: c.userBubbleText)),
   );
 }
 
@@ -1656,7 +1661,7 @@ class _ComposerState extends State<Composer> {
                     controller: _controller,
                     minLines: 1,
                     maxLines: 3,
-                    style: serif(widget.c, widget.fontSize),
+                    style: contentSerif(widget.c, widget.fontSize),
                     decoration: InputDecoration.collapsed(
                       hintText: placeholder,
                       hintStyle: serif(

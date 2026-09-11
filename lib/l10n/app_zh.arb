@@ -745,7 +745,7 @@
   "whiteStone": "白棋",
   "boardLoading": "棋盘加载中…",
   "themePresetsTitle": "颜色预设",
-  "themePresetsDescription": "本机可保存多个预设；浏览器可导出颜色 mod。",
+  "themePresetsDescription": "分别选择日间和夜间配色，可导入或导出 JSON。",
   "newAction": "新建",
   "themeNoCustomPresets": "还没有自定义预设",
   "themeBundledReadOnly": "mods/ 内置 · 只读",
@@ -770,7 +770,7 @@
       }
     }
   },
-  "themeExportSuccess": "已下载颜色 mod；请手动放进项目 mods/ 文件夹。",
+  "themeExportSuccess": "主题 JSON 已导出",
   "exportFailed": "导出失败",
   "themeEditTitle": "编辑颜色预设",
   "themePresetNameLabel": "预设名称",
@@ -1305,15 +1305,37 @@
   "settingsStickerSubtitle": "关闭时不接收表情包消息",
   "settingsAutoPlayVoiceTitle": "自动播放语音",
   "settingsAutoPlayVoiceSubtitle": "需在后端已启用语音功能时开启",
-  "chatPullRefresh": "继续拉动刷新连接",
+  "chatPullRefresh": "下拉刷新最新历史",
   "chatReleaseRefresh": "松手刷新",
   "chatRefreshing": "正在刷新连接…",
-  "chatRefreshComplete": "连接状态已刷新",
+  "chatRefreshComplete": "历史记录已刷新",
   "chatRefreshUnavailable": "暂时无法连接，请检查后端节点和访问 Token。",
   "imageDecodeFailed": "无法显示此图片，请尝试 PNG 或 JPEG 格式。",
   "imageCaptionTitle": "图片说明",
   "imageCaptionHint": "可选：和图片一起发送的文字",
   "dreamNarrationSize": "梦境旁白字号",
   "dreamChatSize": "梦境聊天字号",
-  "dreamActionSize": "梦境动作字号"
+  "dreamActionSize": "梦境动作字号",
+  "showReasoning": "显示思考入口",
+  "expandReasoning": "默认展开思考",
+  "reasoningLocal": "仅影响本机显示",
+  "reasoningOpen": "展开思考",
+  "reasoningClose": "关闭思考",
+  "reasoningUnavailable": "思考暂未就绪，可重试",
+  "reasoningHeading": "{name}的内心活动：",
+  "@reasoningHeading": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "userDisplayName": "用户昵称",
+  "userSignature": "点击编辑签名",
+  "themeFontSize": "界面字号",
+  "systemFont": "系统字体",
+  "importFont": "导入字体（TTF / OTF / TTC）",
+  "fontImportFailed": "字体导入失败：最多 10 个字体，每个不超过 20 MB，请选择有效字体文件",
+  "themeImportJson": "导入主题 JSON",
+  "themeImportFailed": "主题导入失败：请选择完整的手机主题 JSON（256 KB 以内）"
 }

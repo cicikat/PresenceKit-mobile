@@ -31,10 +31,18 @@ class PresenceSnapshot {
   final Color? dotColor;
 }
 
+class AppTypography {
+  static String? family;
+  static double scale = 1;
+}
+
+TextStyle contentSerif(YxPalette c, double size, {Color? color, FontWeight? weight}) =>
+    serif(c, size, color: color, weight: weight).copyWith(fontSize: size);
+
 TextStyle serif(YxPalette c, double size, {Color? color, FontWeight? weight}) {
   return TextStyle(
-    fontFamily: 'serif',
-    fontSize: size,
+    fontFamily: AppTypography.family ?? 'serif',
+    fontSize: size * AppTypography.scale,
     height: 1.35,
     color: color ?? c.ink1,
     fontWeight: weight,
@@ -44,8 +52,8 @@ TextStyle serif(YxPalette c, double size, {Color? color, FontWeight? weight}) {
 
 TextStyle mono(YxPalette c, double size, {Color? color, FontWeight? weight}) {
   return TextStyle(
-    fontFamily: 'monospace',
-    fontSize: size,
+    fontFamily: AppTypography.family ?? 'monospace',
+    fontSize: size * AppTypography.scale,
     height: 1.3,
     color: color ?? c.ink2,
     fontWeight: weight,

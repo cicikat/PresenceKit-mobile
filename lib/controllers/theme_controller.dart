@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import '../models/app_models.dart';
 import '../models/theme_models.dart';
 import '../services/theme_web_bridge.dart';
+import '../services/app_settings_store.dart';
 
 typedef LoadThemeData = Future<String?> Function();
 typedef SaveThemeData = Future<void> Function(String value);
@@ -22,6 +23,12 @@ class ThemeController extends ChangeNotifier {
        _savePersisted = savePersisted,
        _systemBrightness = systemBrightness ??
            (() => WidgetsBinding.instance.platformDispatcher.platformBrightness);
+
+  bool _disposed = false;
+  @override
+  void notifyListeners() { if (!_disposed) super.notifyListeners(); }
+  @override
+  void dispose() { _disposed = true; super.dispose(); }
 
   final LoadThemeData _loadPersisted;
   final SaveThemeData _savePersisted;
@@ -150,13 +157,33 @@ class ThemeController extends ChangeNotifier {
   }
 
   Future<bool> exportPreset(String id) async {
-    if (!kIsWeb) return false;
     final preset = _find(id);
     if (preset == null) return false;
+    if (!kIsWeb) return const AppSettingsStore().exportThemeJson('${_safeFilename(preset.name)}.mobile-theme.json', preset.toModJsonString());
     return exportThemeModFile(
       '${_safeFilename(preset.name)}.mobile-theme.json',
       preset.toModJsonString(),
     );
+  }
+
+  Future<bool> importJson(String raw, {bool? dark}) async {
+    if (raw.length > 256 * 1024) return false;
+    ThemeColorPreset? imported;
+    try { imported = ThemeColorPreset.fromModJson(jsonDecode(raw)); } catch (_) { return false; }
+    if (imported == null) return false;
+    // Import is additive, including when a bundled or user ID already exists.
+    final preset = imported.copyWith(id: _newId('import'), bundled: false);
+    _userPresets.add(preset);
+    _setSelected(preset.id, dark: dark ?? preset.base == 'dark');
+    await _changed();
+    return true;
+  }
+
+  Future<bool> importFile({bool? dark}) async {
+    final file = await const AppSettingsStore().pickUploadFile();
+    if (file == null) return true;
+    if (file.bytes.length > 256 * 1024) return false;
+    try { return await importJson(utf8.decode(file.bytes), dark: dark); } catch (_) { return false; }
   }
 
   void _setSelected(String? id, {required bool dark}) {

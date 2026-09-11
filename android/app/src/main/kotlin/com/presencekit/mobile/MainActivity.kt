@@ -36,6 +36,9 @@ class MainActivity : FlutterActivity() {
     private val pickUploadFileRequest = 9102
     private val pickUploadImagesRequest = 9103
     private val pickPdfFileRequest = 9104
+    private val exportThemeRequest = 9105
+    private var pendingThemeExport: MethodChannel.Result? = null
+    private var pendingThemeJson: String? = null
     private var pendingImagePickResult: MethodChannel.Result? = null
     private var pendingFilePickResult: MethodChannel.Result? = null
     private var pendingImagesPickResult: MethodChannel.Result? = null
@@ -583,6 +586,27 @@ class MainActivity : FlutterActivity() {
                         prefs.edit().putBoolean("autoPlayVoice", call.argument<Boolean>("value") ?: false).apply()
                         result.success(null)
                     }
+                    "exportThemeJson" -> {
+                        val json = call.argument<String>("json").orEmpty()
+                        if (pendingThemeExport != null || json.length > 262144) {
+                            result.success(false)
+                        } else {
+                            pendingThemeExport = result
+                            pendingThemeJson = json
+                            try {
+                                startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    type = "application/json"
+                                    putExtra(Intent.EXTRA_TITLE, call.argument<String>("name") ?: "theme.mobile-theme.json")
+                                }, exportThemeRequest)
+                            } catch (_: Exception) {
+                                pendingThemeExport = null
+                                pendingThemeJson = null
+                                result.success(false)
+                            }
+                        }
+                    }
+                    "localPresentationDirectory" -> result.success(File(filesDir, "presentation").absolutePath)
                     "getAppearancePrefs" -> {
                         result.success(
                             mapOf(
@@ -593,6 +617,8 @@ class MainActivity : FlutterActivity() {
                                 "dreamNarrationColor" to if (prefs.contains("dreamNarrationColor")) prefs.getLong("dreamNarrationColor", 0L) else null,
                                 "dreamChatColor" to if (prefs.contains("dreamChatColor")) prefs.getLong("dreamChatColor", 0L) else null,
                                 "dreamActionColor" to if (prefs.contains("dreamActionColor")) prefs.getLong("dreamActionColor", 0L) else null,
+                                "showReasoning" to prefs.getBoolean("showReasoning", true),
+                                "expandReasoning" to prefs.getBoolean("expandReasoning", false),
                                 "fontSize" to prefs.getFloat("fontSize", 16f).toDouble(),
                                 "showYouAvatar" to prefs.getBoolean("showYouAvatar", false),
                                 "showChatTime" to prefs.getBoolean("showChatTime", true),
@@ -610,6 +636,8 @@ class MainActivity : FlutterActivity() {
                             .putFloat("dreamNarrationSize", call.argument<Number>("dreamNarrationSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
                             .putFloat("dreamChatSize", call.argument<Number>("dreamChatSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
                             .putFloat("dreamActionSize", call.argument<Number>("dreamActionSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
+                            .putBoolean("showReasoning", call.argument<Boolean>("showReasoning") ?: true)
+                            .putBoolean("expandReasoning", call.argument<Boolean>("expandReasoning") ?: false)
                             .putFloat("fontSize", fontSize)
                             .putBoolean("showYouAvatar", call.argument<Boolean>("showYouAvatar") ?: false)
                             .putBoolean("showChatTime", call.argument<Boolean>("showChatTime") ?: true)
@@ -711,6 +739,18 @@ class MainActivity : FlutterActivity() {
                 contentResolver.openInputStream(uri)?.use { it.readBytes() }
             }.getOrNull()
             callback.success(bytes)
+            return
+        }
+        if (requestCode == exportThemeRequest) {
+            val callback = pendingThemeExport
+            val json = pendingThemeJson
+            pendingThemeExport = null
+            pendingThemeJson = null
+            val uri = data?.data
+            val success = resultCode == RESULT_OK && uri != null && json != null && runCatching {
+                contentResolver.openOutputStream(uri!!, "wt")?.use { it.write(json!!.toByteArray(Charsets.UTF_8)) } != null
+            }.getOrDefault(false)
+            callback?.success(success)
             return
         }
         if (requestCode == pickUploadFileRequest) {

@@ -1,5 +1,11 @@
 # 后端集成
 
+## 回合思考显示（2026-09-11）
+
+手机使用同桌面的 `GET /chat/turns/{turn_id}/reasoning`，沿用 mobile Bearer，不调用 admin 全局归档。只接受响应同名 turn_id，按 entries/parts 顺序显示 text；动态角色名取当前资料。发送/附件回复前占位，HTTP canonical turn_id 到达后读取，不以 msg_id、时间或正文猜测 ID。历史仅在接口明确返回 turn_id 时显示入口。显示开关和默认展开为本机偏好，不控制模型生成。
+
+后端管理面仍控制思考生成与归档；无新增队列、ack、TTL 或通知变更。真实 mobile scope、历史 ID 与其他端主动消息的思考关联仍需联调，详见 known-issues。
+
 本机外观新增 `dreamNarrationSize` / `dreamChatSize` / `dreamActionSize`（12–28，默认 16）和对应 `dreamNarrationColor` / `dreamChatColor` / `dreamActionColor`（可空 ARGB 整数，空时跟随主题）。经既有 appearance prefs 通道持久化，不进入后端。手机群聊入口和专属 HTTP 调用已移除，不清除后端群聊数据。
 
 ## 设置控制面调整（2026-09-11）

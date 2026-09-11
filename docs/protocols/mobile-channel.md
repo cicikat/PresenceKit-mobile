@@ -169,3 +169,6 @@ behavior_id 或 kind 不在上述白名单中，且结构字段也无法匹配�
 Mobile `/mobile/chat` and upload responses add optional `display_text` alongside plain `reply`; poll items add the same optional field alongside plain `content`. The copy contains desktop-compatible hl/big/sm tags. Missing, wrong-type or mismatching display copies fall back to canonical text. `BackendChatResponse` and `MobilePollMessage` carry the optional string; `ChatMessage` preserves it across settling/copying. Copy, reply-to, TTS, notification and fingerprints continue using canonical text. IDs, ack/cursor persistence, TTL and relay are unchanged. Legacy clients may ignore this field. No native MethodChannel change or extra permission is required.
 
 The Flutter parser mirrors desktop paired-tag rules (up to 200 characters, no nested angle brackets); hl uses the theme red color (danger palette slot) at weight 600, big uses 1.18x, sm .85x with .8 alpha. Parsing before reveal prevents half tags flashing. Paragraph slicing preserves styles spanning newlines. Old plain-text history has no display copy; Dream/group transport is not extended by this reality contract.
+# 手机只读历史与思考补充（2026-09-11）
+
+手机下拉刷新重读 `/chat-log/dates` 与日期详情，随后沿既有 mobile catch-up/ack 路径执行。历史补回不伪造 mobile seq 或 ack。思考仅使用明确的 `turn_id` 读取 `/chat/turns/{turn_id}/reasoning`；不会将 `msg_id` 当作 canonical turn_id。未增加 mobile 请求/投递字段。

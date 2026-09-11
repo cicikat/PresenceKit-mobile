@@ -2602,7 +2602,7 @@ abstract class AppLocalizations {
   /// No description provided for @themePresetsDescription.
   ///
   /// In zh, this message translates to:
-  /// **'本机可保存多个预设；浏览器可导出颜色 mod。'**
+  /// **'分别选择日间和夜间配色，可导入或导出 JSON。'**
   String get themePresetsDescription;
 
   /// No description provided for @newAction.
@@ -2668,7 +2668,7 @@ abstract class AppLocalizations {
   /// No description provided for @themeExportSuccess.
   ///
   /// In zh, this message translates to:
-  /// **'已下载颜色 mod；请手动放进项目 mods/ 文件夹。'**
+  /// **'主题 JSON 已导出'**
   String get themeExportSuccess;
 
   /// No description provided for @exportFailed.
@@ -4288,7 +4288,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatPullRefresh.
   ///
   /// In zh, this message translates to:
-  /// **'继续拉动刷新连接'**
+  /// **'下拉刷新最新历史'**
   String get chatPullRefresh;
 
   /// No description provided for @chatReleaseRefresh.
@@ -4306,7 +4306,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatRefreshComplete.
   ///
   /// In zh, this message translates to:
-  /// **'连接状态已刷新'**
+  /// **'历史记录已刷新'**
   String get chatRefreshComplete;
 
   /// No description provided for @chatRefreshUnavailable.
@@ -4350,6 +4350,96 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'梦境动作字号'**
   String get dreamActionSize;
+
+  /// No description provided for @showReasoning.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示思考入口'**
+  String get showReasoning;
+
+  /// No description provided for @expandReasoning.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认展开思考'**
+  String get expandReasoning;
+
+  /// No description provided for @reasoningLocal.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅影响本机显示'**
+  String get reasoningLocal;
+
+  /// No description provided for @reasoningOpen.
+  ///
+  /// In zh, this message translates to:
+  /// **'展开思考'**
+  String get reasoningOpen;
+
+  /// No description provided for @reasoningClose.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭思考'**
+  String get reasoningClose;
+
+  /// No description provided for @reasoningUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'思考暂未就绪，可重试'**
+  String get reasoningUnavailable;
+
+  /// No description provided for @reasoningHeading.
+  ///
+  /// In zh, this message translates to:
+  /// **'{name}的内心活动：'**
+  String reasoningHeading(String name);
+
+  /// No description provided for @userDisplayName.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户昵称'**
+  String get userDisplayName;
+
+  /// No description provided for @userSignature.
+  ///
+  /// In zh, this message translates to:
+  /// **'点击编辑签名'**
+  String get userSignature;
+
+  /// No description provided for @themeFontSize.
+  ///
+  /// In zh, this message translates to:
+  /// **'界面字号'**
+  String get themeFontSize;
+
+  /// No description provided for @systemFont.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统字体'**
+  String get systemFont;
+
+  /// No description provided for @importFont.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入字体（TTF / OTF / TTC）'**
+  String get importFont;
+
+  /// No description provided for @fontImportFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'字体导入失败：最多 10 个字体，每个不超过 20 MB，请选择有效字体文件'**
+  String get fontImportFailed;
+
+  /// No description provided for @themeImportJson.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入主题 JSON'**
+  String get themeImportJson;
+
+  /// No description provided for @themeImportFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'主题导入失败：请选择完整的手机主题 JSON（256 KB 以内）'**
+  String get themeImportFailed;
 }
 
 class _AppLocalizationsDelegate

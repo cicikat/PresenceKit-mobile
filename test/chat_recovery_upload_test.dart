@@ -17,6 +17,7 @@ class _Backend extends BackendClient {
   _Backend(superStore)
     : super(baseUrl: 'http://localhost:8080', settingsStore: superStore);
   bool offline = true;
+  ChatLogDay? day;
   int activations = 0;
   int historyReads = 0;
   int uploads = 0;
@@ -29,8 +30,11 @@ class _Backend extends BackendClient {
   Future<ChatLogDates> loadChatLogDates({required String token}) async {
     historyReads++;
     if (offline) throw const BackendException('offline');
-    return ChatLogDates.fromJson({});
+    return ChatLogDates.fromJson({'dates': day == null ? [] : [day!.date]});
   }
+
+  @override
+  Future<ChatLogDay> loadChatLogDay(String date, {required String token}) async => day!;
 
   @override
   Future<MobileActivationResult> activateMobile({required String token}) async {
@@ -110,12 +114,33 @@ void main() {
       await controller.refreshConnection();
       expect(
         backend.historyReads,
-        reads,
+        reads + 1,
         reason:
-            'A healthy refresh must not reload and duplicate locally sent messages',
+            'A healthy refresh must fetch the latest history as a delivery fallback',
       );
     },
   );
+
+  test('refresh adds missed history, reconciles occurrences and retains a pending send', () async {
+    backend.offline = false;
+    final now = DateTime.now();
+    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    backend.day = ChatLogDay.fromJson({'date': date, 'entries': [
+      {'time': '10:00', 'user': 'hello', 'assistant': 'reply'},
+      {'time': '10:01', 'user': 'other device', 'assistant': 'missed'},
+    ]});
+    final reply = ChatMessage(role: 'him', text: 'reply', time: '10:00');
+    final pending = ChatMessage(role: 'you', text: 'still sending', time: '10:02');
+    controller.sent.addAll([ChatMessage(role: 'you', text: 'hello', time: '10:00'), reply, pending]);
+    controller.sending = true;
+    await controller.refreshConnection();
+    expect(controller.history.map((m) => m.text), ['hello', 'reply', 'other device', 'missed']);
+    expect(controller.history[1].id, reply.id);
+    expect(controller.sent.single.id, pending.id);
+    await controller.refreshConnection();
+    expect(controller.history.where((m) => m.text == 'reply'), hasLength(1));
+    expect(controller.sent.single.id, pending.id);
+  });
 
   test(
     'image bytes and caption survive failure and multipart retry without duplicating bubble',

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../controllers/theme_controller.dart';
@@ -55,22 +54,26 @@ class ThemePresetManagerSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              Expanded(
-                child: controller.presets.isEmpty
-                    ? Center(
-                        child: Text(
-                          l10n.themeNoCustomPresets,
-                          style: serif(c, 15, color: c.ink3),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 18),
-                        itemCount: controller.presets.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) =>
-                            _presetCard(context, controller.presets[index]),
-                      ),
+              TextButton.icon(
+                onPressed: () async {
+                  final ok = await controller.importFile(dark: selectingDark);
+                  if (!ok && context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.themeImportFailed)));
+                },
+                icon: const Icon(Icons.file_open_outlined),
+                label: Text(context.l10n.themeImportJson),
               ),
+              ListTile(
+                leading: const Icon(Icons.settings_backup_restore),
+                title: Text((selectingDark ?? controller.isDark) ? l10n.themeNight : l10n.themePaper),
+                trailing: (selectingDark == true ? controller.darkThemePresetId : controller.lightThemePresetId) == null ? const Icon(Icons.check) : null,
+                onTap: () => controller.select(null, dark: selectingDark),
+              ),
+              Expanded(child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 18),
+                itemCount: controller.presets.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (context, index) => _presetCard(context, controller.presets[index]),
+              )),
             ],
           ),
         ),
@@ -161,8 +164,7 @@ class ThemePresetManagerSheet extends StatelessWidget {
                       icon: const Icon(Icons.restart_alt_rounded, size: 16),
                       label: Text(l10n.themeResetColors),
                     ),
-                  if (kIsWeb)
-                    OutlinedButton.icon(
+                  OutlinedButton.icon(
                       onPressed: () => _export(context, preset),
                       icon: const Icon(Icons.download_rounded, size: 16),
                       label: Text(l10n.themeExportMod),

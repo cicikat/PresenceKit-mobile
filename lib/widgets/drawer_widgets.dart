@@ -1,3 +1,5 @@
+import '../controllers/personalization_controller.dart';
+import 'personalization_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -9,6 +11,7 @@ import '../widgets/common_widgets.dart';
 class YxDrawer extends StatelessWidget {
   const YxDrawer({
     super.key,
+    this.personalization,
     required this.c,
     required this.route,
     required this.profileDisplayName,
@@ -17,6 +20,7 @@ class YxDrawer extends StatelessWidget {
     required this.onOpenSettings,
   });
 
+  final PersonalizationController? personalization;
   final YxPalette c;
   final AppRoute route;
   final String profileDisplayName;
@@ -36,42 +40,7 @@ class YxDrawer extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-              child: Row(
-                children: [
-                  YxAvatar(
-                    c: c,
-                    size: 56,
-                    onDark: true,
-                    imageBytes: profileAvatarBytes,
-                    text: profileDisplayName.characters.first,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          profileDisplayName,
-                          style: serif(
-                            c,
-                            22,
-                            color: c.characterOn,
-                            weight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          l10n.drawerClientSubtitle,
-                          style: mono(
-                            c,
-                            10,
-                            color: c.characterOn.withValues(alpha: 0.65),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              child: UserDrawerHeader(c: c, controller: personalization),
             ),
             Divider(
               color: c.characterOn.withValues(alpha: 0.18),

@@ -159,7 +159,7 @@ class ChatController extends ChangeNotifier {
   Future<void> _refreshConnection() async {
     if (_accessToken == null) return;
     if (_initialSync != null) await _initialSync;
-    if (!historyLoaded || historyError != null) await loadHistory();
+    await loadHistory(reconcileLocal: true);
     await activateMobile(source: ChatDeliverySource.catchUp);
     if (mobileActive && mobileError == null) backendError = null;
     _ensurePollTimer();
@@ -265,13 +265,21 @@ class ChatController extends ChangeNotifier {
     sent[index] = sent[index].settled();
   }
 
+  Future<String> loadReasoning(String turnId) => _backend().loadTurnReasoning(turnId, token: _accessToken!);
+
   Future<void> _send(String text, {ReplyTarget? replyTo}) async {
+    final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
+    sent.add(anchor);
+    notifyListeners();
     try {
       final response = await _backend().sendChat(
         text,
         token: _accessToken!,
         replyTo: replyTo,
       );
+      final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
+      if (anchorIndex >= 0) sent[anchorIndex] = ChatMessage(id: anchor.id, role: 'reasoning', text: response.turnId ?? '', time: anchor.time, failed: response.turnId == null);
+      notifyListeners();
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
         await _appendReply(response.reply, displayText: response.displayText);
@@ -295,6 +303,7 @@ class ChatController extends ChangeNotifier {
       ); */
       scrollToBottom();
     } finally {
+      if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
       sending = false;
       himTyping = false;
       notifyListeners();
@@ -324,9 +333,12 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  Future<void> loadHistory() async {
+  Future<void> loadHistory({bool reconcileLocal = false}) async {
     final token = _accessToken;
     if (loadingHistory || token == null) return;
+    final backend = _backend();
+    final localSnapshot = List<ChatMessage>.of(sent);
+    final protectedFrom = sending ? localSnapshot.lastIndexWhere((m) => m.role == 'you') : localSnapshot.length;
     loadingHistory = true;
     historyError = null;
     notifyListeners();
@@ -353,6 +365,24 @@ class ChatController extends ChangeNotifier {
         }
         final earliest = dates.indexOf(firstDate);
         exhausted = earliest < 0 || earliest >= dates.length - 1;
+      }
+      if (_accessToken != token || !identical(_backend(), backend)) return;
+      if (reconcileLocal) {
+        final consumed = <int>{};
+        // Count occurrences, not a set of text: repeated messages remain distinct.
+        for (final local in localSnapshot.take(protectedFrom < 0 ? 0 : protectedFrom)) {
+          if (local.failed || local.attachments.isNotEmpty || local.sticker != null) continue;
+          final date = local.dateKey ?? _dateKey(local.timestamp);
+          final index = messages.lastIndexWhere((remote) =>
+            !consumed.contains(remote.id) && remote.role == local.role &&
+            remote.text == local.text && remote.time == local.time &&
+            (local.role == 'reasoning' || remote.dateKey == date));
+          if (index < 0) continue;
+          consumed.add(messages[index].id);
+          consumed.add(local.id);
+          messages[index] = local.settled();
+          sent.removeWhere((item) => item.id == local.id);
+        }
       }
       history
         ..clear()
@@ -708,6 +738,8 @@ class ChatController extends ChangeNotifier {
       }
       sent[index] = outgoing;
     }
+    final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
+    sent.add(anchor);
     notifyListeners();
     scrollToBottom();
     try {
@@ -717,6 +749,9 @@ class ChatController extends ChangeNotifier {
         channel: 'mobile',
         message: message,
       );
+      final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
+      if (anchorIndex >= 0) sent[anchorIndex] = ChatMessage(id: anchor.id, role: 'reasoning', text: response.turnId ?? '', time: anchor.time, failed: response.turnId == null);
+      notifyListeners();
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
         await _appendReply(response.reply, displayText: response.displayText);
@@ -732,6 +767,7 @@ class ChatController extends ChangeNotifier {
       if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
       scrollToBottom();
     } finally {
+      if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
       sending = false;
       himTyping = false;
       notifyListeners();
@@ -909,6 +945,8 @@ class ChatController extends ChangeNotifier {
           time: entry.time,
           dateKey: day.date,
         ),
+      if (entry.turnId?.isNotEmpty == true)
+        ChatMessage(role: 'reasoning', text: entry.turnId!, time: entry.time),
       for (final part in _splitHistory(entry.assistant))
         ChatMessage(
           role: 'him',

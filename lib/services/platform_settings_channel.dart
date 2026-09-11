@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 
 /// Shared transport for the stable Android settings channel.
-/// Appearance get/set includes independent Dream text sizes (12?28).
+/// Appearance get/set includes independent Dream sizes (12-28), ARGB colors,
+/// showReasoning and expandReasoning. localPresentationDirectory returns the
+/// private font/profile directory; exportThemeJson uses the system save dialog.
 /// Appearance get/set includes local showChatTime (default true).
 /// Domain services depend on this holder instead of owning their own channel.
 class PlatformSettingsChannel {

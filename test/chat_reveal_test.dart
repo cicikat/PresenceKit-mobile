@@ -8,6 +8,26 @@ import 'package:presencekit_mobile/services/device_services.dart';
 import 'package:presencekit_mobile/widgets/chat_widgets.dart';
 
 void main() {
+  testWidgets('skip exposes every remaining segment and releases sending', (tester) async {
+    const store = AppSettingsStore();
+    final backend = _LongReplyBackend();
+    final controller = ChatController(backend: () => backend, token: () => 'test',
+      settings: const SettingsStore(store), relay: const RelayStatusService(store));
+    controller.send('hello');
+    await tester.pump();
+    expect(controller.sent.where((m) => m.role == 'him').length, 1);
+    expect(controller.sending, isTrue);
+    controller.skipReveal();
+    await tester.pump();
+    expect(controller.sent.where((m) => m.role == 'him').length, 3);
+    expect(controller.sent.where((m) => m.role == 'reasoning').length, 1);
+    expect(controller.sending, isFalse);
+    expect(controller.himTyping, isFalse);
+    await tester.pump(const Duration(seconds: 6));
+    expect(controller.sent.where((m) => m.role == 'him').length, 3);
+    controller.dispose();
+  });
+
   test('a new reply loses its animation flag once reveal starts', () {
     const store = AppSettingsStore();
     final backend = BackendClient(
@@ -83,4 +103,13 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     expect(find.text(text), findsOneWidget);
   });
+}
+
+class _LongReplyBackend extends BackendClient {
+  _LongReplyBackend() : super(baseUrl: 'http://127.0.0.1:8080', settingsStore: const AppSettingsStore());
+  @override
+  Future<BackendChatResponse> sendChat(String message, {required String token, ReplyTarget? replyTo}) async =>
+    BackendChatResponse.fromJson({'reply': '${'A' * 5000}\n\nSecond\n\nThird', 'turn_id': 'canonical'});
+  @override
+  Future<MobileActivationResult> deactivateMobile({required String token}) async => MobileActivationResult.fromJson({'ok': true, 'active': false});
 }

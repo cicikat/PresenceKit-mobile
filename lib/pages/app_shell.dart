@@ -14,6 +14,7 @@ import '../controllers/garden_controller.dart';
 import '../controllers/locale_controller.dart';
 import '../controllers/profile_status_controller.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/personalization_controller.dart';
 import '../controllers/voice_input_controller.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
@@ -87,6 +88,7 @@ class _CompanionAppState extends State<CompanionApp>
   late final LifeRecordsController _lifeRecordsController;
   YxPrefs _prefs = const YxPrefs();
   late final ThemeController _themeController;
+  late final PersonalizationController _personalization;
   late final ProfileStatusController _profileStatusController;
   late final LocaleController _localeController;
   late final bool _ownsLocaleController;
@@ -145,6 +147,7 @@ class _CompanionAppState extends State<CompanionApp>
     if (!_localeController.loaded) unawaited(_localeController.load());
     final settingsStore = widget.settingsStore;
     _settings = SettingsStore(settingsStore);
+    _personalization = PersonalizationController(settingsStore)..addListener(_handleThemeChanged);
     _themeController = ThemeController(
       loadPersisted: _settings.loadCustomThemePalette,
       savePersisted: _settings.saveCustomThemePalette,
@@ -217,10 +220,11 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   Future<void> _restoreBackendAndStart() async {
+    unawaited(_themeController.restore());
+    unawaited(_personalization.restore());
     await Future.wait([
       _connectionController.restore(),
       _deviceController.restore(),
-      _themeController.restore(),
     ]);
     final storedName = await _settings.loadProfileName();
     final storedAvatar = await _settings.loadAvatar();
@@ -301,6 +305,8 @@ class _CompanionAppState extends State<CompanionApp>
     _dreamController.dispose();
     _themeController.removeListener(_handleThemeChanged);
     _themeController.dispose();
+    _personalization.removeListener(_handleThemeChanged);
+    _personalization.dispose();
     _profileStatusController.removeListener(_handleProfileStatusChanged);
     _profileStatusController.dispose();
     if (_ownsLocaleController) _localeController.dispose();
@@ -745,6 +751,8 @@ class _CompanionAppState extends State<CompanionApp>
         dreamNarrationColor: _prefs.dreamNarrationColor,
         dreamChatColor: _prefs.dreamChatColor,
         dreamActionColor: _prefs.dreamActionColor,
+        showReasoning: _prefs.showReasoning,
+        expandReasoning: _prefs.expandReasoning,
         fontSize: _prefs.fontSize,
         showYouAvatar: _prefs.showYouAvatar,
         showChatTime: _prefs.showChatTime,
@@ -986,6 +994,7 @@ class _CompanionAppState extends State<CompanionApp>
             _dreamController,
             _connectionController,
             _themeController,
+            _personalization,
             _localeController,
           ]),
           builder: (context, _) => StatefulBuilder(
@@ -1027,6 +1036,7 @@ class _CompanionAppState extends State<CompanionApp>
               }
 
               return SettingsPage(
+                personalization: _personalization,
                 c: c,
                 language: _localeController.language,
                 dark: _themeController.isDark,
@@ -1270,6 +1280,8 @@ class _CompanionAppState extends State<CompanionApp>
 
   @override
   Widget build(BuildContext context) {
+    AppTypography.family = _personalization.family;
+    AppTypography.scale = _personalization.themeSize / 16;
     final conversation = _route == AppRoute.chat || _route == AppRoute.dream;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -1296,6 +1308,7 @@ class _CompanionAppState extends State<CompanionApp>
           backgroundColor: Colors.transparent,
           key: _scaffoldKey,
           drawer: YxDrawer(
+            personalization: _personalization,
             c: c,
             route: _route,
             profileDisplayName: _profileDisplayName,

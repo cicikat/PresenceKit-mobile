@@ -457,6 +457,18 @@ class AppSettingsStore {
     }
   }
 
+  Future<bool> exportThemeJson(String name, String json) async {
+    if (!_channelAvailable) return false;
+    try { return await PlatformSettingsChannel.channel.invokeMethod<bool>('exportThemeJson', {'name': name, 'json': json}) ?? false; }
+    on PlatformException { return false; }
+  }
+
+  Future<String?> localPresentationDirectory() async {
+    if (!_channelAvailable) return null;
+    try { return await PlatformSettingsChannel.channel.invokeMethod<String>('localPresentationDirectory'); }
+    on PlatformException { return null; }
+  }
+
   Future<YxPrefs> loadAppearancePrefs() async {
     if (!_channelAvailable) return const YxPrefs();
     try {
@@ -470,6 +482,8 @@ class AppSettingsStore {
         dreamNarrationColor: (raw['dreamNarrationColor'] as num?)?.toInt(),
         dreamChatColor: (raw['dreamChatColor'] as num?)?.toInt(),
         dreamActionColor: (raw['dreamActionColor'] as num?)?.toInt(),
+        showReasoning: raw['showReasoning'] != false,
+        expandReasoning: raw['expandReasoning'] == true,
         infoStrip: raw['infoStrip'] != false,
         fontSize:
             ((raw['fontSize'] is num
@@ -499,6 +513,8 @@ class AppSettingsStore {
             'dreamNarrationColor': value.dreamNarrationColor,
             'dreamChatColor': value.dreamChatColor,
             'dreamActionColor': value.dreamActionColor,
+            'showReasoning': value.showReasoning,
+            'expandReasoning': value.expandReasoning,
             'fontSize': value.fontSize,
             'showYouAvatar': value.showYouAvatar,
             'showChatTime': value.showChatTime,

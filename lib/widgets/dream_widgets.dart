@@ -171,7 +171,7 @@ class DreamPage extends StatelessWidget {
                         YouMessage(
                           c: c,
                           time: message.time,
-                          prefs: prefs,
+                          prefs: prefs.copyWith(fontSize: prefs.dreamChatSize),
                           text: message.text,
                         )
                       else if (message.segments != null &&
@@ -186,13 +186,11 @@ class DreamPage extends StatelessWidget {
                           animate: message.animate,
                         )
                       else
-                        HimMessage(
-                          c: c,
-                          time: message.time,
-                          prefs: prefs,
+                        DreamSegmentedMessage(
+                          c: c, time: message.time, prefs: prefs,
                           profileDisplayName: profileDisplayName,
                           profileAvatarBytes: profileAvatarBytes,
-                          text: message.text,
+                          segments: [NarrativeSegment(type: 'say', text: message.text)],
                           animate: message.animate,
                         ),
                     if (sending)
@@ -359,7 +357,7 @@ class DreamSceneLine extends StatelessWidget {
           Expanded(child: Divider(color: c.surfaceEdge)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(text, style: mono(c, 10, color: c.ink3)),
+            child: Text(text, style: mono(c, 10, color: c.ink3), maxLines: 3, overflow: TextOverflow.ellipsis),
           ),
           Expanded(child: Divider(color: c.surfaceEdge)),
         ],
@@ -438,7 +436,7 @@ class DreamSegmentedMessage extends StatelessWidget {
                     child: AnimatedRevealText(
                       text: segment.text,
                       animate: animate,
-                      style: serif(c, prefs.dreamChatSize, color: prefs.dreamChatColor == null ? c.ink1 : Color(prefs.dreamChatColor!)),
+                      style: contentSerif(c, prefs.dreamChatSize, color: prefs.dreamChatColor == null ? c.ink1 : Color(prefs.dreamChatColor!)),
                     ),
                   ),
                 ),
@@ -454,7 +452,7 @@ class DreamSegmentedMessage extends StatelessWidget {
           child: Text(
             segment.text,
             style:
-                serif(
+                contentSerif(
                   c,
                   prefs.dreamActionSize,
                   color: prefs.dreamActionColor == null ? c.ink2 : Color(prefs.dreamActionColor!),
@@ -467,7 +465,7 @@ class DreamSegmentedMessage extends StatelessWidget {
       case 'env':
       case 'narration':
       default:
-        return Padding(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18), child: Text(segment.text, textAlign: TextAlign.center, style: serif(c, prefs.dreamNarrationSize, color: prefs.dreamNarrationColor == null ? c.ink3 : Color(prefs.dreamNarrationColor!))));
+        return Padding(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18), child: Text(segment.text, textAlign: TextAlign.center, style: contentSerif(c, prefs.dreamNarrationSize, color: prefs.dreamNarrationColor == null ? c.ink3 : Color(prefs.dreamNarrationColor!))));
     }
   }
 }

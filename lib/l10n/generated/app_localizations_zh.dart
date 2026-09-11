@@ -1361,7 +1361,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themePresetsTitle => '颜色预设';
 
   @override
-  String get themePresetsDescription => '本机可保存多个预设；浏览器可导出颜色 mod。';
+  String get themePresetsDescription => '分别选择日间和夜间配色，可导入或导出 JSON。';
 
   @override
   String get newAction => '新建';
@@ -1398,7 +1398,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get themeExportSuccess => '已下载颜色 mod；请手动放进项目 mods/ 文件夹。';
+  String get themeExportSuccess => '主题 JSON 已导出';
 
   @override
   String get exportFailed => '导出失败';
@@ -2286,7 +2286,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAutoPlayVoiceSubtitle => '需在后端已启用语音功能时开启';
 
   @override
-  String get chatPullRefresh => '继续拉动刷新连接';
+  String get chatPullRefresh => '下拉刷新最新历史';
 
   @override
   String get chatReleaseRefresh => '松手刷新';
@@ -2295,7 +2295,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatRefreshing => '正在刷新连接…';
 
   @override
-  String get chatRefreshComplete => '连接状态已刷新';
+  String get chatRefreshComplete => '历史记录已刷新';
 
   @override
   String get chatRefreshUnavailable => '暂时无法连接，请检查后端节点和访问 Token。';
@@ -2317,4 +2317,51 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dreamActionSize => '梦境动作字号';
+
+  @override
+  String get showReasoning => '显示思考入口';
+
+  @override
+  String get expandReasoning => '默认展开思考';
+
+  @override
+  String get reasoningLocal => '仅影响本机显示';
+
+  @override
+  String get reasoningOpen => '展开思考';
+
+  @override
+  String get reasoningClose => '关闭思考';
+
+  @override
+  String get reasoningUnavailable => '思考暂未就绪，可重试';
+
+  @override
+  String reasoningHeading(String name) {
+    return '$name的内心活动：';
+  }
+
+  @override
+  String get userDisplayName => '用户昵称';
+
+  @override
+  String get userSignature => '点击编辑签名';
+
+  @override
+  String get themeFontSize => '界面字号';
+
+  @override
+  String get systemFont => '系统字体';
+
+  @override
+  String get importFont => '导入字体（TTF / OTF / TTC）';
+
+  @override
+  String get fontImportFailed => '字体导入失败：最多 10 个字体，每个不超过 20 MB，请选择有效字体文件';
+
+  @override
+  String get themeImportJson => '导入主题 JSON';
+
+  @override
+  String get themeImportFailed => '主题导入失败：请选择完整的手机主题 JSON（256 KB 以内）';
 }

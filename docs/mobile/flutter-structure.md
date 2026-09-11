@@ -1,5 +1,9 @@
 # Flutter 结构
 
+下拉刷新现在无条件重读最新聊天历史，再执行 mobile catch-up；按角色、日期、时间、正文逐条对账，保留本地消息标识与正在发送/失败/附件消息。旧日志缺少稳定 ID 时这一兼容对账不等同于后端精确关联。主题管理支持 JSON 文件导入/导出，导入校验完整 schema，始终新增本机副本，不覆盖同名 ID。
+
+`PersonalizationController` 管理本机字体与用户资料，`personalization_widgets.dart` 提供侧栏编辑和字体选择。`ReasoningController`/`reasoning_widgets.dart` 管理单回合读取与旁白展示；不新增组合根领域 Timer。主题与字体恢复不阻塞聊天连接初始化。
+
 ## 外观调整（2026-09-11）
 
 手机群聊路由、页面和专属 HTTP 门面已移除，不删除后端数据。Dream 动作/感受取消斜体；旁白、聊天、动作分别持久化字号与颜色。主题预览支持点选区域打开色盘，日夜模式使用下拉框、分别选择预设；雾窗颜色来自桌面 presence-glass 的 OKLCH 色值转换。

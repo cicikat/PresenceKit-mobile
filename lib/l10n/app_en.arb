@@ -745,7 +745,7 @@
   "whiteStone": "White",
   "boardLoading": "Loading board…",
   "themePresetsTitle": "Color presets",
-  "themePresetsDescription": "Save multiple presets locally; export color mods in the browser.",
+  "themePresetsDescription": "Choose day and night palettes. Import or export them as JSON.",
   "newAction": "New",
   "themeNoCustomPresets": "No custom presets yet",
   "themeBundledReadOnly": "Built into mods/ · Read-only",
@@ -770,7 +770,7 @@
       }
     }
   },
-  "themeExportSuccess": "Color mod downloaded. Place it in the project's mods/ folder manually.",
+  "themeExportSuccess": "Theme JSON exported",
   "exportFailed": "Export failed",
   "themeEditTitle": "Edit color preset",
   "themePresetNameLabel": "Preset name",
@@ -1305,15 +1305,37 @@
   "settingsStickerSubtitle": "Disable to stop receiving sticker messages",
   "settingsAutoPlayVoiceTitle": "Auto-play voice",
   "settingsAutoPlayVoiceSubtitle": "Enable when voice is available on the backend",
-  "chatPullRefresh": "Pull to refresh connection",
+  "chatPullRefresh": "Pull to refresh latest history",
   "chatReleaseRefresh": "Release to refresh",
   "chatRefreshing": "Refreshing connection…",
-  "chatRefreshComplete": "Connection refreshed",
+  "chatRefreshComplete": "Latest history refreshed",
   "chatRefreshUnavailable": "Unable to connect. Check your backend node and access token.",
   "imageDecodeFailed": "Cannot display this image. Try PNG or JPEG.",
   "imageCaptionTitle": "Image caption",
   "imageCaptionHint": "Optional message to send with the images",
   "dreamNarrationSize": "Dream narration size",
   "dreamChatSize": "Dream dialogue size",
-  "dreamActionSize": "Dream action size"
+  "dreamActionSize": "Dream action size",
+  "showReasoning": "Show thoughts",
+  "expandReasoning": "Expand thoughts by default",
+  "reasoningLocal": "Local display only",
+  "reasoningOpen": "Show thoughts",
+  "reasoningClose": "Hide thoughts",
+  "reasoningUnavailable": "Thoughts are not available yet. Try again.",
+  "reasoningHeading": "{name}’s inner thoughts:",
+  "@reasoningHeading": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "userDisplayName": "Your name",
+  "userSignature": "Tap to add a signature",
+  "themeFontSize": "Interface text size",
+  "systemFont": "System font",
+  "importFont": "Import font (TTF / OTF / TTC)",
+  "fontImportFailed": "Import failed. Choose a valid font up to 20 MB; at most 10 fonts can be stored.",
+  "themeImportJson": "Import theme JSON",
+  "themeImportFailed": "Import failed. Choose a complete mobile theme JSON file up to 256 KB."
 }

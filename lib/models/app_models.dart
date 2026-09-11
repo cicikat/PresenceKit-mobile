@@ -162,6 +162,8 @@ class YxPrefs {
     this.dreamNarrationColor,
     this.dreamChatColor,
     this.dreamActionColor,
+    this.showReasoning = true,
+    this.expandReasoning = false,
     this.fontSize = 16,
     this.showYouAvatar = false,
     this.showChatTime = true,
@@ -180,6 +182,8 @@ class YxPrefs {
   final int? dreamNarrationColor;
   final int? dreamChatColor;
   final int? dreamActionColor;
+  final bool showReasoning;
+  final bool expandReasoning;
   final double fontSize;
   final bool showYouAvatar;
   final bool showChatTime;
@@ -200,6 +204,8 @@ class YxPrefs {
     int? dreamNarrationColor,
     int? dreamChatColor,
     int? dreamActionColor,
+    bool? showReasoning,
+    bool? expandReasoning,
     double? fontSize,
     bool? showYouAvatar,
     bool? showChatTime,
@@ -219,6 +225,8 @@ class YxPrefs {
       dreamNarrationColor: dreamNarrationColor ?? this.dreamNarrationColor,
       dreamChatColor: dreamChatColor ?? this.dreamChatColor,
       dreamActionColor: dreamActionColor ?? this.dreamActionColor,
+      showReasoning: showReasoning ?? this.showReasoning,
+      expandReasoning: expandReasoning ?? this.expandReasoning,
       fontSize: fontSize ?? this.fontSize,
       showYouAvatar: showYouAvatar ?? this.showYouAvatar,
       showChatTime: showChatTime ?? this.showChatTime,
@@ -944,6 +952,7 @@ class AttachmentPlaceholder {
 
 class ChatLogEntry {
   const ChatLogEntry({
+    this.turnId,
     required this.time,
     required this.user,
     required this.assistant,
@@ -951,12 +960,14 @@ class ChatLogEntry {
 
   factory ChatLogEntry.fromJson(Map<String, dynamic> json) {
     return ChatLogEntry(
+      turnId: json['turn_id'] is String ? json['turn_id'] as String : null,
       time: (json['time'] ?? '').toString(),
       user: (json['user'] ?? '').toString(),
       assistant: (json['assistant'] ?? '').toString(),
     );
   }
 
+  final String? turnId;
   final String time;
   final String user;
   final String assistant;

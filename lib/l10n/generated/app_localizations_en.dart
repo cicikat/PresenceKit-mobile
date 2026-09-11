@@ -1427,7 +1427,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themePresetsDescription =>
-      'Save multiple presets locally; export color mods in the browser.';
+      'Choose day and night palettes. Import or export them as JSON.';
 
   @override
   String get newAction => 'New';
@@ -1464,8 +1464,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get themeExportSuccess =>
-      'Color mod downloaded. Place it in the project\'s mods/ folder manually.';
+  String get themeExportSuccess => 'Theme JSON exported';
 
   @override
   String get exportFailed => 'Export failed';
@@ -2394,7 +2393,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enable when voice is available on the backend';
 
   @override
-  String get chatPullRefresh => 'Pull to refresh connection';
+  String get chatPullRefresh => 'Pull to refresh latest history';
 
   @override
   String get chatReleaseRefresh => 'Release to refresh';
@@ -2403,7 +2402,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatRefreshing => 'Refreshing connection…';
 
   @override
-  String get chatRefreshComplete => 'Connection refreshed';
+  String get chatRefreshComplete => 'Latest history refreshed';
 
   @override
   String get chatRefreshUnavailable =>
@@ -2426,4 +2425,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dreamActionSize => 'Dream action size';
+
+  @override
+  String get showReasoning => 'Show thoughts';
+
+  @override
+  String get expandReasoning => 'Expand thoughts by default';
+
+  @override
+  String get reasoningLocal => 'Local display only';
+
+  @override
+  String get reasoningOpen => 'Show thoughts';
+
+  @override
+  String get reasoningClose => 'Hide thoughts';
+
+  @override
+  String get reasoningUnavailable =>
+      'Thoughts are not available yet. Try again.';
+
+  @override
+  String reasoningHeading(String name) {
+    return '$name’s inner thoughts:';
+  }
+
+  @override
+  String get userDisplayName => 'Your name';
+
+  @override
+  String get userSignature => 'Tap to add a signature';
+
+  @override
+  String get themeFontSize => 'Interface text size';
+
+  @override
+  String get systemFont => 'System font';
+
+  @override
+  String get importFont => 'Import font (TTF / OTF / TTC)';
+
+  @override
+  String get fontImportFailed =>
+      'Import failed. Choose a valid font up to 20 MB; at most 10 fonts can be stored.';
+
+  @override
+  String get themeImportJson => 'Import theme JSON';
+
+  @override
+  String get themeImportFailed =>
+      'Import failed. Choose a complete mobile theme JSON file up to 256 KB.';
 }
