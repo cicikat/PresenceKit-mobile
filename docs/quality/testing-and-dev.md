@@ -222,4 +222,8 @@ Flutter analyze --no-pub passed with zero issues. Focused widget/controller/prot
 
 - `flutter gen-l10n`、`flutter analyze --no-pub` 通过；全量 Flutter 测试 154 项通过。新增场景覆盖保存撞上同步忙、缓存读取失败仍触发上传。
 - Android `:app:testDevDebugUnitTest --tests com.presencekit.mobile.LifeRecordsTest` 19 项通过，覆盖多条/连续校正一次补传、断网后相同请求自动重试、仅前台模式恢复、后台停止后保留剩余队列；Java 21 运行。
-- 真机正式版 1.0.1+37 的 3 条记录未上传，观测确认后端 enabled=false。经用户授权，只通过管理面 API 将 enabled 改为 true，保留其他三项设置，GET 回读 effective=true；实际补传验收继续进行。
+- 真机正式版 1.0.1+37 的 3 条记录未上传，观测确认后端 enabled=false。经用户授权，只通过管理面 API 将 enabled 改为 true，保留其他三项设置，GET 回读 effective=true；两张图片收到回执；剩余一次修改冲突仍保留，两次识别任务均 failed / ValidationError，未冒充识别成功。
+
+- 正式包 `1.0.1+38` 构建成功；已核对历史 keystore 与手机已安装 APK、候选 APK 的 certificate SHA-256 一致，`adb install -r` 覆盖成功，侧栏显示 1.0.1+38。原设置、连接、头像、背景与记录队列保留。未对外发布。
+- 真机验证“设置 → 外观与显示 → 显示聊天时间”：中文可见、关闭后消息时间隐藏、强停重启仍关闭、重新开启后恢复显示；验收后恢复默认开启。
+- 最后重新生成本地化后，相关本地化/通道测试 41 项通过。断网连续重试与后台取消有 Android 自动测试；真实 Doze/断网恢复/新图保存即传矩阵未完成，不能用这次旧包补传证明新包所有后台场景。

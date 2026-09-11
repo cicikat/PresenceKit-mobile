@@ -327,5 +327,8 @@ observe: physical phone/network/Doze and live image-model end-to-end validation 
 
 ## 生活记录真机排查（2026-09-11）
 
-- `observe`：1.0.1+37 的 3 条记录已在本机队列，后端 enabled=false 阻止上传；recognition_available/background_sync=true。经用户授权启用，继续核对真实 ack 和识别结果。
+- `observe`：1.0.1+37 的 3 条记录已在本机队列，后端 enabled=false 阻止上传；recognition_available/background_sync=true。经用户授权启用后，已收到 2 次图片上传回执；剩余 1 项是同记录的本机修改，遇到 revision 冲突并保留，没有擅自采用电脑版本。
 - `open`：生活记录页在用户自定义暗色背景下，说明文字与同步状态沿用浅色 Material 文本，存在低对比度；真机截图证实。建议后续按 YxPalette 统一此页 Material 主题与文本色。
+
+- `open`：真实后端两张图片均上传成功，但识别任务均为 failed / ValidationError；额外一次不提交结果的识别诊断返回 JSONDecodeError，尚不能断言具体失败字段。建议后端按独立提取 schema 处理模型输出、未知值与用户已锁定字段，提供脱敏校验路径；修复后走管理面重试。recognition_available=true 仅代表配置就绪，不代表真实模型输出通过校验。
+- `open`：已上传记录的后续本机校正在识别推进 revision 后可能冲突；当前只提供“采用电脑版本”，无保留本机修改的三方合并入口。用户确认前保留冲突，不应通过自动丢弃本机操作清空队列。
