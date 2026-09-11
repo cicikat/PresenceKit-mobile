@@ -60,6 +60,7 @@ class ChatController extends ChangeNotifier {
   final List<({String text, ReplyTarget? replyTo})> _pendingSends = [];
   Timer? _pollTimer;
   final List<List<ChatMessage>> _messageQueue = [];
+  Completer<void>? _revealWake;
   Future<void>? _initialSync;
   Future<void>? _refresh;
   bool _playingSegments = false;
@@ -308,6 +309,7 @@ class ChatController extends ChangeNotifier {
     if (_messageQueue.isEmpty) return;
     final pending = _messageQueue.expand((batch) => batch).toList();
     _messageQueue.clear();
+    if (_revealWake?.isCompleted == false) _revealWake!.complete();
     if (pending.isNotEmpty) sent.addAll(pending.map((m) => m.settled()));
     himTyping = false;
     notifyListeners();
@@ -780,34 +782,35 @@ class ChatController extends ChangeNotifier {
   Future<void> _appendMessages(List<ChatMessage> messages) async {
     if (messages.isEmpty) return;
     final wasAtBottom = _isAtBottom;
-    _messageQueue.add(messages);
+    _messageQueue.add(List.of(messages));
     if (_playingSegments) return;
     _playingSegments = true;
     final random = math.Random();
     try {
       while (_messageQueue.isNotEmpty) {
-        final batch = _messageQueue.removeAt(0);
-        for (var i = 0; i < batch.length; i++) {
-          himTyping = false;
-          sent.add(batch[i]);
+        final batch = _messageQueue.first;
+        final message = batch.removeAt(0);
+        if (batch.isEmpty) _messageQueue.removeAt(0);
+        himTyping = false;
+        sent.add(message);
+        notifyListeners();
+        if (wasAtBottom) {
+          scrollToBottom();
+        } else if (message.role == 'him') {
+          unreadHimCount++;
+        }
+        if (_messageQueue.isNotEmpty) {
+          himTyping = true;
           notifyListeners();
-          if (wasAtBottom) {
-            scrollToBottom();
-          } else if (batch[i].role == 'him') {
-            unreadHimCount++;
-          }
-          final hasNext = i < batch.length - 1 || _messageQueue.isNotEmpty;
-          if (hasNext) {
-            himTyping = true;
-            notifyListeners();
-            final revealMs =
-                (batch[i].text.characters.length / revealCps * 1000)
-                    .round()
-                    .clamp(1, 60000);
-            await Future<void>.delayed(
-              Duration(milliseconds: revealMs + 100 + random.nextInt(901)),
-            );
-          }
+          final revealMs = (message.text.characters.length / revealCps * 1000)
+              .round().clamp(1, 4000);
+          final wake = Completer<void>();
+          _revealWake = wake;
+          await Future.any<void>([
+            Future<void>.delayed(Duration(milliseconds: revealMs + 100 + random.nextInt(901))),
+            wake.future,
+          ]);
+          if (identical(_revealWake, wake)) _revealWake = null;
         }
       }
     } finally {
