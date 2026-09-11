@@ -1,5 +1,6 @@
 import '../controllers/personalization_controller.dart';
 import 'personalization_widgets.dart';
+import 'screen_observation_settings.dart';
 import 'package:flutter/material.dart';
 import 'dream_appearance_settings.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,10 @@ import '../models/app_models.dart';
 
 import '../widgets/common_widgets.dart';
 import '../widgets/settings_editor_widgets.dart';
+
+TextStyle _settingsSectionTitleStyle(YxPalette c) => TextStyle(
+  fontSize: 16, color: c.ink1, fontWeight: FontWeight.w600,
+);
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
@@ -278,12 +283,13 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ),
                   ListTile(
-                    title: Text(l10n.settingsPermissionsTitle),
+                    title: Text(l10n.settingsPermissionsTitle, style: _settingsSectionTitleStyle(c)),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: onOpenSystemControls,
                   ),
+                  ScreenObservationSettings(c: c),
                   ExpansionTile(
-                    title: Text(l10n.settingsNotificationTestTitle),
+                    title: Text(l10n.settingsNotificationTestTitle, style: _settingsSectionTitleStyle(c)),
                     children: [
                       SettingsRow(
                         c: c,
@@ -728,7 +734,7 @@ class SettingsPage extends StatelessWidget {
                     Icons.health_and_safety_outlined,
                     color: c.character,
                   ),
-                  title: Text(l10n.settingsCapabilitiesTitle),
+                  title: Text(l10n.settingsCapabilitiesTitle, style: _settingsSectionTitleStyle(c)),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: onOpenCapabilities,
                 ),
@@ -766,11 +772,7 @@ class _SettingsModule extends StatelessWidget {
         leading: Icon(icon, color: c.character),
         title: Text(
           title,
-          style: TextStyle(
-            fontSize: 16,
-            color: c.ink1,
-            fontWeight: FontWeight.w600,
-          ),
+          style: _settingsSectionTitleStyle(c),
         ),
         childrenPadding: const EdgeInsets.only(bottom: 12),
         children: children,

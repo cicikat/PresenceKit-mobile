@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
+import '../models/app_models.dart';
+import 'settings_editor_widgets.dart';
+import 'capability_widgets.dart';
 
 class ScreenObservationSettings extends StatefulWidget {
-  const ScreenObservationSettings({super.key, required this.accessibilityEnabled, required this.readOnly});
+  const ScreenObservationSettings({super.key, required this.c, this.accessibilityEnabled = true, this.readOnly = false});
+  final YxPalette c;
   final bool accessibilityEnabled;
   final bool readOnly;
   @override
@@ -33,11 +37,17 @@ class _ScreenObservationSettingsState extends State<ScreenObservationSettings> {
   }
 
   @override
-  Widget build(BuildContext context) => SwitchListTile(
-    title: Text(context.l10n.screenObservationTitle),
-    subtitle: Text(_failed ? context.l10n.screenObservationFailed :
-      !_supported || !widget.accessibilityEnabled ? context.l10n.screenObservationRequirements : context.l10n.screenObservationHint),
-    value: _enabled,
-    onChanged: _busy || widget.readOnly || (!_enabled && (!_supported || !widget.accessibilityEnabled)) ? null : _load,
-  );
+  Widget build(BuildContext context) {
+    final subtitle = _failed ? context.l10n.screenObservationFailed :
+      !_supported || !widget.accessibilityEnabled ? context.l10n.screenObservationRequirements : context.l10n.screenObservationHint;
+    if (widget.readOnly) {
+      return CapabilityRow(c: widget.c, icon: Icons.screenshot_rounded,
+        title: context.l10n.screenObservationTitle, subtitle: subtitle,
+        enabled: !_busy && !_failed && _enabled && _supported && widget.accessibilityEnabled,
+        actionLabel: '', onPressed: null);
+    }
+    return SettingsRow(c: widget.c, title: context.l10n.screenObservationTitle,
+      subtitle: subtitle, child: Switch(value: _enabled,
+        onChanged: _busy || _failed || (!_enabled && !_supported) ? null : _load));
+  }
 }

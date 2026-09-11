@@ -339,7 +339,8 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                         ? null
                         : () => _run(widget.onRequestAccessibility),
                   ),
-                  ScreenObservationSettings(accessibilityEnabled: status.accessibilityEnabled, readOnly: !widget.controlsOnly),
+                  if (!widget.controlsOnly)
+                    ScreenObservationSettings(c: c, accessibilityEnabled: status.accessibilityEnabled, readOnly: true),
                   CapabilityRow(
                     c: c,
                     icon: Icons.visibility_outlined,
