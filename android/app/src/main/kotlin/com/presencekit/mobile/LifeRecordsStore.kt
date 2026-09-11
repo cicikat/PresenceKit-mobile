@@ -80,6 +80,7 @@ class LifeRecordsStore(context: Context) : AutoCloseable {
         val existingId = body.optString("id")
         val id = if (existingId.isEmpty()) UUID.randomUUID().toString() else existingId
         val old = if (existingId.isEmpty()) null else record(realm, id) ?: error("record_missing")
+        require(old == null || body.optLong("revision", -1) == old.optLong("revision")) { "stale_revision" }
         require(old == null || image == null) { "image_immutable" }
         if (old == null) require(image != null && image.isNotEmpty()) { "image_required" }
         if (image != null) require(image.size <= 10 * 1024 * 1024) { "image_too_large" }
@@ -216,6 +217,6 @@ class LifeRecordsStore(context: Context) : AutoCloseable {
         old?.optString("local_image")?.takeIf { it.isNotEmpty() }?.let { File(directory, it).delete() }
     }
 
-    fun retry(realm: String) { db.update("operations", values("state" to "queued"), "realm=? AND state IN ('retry','failed')", arrayOf(realm)) }
+    fun retry(realm: String) { db.update("operations", values("state" to "queued"), "realm=? AND state IN ('retry','failed','rejected')", arrayOf(realm)) }
     override fun close() = db.close()
 }

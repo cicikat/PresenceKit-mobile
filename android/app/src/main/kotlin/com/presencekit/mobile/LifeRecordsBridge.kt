@@ -62,7 +62,7 @@ object LifeRecordsBridge {
         // Scheduling failure must not turn a successful durable save into a failed save.
         runCatching {
             val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-            if (scheduler.getPendingJob(jobId) == null) scheduler.schedule(
+            if (scheduler.allPendingJobs.none { it.id == jobId }) scheduler.schedule(
                 JobInfo.Builder(jobId, ComponentName(context, LifeRecordsJobService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setPersisted(true)

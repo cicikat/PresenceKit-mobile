@@ -55,7 +55,7 @@ class LifeRecordsTest {
             val id = store.save(realm, body(), image)
             val first = store.next(realm)!!
             val firstRequest = store.wire(realm, "owner", first).toString()
-            store.save(realm, body("Corrected").put("id", id), null)
+            store.save(realm, body("Corrected").put("id", id).put("revision", 0), null)
             assertEquals(firstRequest, store.wire(realm, "owner", store.next(realm)!!).toString())
             store.acknowledge(realm, first, ack(first, 1))
             assertEquals("Corrected", store.snapshot(realm).getJSONArray("records").getJSONObject(0).getString("title"))
@@ -181,7 +181,7 @@ class LifeRecordsTest {
             store.wire(realm, "owner", rejected)
             store.fail(rejected, "rejected")
             assertNull(store.next(realm))
-            store.save(realm, body("Corrected").put("id", id), null)
+            store.save(realm, body("Corrected").put("id", id).put("revision", 0), null)
             val corrected = store.next(realm)!!
             assertNotEquals(rejected.getString("operation_id"), corrected.getString("operation_id"))
             assertEquals("Corrected", store.wire(realm, "owner", corrected).getJSONObject("record").getString("title"))
@@ -220,6 +220,16 @@ class LifeRecordsTest {
             catch (_: IllegalArgumentException) { }
             assertNull(store.next(realm))
             assertEquals(0, store.snapshot(realm).getJSONArray("records").length())
+        }
+    }
+
+    @Test fun `stale editor cannot silently replace a newer cached server revision`() {
+        LifeRecordsStore(context).use { store ->
+            store.merge(realm, JSONArray().put(body("New").put("id", "remote").put("revision", 2)))
+            try { store.save(realm, body("Stale edit").put("id", "remote").put("revision", 1), null); fail() }
+            catch (e: IllegalArgumentException) { assertEquals("stale_revision", e.message) }
+            assertNull(store.next(realm))
+            assertEquals("New", store.snapshot(realm).getJSONArray("records").getJSONObject(0).getString("title"))
         }
     }
 }
