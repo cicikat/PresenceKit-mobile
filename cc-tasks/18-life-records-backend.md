@@ -1,5 +1,7 @@
 # 18 · 后端工单：生活记录（proposed，尚未实现）
 
+后端接力文件：`Emerald-presence/cc-tasks/245-life-records-backend-handoff.md`（同内容快照）。后续后端施工状态以该仓文件为准。
+
 依赖手机工单 17；本文件仅是后端交接单，不表示接口已经存在。后端正在施工，本轮不修改其代码。
 
 ## 目标
@@ -28,6 +30,10 @@
 - `GET /life-records/observability?owner_id=...` → 脱敏任务数、pending/failed、最近 ack 时间、识别路由/effective state、保留策略；无正文/原图/token。管理面用 admin 聚合，mobile 仅能看自己。
 
 记录公共结构：`{id, revision, category:"diet"|"bill"|"cart", occurred_on:"YYYY-MM-DD", captured_at:<UTC ISO8601>, title, note, items:[{name, quantity, unit, amount, currency}], recognition_status:"pending"|"processing"|"ready"|"failed", updated_at}`。quantity/amount 是十进制字符串，可为空；currency 使用明确币种字符串；不凭照片捏造热量、价格、份量。occurred_on 是用户当地日期，可校正，captured_at 不随校正改变。空 category 输入需要后端自动分类的扩展可后续协商，手机一期用户选择类别。
+
+补充字段：`user_edited_fields` 为用户已校正/明确输入的顶层字段名数组（title/note/category/occurred_on/items），识别不得覆盖；`image_mime` 为源图 MIME。amount 是该条明细金额，不自行推导单价/总额。额外 items 字段客户端必须保留。列表可带 `{id,revision,deleted:true}` 墓碑，手机按 revision 清除无待同步修改的旧缓存；409 的 current_record 也可为墓碑。
+
+capability 的 `background_sync` 必须明确给出；false 时系统后台任务不发送图片，前台仍可手动同步。每次同步只发送一个操作，前台 30 秒续传；原生 JobScheduler 在任意网络可用时按系统退避继续，非即时传输保证。原图及 outbox 存于 noBackupFilesDir，单图 10 MiB、全机源图 100 MiB、待办最多 200 项；记录/操作事务写入，原图 fsync。最后一次操作收到匹配 ack 后清理手机源图。长期原图读取接口是后续扩展，本期手机校正正式结构化记录，不能宣称已支持上传后原图的跨端重取。
 
 409 返回 `{detail, current_record:{...}}`；手机保留本地草稿并提示冲突，重新拉取后由用户决定，禁止静默覆盖。后台识别只能更新未被用户锁定字段；revision 增加。识别 ready 是可校正提取结果，不等于角色已确认真实发生。
 
