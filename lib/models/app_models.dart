@@ -499,27 +499,26 @@ class YxPalette {
   );
 
   static const dark = YxPalette(
-    surface: Color(0xFF1B1410),
-    surfaceSoft: Color(0xFF221912),
-    surfaceDeep: Color(0xFF2C2117),
-    surfaceEdge: Color(0xFF3D3022),
+    surface: Color(0xFF101418),
+    surfaceSoft: Color(0xFF101418),
+    surfaceDeep: Color(0xFF2A1F18),
+    surfaceEdge: Color(0xFF653D5D),
     ink1: Color(0xFFE8DCC0),
     ink2: Color(0xFFB5A488),
     ink3: Color(0xFF897A5F),
     ink4: Color(0xFF5A4E3A),
-    character: Color(0xFF88A589),
-    characterDeep: Color(0xFFC5D6BD),
-    characterSoft: Color(0xFF1F2A20),
-    characterOn: Color(0xFF14271F),
+    character: Color(0xFFF0D7E5),
+    characterDeep: Color(0xFF2A3038),
+    characterSoft: Color(0xFF1F3A2E),
+    characterOn: Color(0xFFECE3D0),
     danger: Color(0xFFC76851),
     warn: Color(0xFFD4A256),
     ok: Color(0xFF88A589),
     send: Color(0xFFC76851),
     userBubble: Color(0xFFE8DCC0),
-    userBubbleText: Color(0xFF1B1410),
+    userBubbleText: Color(0xFF101418),
     scrim: Color(0xB3000000),
-  );
-}
+  );}
 
 class ChatMessage {
   ChatMessage({

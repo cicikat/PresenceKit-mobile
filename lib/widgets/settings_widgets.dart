@@ -382,7 +382,7 @@ class SettingsPage extends StatelessWidget {
                               (_) => onManageThemes())(false),
                           icon: const Icon(Icons.palette_outlined, size: 17),
                           label: Text(
-                            '${l10n.themePaper} ? ${lightThemePresetName ?? l10n.themePaper}',
+                            '${l10n.themePaper} / ${lightThemePresetName ?? l10n.themePaper}',
                           ),
                         ),
                         OutlinedButton.icon(
@@ -391,7 +391,7 @@ class SettingsPage extends StatelessWidget {
                               (_) => onManageThemes())(true),
                           icon: const Icon(Icons.palette_outlined, size: 17),
                           label: Text(
-                            '${l10n.themeNight} ? ${darkThemePresetName ?? l10n.themeNight}',
+                            '${l10n.themeNight} / ${darkThemePresetName ?? l10n.themeNight}',
                           ),
                         ),
                       ],
