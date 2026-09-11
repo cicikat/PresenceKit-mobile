@@ -70,14 +70,16 @@ class LifeRecordsSync(private val context: Context, private val store: LifeRecor
         return output.toByteArray()
     }
 
-    fun run(origin: String, owner: String, manual: Boolean = false, background: Boolean = false): JSONObject {
+    fun run(origin: String, owner: String, manual: Boolean = false, background: Boolean = false, cancelled: () -> Boolean = { false }): JSONObject {
         val realm = checkRealm(origin, owner)
         val meta = store.metadata(realm)
         val now = System.currentTimeMillis()
         val token = tokenProvider?.invoke() ?: BackendSecurityPolicy.adminToken(context, prefs)
         val fingerprint = MessageDigest.getInstance("SHA-256").digest(token.toByteArray()).joinToString("") { "%02x".format(it) }
         val credentialChanged = meta.has("credential") && meta.optString("credential") != fingerprint
-        if (!manual && !credentialChanged && ((meta.optString("status") in setOf("auth", "forbidden") && meta.optString("credential") == fingerprint) || meta.optLong("next_attempt") > now)) return meta
+        val returningToForeground = !background && meta.optString("status") == "foreground_only"
+        if (!manual && !credentialChanged && !returningToForeground && ((meta.optString("status") in setOf("auth", "forbidden") && meta.optString("credential") == fingerprint) || meta.optLong("next_attempt") > now)) return meta
+        if (cancelled()) return meta
         if (manual) store.retry(realm)
         var operation: JSONObject? = null
         try {
@@ -89,11 +91,17 @@ class LifeRecordsSync(private val context: Context, private val store: LifeRecor
                 meta.put("status", "disabled").put("next_attempt", now + 900_000)
             } else {
                 meta.put("recognition_available", capability.optBoolean("recognition_available"))
-                operation = store.next(realm)
-                if (operation != null) {
+                // Drain acknowledged operations in order instead of waiting another
+                // foreground tick / exponentially backed-off job for every image.
+                val started = android.os.SystemClock.elapsedRealtime()
+                var sent = 0
+                while (!cancelled() && sent < 200 && android.os.SystemClock.elapsedRealtime() - started < 60_000) {
+                    operation = store.next(realm) ?: break
                     val response = request(origin, owner, "/life-records/sync", store.wire(realm, owner, operation))
                     store.acknowledge(realm, operation, response)
+                    operation = null
                     meta.put("last_ack", System.currentTimeMillis())
+                    sent++
                 }
                 meta.put("status", "ready").put("next_attempt", 0).put("attempts", 0)
             }

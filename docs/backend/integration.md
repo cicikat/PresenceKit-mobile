@@ -7,12 +7,12 @@
 - `PATCH /dream/settings` 只提交修改字段：`enable_dream_lorebook`、`world_layer`、`jailbreak_presets`、`memory_access`、`boundary_level`、`lucid_mode`。读取兼容旧 `jailbreak_preset`，优先使用新数组；保存使用新数组。后端仍负责枚举校验和入梦快照，本场梦境中手机禁用编辑。
 - 三面核对：管理面的 Reality 资产、Dream CRUD/默认值/effective state 与审计保持后端负责；桌面 Dream 动态资产与上下文设置用作契约依据，未修改桌面/后端代码。本次不新增队列、trace 或台账；mobile chat/poll/ack、消息关联键、去重、TTL、鉴权和生命周期不变。固定深夜静音取消仅影响 Android 提醒，后台接收与提醒冷却仍分离。
 
-## 生活记录（2026-09-11，proposed）
+## 生活记录（2026-09-11，current / observe）
 
 手机新增独立生活记录 UI 和 Android durable outbox。API 草案、schema、幂等和后端验收清单见
 `cc-tasks/18-life-records-backend.md`；后端已放置 `cc-tasks/245-life-records-backend-handoff.md`。
 `GET /life-records/capabilities`、`POST /life-records/sync`、列表/详情和
-`GET /life-records/observability` 均尚未实现，不得作为 current HTTP 清单宣传。
+`GET /life-records/observability` 现已实现，后端管理面负责 enabled / background_sync / 识别 effective state；真实设备与模型链路需另行验证。
 
 传输由 `LifeRecordsService` → 独立 native channel → `LifeRecordsSync` 完成，使 Flutter
 与 JobScheduler 共用同一队列和 HTTP 策略。复用原生 Keystore/Bearer、可信 origin 与 owner；
@@ -213,3 +213,5 @@ observe: physical phone/network/Doze and live image-model end-to-end validation 
 ## XHS reader deployment (2026-09-11)
 
 Backend-owned settings remain authoritative; no client credentials or local switches were added. Docker login and a user-provided share were verified with body text, one WebP image description and ten sampled comments. The adapter supports xhslink.cn and returns busy/cooldown_seconds in its settings projection. Reads are serialized with a 15-25 second cooldown and five-minute backoff on login/rate rejection. Native chat verification and loading the new code in the running backend remain observe.
+
+2026-09-11 真机排查：正式版 1.0.1+37 显示 3 个本机待办；后端观测返回 enabled=false、effective=false、blocking_reason=disabled、recognition_available=true、background_sync=true，任务与设备回执为空。这次阻塞是后端总开关关闭，不是已经上传后识别结果丢失。用户授权后经管理 API 开启 enabled，其他设置不变。手机按原 capability 闸门保留队列，不在本机绕过后端启用状态。前台保存触发合并、批量顺序补传及 foreground_only 恢复已修复；原 HTTP 字段、scope、ack、无静默 TTL 和桌面管理面设置归属不变。

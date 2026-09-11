@@ -163,6 +163,83 @@ class LifeRecordsTest {
         }
     }
 
+
+    @Test fun `one automatic pass drains queued images and ordered corrections`() {
+        LifeRecordsStore(context).use { store ->
+            val id = store.save(realm, body(), image)
+            store.save(realm, body("Corrected").put("id", id).put("revision", 0), null)
+            store.save(realm, body("Other"), image)
+            val requests = mutableListOf<JSONObject>()
+            val sync = LifeRecordsSync(context, store, { "test" }) { path, request ->
+                if (path.contains("capabilities")) JSONObject().put("schema_version", 1).put("enabled", true)
+                else {
+                    requests.add(JSONObject(request!!.toString()))
+                    ack(store.next(realm)!!, request.getLong("base_revision") + 1)
+                }
+            }
+            assertEquals("ready", sync.run(origin, "owner").getString("status"))
+            assertEquals(3, requests.size)
+            assertEquals(1, requests[1].getLong("base_revision"))
+            assertFalse(requests[1].has("image_base64"))
+            assertNull(store.next(realm))
+        }
+    }
+
+    @Test fun `foreground resumes immediately after background capability gate`() {
+        LifeRecordsStore(context).use { store ->
+            store.save(realm, body(), image)
+            var uploads = 0
+            val sync = LifeRecordsSync(context, store, { "test" }) { path, _ ->
+                if (path.contains("capabilities")) JSONObject().put("schema_version", 1).put("enabled", true).put("background_sync", false)
+                else { uploads++; ack(store.next(realm)!!, 1) }
+            }
+            assertEquals("foreground_only", sync.run(origin, "owner", background = true).getString("status"))
+            assertEquals("ready", sync.run(origin, "owner").getString("status"))
+            assertEquals(1, uploads)
+            assertNull(store.next(realm))
+        }
+    }
+
+    @Test fun `batch stops on network loss and automatic retry preserves exact request`() {
+        LifeRecordsStore(context).use { store ->
+            repeat(3) { store.save(realm, body(), image) }
+            val sent = mutableListOf<String>()
+            var offline = true
+            val sync = LifeRecordsSync(context, store, { "test" }) { path, request ->
+                if (path.contains("capabilities")) JSONObject().put("schema_version", 1).put("enabled", true)
+                else {
+                    sent.add(request!!.toString())
+                    if (offline && sent.size == 2) throw IOException("offline")
+                    ack(store.next(realm)!!, 1)
+                }
+            }
+            assertEquals("offline", sync.run(origin, "owner").getString("status"))
+            assertEquals(2, sent.size)
+            sync.run(origin, "owner")
+            assertEquals(2, sent.size)
+            offline = false
+            store.setMetadata(realm, store.metadata(realm).put("next_attempt", 0))
+            assertEquals("ready", sync.run(origin, "owner").getString("status"))
+            assertEquals(sent[1], sent[2])
+            assertEquals(4, sent.size)
+            assertNull(store.next(realm))
+        }
+    }
+
+    @Test fun `stopped background batch leaves remaining records queued`() {
+        LifeRecordsStore(context).use { store ->
+            repeat(2) { store.save(realm, body(), image) }
+            var stopped = false
+            val sync = LifeRecordsSync(context, store, { "test" }) { path, _ ->
+                if (path.contains("capabilities")) JSONObject().put("schema_version", 1).put("enabled", true).put("background_sync", true)
+                else { stopped = true; ack(store.next(realm)!!, 1) }
+            }
+            sync.run(origin, "owner", background = true, cancelled = { stopped })
+            assertNotNull(store.next(realm))
+            assertEquals(1, store.snapshot(realm).getJSONObject("queue").getInt("queued"))
+        }
+    }
+
     @Test fun `account switch prevents old realm transmission`() {
         LifeRecordsStore(context).use { store ->
             store.save(realm, body(), image)

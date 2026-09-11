@@ -8,7 +8,7 @@
 
 ## 生活记录前端先行（2026-09-11，open / observe / roadmap）
 
-- `open`：`/life-records/*` 是 proposed 协议；电脑识别、正式存储、角色查询、管理面 capability/权限与观测均待后端工单 245 实施。本机不得把待上传素材显示为已识别。详见 `cc-tasks/17-life-records.md`、`cc-tasks/18-life-records-backend.md`。
+- `current`：`/life-records/*` 已有后端实现；总开关、识别与角色读取仍由后端管理面决定。本机不得把待上传素材显示为已识别。详见 `cc-tasks/17-life-records.md`、`cc-tasks/18-life-records-backend.md`。
 - `observe`：Android JobScheduler 的联网恢复、Doze、强停后重新打开、开机恢复和相机进程回收需真机验收；系统可延迟后台执行。没有连接的真机/模拟器时不能将单元测试当作设备验收。相机回收通过 image_picker retrieveLostData 在打开生活记录页时重新请求用户保存；未确认的选择属于临时草稿，尚未入持久队列。
 - `roadmap`：淘宝官方授权直接导入未实现；一期是用户主动提供截图。手机上传确认后清理本机源图，电脑原图跨端重取接口未实现；正式记录的日期、条目和备注可校正。营养估算/统计不属于一期，不能凭图片捏造摄入量。
 - 缓存是已查询页面的本机副本，不是全部历史；联网查询由后端分页返回，离线页面明确显示缓存。正式删除和跨设备墓碑需后端按工单返回；schema 确认和真实 mobile token 联调完成前保持 open。
@@ -324,3 +324,8 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 current: /life-records capabilities/sync/list/detail/observability are implemented with dedicated life_records scope (mobile profile), transactional images/jobs/receipts, revisions/tombstones, bounded snapshot pagination, asynchronous OCR/vision, correction locks and owner-only read_life_records tool. Admin Service Configuration owns switches, effective recognition, task/device/audit observation and failed-task retry. See backend docs/life-records.md and brief 245. No changes to chat/poll/ack, notifications or payment.
 
 observe: physical phone/network/Doze and live image-model end-to-end validation remain open. Backend tests include atomic retry, edits versus recognition, deletion, scopes, decimals, snapshot pagination and worker recovery; 72 initial scope/store tests and 39 focused/mobile regressions passed. Android LifeRecords/security/credential targeted task succeeded (cached unit-test output). Admin browser hard refresh used real isolated API. Desktop native record UI and original-image refetch remain roadmap.
+
+## 生活记录真机排查（2026-09-11）
+
+- `observe`：1.0.1+37 的 3 条记录已在本机队列，后端 enabled=false 阻止上传；recognition_available/background_sync=true。经用户授权启用，继续核对真实 ack 和识别结果。
+- `open`：生活记录页在用户自定义暗色背景下，说明文字与同步状态沿用浅色 Material 文本，存在低对比度；真机截图证实。建议后续按 YxPalette 统一此页 Material 主题与文本色。

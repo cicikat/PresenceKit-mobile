@@ -5,10 +5,10 @@
 - `image_picker` 调用系统相机/照片选择器，用户在预览页明确保存后才持久化并允许上传。不读取淘宝账号、cookie，不增加无障碍、悬浮窗或支付动作。图片仅接受 JPEG/PNG/WebP、单图 ≤10 MiB。
 - 独立 channel `presence_mobile/life_records` 由 `LifeRecordsBridge` 注册，方法为 snapshot/save/delete/image/sync/query/observe/acceptServer；Dart `LifeRecordsService` 是唯一门面。不改 `presence_mobile/settings` 或 legacy prefs 契约。
 - `LifeRecordsStore` 在 `noBackupFilesDir/life_records/` 保存 SQLite 队列/已查询记录缓存和 fsync 后的源图。上限 200 个待办、100 MiB 图片；无静默过期，空间不足明确失败。原图与 token 不写日志，token 不入队列；正式数据在电脑。操作与记录事务更新，已发送请求保持相同 operation_id 和内容；ack 验证 ID/revision/delete 后才出队，最后一个操作成功后清理源图。
-- `LifeRecordsSync` 是前后台共享 HTTP 实现（生活记录是 `BackendClient` 以外的原生后台传输边界）；复用 `BackendSecurityPolicy` origin、Keystore token 和 owner，禁止重定向，连接 8s、读取 20s、单请求总截止 35s。每次只发送一个操作。先读取后端 capability；缺失/关闭时不上传图片，background_sync=false 时不在后台上传。
+- `LifeRecordsSync` 是前后台共享 HTTP 实现（生活记录是 `BackendClient` 以外的原生后台传输边界）；复用 `BackendSecurityPolicy` origin、Keystore token 和 owner，禁止重定向，连接 8s、读取 20s、单请求总截止 35s。每轮按序连续发送待办，最多 200 个或 60 秒预算；收到有效 ack 后才发下一项，断网停止本轮并保留剩余待办，后台取消后不再发新请求。先读取后端 capability；缺失/关闭时不上传图片，background_sync=false 时不在后台上传。
 - `LifeRecordsJobService` 使用系统 JobScheduler，声明 `BIND_JOB_SERVICE`，新增 `ACCESS_NETWORK_STATE` 与 `RECEIVE_BOOT_COMPLETED` 以支持联网条件和持久任务。没有新增前台常驻服务、通知权限弹窗或精确闹钟。Job 可在普通进程退出/重启后恢复；Doze、系统调度及用户强停会延迟，不能承诺立即上传。前台每 30 秒重试，恢复前台重启计时器。
 - 401/403 对相同凭证暂停自动网络请求；新凭证或手动重试重新检查。429/网络错误退避最高 15 分钟；404/501 提示后端未接入。409 保留本机修改、等待用户确认采用电脑版本，其他记录仍可同步。确定未提交的 4xx 拒绝可通过校正生成新操作；结果不确定的请求不能换 ID。
-- 本机“同步与队列”显示各记录状态/待办数/最近 ack，`observe` 消费 proposed 后端 `/life-records/observability`。后端未上线及 OEM 真机验收边界见 `docs/known-issues.md` 与工单 17。
+- 本机“同步与队列”显示各记录状态/待办数/最近 ack，`observe` 消费后端 `/life-records/observability`。后端未上线及 OEM 真机验收边界见 `docs/known-issues.md` 与工单 17。
 
 ## v1 credential storage
 
@@ -184,3 +184,5 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 - Device admin receiver
 
 `android:usesCleartextTraffic="true"` 仍用于本机/LAN HTTP 调试，但应用层会在 Flutter 和 Android 后台服务建立请求前校验 origin，并关闭自动重定向。允许 loopback、Tailscale `100.64.0.0/10`、HTTPS，以及用户明确确认过的 RFC1918 私网精确 IPv4 或 Tailscale MagicDNS `*.ts.net` HTTP origin；公网 HTTP 会直接拒绝。
+
+2026-09-11 自动补传修复：前台同步忙时合并后续触发，保存后立即安排下一轮；缓存读取失败不再阻止上传。后台 foreground_only 的等待不再阻挡恢复前台。原生共享单线程保持顺序、账号隔离、同 operation_id 重试、凭证闸门与退避。复用已有 SQLite 队列、snapshot/observe 观测，没有新增持久队列、权限或通知链路。

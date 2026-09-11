@@ -85,7 +85,7 @@ class LifeRecordsJobService : JobService() {
                     val (origin, owner) = sync.current()
                     val realm = sync.realm(origin, owner)
                     if (!cancellation.get() && owner.isNotBlank() && store.next(realm) != null) {
-                        sync.run(origin, owner, background = true)
+                        sync.run(origin, owner, background = true, cancelled = { cancellation.get() })
                         retry = store.next(realm) != null
                     }
                 }

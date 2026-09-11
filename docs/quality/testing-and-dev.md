@@ -217,3 +217,9 @@ Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/Creden
 ## Inline typography validation (2026-09-09)
 
 Flutter analyze --no-pub passed with zero issues. Focused widget/controller/protocol tests passed (67 tests), including style ratios/accent, grapheme reveal, paragraph slicing, malformed-copy fallback, HTTP/poll dedup, catch-up/ack and existing upload/sticker paths. Backend focused delivery tests passed (48 tests). Dev debug APK is built with the existing dev flavor; no production signing/version/release changes or device installation are part of this task. Physical-device visual verification remains pending.
+
+## 聊天时间与自动补传修复（2026-09-11）
+
+- `flutter gen-l10n`、`flutter analyze --no-pub` 通过；全量 Flutter 测试 154 项通过。新增场景覆盖保存撞上同步忙、缓存读取失败仍触发上传。
+- Android `:app:testDevDebugUnitTest --tests com.presencekit.mobile.LifeRecordsTest` 19 项通过，覆盖多条/连续校正一次补传、断网后相同请求自动重试、仅前台模式恢复、后台停止后保留剩余队列；Java 21 运行。
+- 真机正式版 1.0.1+37 的 3 条记录未上传，观测确认后端 enabled=false。经用户授权，只通过管理面 API 将 enabled 改为 true，保留其他三项设置，GET 回读 effective=true；实际补传验收继续进行。

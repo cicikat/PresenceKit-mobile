@@ -19,7 +19,7 @@
 `LifeRecordsService` 是 `presence_mobile/life_records` 专用门面；持久化与前后台共享传输
 由 Android `LifeRecordsStore` / `LifeRecordsSync` / `LifeRecordsJobService` 实现。
 这是 Android 优先能力，其他平台明确提示不支持采集/离线存储；其余页面仍可使用。
-识别和角色工具在后端工单中，本地显示的排队状态不代表识别完成。
+识别和角色工具已在后端实现，本地显示的排队状态不代表上传或识别完成。
 
 ## 当前入口与模块边界
 
@@ -85,3 +85,5 @@
 `models/inline_display.dart` owns the desktop-compatible paired-tag parser, canonical-text validation and paragraph style slicing. `widgets/inline_display_text.dart` builds TextSpans with theme red emphasis and font-size scaling. `ChatController` carries optional displayText through HTTP replies and live/catch-up polling without changing dedup/ack/voice logic. `HimMessage` and `AnimatedRevealText` use rich text for display and selection; copy/reply use canonical text. No state is added to app_shell.
 
 聊天时间开关（2026-09-11）：设置 → 外观提供 `showChatTime`，默认 true，控制角色和用户消息头的时间；日期分隔及消息原始时间不变。经现有 appearance prefs 通道持久化，重启和删除背景后保留。纯本机外观，无后端/桌面开关、权限、队列或通知协议变化。
+
+LifeRecordsController 的保存/连接/手动同步在 busy 期间合并为后续一轮，手动标志保留；缓存读取失败不阻断原生同步。复用原 30 秒恢复定时器，未向组合根增加状态。

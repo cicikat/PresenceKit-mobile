@@ -44,6 +44,7 @@ class FakeLifeService extends LifeRecordsService {
   final List<String> calls = [];
   final List<Map<String, dynamic>> arguments = [];
   Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onQuery;
+  Future<Map<String, dynamic>> Function()? onSync;
   bool snapshotFails = false;
   bool saveFails = false;
   @override
@@ -70,6 +71,7 @@ class FakeLifeService extends LifeRecordsService {
   ]) async {
     calls.add(method);
     arguments.add(args);
+    if (method == 'sync') return onSync?.call() ?? {'status': 'unsupported'};
     if (method == 'query') {
       return onQuery?.call(args) ?? {'records': rows, 'next_cursor': null};
     }
@@ -195,6 +197,46 @@ void main() {
     );
     expect(service.calls.where((m) => m == 'save').length, 1);
   });
+
+  test(
+    'saving during an active sync immediately schedules another pass',
+    () async {
+      final firstSync = Completer<Map<String, dynamic>>();
+      var passes = 0;
+      service.onSync = () async {
+        passes++;
+        if (passes == 1) return firstSync.future;
+        return {'status': 'ready'};
+      };
+      final running = controller.synchronize();
+      await Future<void>.delayed(Duration.zero);
+      expect(passes, 1);
+      expect(
+        await controller.save(
+          row('new'),
+          null,
+          expectedRealm: controller.realm,
+        ),
+        isTrue,
+      );
+      expect(passes, 1);
+      firstSync.complete({'status': 'ready'});
+      await running;
+      await Future<void>.delayed(Duration.zero);
+      expect(passes, 2);
+    },
+  );
+
+  test(
+    'cache failure cannot prevent immediate upload after durable save',
+    () async {
+      service.snapshotFails = true;
+      await controller.save(row('one'), null, expectedRealm: controller.realm);
+      await Future<void>.delayed(Duration.zero);
+      expect(service.calls, contains('sync'));
+      expect(service.calls.where((m) => m == 'save'), hasLength(1));
+    },
+  );
 
   test('storage error does not report successful save', () async {
     service.saveFails = true;

@@ -30,6 +30,8 @@ class LifeRecordsController extends ChangeNotifier {
   bool busy = false;
   bool querying = false;
   bool _searchAgain = false;
+  bool _syncAgain = false;
+  bool _manualSyncAgain = false;
   bool cacheOnly = true;
   Timer? _timer;
   bool _disposed = false;
@@ -112,7 +114,12 @@ class LifeRecordsController extends ChangeNotifier {
   }
 
   Future<void> synchronize({bool manual = false}) async {
-    if (busy || _disposed) return;
+    if (_disposed) return;
+    if (busy) {
+      _syncAgain = true;
+      _manualSyncAgain = _manualSyncAgain || manual;
+      return;
+    }
     if (realm != _realm) {
       _realm = realm;
       _generation++;
@@ -124,7 +131,11 @@ class LifeRecordsController extends ChangeNotifier {
     busy = true;
     _notify();
     try {
-      await reload();
+      // A cache read failure must not suppress a durable queue upload.
+      try {
+        await reload();
+      } catch (_) {}
+      if (!_current(generation, expected)) return;
       final previousAck = syncState['last_ack'];
       await service.object('sync', origin(), owner(), {'manual': manual});
       if (_current(generation, expected)) {
@@ -146,6 +157,12 @@ class LifeRecordsController extends ChangeNotifier {
     } finally {
       busy = false;
       _notify();
+      if (_syncAgain && !_disposed) {
+        final retryManually = _manualSyncAgain;
+        _syncAgain = false;
+        _manualSyncAgain = false;
+        unawaited(synchronize(manual: retryManually));
+      }
     }
   }
 
