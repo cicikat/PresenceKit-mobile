@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../controllers/chat_controller.dart';
+import '../controllers/life_records_controller.dart';
+import '../widgets/life_records_widgets.dart';
 import '../controllers/connection_controller.dart';
 import '../controllers/device_controller.dart';
 import '../controllers/dream_controller.dart';
@@ -84,6 +86,7 @@ class _CompanionAppState extends State<CompanionApp>
   late final DreamController _dreamController;
   late final GardenController _gardenController;
   late final DiaryController _diaryController;
+  late final LifeRecordsController _lifeRecordsController;
   YxPrefs _prefs = const YxPrefs();
   late final ThemeController _themeController;
   late final PromptEntriesController _promptEntries;
@@ -163,6 +166,11 @@ class _CompanionAppState extends State<CompanionApp>
       settingsStore: settingsStore,
       backendClient: widget.backendClient,
     );
+    _lifeRecordsController = LifeRecordsController(
+      origin: () => _backendBaseUrl,
+      owner: () => _ownerUserId,
+    );
+    _connectionController.addListener(_lifeRecordsController.connectionChanged);
     _profileStatusController = ProfileStatusController(
       backend: () => _backend,
       token: () => _adminToken,
@@ -249,6 +257,7 @@ class _CompanionAppState extends State<CompanionApp>
     }
     if (!mounted) return;
     if (_hasAdminToken) {
+      _lifeRecordsController.start();
       _startBackendSync();
       await _consumeNotificationOpen();
     } else {
@@ -271,6 +280,7 @@ class _CompanionAppState extends State<CompanionApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _lifeRecordsController.start();
       _applySystemUi();
       if (_hasAdminToken) {
         _chatController.resumePolling();
@@ -278,12 +288,15 @@ class _CompanionAppState extends State<CompanionApp>
       }
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
+      _lifeRecordsController.pause();
       _chatController.pausePolling();
     }
   }
 
   @override
   void dispose() {
+    _connectionController.removeListener(_lifeRecordsController.connectionChanged);
+    _lifeRecordsController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _gardenController.dispose();
     _diaryController.dispose();
@@ -1292,6 +1305,12 @@ class _CompanionAppState extends State<CompanionApp>
 
   Widget _buildRoute() {
     switch (_route) {
+      case AppRoute.lifeRecords:
+        return LifeRecordsPage(
+          c: c,
+          controller: _lifeRecordsController,
+          onBack: () => setState(() => _route = AppRoute.chat),
+        );
       case AppRoute.chat:
         return ChatScene(
           key: const ValueKey('chat'),

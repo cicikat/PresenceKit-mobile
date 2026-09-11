@@ -86,6 +86,14 @@ class YxDrawer extends StatelessWidget {
                     _DrawerSectionLabel(c: c, label: l10n.drawerPagesSection),
                     DrawerItem(
                       c: c,
+                      icon: Icons.receipt_long_outlined,
+                      title: l10n.lifeTitle,
+                      subtitle: l10n.lifeSubtitle,
+                      active: route == AppRoute.lifeRecords,
+                      onTap: () => onRoute(AppRoute.lifeRecords),
+                    ),
+                    DrawerItem(
+                      c: c,
                       icon: Icons.chat_bubble_outline_rounded,
                       title: l10n.drawerChatTitle,
                       subtitle: l10n.drawerChatSubtitle,

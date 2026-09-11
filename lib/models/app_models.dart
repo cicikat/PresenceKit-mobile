@@ -122,11 +122,13 @@ class BehaviorDecisionStatus {
   }
 }
 
-enum AppRoute { chat, dream, profile, diary, garden, activity, group }
+enum AppRoute { chat, dream, profile, diary, garden, activity, group, lifeRecords }
 
 extension AppRouteLabel on AppRoute {
   String get label {
     switch (this) {
+      case AppRoute.lifeRecords:
+        return '生活记录';
       case AppRoute.chat:
         return '主对话';
       case AppRoute.dream:

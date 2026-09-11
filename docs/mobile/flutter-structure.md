@@ -1,5 +1,18 @@
 # Flutter 结构
 
+## 生活记录（2026-09-11）
+
+侧栏 `AppRoute.lifeRecords` → `LifeRecordsPage`，由独立 `LifeRecordsController`
+持有查询条件、分页、缓存/同步状态、30 秒前台重试与 generation 防串号。
+`LifeRecordEditor` 提供图片确认、日期/类别及条目校正（数量、单位、金额、币种）；
+`models/life_record.dart` 负责记录展示模型，中英文文案同步维护并 gen-l10n。
+`app_shell.dart` 只负责 controller 注入、连接监听、路由和前后台生命周期，不新增领域 Timer。
+
+`LifeRecordsService` 是 `presence_mobile/life_records` 专用门面；持久化与前后台共享传输
+由 Android `LifeRecordsStore` / `LifeRecordsSync` / `LifeRecordsJobService` 实现。
+这是 Android 优先能力，其他平台明确提示不支持采集/离线存储；其余页面仍可使用。
+识别和角色工具在后端工单中，本地显示的排队状态不代表识别完成。
+
 ## 当前入口与模块边界
 
 `lib/main.dart` 是薄入口，负责全局错误兜底、根 `MaterialApp` 和 `CompanionApp` 挂载。历史 `part` / `part of` 结构已全部移除；`lib/` 下的 models、services、controllers、pages、widgets 现在都是独立 library，通过普通 `import` 建立编译器可检查的依赖边界。

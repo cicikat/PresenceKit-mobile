@@ -98,6 +98,456 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @lifeTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'生活记录'**
+  String get lifeTitle;
+
+  /// No description provided for @lifeStaleEditor.
+  ///
+  /// In zh, this message translates to:
+  /// **'记录在编辑期间已更新。请先复制要保留的修改，关闭后重新打开最新记录再校正。'**
+  String get lifeStaleEditor;
+
+  /// No description provided for @lifeForegroundOnly.
+  ///
+  /// In zh, this message translates to:
+  /// **'电脑端仅允许前台同步，请打开本页后点击立即同步。'**
+  String get lifeForegroundOnly;
+
+  /// No description provided for @lifeSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'饮食 · 账单 · 购物车'**
+  String get lifeSubtitle;
+
+  /// No description provided for @lifeIntro.
+  ///
+  /// In zh, this message translates to:
+  /// **'拍照留存，由电脑整理。按日期回看，随时校正识别内容。'**
+  String get lifeIntro;
+
+  /// No description provided for @lifeDiet.
+  ///
+  /// In zh, this message translates to:
+  /// **'饮食'**
+  String get lifeDiet;
+
+  /// No description provided for @lifeBill.
+  ///
+  /// In zh, this message translates to:
+  /// **'账单'**
+  String get lifeBill;
+
+  /// No description provided for @lifeCart.
+  ///
+  /// In zh, this message translates to:
+  /// **'购物车'**
+  String get lifeCart;
+
+  /// No description provided for @lifeAll.
+  ///
+  /// In zh, this message translates to:
+  /// **'全部'**
+  String get lifeAll;
+
+  /// No description provided for @lifeCamera.
+  ///
+  /// In zh, this message translates to:
+  /// **'拍一张'**
+  String get lifeCamera;
+
+  /// No description provided for @lifeGallery.
+  ///
+  /// In zh, this message translates to:
+  /// **'选图片'**
+  String get lifeGallery;
+
+  /// No description provided for @lifeSync.
+  ///
+  /// In zh, this message translates to:
+  /// **'立即同步'**
+  String get lifeSync;
+
+  /// No description provided for @lifeQueue.
+  ///
+  /// In zh, this message translates to:
+  /// **'同步与队列'**
+  String get lifeQueue;
+
+  /// No description provided for @lifeSearch.
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索名称、备注、明细'**
+  String get lifeSearch;
+
+  /// No description provided for @lifeDateRange.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择日期范围'**
+  String get lifeDateRange;
+
+  /// No description provided for @lifeClearDates.
+  ///
+  /// In zh, this message translates to:
+  /// **'全部日期'**
+  String get lifeClearDates;
+
+  /// No description provided for @lifeEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无符合条件的记录。可以先拍照或上传截图。'**
+  String get lifeEmpty;
+
+  /// No description provided for @lifeCacheOnly.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前显示本机缓存；联网查询可查看电脑上的历史记录。'**
+  String get lifeCacheOnly;
+
+  /// No description provided for @lifeServerResults.
+  ///
+  /// In zh, this message translates to:
+  /// **'已查询电脑记录；未同步的本机修改同时显示。'**
+  String get lifeServerResults;
+
+  /// No description provided for @lifeCartHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'购物车暂支持上传淘宝等 App 的截图，不会自动读取账号或下单。'**
+  String get lifeCartHelp;
+
+  /// No description provided for @lifeBackgroundHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'联网后自动补传。后台由 Android 安排，省电、强行停止等可能延后；重新打开 App 会继续。'**
+  String get lifeBackgroundHelp;
+
+  /// No description provided for @lifePendingCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'待同步 {count} 项'**
+  String lifePendingCount(int count);
+
+  /// No description provided for @lifeLastAck.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近同步成功：{time}'**
+  String lifeLastAck(String time);
+
+  /// No description provided for @lifeConnected.
+  ///
+  /// In zh, this message translates to:
+  /// **'电脑已连接'**
+  String get lifeConnected;
+
+  /// No description provided for @lifeWaiting.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待连接电脑'**
+  String get lifeWaiting;
+
+  /// No description provided for @lifeAuth.
+  ///
+  /// In zh, this message translates to:
+  /// **'访问凭证无效，请在设置中更新；记录已保留。'**
+  String get lifeAuth;
+
+  /// No description provided for @lifeForbidden.
+  ///
+  /// In zh, this message translates to:
+  /// **'凭证权限不足，请在电脑端检查授权；记录已保留。'**
+  String get lifeForbidden;
+
+  /// No description provided for @lifeNotIntegrated.
+  ///
+  /// In zh, this message translates to:
+  /// **'电脑尚未接入生活记录；图片和修改保留在本机等待同步。'**
+  String get lifeNotIntegrated;
+
+  /// No description provided for @lifeDisabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'电脑端尚未启用生活记录；本机内容已保留。'**
+  String get lifeDisabled;
+
+  /// No description provided for @lifeSetup.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先在设置中配置可信后端节点、用户 ID 和访问凭证。'**
+  String get lifeSetup;
+
+  /// No description provided for @lifeAccountChanged.
+  ///
+  /// In zh, this message translates to:
+  /// **'节点或用户已切换，请回到原节点与用户后再保存。'**
+  String get lifeAccountChanged;
+
+  /// No description provided for @lifeConflict.
+  ///
+  /// In zh, this message translates to:
+  /// **'电脑记录已变更，需要处理版本冲突。'**
+  String get lifeConflict;
+
+  /// No description provided for @lifeQueueFull.
+  ///
+  /// In zh, this message translates to:
+  /// **'本机队列已满（200 项或 100 MiB 图片），请先同步或删除待上传记录。'**
+  String get lifeQueueFull;
+
+  /// No description provided for @lifeImageTooLarge.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片超过 10 MiB，请裁切或压缩后重试。'**
+  String get lifeImageTooLarge;
+
+  /// No description provided for @lifeImageFormat.
+  ///
+  /// In zh, this message translates to:
+  /// **'请使用 JPEG、PNG 或 WebP 图片。'**
+  String get lifeImageFormat;
+
+  /// No description provided for @lifeAndroidOnly.
+  ///
+  /// In zh, this message translates to:
+  /// **'拍照、离线存储和同步目前仅支持 Android。'**
+  String get lifeAndroidOnly;
+
+  /// No description provided for @lifeRejected.
+  ///
+  /// In zh, this message translates to:
+  /// **'同步被拒绝或返回格式不符；内容已保留，可检查后重试。'**
+  String get lifeRejected;
+
+  /// No description provided for @lifeRateLimited.
+  ///
+  /// In zh, this message translates to:
+  /// **'电脑暂时限流，稍后自动重试。'**
+  String get lifeRateLimited;
+
+  /// No description provided for @lifeStorageError.
+  ///
+  /// In zh, this message translates to:
+  /// **'读取或保存失败，请检查存储空间后重试。'**
+  String get lifeStorageError;
+
+  /// No description provided for @lifeOffline.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时连不上电脑，已保存的内容将在恢复连接后重试。'**
+  String get lifeOffline;
+
+  /// No description provided for @lifeCaptureFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'未能获取图片，请检查相机或相册权限后重试。'**
+  String get lifeCaptureFailed;
+
+  /// No description provided for @lifeUntitled.
+  ///
+  /// In zh, this message translates to:
+  /// **'待整理记录'**
+  String get lifeUntitled;
+
+  /// No description provided for @lifeQueued.
+  ///
+  /// In zh, this message translates to:
+  /// **'已存本机 · 等待同步'**
+  String get lifeQueued;
+
+  /// No description provided for @lifeDeleting.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待同步删除'**
+  String get lifeDeleting;
+
+  /// No description provided for @lifeRecognized.
+  ///
+  /// In zh, this message translates to:
+  /// **'已识别 · 可校正'**
+  String get lifeRecognized;
+
+  /// No description provided for @lifeRecognitionFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'电脑识别失败，可手动补充明细。'**
+  String get lifeRecognitionFailed;
+
+  /// No description provided for @lifeRecognizing.
+  ///
+  /// In zh, this message translates to:
+  /// **'已上传 · 等待电脑识别'**
+  String get lifeRecognizing;
+
+  /// No description provided for @lifeEdit.
+  ///
+  /// In zh, this message translates to:
+  /// **'查看 / 校正'**
+  String get lifeEdit;
+
+  /// No description provided for @lifeAdd.
+  ///
+  /// In zh, this message translates to:
+  /// **'新增生活记录'**
+  String get lifeAdd;
+
+  /// No description provided for @lifeDelete.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除记录'**
+  String get lifeDelete;
+
+  /// No description provided for @lifeDeleteHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认删除这条记录？未上传的记录会从本机移除；已上传的记录会排队请求电脑删除。'**
+  String get lifeDeleteHelp;
+
+  /// No description provided for @lifeAcceptServer.
+  ///
+  /// In zh, this message translates to:
+  /// **'采用电脑版本'**
+  String get lifeAcceptServer;
+
+  /// No description provided for @lifeConflictHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'将放弃这条记录尚未同步的本机修改，采用电脑返回的版本。可以先复制要保留的内容，之后再校正。'**
+  String get lifeConflictHelp;
+
+  /// No description provided for @lifeConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认'**
+  String get lifeConfirm;
+
+  /// No description provided for @lifeCancel.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消'**
+  String get lifeCancel;
+
+  /// No description provided for @lifeClose.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭'**
+  String get lifeClose;
+
+  /// No description provided for @lifeMore.
+  ///
+  /// In zh, this message translates to:
+  /// **'加载更多'**
+  String get lifeMore;
+
+  /// No description provided for @lifeConsent.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存即同意将本图及记录上传到下方电脑节点，供识别、存储及已获授权的角色查询。离线时先保存在本机。'**
+  String get lifeConsent;
+
+  /// No description provided for @lifeCategory.
+  ///
+  /// In zh, this message translates to:
+  /// **'分类'**
+  String get lifeCategory;
+
+  /// No description provided for @lifeDate.
+  ///
+  /// In zh, this message translates to:
+  /// **'记录日期'**
+  String get lifeDate;
+
+  /// No description provided for @lifeRecordTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'标题（可留空待识别）'**
+  String get lifeRecordTitle;
+
+  /// No description provided for @lifeNote.
+  ///
+  /// In zh, this message translates to:
+  /// **'备注 / 识别补充'**
+  String get lifeNote;
+
+  /// No description provided for @lifeItems.
+  ///
+  /// In zh, this message translates to:
+  /// **'结构化明细（不确定的内容可留空）'**
+  String get lifeItems;
+
+  /// No description provided for @lifeItemName.
+  ///
+  /// In zh, this message translates to:
+  /// **'食物 / 商品 / 账目名称'**
+  String get lifeItemName;
+
+  /// No description provided for @lifeQuantity.
+  ///
+  /// In zh, this message translates to:
+  /// **'数量 / 份量'**
+  String get lifeQuantity;
+
+  /// No description provided for @lifeUnit.
+  ///
+  /// In zh, this message translates to:
+  /// **'单位（份、克、件等）'**
+  String get lifeUnit;
+
+  /// No description provided for @lifeAmount.
+  ///
+  /// In zh, this message translates to:
+  /// **'金额（退款可填负数）'**
+  String get lifeAmount;
+
+  /// No description provided for @lifeCurrency.
+  ///
+  /// In zh, this message translates to:
+  /// **'币种（如 CNY、USD）'**
+  String get lifeCurrency;
+
+  /// No description provided for @lifeRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'请填写名称'**
+  String get lifeRequired;
+
+  /// No description provided for @lifeCurrencyRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'填写金额时必须提供三字母币种'**
+  String get lifeCurrencyRequired;
+
+  /// No description provided for @lifeNumberInvalid.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入有效数字；数量必须大于零'**
+  String get lifeNumberInvalid;
+
+  /// No description provided for @lifeRemoveItem.
+  ///
+  /// In zh, this message translates to:
+  /// **'移除此项'**
+  String get lifeRemoveItem;
+
+  /// No description provided for @lifeAddItem.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加明细'**
+  String get lifeAddItem;
+
+  /// No description provided for @lifeSaving.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存中…'**
+  String get lifeSaving;
+
+  /// No description provided for @lifeSave.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存并排队同步'**
+  String get lifeSave;
+
   /// No description provided for @appTitle.
   ///
   /// In zh, this message translates to:

@@ -9,6 +9,264 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get lifeTitle => 'Life records';
+
+  @override
+  String get lifeStaleEditor =>
+      'This record changed while you were editing. Copy your changes, close this editor, then reopen the latest record to correct it.';
+
+  @override
+  String get lifeForegroundOnly =>
+      'The computer only permits foreground sync. Open this page and tap Sync now.';
+
+  @override
+  String get lifeSubtitle => 'Diet · Bills · Shopping cart';
+
+  @override
+  String get lifeIntro =>
+      'Capture a photo for your computer to organize. Browse by date and correct extracted details.';
+
+  @override
+  String get lifeDiet => 'Diet';
+
+  @override
+  String get lifeBill => 'Bills';
+
+  @override
+  String get lifeCart => 'Cart';
+
+  @override
+  String get lifeAll => 'All';
+
+  @override
+  String get lifeCamera => 'Take photo';
+
+  @override
+  String get lifeGallery => 'Choose image';
+
+  @override
+  String get lifeSync => 'Sync now';
+
+  @override
+  String get lifeQueue => 'Sync and queue';
+
+  @override
+  String get lifeSearch => 'Search names, notes and items';
+
+  @override
+  String get lifeDateRange => 'Choose date range';
+
+  @override
+  String get lifeClearDates => 'All dates';
+
+  @override
+  String get lifeEmpty =>
+      'No matching records. Take a photo or choose a screenshot to begin.';
+
+  @override
+  String get lifeCacheOnly =>
+      'Showing local cache. Search online to see records on your computer.';
+
+  @override
+  String get lifeServerResults =>
+      'Showing computer results alongside pending local changes.';
+
+  @override
+  String get lifeCartHelp =>
+      'Upload cart screenshots from apps such as Taobao. This does not access accounts or place orders.';
+
+  @override
+  String get lifeBackgroundHelp =>
+      'Uploads resume when connected. Android schedules background work; battery saving or force stop may delay it. Reopen the app to continue.';
+
+  @override
+  String lifePendingCount(int count) {
+    return '$count pending';
+  }
+
+  @override
+  String lifeLastAck(String time) {
+    return 'Last successful sync: $time';
+  }
+
+  @override
+  String get lifeConnected => 'Computer connected';
+
+  @override
+  String get lifeWaiting => 'Waiting for computer';
+
+  @override
+  String get lifeAuth =>
+      'Invalid credential. Update it in settings; your records are retained.';
+
+  @override
+  String get lifeForbidden =>
+      'Insufficient permission. Check authorization on your computer; records are retained.';
+
+  @override
+  String get lifeNotIntegrated =>
+      'Life records are not integrated on your computer yet. Images and edits remain queued locally.';
+
+  @override
+  String get lifeDisabled =>
+      'Life records are disabled on your computer. Local content is retained.';
+
+  @override
+  String get lifeSetup =>
+      'Configure a trusted backend, user ID and credential in settings first.';
+
+  @override
+  String get lifeAccountChanged =>
+      'Backend or user changed. Return to the original backend and user before saving.';
+
+  @override
+  String get lifeConflict =>
+      'The computer record changed. Resolve the version conflict.';
+
+  @override
+  String get lifeQueueFull =>
+      'Local queue is full (200 operations or 100 MiB of images). Sync or delete pending records first.';
+
+  @override
+  String get lifeImageTooLarge =>
+      'Image exceeds 10 MiB. Crop or compress it and try again.';
+
+  @override
+  String get lifeImageFormat => 'Please use a JPEG, PNG or WebP image.';
+
+  @override
+  String get lifeAndroidOnly =>
+      'Capture, offline storage and sync currently support Android only.';
+
+  @override
+  String get lifeRejected =>
+      'Sync was rejected or returned invalid data. Content is retained; check and retry.';
+
+  @override
+  String get lifeRateLimited =>
+      'The computer is rate limiting requests. Retrying later.';
+
+  @override
+  String get lifeStorageError =>
+      'Could not read or save. Check available storage and retry.';
+
+  @override
+  String get lifeOffline =>
+      'Cannot reach the computer. Saved content will retry when connected.';
+
+  @override
+  String get lifeCaptureFailed =>
+      'Could not obtain the image. Check camera or photo permissions and retry.';
+
+  @override
+  String get lifeUntitled => 'Untitled record';
+
+  @override
+  String get lifeQueued => 'Saved locally · Pending sync';
+
+  @override
+  String get lifeDeleting => 'Deletion pending sync';
+
+  @override
+  String get lifeRecognized => 'Extracted · Review details';
+
+  @override
+  String get lifeRecognitionFailed =>
+      'Computer recognition failed. You can add items manually.';
+
+  @override
+  String get lifeRecognizing => 'Uploaded · Awaiting recognition';
+
+  @override
+  String get lifeEdit => 'View / correct';
+
+  @override
+  String get lifeAdd => 'Add life record';
+
+  @override
+  String get lifeDelete => 'Delete record';
+
+  @override
+  String get lifeDeleteHelp =>
+      'Delete this record? Unsent records are removed locally. Uploaded records are queued for deletion on the computer.';
+
+  @override
+  String get lifeAcceptServer => 'Use computer version';
+
+  @override
+  String get lifeConflictHelp =>
+      'Discard pending local changes for this record and use the computer version. Copy any details you want to keep before continuing, then edit again.';
+
+  @override
+  String get lifeConfirm => 'Confirm';
+
+  @override
+  String get lifeCancel => 'Cancel';
+
+  @override
+  String get lifeClose => 'Close';
+
+  @override
+  String get lifeMore => 'Load more';
+
+  @override
+  String get lifeConsent =>
+      'Saving authorizes uploading this image and record to the computer below for extraction, storage and queries by authorized characters. Offline content is saved locally first.';
+
+  @override
+  String get lifeCategory => 'Category';
+
+  @override
+  String get lifeDate => 'Record date';
+
+  @override
+  String get lifeRecordTitle => 'Title (optional before extraction)';
+
+  @override
+  String get lifeNote => 'Notes / extraction hints';
+
+  @override
+  String get lifeItems => 'Structured items (leave uncertain values blank)';
+
+  @override
+  String get lifeItemName => 'Food / product / entry name';
+
+  @override
+  String get lifeQuantity => 'Quantity / portion';
+
+  @override
+  String get lifeUnit => 'Unit (serving, gram, item, etc.)';
+
+  @override
+  String get lifeAmount => 'Amount (negative for refunds)';
+
+  @override
+  String get lifeCurrency => 'Currency (e.g. CNY, USD)';
+
+  @override
+  String get lifeRequired => 'Enter a name';
+
+  @override
+  String get lifeCurrencyRequired =>
+      'Amounts require a three-letter currency code';
+
+  @override
+  String get lifeNumberInvalid =>
+      'Enter a valid number; quantity must be positive';
+
+  @override
+  String get lifeRemoveItem => 'Remove item';
+
+  @override
+  String get lifeAddItem => 'Add item';
+
+  @override
+  String get lifeSaving => 'Saving…';
+
+  @override
+  String get lifeSave => 'Save and queue sync';
+
+  @override
   String get appTitle => 'Companion';
 
   @override

@@ -9,6 +9,237 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get lifeTitle => '生活记录';
+
+  @override
+  String get lifeStaleEditor => '记录在编辑期间已更新。请先复制要保留的修改，关闭后重新打开最新记录再校正。';
+
+  @override
+  String get lifeForegroundOnly => '电脑端仅允许前台同步，请打开本页后点击立即同步。';
+
+  @override
+  String get lifeSubtitle => '饮食 · 账单 · 购物车';
+
+  @override
+  String get lifeIntro => '拍照留存，由电脑整理。按日期回看，随时校正识别内容。';
+
+  @override
+  String get lifeDiet => '饮食';
+
+  @override
+  String get lifeBill => '账单';
+
+  @override
+  String get lifeCart => '购物车';
+
+  @override
+  String get lifeAll => '全部';
+
+  @override
+  String get lifeCamera => '拍一张';
+
+  @override
+  String get lifeGallery => '选图片';
+
+  @override
+  String get lifeSync => '立即同步';
+
+  @override
+  String get lifeQueue => '同步与队列';
+
+  @override
+  String get lifeSearch => '搜索名称、备注、明细';
+
+  @override
+  String get lifeDateRange => '选择日期范围';
+
+  @override
+  String get lifeClearDates => '全部日期';
+
+  @override
+  String get lifeEmpty => '暂无符合条件的记录。可以先拍照或上传截图。';
+
+  @override
+  String get lifeCacheOnly => '当前显示本机缓存；联网查询可查看电脑上的历史记录。';
+
+  @override
+  String get lifeServerResults => '已查询电脑记录；未同步的本机修改同时显示。';
+
+  @override
+  String get lifeCartHelp => '购物车暂支持上传淘宝等 App 的截图，不会自动读取账号或下单。';
+
+  @override
+  String get lifeBackgroundHelp =>
+      '联网后自动补传。后台由 Android 安排，省电、强行停止等可能延后；重新打开 App 会继续。';
+
+  @override
+  String lifePendingCount(int count) {
+    return '待同步 $count 项';
+  }
+
+  @override
+  String lifeLastAck(String time) {
+    return '最近同步成功：$time';
+  }
+
+  @override
+  String get lifeConnected => '电脑已连接';
+
+  @override
+  String get lifeWaiting => '等待连接电脑';
+
+  @override
+  String get lifeAuth => '访问凭证无效，请在设置中更新；记录已保留。';
+
+  @override
+  String get lifeForbidden => '凭证权限不足，请在电脑端检查授权；记录已保留。';
+
+  @override
+  String get lifeNotIntegrated => '电脑尚未接入生活记录；图片和修改保留在本机等待同步。';
+
+  @override
+  String get lifeDisabled => '电脑端尚未启用生活记录；本机内容已保留。';
+
+  @override
+  String get lifeSetup => '请先在设置中配置可信后端节点、用户 ID 和访问凭证。';
+
+  @override
+  String get lifeAccountChanged => '节点或用户已切换，请回到原节点与用户后再保存。';
+
+  @override
+  String get lifeConflict => '电脑记录已变更，需要处理版本冲突。';
+
+  @override
+  String get lifeQueueFull => '本机队列已满（200 项或 100 MiB 图片），请先同步或删除待上传记录。';
+
+  @override
+  String get lifeImageTooLarge => '图片超过 10 MiB，请裁切或压缩后重试。';
+
+  @override
+  String get lifeImageFormat => '请使用 JPEG、PNG 或 WebP 图片。';
+
+  @override
+  String get lifeAndroidOnly => '拍照、离线存储和同步目前仅支持 Android。';
+
+  @override
+  String get lifeRejected => '同步被拒绝或返回格式不符；内容已保留，可检查后重试。';
+
+  @override
+  String get lifeRateLimited => '电脑暂时限流，稍后自动重试。';
+
+  @override
+  String get lifeStorageError => '读取或保存失败，请检查存储空间后重试。';
+
+  @override
+  String get lifeOffline => '暂时连不上电脑，已保存的内容将在恢复连接后重试。';
+
+  @override
+  String get lifeCaptureFailed => '未能获取图片，请检查相机或相册权限后重试。';
+
+  @override
+  String get lifeUntitled => '待整理记录';
+
+  @override
+  String get lifeQueued => '已存本机 · 等待同步';
+
+  @override
+  String get lifeDeleting => '等待同步删除';
+
+  @override
+  String get lifeRecognized => '已识别 · 可校正';
+
+  @override
+  String get lifeRecognitionFailed => '电脑识别失败，可手动补充明细。';
+
+  @override
+  String get lifeRecognizing => '已上传 · 等待电脑识别';
+
+  @override
+  String get lifeEdit => '查看 / 校正';
+
+  @override
+  String get lifeAdd => '新增生活记录';
+
+  @override
+  String get lifeDelete => '删除记录';
+
+  @override
+  String get lifeDeleteHelp => '确认删除这条记录？未上传的记录会从本机移除；已上传的记录会排队请求电脑删除。';
+
+  @override
+  String get lifeAcceptServer => '采用电脑版本';
+
+  @override
+  String get lifeConflictHelp =>
+      '将放弃这条记录尚未同步的本机修改，采用电脑返回的版本。可以先复制要保留的内容，之后再校正。';
+
+  @override
+  String get lifeConfirm => '确认';
+
+  @override
+  String get lifeCancel => '取消';
+
+  @override
+  String get lifeClose => '关闭';
+
+  @override
+  String get lifeMore => '加载更多';
+
+  @override
+  String get lifeConsent => '保存即同意将本图及记录上传到下方电脑节点，供识别、存储及已获授权的角色查询。离线时先保存在本机。';
+
+  @override
+  String get lifeCategory => '分类';
+
+  @override
+  String get lifeDate => '记录日期';
+
+  @override
+  String get lifeRecordTitle => '标题（可留空待识别）';
+
+  @override
+  String get lifeNote => '备注 / 识别补充';
+
+  @override
+  String get lifeItems => '结构化明细（不确定的内容可留空）';
+
+  @override
+  String get lifeItemName => '食物 / 商品 / 账目名称';
+
+  @override
+  String get lifeQuantity => '数量 / 份量';
+
+  @override
+  String get lifeUnit => '单位（份、克、件等）';
+
+  @override
+  String get lifeAmount => '金额（退款可填负数）';
+
+  @override
+  String get lifeCurrency => '币种（如 CNY、USD）';
+
+  @override
+  String get lifeRequired => '请填写名称';
+
+  @override
+  String get lifeCurrencyRequired => '填写金额时必须提供三字母币种';
+
+  @override
+  String get lifeNumberInvalid => '请输入有效数字；数量必须大于零';
+
+  @override
+  String get lifeRemoveItem => '移除此项';
+
+  @override
+  String get lifeAddItem => '添加明细';
+
+  @override
+  String get lifeSaving => '保存中…';
+
+  @override
+  String get lifeSave => '保存并排队同步';
+
+  @override
   String get appTitle => '陪伴';
 
   @override
