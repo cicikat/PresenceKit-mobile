@@ -161,6 +161,7 @@ class YxPrefs {
     this.infoStrip = true,
     this.fontSize = 16,
     this.showYouAvatar = false,
+    this.showChatTime = true,
     this.proactiveRate = 'mid',
     this.nightSilent = true,
     this.chatBackground,
@@ -172,6 +173,7 @@ class YxPrefs {
   final bool infoStrip;
   final double fontSize;
   final bool showYouAvatar;
+  final bool showChatTime;
   final String proactiveRate;
   final bool nightSilent;
   final Uint8List? chatBackground;
@@ -185,6 +187,7 @@ class YxPrefs {
     bool? infoStrip,
     double? fontSize,
     bool? showYouAvatar,
+    bool? showChatTime,
     String? proactiveRate,
     bool? nightSilent,
     Uint8List? chatBackground,
@@ -197,6 +200,7 @@ class YxPrefs {
       infoStrip: infoStrip ?? this.infoStrip,
       fontSize: fontSize ?? this.fontSize,
       showYouAvatar: showYouAvatar ?? this.showYouAvatar,
+      showChatTime: showChatTime ?? this.showChatTime,
       proactiveRate: proactiveRate ?? this.proactiveRate,
       nightSilent: nightSilent ?? this.nightSilent,
       chatBackground: chatBackground ?? this.chatBackground,

@@ -1,4 +1,6 @@
 {
+  "settingsShowChatTimeTitle": "Show chat timestamps",
+  "settingsShowChatTimeSubtitle": "Show timestamps for character and your messages",
   "settingsSystemModule": "System",
   "settingsDreamMemory": "Memory access",
   "settingsDreamCardOnly": "Character card only",

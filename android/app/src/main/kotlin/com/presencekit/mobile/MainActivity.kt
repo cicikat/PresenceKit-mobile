@@ -589,6 +589,7 @@ class MainActivity : FlutterActivity() {
                                 "infoStrip" to prefs.getBoolean("infoStrip", true),
                                 "fontSize" to prefs.getFloat("fontSize", 16f).toDouble(),
                                 "showYouAvatar" to prefs.getBoolean("showYouAvatar", false),
+                                "showChatTime" to prefs.getBoolean("showChatTime", true),
                                 "nightSilent" to prefs.getBoolean("nightSilent", true),
                             ),
                         )
@@ -599,6 +600,7 @@ class MainActivity : FlutterActivity() {
                             .putBoolean("infoStrip", call.argument<Boolean>("infoStrip") ?: true)
                             .putFloat("fontSize", fontSize)
                             .putBoolean("showYouAvatar", call.argument<Boolean>("showYouAvatar") ?: false)
+                            .putBoolean("showChatTime", call.argument<Boolean>("showChatTime") ?: true)
                             .putBoolean("nightSilent", call.argument<Boolean>("nightSilent") ?: true)
                             .apply()
                         result.success(null)

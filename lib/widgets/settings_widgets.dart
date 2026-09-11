@@ -466,6 +466,16 @@ class SettingsPage extends StatelessWidget {
                   ),
                   SettingsRow(
                     c: c,
+                    title: l10n.settingsShowChatTimeTitle,
+                    subtitle: l10n.settingsShowChatTimeSubtitle,
+                    child: Switch(
+                      value: prefs.showChatTime,
+                      onChanged: (value) =>
+                          onPrefs(prefs.copyWith(showChatTime: value)),
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
                     title: l10n.settingsShowAvatarTitle,
                     subtitle: l10n.settingsShowAvatarSubtitle,
                     child: Switch(

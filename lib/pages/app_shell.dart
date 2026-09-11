@@ -742,6 +742,7 @@ class _CompanionAppState extends State<CompanionApp>
         infoStrip: _prefs.infoStrip,
         fontSize: _prefs.fontSize,
         showYouAvatar: _prefs.showYouAvatar,
+        showChatTime: _prefs.showChatTime,
         proactiveRate: _prefs.proactiveRate,
         nightSilent: _prefs.nightSilent,
       );

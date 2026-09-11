@@ -1,4 +1,6 @@
 {
+  "settingsShowChatTimeTitle": "显示聊天时间",
+  "settingsShowChatTimeSubtitle": "显示角色和自己的消息时间",
   "settingsSystemModule": "系统配置",
   "settingsDreamMemory": "记忆范围",
   "settingsDreamCardOnly": "仅角色卡",

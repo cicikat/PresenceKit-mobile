@@ -98,6 +98,18 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @settingsShowChatTimeTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示聊天时间'**
+  String get settingsShowChatTimeTitle;
+
+  /// No description provided for @settingsShowChatTimeSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示角色和自己的消息时间'**
+  String get settingsShowChatTimeSubtitle;
+
   /// No description provided for @settingsSystemModule.
   ///
   /// In zh, this message translates to:

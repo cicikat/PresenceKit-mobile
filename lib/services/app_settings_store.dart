@@ -424,17 +424,37 @@ class AppSettingsStore {
 
   Future<Uint8List?> loadDreamBackground() async {
     if (!_channelAvailable) return null;
-    try { return await PlatformSettingsChannel.channel.invokeMethod<Uint8List>('getDreamBackground'); } on PlatformException { return null; }
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<Uint8List>(
+        'getDreamBackground',
+      );
+    } on PlatformException {
+      return null;
+    }
   }
 
   Future<bool> saveDreamBackground(Uint8List bytes) async {
     if (!_channelAvailable) return false;
-    try { return await PlatformSettingsChannel.channel.invokeMethod<bool>('saveDreamBackground', {'bytes': bytes}) ?? false; } on PlatformException { return false; }
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<bool>(
+            'saveDreamBackground',
+            {'bytes': bytes},
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    }
   }
 
   Future<void> deleteDreamBackground() async {
     if (!_channelAvailable) return;
-    try { await PlatformSettingsChannel.channel.invokeMethod<void>('deleteDreamBackground'); } on PlatformException catch (_) { return; }
+    try {
+      await PlatformSettingsChannel.channel.invokeMethod<void>(
+        'deleteDreamBackground',
+      );
+    } on PlatformException catch (_) {
+      return;
+    }
   }
 
   Future<YxPrefs> loadAppearancePrefs() async {
@@ -453,6 +473,7 @@ class AppSettingsStore {
                     as num)
                 .toDouble(),
         showYouAvatar: raw['showYouAvatar'] == true,
+        showChatTime: raw['showChatTime'] != false,
         nightSilent: raw['nightSilent'] != false,
       );
     } on PlatformException {
@@ -468,6 +489,7 @@ class AppSettingsStore {
             'infoStrip': value.infoStrip,
             'fontSize': value.fontSize,
             'showYouAvatar': value.showYouAvatar,
+            'showChatTime': value.showChatTime,
             'nightSilent': value.nightSilent,
           });
     } on PlatformException {

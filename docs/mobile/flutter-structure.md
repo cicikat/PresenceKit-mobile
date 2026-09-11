@@ -83,3 +83,5 @@
 ## Inline chat typography (2026-09-09)
 
 `models/inline_display.dart` owns the desktop-compatible paired-tag parser, canonical-text validation and paragraph style slicing. `widgets/inline_display_text.dart` builds TextSpans with theme red emphasis and font-size scaling. `ChatController` carries optional displayText through HTTP replies and live/catch-up polling without changing dedup/ack/voice logic. `HimMessage` and `AnimatedRevealText` use rich text for display and selection; copy/reply use canonical text. No state is added to app_shell.
+
+聊天时间开关（2026-09-11）：设置 → 外观提供 `showChatTime`，默认 true，控制角色和用户消息头的时间；日期分隔及消息原始时间不变。经现有 appearance prefs 通道持久化，重启和删除背景后保留。纯本机外观，无后端/桌面开关、权限、队列或通知协议变化。

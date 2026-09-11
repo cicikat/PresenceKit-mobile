@@ -9,6 +9,12 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get settingsShowChatTimeTitle => '显示聊天时间';
+
+  @override
+  String get settingsShowChatTimeSubtitle => '显示角色和自己的消息时间';
+
+  @override
   String get settingsSystemModule => '系统配置';
 
   @override

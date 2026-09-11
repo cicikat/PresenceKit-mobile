@@ -70,6 +70,7 @@ void main() {
         'infoStrip': false,
         'fontSize': 18.0,
         'showYouAvatar': true,
+        'showChatTime': false,
         'nightSilent': false,
       });
       final prefs = await store.loadAppearancePrefs();
@@ -77,6 +78,7 @@ void main() {
       expect(prefs.infoStrip, isFalse);
       expect(prefs.fontSize, 18);
       expect(prefs.showYouAvatar, isTrue);
+      expect(prefs.showChatTime, isFalse);
       expect(prefs.nightSilent, isFalse);
     });
 
@@ -86,6 +88,7 @@ void main() {
           infoStrip: false,
           fontSize: 19,
           showYouAvatar: true,
+          showChatTime: false,
           nightSilent: false,
         ),
       );
@@ -94,6 +97,7 @@ void main() {
         'infoStrip': false,
         'fontSize': 19.0,
         'showYouAvatar': true,
+        'showChatTime': false,
         'nightSilent': false,
       });
     });

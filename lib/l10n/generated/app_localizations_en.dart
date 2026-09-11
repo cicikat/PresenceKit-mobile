@@ -9,6 +9,13 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get settingsShowChatTimeTitle => 'Show chat timestamps';
+
+  @override
+  String get settingsShowChatTimeSubtitle =>
+      'Show timestamps for character and your messages';
+
+  @override
   String get settingsSystemModule => 'System';
 
   @override

@@ -819,7 +819,9 @@ class _HimMessageState extends State<HimMessage> {
                 Row(
                   children: [
                     Text(
-                      '${context.l10n.chatRoleHim}  ${widget.time}',
+                      widget.prefs.showChatTime
+                          ? '${context.l10n.chatRoleHim}  ${widget.time}'
+                          : context.l10n.chatRoleHim,
                       style: mono(c, 9.5, color: c.ink3),
                     ),
                     if (widget.tag != null) ...[
@@ -1248,7 +1250,9 @@ class _YouMessageState extends State<YouMessage> {
                     role: context.l10n.chatRoleYou,
                   ),
                 Text(
-                  '${context.l10n.chatRoleYou}  ${widget.time}',
+                  widget.prefs.showChatTime
+                      ? '${context.l10n.chatRoleYou}  ${widget.time}'
+                      : context.l10n.chatRoleYou,
                   style: mono(c, 9.5, color: c.ink3),
                 ),
                 const SizedBox(height: 4),
