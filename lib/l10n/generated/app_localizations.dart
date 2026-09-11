@@ -98,6 +98,30 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @screenObservationTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'允许角色按需截图'**
+  String get screenObservationTitle;
+
+  /// No description provided for @screenObservationHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机活跃且未锁屏时，允许按请求截图并发送到已配置的视觉服务，返回隐私过滤后的概括。需同时开启后端按需截图，与屏幕文字分享独立。'**
+  String get screenObservationHint;
+
+  /// No description provided for @screenObservationRequirements.
+  ///
+  /// In zh, this message translates to:
+  /// **'需要 Android 11 或更新版本及无障碍权限。锁屏时不会截图。'**
+  String get screenObservationRequirements;
+
+  /// No description provided for @screenObservationFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法读取或保存截图授权，请重新打开此页面重试。'**
+  String get screenObservationFailed;
+
   /// No description provided for @settingsShowChatTimeTitle.
   ///
   /// In zh, this message translates to:

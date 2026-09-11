@@ -186,3 +186,12 @@ YexuanAccessibilityService
 | `ThemeController` | 多颜色预设、旧单色盘迁移、内置 mod、Web 持久化与导出 | 设置页颜色预设管理器 |
 
 `app_shell.dart` 仍是组合根，不得新增领域字段、Timer 或成组业务方法；当前未下沉的 profile、theme、capability/settings、附件协调，以及可信 HTTP origin 等安全确认列为 `docs/mobile/flutter-structure.md` 记录的后续结构债。
+
+
+## 按需截图三端接入（2026-09-12，partial）
+
+详见仓库 `docs/screen-observation-2026-09-12.md`。后端 `observe_user_screen` 通过独立 HTTP poll/result 请求活跃电脑或手机的新截图，UUID/凭据绑定、20 秒 TTL、30 秒设备新鲜度和本地授权均参与门控；图像只在内存中处理。
+
+管理面提供全局开关、effective state 与 `/perception/screen/status` 无正文观测；电脑视觉观察页、手机系统配置页各有独立本地授权，默认关闭。全局开启时自主工具继承启用，显式工具禁用优先；角色消息继续走原通知/免打扰链路。桌面 IPC 新增可选 onDemandEnabled；手机使用专用 screen_observation 通道与无障碍 worker，不改 mobile poll/ack/relay。
+
+实现及构建/定向测试通过，真实双设备、锁屏、OEM 后台及 VLM/消息联合验收保持 open。管理面既有国际化测试 3 项失败保持 open，详见施工记录，不能将静态检查作为真实设备验收。

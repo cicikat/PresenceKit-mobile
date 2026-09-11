@@ -9,6 +9,20 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get screenObservationTitle => '允许角色按需截图';
+
+  @override
+  String get screenObservationHint =>
+      '手机活跃且未锁屏时，允许按请求截图并发送到已配置的视觉服务，返回隐私过滤后的概括。需同时开启后端按需截图，与屏幕文字分享独立。';
+
+  @override
+  String get screenObservationRequirements =>
+      '需要 Android 11 或更新版本及无障碍权限。锁屏时不会截图。';
+
+  @override
+  String get screenObservationFailed => '无法读取或保存截图授权，请重新打开此页面重试。';
+
+  @override
   String get settingsShowChatTimeTitle => '显示聊天时间';
 
   @override

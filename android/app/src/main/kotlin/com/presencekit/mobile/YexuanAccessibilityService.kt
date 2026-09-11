@@ -26,13 +26,19 @@ class YexuanAccessibilityService : AccessibilityService() {
     private var snapshotDirty = true
     private var dirtyPackageName = ""
     private var lastSnapshotAt = 0L
+    private var screenObservation: ScreenObservationClient? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         activeService = this
+        screenObservation?.close()
+        screenObservation = ScreenObservationClient(this).also { it.start() }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event?.eventType in setOf(AccessibilityEvent.TYPE_VIEW_CLICKED,
+                AccessibilityEvent.TYPE_VIEW_SCROLLED, AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
+                AccessibilityEvent.TYPE_TOUCH_INTERACTION_START)) screenObservation?.interacted()
         snapshotDirty = true
         dirtyPackageName = event?.packageName?.toString().orEmpty()
         if (!hasPendingCartRequest()) return
@@ -47,6 +53,8 @@ class YexuanAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        screenObservation?.close()
+        screenObservation = null
         if (activeService === this) {
             activeService = null
         }
@@ -383,7 +391,27 @@ class YexuanAccessibilityService : AccessibilityService() {
 
     // API 30+ \u4e13\u7528\uff1b\u4f4e\u7248\u672c\u8bbe\u5907\u76f4\u63a5\u56de\u8c03 null\uff08\u89c6\u89c9\u6a21\u578b\u9000\u5316\u4e3a\u53ea\u9760\u8282\u70b9\u6587\u672c\u5224\u65ad\uff0c\u8986\u76d6\u4e0d\u5230\u7eaf\u56fe\u6807
     // \u6309\u94ae\uff0c\u4f46\u4e0d\u963b\u65ad\u529f\u80fd\uff09\u3002\u56de\u8c03\u7ecf executor \u8f6c\u56de\u4e3b Handler\uff0c\u4e0d\u5728\u8fd9\u91cc\u505a\u4efb\u4f55\u963b\u585e\u7b49\u5f85\u3002
-    private fun captureScreenshotBase64(callback: (String?) -> Unit) {
+    fun captureObservation(current: () -> Boolean, callback: (String?) -> Unit) {
+        handler.post {
+            if (!current() || !ScreenObservationClient.available(this) || activeService !== this) {
+                callback(null); return@post
+            }
+            val root = rootInActiveWindow
+            if (root == null || containsPasswordNode(root, 0)) { callback(null); return@post }
+            val pkg = root.packageName?.toString().orEmpty()
+            val visible = linkedSetOf<String>()
+            val clickable = linkedSetOf<String>()
+            collectNodeText(root, visible, clickable, 0)
+            if (sensitiveAppReason(pkg, appLabel(pkg)) != null || containsSensitiveKeyword(visible + clickable)) {
+                callback(null); return@post
+            }
+            captureScreenshotBase64(resize = true) { image ->
+                callback(if (current() && ScreenObservationClient.available(this) && activeService === this) image else null)
+            }
+        }
+    }
+
+    private fun captureScreenshotBase64(resize: Boolean = false, callback: (String?) -> Unit) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             callback(null)
             return
@@ -402,9 +430,16 @@ class YexuanAccessibilityService : AccessibilityService() {
                         val encoded = bitmap?.let { hwBitmap ->
                             runCatching {
                                 val software = hwBitmap.copy(Bitmap.Config.ARGB_8888, false)
-                                val stream = ByteArrayOutputStream()
-                                software.compress(Bitmap.CompressFormat.JPEG, 70, stream)
-                                Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
+                                try {
+                                    val ratio = if (resize) (1280.0 / maxOf(software.width, software.height)).coerceAtMost(1.0) else 1.0
+                                    val scaled = Bitmap.createScaledBitmap(software,
+                                        (software.width*ratio).toInt().coerceAtLeast(1), (software.height*ratio).toInt().coerceAtLeast(1), true)
+                                    try {
+                                        val stream = ByteArrayOutputStream()
+                                        scaled.compress(Bitmap.CompressFormat.JPEG, 70, stream)
+                                        Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
+                                    } finally { if (scaled !== software) scaled.recycle() }
+                                } finally { software.recycle(); hwBitmap.recycle() }
                             }.getOrNull()
                         }
                         callback(encoded)

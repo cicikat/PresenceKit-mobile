@@ -194,3 +194,12 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 `android:usesCleartextTraffic="true"` 仍用于本机/LAN HTTP 调试，但应用层会在 Flutter 和 Android 后台服务建立请求前校验 origin，并关闭自动重定向。允许 loopback、Tailscale `100.64.0.0/10`、HTTPS，以及用户明确确认过的 RFC1918 私网精确 IPv4 或 Tailscale MagicDNS `*.ts.net` HTTP origin；公网 HTTP 会直接拒绝。
 
 2026-09-11 自动补传修复：前台同步忙时合并后续触发，保存后立即安排下一轮；缓存读取失败不再阻止上传。后台 foreground_only 的等待不再阻挡恢复前台。原生共享单线程保持顺序、账号隔离、同 operation_id 重试、凭证闸门与退避。复用已有 SQLite 队列、snapshot/observe 观测，没有新增持久队列、权限或通知链路。
+
+
+## 按需截图三端接入（2026-09-12，partial）
+
+详见仓库 `docs/screen-observation-2026-09-12.md`。后端 `observe_user_screen` 通过独立 HTTP poll/result 请求活跃电脑或手机的新截图，UUID/凭据绑定、20 秒 TTL、30 秒设备新鲜度和本地授权均参与门控；图像只在内存中处理。
+
+管理面提供全局开关、effective state 与 `/perception/screen/status` 无正文观测；电脑视觉观察页、手机系统配置页各有独立本地授权，默认关闭。全局开启时自主工具继承启用，显式工具禁用优先；角色消息继续走原通知/免打扰链路。桌面 IPC 新增可选 onDemandEnabled；手机使用专用 screen_observation 通道与无障碍 worker，不改 mobile poll/ack/relay。
+
+实现及构建/定向测试通过，真实双设备、锁屏、OEM 后台及 VLM/消息联合验收保持 open。管理面既有国际化测试 3 项失败保持 open，详见施工记录，不能将静态检查作为真实设备验收。

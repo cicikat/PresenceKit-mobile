@@ -1,4 +1,8 @@
 {
+  "screenObservationTitle": "允许角色按需截图",
+  "screenObservationHint": "手机活跃且未锁屏时，允许按请求截图并发送到已配置的视觉服务，返回隐私过滤后的概括。需同时开启后端按需截图，与屏幕文字分享独立。",
+  "screenObservationRequirements": "需要 Android 11 或更新版本及无障碍权限。锁屏时不会截图。",
+  "screenObservationFailed": "无法读取或保存截图授权，请重新打开此页面重试。",
   "settingsShowChatTimeTitle": "显示聊天时间",
   "settingsShowChatTimeSubtitle": "显示角色和自己的消息时间",
   "settingsSystemModule": "系统配置",

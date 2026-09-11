@@ -9,6 +9,21 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get screenObservationTitle => 'Allow character-requested screenshots';
+
+  @override
+  String get screenObservationHint =>
+      'When this phone is active and unlocked, allow a requested screenshot to be sent to your configured vision service for a privacy-filtered summary. Requires the backend screen observation switch. Separate from screen text sharing.';
+
+  @override
+  String get screenObservationRequirements =>
+      'Requires Android 11 or later and Accessibility permission. Locked screens are never captured.';
+
+  @override
+  String get screenObservationFailed =>
+      'Could not read or save screenshot permission. Reopen this page to retry.';
+
+  @override
   String get settingsShowChatTimeTitle => 'Show chat timestamps';
 
   @override

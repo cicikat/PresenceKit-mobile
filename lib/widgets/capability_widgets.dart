@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'screen_observation_settings.dart';
 
 import '../app_constants.dart';
 import '../models/app_models.dart';
@@ -338,6 +339,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                         ? null
                         : () => _run(widget.onRequestAccessibility),
                   ),
+                  ScreenObservationSettings(accessibilityEnabled: status.accessibilityEnabled, readOnly: !widget.controlsOnly),
                   CapabilityRow(
                     c: c,
                     icon: Icons.visibility_outlined,

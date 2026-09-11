@@ -229,3 +229,12 @@ Flutter analyze --no-pub passed with zero issues. Focused widget/controller/prot
 - 正式包 `1.0.1+38` 构建成功；已核对历史 keystore 与手机已安装 APK、候选 APK 的 certificate SHA-256 一致，`adb install -r` 覆盖成功，侧栏显示 1.0.1+38。原设置、连接、头像、背景与记录队列保留。未对外发布。
 - 真机验证“设置 → 外观与显示 → 显示聊天时间”：中文可见、关闭后消息时间隐藏、强停重启仍关闭、重新开启后恢复显示；验收后恢复默认开启。
 - 最后重新生成本地化后，相关本地化/通道测试 41 项通过。断网连续重试与后台取消有 Android 自动测试；真实 Doze/断网恢复/新图保存即传矩阵未完成，不能用这次旧包补传证明新包所有后台场景。
+
+
+## 按需截图三端接入（2026-09-12，partial）
+
+详见仓库 `docs/screen-observation-2026-09-12.md`。后端 `observe_user_screen` 通过独立 HTTP poll/result 请求活跃电脑或手机的新截图，UUID/凭据绑定、20 秒 TTL、30 秒设备新鲜度和本地授权均参与门控；图像只在内存中处理。
+
+管理面提供全局开关、effective state 与 `/perception/screen/status` 无正文观测；电脑视觉观察页、手机系统配置页各有独立本地授权，默认关闭。全局开启时自主工具继承启用，显式工具禁用优先；角色消息继续走原通知/免打扰链路。桌面 IPC 新增可选 onDemandEnabled；手机使用专用 screen_observation 通道与无障碍 worker，不改 mobile poll/ack/relay。
+
+实现及构建/定向测试通过，真实双设备、锁屏、OEM 后台及 VLM/消息联合验收保持 open。管理面既有国际化测试 3 项失败保持 open，详见施工记录，不能将静态检查作为真实设备验收。
