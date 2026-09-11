@@ -311,3 +311,10 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 ## Inline typography history and visual verification (2026-09-09)
 
 `observe`: reality HTTP/poll rendering now supports hl/big/sm, including typing and selection. Widget/controller regressions and a Dev APK validate implementation; physical-device visual verification remains pending. `roadmap`: backend chat-log history is plain text, so a reload cannot recover discarded styles. Independent Dream/group transport is not extended by this reality change. No new settings, permissions, queue or notification behavior are introduced.
+
+
+## Life records v1 backend (2026-09-11)
+
+current: /life-records capabilities/sync/list/detail/observability are implemented with dedicated life_records scope (mobile profile), transactional images/jobs/receipts, revisions/tombstones, bounded snapshot pagination, asynchronous OCR/vision, correction locks and owner-only read_life_records tool. Admin Service Configuration owns switches, effective recognition, task/device/audit observation and failed-task retry. See backend docs/life-records.md and brief 245. No changes to chat/poll/ack, notifications or payment.
+
+observe: physical phone/network/Doze and live image-model end-to-end validation remain open. Backend tests include atomic retry, edits versus recognition, deletion, scopes, decimals, snapshot pagination and worker recovery; 72 initial scope/store tests and 39 focused/mobile regressions passed. Android LifeRecords/security/credential targeted task succeeded (cached unit-test output). Admin browser hard refresh used real isolated API. Desktop native record UI and original-image refetch remain roadmap.

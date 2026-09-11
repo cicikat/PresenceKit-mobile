@@ -194,3 +194,10 @@ Backend admin Preset editing owns force_stream (default false, Chat Completions 
 ## Inline display delivery (2026-09-09)
 
 Reality HTTP chat/upload replies and turn-sink poll messages consume optional display_text; reply/content stays canonical for voice, notification, quotation and dedup. Phone validates copy text equality, then renders hl/big/sm in animation and selection with desktop proportions and the theme red color. Existing font-size/theme settings apply; no backend feature switch, new client setting, native permission or service is needed. Backend queue poll is the existing read-only observation surface. Old history style recovery and independent Dream/group display transport remain roadmap; real-device visual verification remains observe.
+
+
+## Life records v1 backend (2026-09-11)
+
+current: /life-records capabilities/sync/list/detail/observability are implemented with dedicated life_records scope (mobile profile), transactional images/jobs/receipts, revisions/tombstones, bounded snapshot pagination, asynchronous OCR/vision, correction locks and owner-only read_life_records tool. Admin Service Configuration owns switches, effective recognition, task/device/audit observation and failed-task retry. See backend docs/life-records.md and brief 245. No changes to chat/poll/ack, notifications or payment.
+
+observe: physical phone/network/Doze and live image-model end-to-end validation remain open. Backend tests include atomic retry, edits versus recognition, deletion, scopes, decimals, snapshot pagination and worker recovery; 72 initial scope/store tests and 39 focused/mobile regressions passed. Android LifeRecords/security/credential targeted task succeeded (cached unit-test output). Admin browser hard refresh used real isolated API. Desktop native record UI and original-image refetch remain roadmap.
