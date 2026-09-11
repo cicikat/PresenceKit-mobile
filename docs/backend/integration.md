@@ -215,3 +215,8 @@ observe: physical phone/network/Doze and live image-model end-to-end validation 
 Backend-owned settings remain authoritative; no client credentials or local switches were added. Docker login and a user-provided share were verified with body text, one WebP image description and ten sampled comments. The adapter supports xhslink.cn and returns busy/cooldown_seconds in its settings projection. Reads are serialized with a 15-25 second cooldown and five-minute backoff on login/rate rejection. Native chat verification and loading the new code in the running backend remain observe.
 
 2026-09-11 真机排查：正式版 1.0.1+37 显示 3 个本机待办；后端观测返回 enabled=false、effective=false、blocking_reason=disabled、recognition_available=true、background_sync=true，任务与设备回执为空。这次阻塞是后端总开关关闭，不是已经上传后识别结果丢失。用户授权后经管理 API 开启 enabled，其他设置不变。手机按原 capability 闸门保留队列，不在本机绕过后端启用状态。前台保存触发合并、批量顺序补传及 foreground_only 恢复已修复；原 HTTP 字段、scope、ack、无静默 TTL 和桌面管理面设置归属不变。
+
+
+## Character thinking voice control audit (2026-09-11)
+
+Backend /settings/thinking adds character_voice and a read-only voice_preview under persona scope; admin Conversation/Thinking is the configuration owner. Mobile chat uses the same backend prompt guidance, which may affect reply wording. No new mobile setting, permission, poll/ack/TTL, relay or notification behavior. This app has no reasoning expansion UI; that remains roadmap. Native summary voice compliance remains observe. See backend docs/thinking-voice.md.
