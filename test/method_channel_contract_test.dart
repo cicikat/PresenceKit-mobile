@@ -96,6 +96,12 @@ void main() {
       expect(calls.single.arguments, {
         'infoStrip': false,
         'fontSize': 19.0,
+        'dreamNarrationSize': 16.0,
+        'dreamChatSize': 16.0,
+        'dreamActionSize': 16.0,
+        'dreamNarrationColor': null,
+        'dreamChatColor': null,
+        'dreamActionColor': null,
         'showYouAvatar': true,
         'showChatTime': false,
         'nightSilent': false,

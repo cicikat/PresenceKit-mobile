@@ -43,9 +43,21 @@
   "lifeCartHelp": "Upload cart screenshots from apps such as Taobao. This does not access accounts or place orders.",
   "lifeBackgroundHelp": "Uploads resume when connected. Android schedules background work; battery saving or force stop may delay it. Reopen the app to continue.",
   "lifePendingCount": "{count} pending",
-  "@lifePendingCount": {"placeholders": {"count": {"type": "int"}}},
+  "@lifePendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "lifeLastAck": "Last successful sync: {time}",
-  "@lifeLastAck": {"placeholders": {"time": {"type": "String"}}},
+  "@lifeLastAck": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "lifeConnected": "Computer connected",
   "lifeWaiting": "Waiting for computer",
   "lifeAuth": "Invalid credential. Update it in settings; your records are retained.",
@@ -125,7 +137,13 @@
   "drawerProfileTitle": "Profile",
   "drawerProfileSubtitle": "Local name and avatar",
   "drawerDiaryTitle": "{name}'s diary",
-  "@drawerDiaryTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@drawerDiaryTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "drawerDiarySubtitle": "What he writes for himself",
   "drawerActivityTitle": "Activities",
   "drawerActivitySubtitle": "Reading / Gomoku / Chess / Dream setup",
@@ -137,7 +155,13 @@
   "drawerSettingsTitle": "Settings",
   "drawerSettingsSubtitle": "Connection, notifications, appearance and chat",
   "drawerVersionLabel": "Version {version}",
-  "@drawerVersionLabel": {"placeholders": {"version": {"type": "String"}}},
+  "@drawerVersionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "drawerCurrent": "Current",
   "presenceOnline": "Present",
   "presenceMobileOnline": "Mobile online",
@@ -147,18 +171,48 @@
   "backTooltip": "Back",
   "chatLoadingOlder": "Loading earlier conversations…",
   "chatHiddenOlder": "{count} earlier messages collapsed · Swipe up to expand",
-  "@chatHiddenOlder": {"placeholders": {"count": {"type": "int"}}},
+  "@chatHiddenOlder": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatLoadingHistory": "Loading chat history from the backend",
   "chatEmptyHistory": "Backend connected · No chat history yet",
   "chatHistoryError": "Could not load history · {error}",
-  "@chatHistoryError": {"placeholders": {"error": {"type": "String"}}},
+  "@chatHistoryError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "chatWaitingReply": "Sent to backend · Waiting for his reply",
   "chatBackendError": "Backend connection error · {error}",
-  "@chatBackendError": {"placeholders": {"error": {"type": "String"}}},
+  "@chatBackendError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "chatBackendStatus": "Backend connected · {emotion}",
-  "@chatBackendStatus": {"placeholders": {"emotion": {"type": "String"}}},
+  "@chatBackendStatus": {
+    "placeholders": {
+      "emotion": {
+        "type": "String"
+      }
+    }
+  },
   "chatMobileReceived": "Received {count} proactive messages",
-  "@chatMobileReceived": {"placeholders": {"count": {"type": "int"}}},
+  "@chatMobileReceived": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatTyping": "Typing",
   "chatRoleHim": "Him",
   "chatRoleYou": "Me",
@@ -195,10 +249,25 @@
   "waitAction": "Wait",
   "sendAction": "Send",
   "characterCount": "{count} characters",
-  "@characterCount": {"placeholders": {"count": {"type": "int"}}},
+  "@characterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "settingsBackendNodeTitle": "Backend node & user ID",
   "settingsBackendNodeSubtitle": "{baseUrl} · User {userId}",
-  "@settingsBackendNodeSubtitle": {"placeholders": {"baseUrl": {"type": "String"}, "userId": {"type": "String"}}},
+  "@settingsBackendNodeSubtitle": {
+    "placeholders": {
+      "baseUrl": {
+        "type": "String"
+      },
+      "userId": {
+        "type": "String"
+      }
+    }
+  },
   "settingsEditBackendTooltip": "Edit backend address",
   "settingsRelayTitle": "ntfy push relay",
   "settingsRelaySubtitle": "Set up background push delivery",
@@ -217,18 +286,45 @@
   "settingsResetAvatarTooltip": "Restore default avatar",
   "settingsThemeTitle": "Appearance theme",
   "settingsThemeBuiltInSubtitle": "Paper · Night · {count} color presets",
-  "@settingsThemeBuiltInSubtitle": {"placeholders": {"count": {"type": "int"}}},
+  "@settingsThemeBuiltInSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "settingsThemePresetSubtitle": "Current: {name} · {count} presets total",
-  "@settingsThemePresetSubtitle": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "@settingsThemePresetSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "themePaper": "Paper",
   "themeNight": "Night",
   "settingsColorPresets": "Color presets ({count})",
-  "@settingsColorPresets": {"placeholders": {"count": {"type": "int"}}},
+  "@settingsColorPresets": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "settingsInfoStripTitle": "Conversation info bar",
   "settingsInfoStripSubtitle": "Controls the dark green status area on the home screen",
   "settingsFontSizeTitle": "Text size",
   "settingsFontSizeSubtitle": "{size}px · Affects bubbles and body text",
-  "@settingsFontSizeSubtitle": {"placeholders": {"size": {"type": "int"}}},
+  "@settingsFontSizeSubtitle": {
+    "placeholders": {
+      "size": {
+        "type": "int"
+      }
+    }
+  },
   "settingsShowAvatarTitle": "Show my avatar",
   "settingsShowAvatarSubtitle": "Display a small avatar beside my chat bubbles",
   "settingsProactiveRateTitle": "Proactive message frequency",
@@ -257,7 +353,13 @@
   "settingsDreamJailbreakSubtitle": "Independent Dream D0 preset",
   "defaultOption": "Default",
   "settingsBackendSaveError": "Could not load/save backend settings: {error}",
-  "@settingsBackendSaveError": {"placeholders": {"error": {"type": "String"}}},
+  "@settingsBackendSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settingsDiagnosticsSection": "Diagnostics",
   "settingsCapabilitiesTitle": "Capability check",
   "settingsCapabilitiesSubtitle": "Permissions, backend, relay and sync status",
@@ -268,7 +370,13 @@
   "loadingAction": "Loading…",
   "profileTitle": "Character profile",
   "profileEyebrow": "{name} · Local display",
-  "@profileEyebrow": {"placeholders": {"name": {"type": "String"}}},
+  "@profileEyebrow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "profileAvatarConfigured": "Local avatar configured",
   "profileAvatarDefault": "Using the default letter avatar",
   "profileNameAction": "Display name",
@@ -278,11 +386,32 @@
   "profileNoActivity": "Nothing in particular right now",
   "profileStatusUpdating": "Refreshing status…",
   "profileStatusLastUpdated": "Last successful update: {time}",
-  "@profileStatusLastUpdated": {"placeholders": {"time": {"type": "String"}}},
+  "@profileStatusLastUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "profileStatusLoadError": "Could not refresh status; showing the last successful values: {error}",
-  "@profileStatusLoadError": {"placeholders": {"error": {"type": "String"}}},
+  "@profileStatusLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "profileMoodStatus": "Mood: {label} ({percent}%)",
-  "@profileMoodStatus": {"placeholders": {"label": {"type": "String"}, "percent": {"type": "int"}}},
+  "@profileMoodStatus": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "profileLocalNameTitle": "Local display name",
   "profileDefaultCharacterName": "Default character name",
   "profileLocalNameBody": "Only affects display on this phone: top bar, drawer, preferences and HIM chat bubbles. It is not written to the backend or the core personality configuration.",
@@ -299,9 +428,21 @@
   "profileDisplayLocationTitle": "Display locations",
   "profileDisplayLocationValue": "UI updated",
   "profileDisplayLocationBody": "The top bar, drawer, preferences and {name}'s message avatar all use this local profile. Your own avatar remains separate.",
-  "@profileDisplayLocationBody": {"placeholders": {"name": {"type": "String"}}},
+  "@profileDisplayLocationBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "profileFooterNotice": "This page only manages the mobile thin client's visual identity. {name}'s core personality, memory and scheduling remain on the backend.",
-  "@profileFooterNotice": {"placeholders": {"name": {"type": "String"}}},
+  "@profileFooterNotice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "activityTitle": "Activities",
   "activityEyebrow": "Do something together",
   "activityReadingTitle": "Read together",
@@ -315,7 +456,13 @@
   "activityChatPrompt": "Say something about how it's going",
   "saySomethingHint": "Say something…",
   "sendFailedMessage": "(Send failed: {error})",
-  "@sendFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "@sendFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "endAction": "End",
   "dreamBuildIntro": "Dream setup has not started yet. Once started, you can talk about what you want to dream tonight. The conversation becomes a seed when you finish.",
   "dreamBuildStart": "Start setup",
@@ -324,7 +471,13 @@
   "diaryAllFilter": "All",
   "diaryTitle": "Diary",
   "diaryEyebrow": "{name} · Private writing",
-  "@diaryEyebrow": {"placeholders": {"name": {"type": "String"}}},
+  "@diaryEyebrow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "syncingStatus": "Syncing",
   "syncedStatus": "Synced",
   "diarySearchHint": "Search · Keyword / date / mood",
@@ -333,16 +486,34 @@
   "diaryEmpty": "He has not started writing a diary yet.",
   "diaryNoResults": "No matching diary entries.",
   "diaryRecentRefreshError": "Most recent refresh failed: {error}",
-  "@diaryRecentRefreshError": {"placeholders": {"error": {"type": "String"}}},
+  "@diaryRecentRefreshError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "diaryOpenToLoad": "Open an entry to load its content.",
   "diaryTapToLoad": "Tap to load content",
   "loadingStatus": "Loading…",
   "noData": "No data",
   "loadFailedMessage": "Load failed: {error}",
-  "@loadFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "@loadFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "gardenTitle": "Companion garden",
   "gardenEyebrow": "{name} · State garden",
-  "@gardenEyebrow": {"placeholders": {"name": {"type": "String"}}},
+  "@gardenEyebrow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "gardenShortTitle": "Garden",
   "gardenLoadingDescription": "Loading garden state from the backend.",
   "gardenErrorDescription": "Garden sync failed. You can refresh again later.",
@@ -360,14 +531,41 @@
   "gardenEmpty": "No garden data",
   "gardenWaitingSlot": "Waiting for the backend to return a garden slot.",
   "gardenStageSummary": "{mood} is closest to the next stage · {percent}% · Harvest {harvest} · Vase {vase}",
-  "@gardenStageSummary": {"placeholders": {"mood": {"type": "String"}, "percent": {"type": "int"}, "harvest": {"type": "String"}, "vase": {"type": "String"}}},
+  "@gardenStageSummary": {
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      },
+      "harvest": {
+        "type": "String"
+      },
+      "vase": {
+        "type": "String"
+      }
+    }
+  },
   "dreamHeaderTitle": "Dream · {name}",
-  "@dreamHeaderTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@dreamHeaderTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "dreamInProgress": "In progress",
   "dreamReady": "DREAM · READY",
   "dreamWakeAction": "Wake up",
   "dreamConnectionError": "Dream connection error · {error}",
-  "@dreamConnectionError": {"placeholders": {"error": {"type": "String"}}},
+  "@dreamConnectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "dreamResponding": "The dream is responding",
   "dreamStability": "Stability",
   "dreamDepth": "Depth",
@@ -375,7 +573,13 @@
   "dreamEntranceOpen": "The dream entrance is open",
   "dreamEntranceDescription": "Inside, the conversation pauses somewhere lighter and slower. This message flow is separate from the main chat.",
   "dreamValidCount": "{count} valid dreams so far",
-  "@dreamValidCount": {"placeholders": {"count": {"type": "int"}}},
+  "@dreamValidCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "dreamEntering": "Falling in…",
   "dreamEnterAction": "Enter dream",
   "dreamComposerHint": "Write something here…",
@@ -387,22 +591,52 @@
   "closeAction": "Close",
   "startGameAction": "Start game",
   "groupDeleteTitle": "Delete “{title}”?",
-  "@groupDeleteTitle": {"placeholders": {"title": {"type": "String"}}},
+  "@groupDeleteTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "groupDeleteWarning": "The chat history will also be deleted and cannot be recovered.",
   "groupTitle": "Group chat",
   "groupEyebrow": "Chat with multiple characters",
   "groupCreateAction": "New group",
   "groupEmpty": "No group chats yet",
   "groupRosterDeleteHint": "{members} · Hold to delete",
-  "@groupRosterDeleteHint": {"placeholders": {"members": {"type": "String"}}},
+  "@groupRosterDeleteHint": {
+    "placeholders": {
+      "members": {
+        "type": "String"
+      }
+    }
+  },
   "groupSelectAtLeastOne": "Select at least one character",
   "groupSelectedCount": "Select members ({count} selected)",
-  "@groupSelectedCount": {"placeholders": {"count": {"type": "int"}}},
+  "@groupSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "groupNoCharacters": "No characters available",
   "groupMinResponders": "N minimum responders: {count}",
-  "@groupMinResponders": {"placeholders": {"count": {"type": "int"}}},
+  "@groupMinResponders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "groupMaxResponders": "M maximum responders: {count}",
-  "@groupMaxResponders": {"placeholders": {"count": {"type": "int"}}},
+  "@groupMaxResponders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "groupCreating": "Creating…",
   "groupConfirmCreate": "Create group",
   "groupSendToStart": "Send a message to start the group chat",
@@ -411,7 +645,13 @@
   "groupKeepAtLeastOne": "Keep at least one member",
   "groupSettingsTitle": "Group settings",
   "groupManagingCount": "Manage members ({count} selected)",
-  "@groupManagingCount": {"placeholders": {"count": {"type": "int"}}},
+  "@groupManagingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "groupDreamEnterAction": "Dream",
   "groupDreamTitle": "Group Dream",
   "groupDreamEntering": "Falling asleep…",
@@ -424,7 +664,13 @@
   "groupDreamExitConfirmBody": "This ends the group dream immediately and it can't be resumed.",
   "groupDreamBlockedHint": "Group dream in progress — reality chat is locked",
   "readingDeleteTitle": "Delete “{title}”?",
-  "@readingDeleteTitle": {"placeholders": {"title": {"type": "String"}}},
+  "@readingDeleteTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "irreversibleWarning": "This action cannot be undone.",
   "readingInProgress": "Reading",
   "readingTogetherTitle": "Read together",
@@ -434,18 +680,45 @@
   "readingAddPdf": "Add PDF",
   "readingEmptyLibrary": "The library is empty. Add a PDF to begin.",
   "readingBookPages": "{pages} pages · Hold to delete",
-  "@readingBookPages": {"placeholders": {"pages": {"type": "String"}}},
+  "@readingBookPages": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
   "readingPageStatus": "Page {current} of {total}",
-  "@readingPageStatus": {"placeholders": {"current": {"type": "String"}, "total": {"type": "String"}}},
+  "@readingPageStatus": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "readingLoadingPage": "Loading page content…",
   "readingPreviousPage": "← Previous",
   "readingNextPage": "Next →",
   "chessTitle": "Chess",
   "chessIntro": "Play a game of chess with him. You play White and move first: tap a piece, then its destination.",
   "chessGameOver": "Game over: {result}",
-  "@chessGameOver": {"placeholders": {"result": {"type": "String"}}},
+  "@chessGameOver": {
+    "placeholders": {
+      "result": {
+        "type": "String"
+      }
+    }
+  },
   "chessTurn": "Turn: {side}",
-  "@chessTurn": {"placeholders": {"side": {"type": "String"}}},
+  "@chessTurn": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
   "whiteSide": "White",
   "blackSide": "Black",
   "gameChatTitle": "Game chat",
@@ -453,9 +726,21 @@
   "gomokuIntro": "Play a game of Gomoku with him. You move first by tapping the board.",
   "drawResult": "Draw",
   "gomokuWinner": "{stone} wins",
-  "@gomokuWinner": {"placeholders": {"stone": {"type": "String"}}},
+  "@gomokuWinner": {
+    "placeholders": {
+      "stone": {
+        "type": "String"
+      }
+    }
+  },
   "gomokuTurn": "Turn: {stone}",
-  "@gomokuTurn": {"placeholders": {"stone": {"type": "String"}}},
+  "@gomokuTurn": {
+    "placeholders": {
+      "stone": {
+        "type": "String"
+      }
+    }
+  },
   "blackStone": "Black",
   "whiteStone": "White",
   "boardLoading": "Loading board…",
@@ -465,14 +750,26 @@
   "themeNoCustomPresets": "No custom presets yet",
   "themeBundledReadOnly": "Built into mods/ · Read-only",
   "themeLocalPreset": "{base} base · Local preset",
-  "@themeLocalPreset": {"placeholders": {"base": {"type": "String"}}},
+  "@themeLocalPreset": {
+    "placeholders": {
+      "base": {
+        "type": "String"
+      }
+    }
+  },
   "themeCopyEdit": "Copy and edit",
   "editAction": "Edit",
   "themeResetColors": "Reset colors",
   "themeExportMod": "Export mod",
   "themeDeleteTitle": "Delete color preset?",
   "themeDeleteWarning": "“{name}” will be deleted from this device. This cannot be undone.",
-  "@themeDeleteWarning": {"placeholders": {"name": {"type": "String"}}},
+  "@themeDeleteWarning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "themeExportSuccess": "Color mod downloaded. Place it in the project's mods/ folder manually.",
   "exportFailed": "Export failed",
   "themeEditTitle": "Edit color preset",
@@ -480,9 +777,21 @@
   "themeComponentColors": "Component colors",
   "themeFreeColor": "Custom color",
   "themeHue": "Hue {value}°",
-  "@themeHue": {"placeholders": {"value": {"type": "int"}}},
+  "@themeHue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
   "themeOpacity": "Opacity {value}%",
-  "@themeOpacity": {"placeholders": {"value": {"type": "int"}}},
+  "@themeOpacity": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
   "themeApplyRgbTooltip": "Apply RGB",
   "previewLabel": "Preview",
   "themeCharacterPreview": "Character message and body colors",
@@ -508,7 +817,13 @@
   "closeTooltip": "Close",
   "themeCustomPaletteTitle": "Custom palette",
   "themeEditingRole": "Editing: {role}",
-  "@themeEditingRole": {"placeholders": {"role": {"type": "String"}}},
+  "@themeEditingRole": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
   "themePreviewBody": "These colors apply to chat, drawer and settings components.",
   "themeSidebarPreview": "Sidebar background / text and icons / selection",
   "themeUserBubblePreview": "User bubbles update too.",
@@ -543,22 +858,58 @@
   "tokenHelp": "Enter a mobile token issued by the backend (starts with emt_). Legacy admin secrets still work but are not recommended. The token stays in Android private storage and is never bundled with the app.",
   "tokenRequiredError": "Enter an access token",
   "saveFailedMessage": "Save failed: {error}",
-  "@saveFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "@saveFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "deviceAdminRequired": "Enable device administrator permission for Companion lock confirmation first",
   "accessibilityAuthorized": "Companion assistant is authorized",
   "shoppingAppMissing": "Could not find {label}. Install it manually or verify the package name.",
-  "@shoppingAppMissing": {"placeholders": {"label": {"type": "String"}}},
+  "@shoppingAppMissing": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "orderBubbleShown": "Opened the {label} cart confirmation overlay",
-  "@orderBubbleShown": {"placeholders": {"label": {"type": "String"}}},
+  "@orderBubbleShown": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "overlayPermissionRequired": "Allow display over other apps, then return and try again",
   "screenPushFailed": "Could not push screen context: {error}",
-  "@screenPushFailed": {"placeholders": {"error": {"type": "String"}}},
+  "@screenPushFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "accessibilityRequiredForScreen": "Enable accessibility before reading screen context",
   "screenContextEmpty": "No readable screen context available",
   "behaviorTestQueued": "Queued proactive behavior test: {label}",
-  "@behaviorTestQueued": {"placeholders": {"label": {"type": "String"}}},
+  "@behaviorTestQueued": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "behaviorTestFailed": "Proactive behavior test failed: {error}",
-  "@behaviorTestFailed": {"placeholders": {"error": {"type": "String"}}},
+  "@behaviorTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "profileNameHint": "Leave blank to use the backend character name",
   "restoreDefaultAction": "Restore default",
   "avatarSaveFailed": "Could not save avatar",
@@ -587,7 +938,19 @@
   "imageTypeUnsupported": "The backend currently supports jpg / png / gif / webp / heic / bmp only",
   "imageTooLarge": "The backend image limit is 10 MB per image",
   "imageCountPreview": "📎 {count} images: {names}{suffix}",
-  "@imageCountPreview": {"placeholders": {"count": {"type": "int"}, "names": {"type": "String"}, "suffix": {"type": "String"}}},
+  "@imageCountPreview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
   "imageFailureLabel": "Image",
   "meituanName": "Meituan",
   "taobaoName": "Taobao",
@@ -629,7 +992,13 @@
   "capabilityEditBackendTooltip": "Edit backend node",
   "capabilityDetectBackendTooltip": "Check backend connection",
   "capabilityBackendLastError": "Latest connection error: {error}",
-  "@capabilityBackendLastError": {"placeholders": {"error": {"type": "String"}}},
+  "@capabilityBackendLastError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityBackendNotice": "This page shows only status the phone can verify. adb reverse runs on the computer; the phone infers it from backend reachability at 127.0.0.1.",
   "relayConnected": "Connected",
   "relayConnecting": "Connecting",
@@ -639,31 +1008,88 @@
   "syncStatusTitle": "Sync status",
   "readingStatus": "Reading",
   "failedStatus": "Failed: {error}",
-  "@failedStatus": {"placeholders": {"error": {"type": "String"}}},
+  "@failedStatus": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "pendingSyncStatus": "Pending",
   "pollingStatus": "Polling",
   "activatedStatus": "Active",
   "pendingActivationStatus": "Pending activation",
   "syncChatStatus": "Chat history: {status}",
-  "@syncChatStatus": {"placeholders": {"status": {"type": "String"}}},
+  "@syncChatStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
   "syncGardenStatus": "Garden state: {status}",
-  "@syncGardenStatus": {"placeholders": {"status": {"type": "String"}}},
+  "@syncGardenStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
   "syncMobileStatus": "Proactive messages: {status}{received}",
-  "@syncMobileStatus": {"placeholders": {"status": {"type": "String"}, "received": {"type": "String"}}},
+  "@syncMobileStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "received": {
+        "type": "String"
+      }
+    }
+  },
   "syncReceivedSuffix": " · {count} received",
-  "@syncReceivedSuffix": {"placeholders": {"count": {"type": "int"}}},
+  "@syncReceivedSuffix": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "syncLatestMessage": "Latest: {content}",
-  "@syncLatestMessage": {"placeholders": {"content": {"type": "String"}}},
+  "@syncLatestMessage": {
+    "placeholders": {
+      "content": {
+        "type": "String"
+      }
+    }
+  },
   "screenSnapshotEmpty": "No screen snapshot",
   "screenDebugTitle": "Screen context debug",
   "readAction": "Read",
   "pushAction": "Push",
   "screenWindow": "Window: {value}",
-  "@screenWindow": {"placeholders": {"value": {"type": "String"}}},
+  "@screenWindow": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "screenVisible": "Visible: {value}",
-  "@screenVisible": {"placeholders": {"value": {"type": "String"}}},
+  "@screenVisible": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "screenClickable": "Clickable: {value}",
-  "@screenClickable": {"placeholders": {"value": {"type": "String"}}},
+  "@screenClickable": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "behaviorTestTitle": "Proactive behavior test",
   "behaviorTestDescription": "Writes to the backend mobile queue and polls immediately; overlay and confirmation actions appear directly in foreground.",
   "behaviorOverlayTestMessage": "(Test) I'll wait by the edge of your screen for a moment.",
@@ -683,7 +1109,13 @@
   "behaviorDecisionTitle": "Behavior decision",
   "behaviorDecisionEmpty": "Not loaded yet. Refresh to see why the latest backend behavior decision did or did not show.",
   "readFailedMessage": "Read failed: {error}",
-  "@readFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "@readFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "fieldTime": "Time",
   "fieldReason": "Reason",
   "fieldEvent": "Event",
@@ -705,7 +1137,13 @@
   "diagnosticLorebook": "Lorebook",
   "diagnosticJailbreak": "Jailbreak",
   "diagnosticEntries": "{count} entries",
-  "@diagnosticEntries": {"placeholders": {"count": {"type": "int"}}},
+  "@diagnosticEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "diagnosticDream": "Dream",
   "diagnosticDreamLorebook": "Dream lorebook",
   "enabledShortStatus": "Enabled",
@@ -723,36 +1161,111 @@
   "phoneControlTestEmptyTask": "Describe the task to test first",
   "capabilityLastPollNone": "Latest fallback poll: none",
   "capabilityLastPoll": "Latest fallback poll: {time}",
-  "@capabilityLastPoll": {"placeholders": {"time": {"type": "String"}}},
+  "@capabilityLastPoll": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityLastErrorNone": "Latest error: none",
   "capabilityLastError": "Latest error: {error}",
-  "@capabilityLastError": {"placeholders": {"error": {"type": "String"}}},
+  "@capabilityLastError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityNativeRelayRunning": "Native relay service is running",
   "capabilityNativeRelayStopped": "Native relay service is stopped; Flutter checks proactive messages every 5 seconds in foreground",
   "capabilityGateTestOn": "Test mode is on: the 30-minute cooldown is bypassed",
   "capabilityGateTestOff": "Regular alerts are 30 minutes apart; messages are still received",
   "noneStatus": "None",
   "capabilityGateSummary": "{mode}.\nSuppressed: {count} / Latest reason: {reason}",
-  "@capabilityGateSummary": {"placeholders": {"mode": {"type": "String"}, "count": {"type": "int"}, "reason": {"type": "String"}}},
+  "@capabilityGateSummary": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityOverlayLastError": "{base}\nPermission is granted, but the latest overlay failed{time}: {error}",
-  "@capabilityOverlayLastError": {"placeholders": {"base": {"type": "String"}, "time": {"type": "String"}, "error": {"type": "String"}}},
+  "@capabilityOverlayLastError": {
+    "placeholders": {
+      "base": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "capabilitySignalNone": "Latest signal: none",
   "capabilitySignalTime": "Latest signal: {time}",
-  "@capabilitySignalTime": {"placeholders": {"time": {"type": "String"}}},
+  "@capabilitySignalTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityHeartbeatNone": "Latest relay heartbeat: none",
   "capabilityHeartbeatTime": "Latest relay heartbeat: {time}",
-  "@capabilityHeartbeatTime": {"placeholders": {"time": {"type": "String"}}},
+  "@capabilityHeartbeatTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityRelayLastError": "\nLatest relay error: {error}",
-  "@capabilityRelayLastError": {"placeholders": {"error": {"type": "String"}}},
+  "@capabilityRelayLastError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityRelayConfigWarning": "\nConnected does not mean the backend is configured; ensure backend relay_base_url and relay_topic match exactly.",
   "capabilityLoopbackHint": "{url} · Real-device debugging requires adb reverse tcp:8080 tcp:8080",
-  "@capabilityLoopbackHint": {"placeholders": {"url": {"type": "String"}}},
+  "@capabilityLoopbackHint": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityRemoteHint": "{url} · LAN/VPN/tunnel address must be reachable",
-  "@capabilityRemoteHint": {"placeholders": {"url": {"type": "String"}}},
+  "@capabilityRemoteHint": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
   "notEnabledStatus": "Not enabled",
   "sandboxSuffix": "  ⚠ Sandbox",
   "diagnosticReadError": "{label}: read failed — {message}",
-  "@diagnosticReadError": {"placeholders": {"label": {"type": "String"}, "message": {"type": "String"}}},
+  "@diagnosticReadError": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "backgroundTestPresenceMessage": "I'm here. It's okay if you don't feel like talking.",
   "backgroundTestLockMessage": "It's getting late. Would you like me to lock the screen?",
   "backgroundTestTakeoutMessage": "You haven't eaten yet. Want me to open the takeout page?",
@@ -760,7 +1273,16 @@
   "checkingStatus": "Checking",
   "notRunStatus": "Not run",
   "chatTodayLine": "Today · {date} · {time}",
-  "@chatTodayLine": {"placeholders": {"date": {"type": "String"}, "time": {"type": "String"}}},
+  "@chatTodayLine": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "moodNeutral": "Calm",
   "moodGentle": "Gentle",
   "moodThinking": "Thoughtful",
@@ -771,7 +1293,13 @@
   "moodSleepy": "Sleepy",
   "moodYandere": "Intense",
   "oemBackgroundGuide": "Vendor background allowlist reference:\nXiaomi: Settings → Apps → Manage apps → {appName} → Battery saver/Autostart → No restrictions and enable autostart\nOPPO: Settings → Apps → Autostart/Power usage → {appName} → Allow background activity\nvivo: Settings → Battery → Background power usage → {appName} → Allow high background power usage\nHuawei: Settings → Apps & services → App launch → {appName} → Manage manually and allow background activity",
-  "@oemBackgroundGuide": {"placeholders": {"appName": {"type": "String"}}},
+  "@oemBackgroundGuide": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
   "settingsChatSection": "Chat & Stickers",
   "settingsStickerTitle": "Receive stickers",
   "settingsStickerSubtitle": "Disable to stop receiving sticker messages",
@@ -784,5 +1312,8 @@
   "chatRefreshUnavailable": "Unable to connect. Check your backend node and access token.",
   "imageDecodeFailed": "Cannot display this image. Try PNG or JPEG.",
   "imageCaptionTitle": "Image caption",
-  "imageCaptionHint": "Optional message to send with the images"
+  "imageCaptionHint": "Optional message to send with the images",
+  "dreamNarrationSize": "Dream narration size",
+  "dreamChatSize": "Dream dialogue size",
+  "dreamActionSize": "Dream action size"
 }

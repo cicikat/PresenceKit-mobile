@@ -1,0 +1,28 @@
+{
+  "schema": "presencekit-mobile-color-mod",
+  "version": 1,
+  "id": "presence-glass",
+  "name": "Presence Glass · 雾窗",
+  "base": "light",
+  "colors": {
+    "surface": "#f2f2fe",
+    "surfaceSoft": "#ebebfa",
+    "surfaceDeep": "#e1e1f3",
+    "surfaceEdge": "#b0b6ce",
+    "ink1": "#222633",
+    "ink2": "#424757",
+    "ink3": "#6d7487",
+    "ink4": "#979eb0",
+    "character": "#005a52",
+    "characterDeep": "#00423f",
+    "characterSoft": "#e1e1f3",
+    "characterOn": "#ecf8fa",
+    "danger": "#de4e4b",
+    "warn": "#e0b67b",
+    "ok": "#4b9779",
+    "send": "#005a52",
+    "userBubble": "#00423f",
+    "userBubbleText": "#ecf8fa",
+    "scrim": "#24233388"
+  }
+}

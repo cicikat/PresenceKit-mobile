@@ -4332,6 +4332,24 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'可选：和图片一起发送的文字'**
   String get imageCaptionHint;
+
+  /// No description provided for @dreamNarrationSize.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境旁白字号'**
+  String get dreamNarrationSize;
+
+  /// No description provided for @dreamChatSize.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境聊天字号'**
+  String get dreamChatSize;
+
+  /// No description provided for @dreamActionSize.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境动作字号'**
+  String get dreamActionSize;
 }
 
 class _AppLocalizationsDelegate

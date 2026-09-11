@@ -1,5 +1,7 @@
 # 后端集成
 
+本机外观新增 `dreamNarrationSize` / `dreamChatSize` / `dreamActionSize`（12–28，默认 16）和对应 `dreamNarrationColor` / `dreamChatColor` / `dreamActionColor`（可空 ARGB 整数，空时跟随主题）。经既有 appearance prefs 通道持久化，不进入后端。手机群聊入口和专属 HTTP 调用已移除，不清除后端群聊数据。
+
 ## 设置控制面调整（2026-09-11）
 
 - Reality 主聊天世界书与破限由后端管理面维护，手机设置不再读取条目列表或提交启用修改。

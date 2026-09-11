@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'theme_widgets.dart';
 import 'package:flutter/services.dart';
 import '../controllers/locale_controller.dart';
 import '../l10n/l10n.dart';
@@ -363,15 +364,13 @@ class SettingsPage extends StatelessWidget {
                       runSpacing: 6,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        ChoiceChip(
-                          label: Text(l10n.themePaper),
-                          selected: !dark,
-                          onSelected: (_) => onTheme(false),
-                        ),
-                        ChoiceChip(
-                          label: Text(l10n.themeNight),
-                          selected: dark,
-                          onSelected: (_) => onTheme(true),
+                        DropdownButton<bool>(
+                          value: dark,
+                          items: [
+                            DropdownMenuItem(value: false, child: Text(l10n.themePaper)),
+                            DropdownMenuItem(value: true, child: Text(l10n.themeNight)),
+                          ],
+                          onChanged: (value) { if (value != null) onTheme(value); },
                         ),
                         OutlinedButton.icon(
                           onPressed: () =>
@@ -379,9 +378,7 @@ class SettingsPage extends StatelessWidget {
                               (_) => onManageThemes())(false),
                           icon: const Icon(Icons.palette_outlined, size: 17),
                           label: Text(
-                            lightThemePresetName ??
-                                activeThemePresetName ??
-                                l10n.settingsColorPresets(themePresetCount),
+                            '${l10n.themePaper} ? ${lightThemePresetName ?? l10n.themePaper}',
                           ),
                         ),
                         OutlinedButton.icon(
@@ -390,9 +387,7 @@ class SettingsPage extends StatelessWidget {
                               (_) => onManageThemes())(true),
                           icon: const Icon(Icons.palette_outlined, size: 17),
                           label: Text(
-                            darkThemePresetName ??
-                                activeThemePresetName ??
-                                l10n.settingsColorPresets(themePresetCount),
+                            '${l10n.themeNight} ? ${darkThemePresetName ?? l10n.themeNight}',
                           ),
                         ),
                       ],
@@ -464,6 +459,12 @@ class SettingsPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  SettingsRow(c: c, title: l10n.dreamNarrationSize, subtitle: l10n.themeComponentColors, child: TextButton(onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: SingleChildScrollView(child: FreeColorPicker(c: c, color: prefs.dreamNarrationColor == null ? c.ink2 : Color(prefs.dreamNarrationColor!), onChanged: (value) => onPrefs(prefs.copyWith(dreamNarrationColor: value.toARGB32()))))))), child: Text('Aa', style: TextStyle(color: prefs.dreamNarrationColor == null ? c.ink2 : Color(prefs.dreamNarrationColor!), fontSize: 22)))),
+                  SettingsRow(c: c, title: l10n.dreamChatSize, subtitle: l10n.themeComponentColors, child: TextButton(onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: SingleChildScrollView(child: FreeColorPicker(c: c, color: prefs.dreamChatColor == null ? c.ink2 : Color(prefs.dreamChatColor!), onChanged: (value) => onPrefs(prefs.copyWith(dreamChatColor: value.toARGB32()))))))), child: Text('Aa', style: TextStyle(color: prefs.dreamChatColor == null ? c.ink2 : Color(prefs.dreamChatColor!), fontSize: 22)))),
+                  SettingsRow(c: c, title: l10n.dreamActionSize, subtitle: l10n.themeComponentColors, child: TextButton(onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: SingleChildScrollView(child: FreeColorPicker(c: c, color: prefs.dreamActionColor == null ? c.ink2 : Color(prefs.dreamActionColor!), onChanged: (value) => onPrefs(prefs.copyWith(dreamActionColor: value.toARGB32()))))))), child: Text('Aa', style: TextStyle(color: prefs.dreamActionColor == null ? c.ink2 : Color(prefs.dreamActionColor!), fontSize: 22)))),
+                  SettingsRow(c: c, title: l10n.dreamNarrationSize, subtitle: '${prefs.dreamNarrationSize.round()}', child: SizedBox(width: 130, child: Slider(value: prefs.dreamNarrationSize, min: 12, max: 28, divisions: 16, onChanged: (value) => onPrefs(prefs.copyWith(dreamNarrationSize: value))))),
+                  SettingsRow(c: c, title: l10n.dreamChatSize, subtitle: '${prefs.dreamChatSize.round()}', child: SizedBox(width: 130, child: Slider(value: prefs.dreamChatSize, min: 12, max: 28, divisions: 16, onChanged: (value) => onPrefs(prefs.copyWith(dreamChatSize: value))))),
+                  SettingsRow(c: c, title: l10n.dreamActionSize, subtitle: '${prefs.dreamActionSize.round()}', child: SizedBox(width: 130, child: Slider(value: prefs.dreamActionSize, min: 12, max: 28, divisions: 16, onChanged: (value) => onPrefs(prefs.copyWith(dreamActionSize: value))))),
                   SettingsRow(
                     c: c,
                     title: l10n.settingsShowChatTimeTitle,

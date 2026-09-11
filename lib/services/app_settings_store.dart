@@ -464,6 +464,12 @@ class AppSettingsStore {
           .invokeMethod<Map<dynamic, dynamic>>('getAppearancePrefs');
       if (raw == null) return const YxPrefs();
       return YxPrefs(
+        dreamNarrationSize: (raw['dreamNarrationSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
+        dreamChatSize: (raw['dreamChatSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
+        dreamActionSize: (raw['dreamActionSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
+        dreamNarrationColor: (raw['dreamNarrationColor'] as num?)?.toInt(),
+        dreamChatColor: (raw['dreamChatColor'] as num?)?.toInt(),
+        dreamActionColor: (raw['dreamActionColor'] as num?)?.toInt(),
         infoStrip: raw['infoStrip'] != false,
         fontSize:
             ((raw['fontSize'] is num
@@ -487,6 +493,12 @@ class AppSettingsStore {
       await PlatformSettingsChannel.channel
           .invokeMethod<void>('setAppearancePrefs', {
             'infoStrip': value.infoStrip,
+            'dreamNarrationSize': value.dreamNarrationSize,
+            'dreamChatSize': value.dreamChatSize,
+            'dreamActionSize': value.dreamActionSize,
+            'dreamNarrationColor': value.dreamNarrationColor,
+            'dreamChatColor': value.dreamChatColor,
+            'dreamActionColor': value.dreamActionColor,
             'fontSize': value.fontSize,
             'showYouAvatar': value.showYouAvatar,
             'showChatTime': value.showChatTime,

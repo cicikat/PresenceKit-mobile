@@ -2417,4 +2417,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get imageCaptionHint => 'Optional message to send with the images';
+
+  @override
+  String get dreamNarrationSize => 'Dream narration size';
+
+  @override
+  String get dreamChatSize => 'Dream dialogue size';
+
+  @override
+  String get dreamActionSize => 'Dream action size';
 }

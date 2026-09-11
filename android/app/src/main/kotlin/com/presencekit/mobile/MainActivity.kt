@@ -587,6 +587,12 @@ class MainActivity : FlutterActivity() {
                         result.success(
                             mapOf(
                                 "infoStrip" to prefs.getBoolean("infoStrip", true),
+                                "dreamNarrationSize" to prefs.getFloat("dreamNarrationSize", 16f).toDouble(),
+                                "dreamChatSize" to prefs.getFloat("dreamChatSize", 16f).toDouble(),
+                                "dreamActionSize" to prefs.getFloat("dreamActionSize", 16f).toDouble(),
+                                "dreamNarrationColor" to if (prefs.contains("dreamNarrationColor")) prefs.getLong("dreamNarrationColor", 0L) else null,
+                                "dreamChatColor" to if (prefs.contains("dreamChatColor")) prefs.getLong("dreamChatColor", 0L) else null,
+                                "dreamActionColor" to if (prefs.contains("dreamActionColor")) prefs.getLong("dreamActionColor", 0L) else null,
                                 "fontSize" to prefs.getFloat("fontSize", 16f).toDouble(),
                                 "showYouAvatar" to prefs.getBoolean("showYouAvatar", false),
                                 "showChatTime" to prefs.getBoolean("showChatTime", true),
@@ -595,9 +601,15 @@ class MainActivity : FlutterActivity() {
                         )
                     }
                     "setAppearancePrefs" -> {
+                        call.argument<Number>("dreamNarrationColor")?.let { prefs.edit().putLong("dreamNarrationColor", it.toLong()).apply() }
+                        call.argument<Number>("dreamChatColor")?.let { prefs.edit().putLong("dreamChatColor", it.toLong()).apply() }
+                        call.argument<Number>("dreamActionColor")?.let { prefs.edit().putLong("dreamActionColor", it.toLong()).apply() }
                         val fontSize = call.argument<Number>("fontSize")?.toFloat()?.coerceIn(14f, 20f) ?: 16f
                         prefs.edit()
                             .putBoolean("infoStrip", call.argument<Boolean>("infoStrip") ?: true)
+                            .putFloat("dreamNarrationSize", call.argument<Number>("dreamNarrationSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
+                            .putFloat("dreamChatSize", call.argument<Number>("dreamChatSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
+                            .putFloat("dreamActionSize", call.argument<Number>("dreamActionSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
                             .putFloat("fontSize", fontSize)
                             .putBoolean("showYouAvatar", call.argument<Boolean>("showYouAvatar") ?: false)
                             .putBoolean("showChatTime", call.argument<Boolean>("showChatTime") ?: true)

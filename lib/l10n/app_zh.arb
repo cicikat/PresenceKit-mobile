@@ -43,9 +43,21 @@
   "lifeCartHelp": "购物车暂支持上传淘宝等 App 的截图，不会自动读取账号或下单。",
   "lifeBackgroundHelp": "联网后自动补传。后台由 Android 安排，省电、强行停止等可能延后；重新打开 App 会继续。",
   "lifePendingCount": "待同步 {count} 项",
-  "@lifePendingCount": {"placeholders": {"count": {"type": "int"}}},
+  "@lifePendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "lifeLastAck": "最近同步成功：{time}",
-  "@lifeLastAck": {"placeholders": {"time": {"type": "String"}}},
+  "@lifeLastAck": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "lifeConnected": "电脑已连接",
   "lifeWaiting": "等待连接电脑",
   "lifeAuth": "访问凭证无效，请在设置中更新；记录已保留。",
@@ -125,7 +137,13 @@
   "drawerProfileTitle": "角色资料",
   "drawerProfileSubtitle": "本机备注和头像",
   "drawerDiaryTitle": "{name}的日记",
-  "@drawerDiaryTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@drawerDiaryTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "drawerDiarySubtitle": "他写给自己的",
   "drawerActivityTitle": "活动",
   "drawerActivitySubtitle": "看书 / 五子棋 / 国际象棋 / 梦境预构",
@@ -137,7 +155,13 @@
   "drawerSettingsTitle": "设置",
   "drawerSettingsSubtitle": "连接、通知、外观与对话配置",
   "drawerVersionLabel": "版本号 {version}",
-  "@drawerVersionLabel": {"placeholders": {"version": {"type": "String"}}},
+  "@drawerVersionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "drawerCurrent": "当前",
   "presenceOnline": "在场",
   "presenceMobileOnline": "手机端在线",
@@ -147,18 +171,48 @@
   "backTooltip": "返回",
   "chatLoadingOlder": "正在加载更早的对话…",
   "chatHiddenOlder": "已折叠 {count} 条更早对话 · 上滑继续展开",
-  "@chatHiddenOlder": {"placeholders": {"count": {"type": "int"}}},
+  "@chatHiddenOlder": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatLoadingHistory": "正在从后端读取聊天记录",
   "chatEmptyHistory": "后端已连接 · 暂无聊天记录",
   "chatHistoryError": "历史加载失败 · {error}",
-  "@chatHistoryError": {"placeholders": {"error": {"type": "String"}}},
+  "@chatHistoryError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "chatWaitingReply": "已送到后端 · 正在等他回话",
   "chatBackendError": "后端连接异常 · {error}",
-  "@chatBackendError": {"placeholders": {"error": {"type": "String"}}},
+  "@chatBackendError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "chatBackendStatus": "后端已接入 · {emotion}",
-  "@chatBackendStatus": {"placeholders": {"emotion": {"type": "String"}}},
+  "@chatBackendStatus": {
+    "placeholders": {
+      "emotion": {
+        "type": "String"
+      }
+    }
+  },
   "chatMobileReceived": "已接收 {count} 条主动消息",
-  "@chatMobileReceived": {"placeholders": {"count": {"type": "int"}}},
+  "@chatMobileReceived": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatTyping": "正在输入",
   "chatRoleHim": "他",
   "chatRoleYou": "我",
@@ -195,10 +249,25 @@
   "waitAction": "等待",
   "sendAction": "寄出",
   "characterCount": "{count} 字",
-  "@characterCount": {"placeholders": {"count": {"type": "int"}}},
+  "@characterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "settingsBackendNodeTitle": "后端节点与用户 ID",
   "settingsBackendNodeSubtitle": "{baseUrl} · 用户 {userId}",
-  "@settingsBackendNodeSubtitle": {"placeholders": {"baseUrl": {"type": "String"}, "userId": {"type": "String"}}},
+  "@settingsBackendNodeSubtitle": {
+    "placeholders": {
+      "baseUrl": {
+        "type": "String"
+      },
+      "userId": {
+        "type": "String"
+      }
+    }
+  },
   "settingsEditBackendTooltip": "修改后端地址",
   "settingsRelayTitle": "推送中继 ntfy",
   "settingsRelaySubtitle": "配置后台推送连接",
@@ -217,18 +286,45 @@
   "settingsResetAvatarTooltip": "恢复默认头像",
   "settingsThemeTitle": "外观主题",
   "settingsThemeBuiltInSubtitle": "信纸 · 夜间 · {count} 个颜色预设",
-  "@settingsThemeBuiltInSubtitle": {"placeholders": {"count": {"type": "int"}}},
+  "@settingsThemeBuiltInSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "settingsThemePresetSubtitle": "当前：{name} · 共 {count} 个预设",
-  "@settingsThemePresetSubtitle": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "@settingsThemePresetSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "themePaper": "信纸",
   "themeNight": "夜间",
   "settingsColorPresets": "颜色预设 ({count})",
-  "@settingsColorPresets": {"placeholders": {"count": {"type": "int"}}},
+  "@settingsColorPresets": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "settingsInfoStripTitle": "对话信息栏",
   "settingsInfoStripSubtitle": "控制主页整块深绿色状态区",
   "settingsFontSizeTitle": "正文字号",
   "settingsFontSizeSubtitle": "{size}px · 影响气泡和正文段落",
-  "@settingsFontSizeSubtitle": {"placeholders": {"size": {"type": "int"}}},
+  "@settingsFontSizeSubtitle": {
+    "placeholders": {
+      "size": {
+        "type": "int"
+      }
+    }
+  },
   "settingsShowAvatarTitle": "显示我的头像",
   "settingsShowAvatarSubtitle": "对话气泡右侧也放小头像",
   "settingsProactiveRateTitle": "主动消息频率",
@@ -257,7 +353,13 @@
   "settingsDreamJailbreakSubtitle": "Dream 独立 D0 预设",
   "defaultOption": "默认",
   "settingsBackendSaveError": "后端设置读取/保存失败：{error}",
-  "@settingsBackendSaveError": {"placeholders": {"error": {"type": "String"}}},
+  "@settingsBackendSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "settingsDiagnosticsSection": "诊断",
   "settingsCapabilitiesTitle": "能力检查",
   "settingsCapabilitiesSubtitle": "权限状态、后端连通、中继与同步状态",
@@ -268,7 +370,13 @@
   "loadingAction": "正在读取…",
   "profileTitle": "角色资料",
   "profileEyebrow": "{name} · 本机显示",
-  "@profileEyebrow": {"placeholders": {"name": {"type": "String"}}},
+  "@profileEyebrow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "profileAvatarConfigured": "本机头像已设置",
   "profileAvatarDefault": "使用默认字母头像",
   "profileNameAction": "备注名",
@@ -278,11 +386,32 @@
   "profileNoActivity": "暂时没有特别的动向",
   "profileStatusUpdating": "正在刷新状态…",
   "profileStatusLastUpdated": "最后成功更新：{time}",
-  "@profileStatusLastUpdated": {"placeholders": {"time": {"type": "String"}}},
+  "@profileStatusLastUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "profileStatusLoadError": "状态刷新失败，正在显示上次成功值：{error}",
-  "@profileStatusLoadError": {"placeholders": {"error": {"type": "String"}}},
+  "@profileStatusLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "profileMoodStatus": "心情：{label}（{percent}%）",
-  "@profileMoodStatus": {"placeholders": {"label": {"type": "String"}, "percent": {"type": "int"}}},
+  "@profileMoodStatus": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "profileLocalNameTitle": "本机备注名",
   "profileDefaultCharacterName": "默认角色名",
   "profileLocalNameBody": "只影响这台手机里的显示：顶部栏、抽屉、偏好页和 HIM 聊天气泡。不会写回后端，也不会改核心人格配置。",
@@ -299,9 +428,21 @@
   "profileDisplayLocationTitle": "显示位置",
   "profileDisplayLocationValue": "UI 已跟随",
   "profileDisplayLocationBody": "顶部栏、抽屉、偏好页和{name}消息头像都会读取这份本机资料。用户自己的头像设置仍独立处理。",
-  "@profileDisplayLocationBody": {"placeholders": {"name": {"type": "String"}}},
+  "@profileDisplayLocationBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "profileFooterNotice": "这页只管理手机薄客户端的外观身份。{name}的核心人格、记忆和调度仍然以后端为准。",
-  "@profileFooterNotice": {"placeholders": {"name": {"type": "String"}}},
+  "@profileFooterNotice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "activityTitle": "活动",
   "activityEyebrow": "和他一起做点什么",
   "activityReadingTitle": "一起看书",
@@ -315,7 +456,13 @@
   "activityChatPrompt": "说点什么，聊聊现在的进展",
   "saySomethingHint": "说点什么…",
   "sendFailedMessage": "（发送失败：{error}）",
-  "@sendFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "@sendFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "endAction": "结束",
   "dreamBuildIntro": "还没开始预构梦境。开始后可以先跟他聊聊今晚想梦到什么，结束时会把这段对话浓缩成一个种子，供入梦时参考。",
   "dreamBuildStart": "开始预构",
@@ -324,7 +471,13 @@
   "diaryAllFilter": "全部",
   "diaryTitle": "日记",
   "diaryEyebrow": "{name} · 私写",
-  "@diaryEyebrow": {"placeholders": {"name": {"type": "String"}}},
+  "@diaryEyebrow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "syncingStatus": "同步中",
   "syncedStatus": "已同步",
   "diarySearchHint": "搜索 · 关键词 / 日期 / 心情",
@@ -333,16 +486,34 @@
   "diaryEmpty": "他还没开始写日记。",
   "diaryNoResults": "找不到对应的日记。",
   "diaryRecentRefreshError": "最近刷新失败：{error}",
-  "@diaryRecentRefreshError": {"placeholders": {"error": {"type": "String"}}},
+  "@diaryRecentRefreshError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "diaryOpenToLoad": "点开条目后再读取正文。",
   "diaryTapToLoad": "点击读取正文",
   "loadingStatus": "加载中…",
   "noData": "无数据",
   "loadFailedMessage": "加载失败：{error}",
-  "@loadFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "@loadFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "gardenTitle": "陪伴花园",
   "gardenEyebrow": "{name} · 状态花园",
-  "@gardenEyebrow": {"placeholders": {"name": {"type": "String"}}},
+  "@gardenEyebrow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "gardenShortTitle": "花园",
   "gardenLoadingDescription": "正在读取后端花园状态。",
   "gardenErrorDescription": "花园同步失败，稍后可以重新刷新。",
@@ -360,14 +531,41 @@
   "gardenEmpty": "暂无花园数据",
   "gardenWaitingSlot": "等待后端返回花园槽位。",
   "gardenStageSummary": "{mood} 槽位最接近下一阶段 · {percent}% · 收获 {harvest} · 花瓶 {vase}",
-  "@gardenStageSummary": {"placeholders": {"mood": {"type": "String"}, "percent": {"type": "int"}, "harvest": {"type": "String"}, "vase": {"type": "String"}}},
+  "@gardenStageSummary": {
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      },
+      "harvest": {
+        "type": "String"
+      },
+      "vase": {
+        "type": "String"
+      }
+    }
+  },
   "dreamHeaderTitle": "梦 · {name}",
-  "@dreamHeaderTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@dreamHeaderTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "dreamInProgress": "进行中",
   "dreamReady": "DREAM · READY",
   "dreamWakeAction": "醒来",
   "dreamConnectionError": "梦境连接异常 · {error}",
-  "@dreamConnectionError": {"placeholders": {"error": {"type": "String"}}},
+  "@dreamConnectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "dreamResponding": "梦在回应",
   "dreamStability": "稳定度",
   "dreamDepth": "深度",
@@ -375,7 +573,13 @@
   "dreamEntranceOpen": "梦境入口已经打开",
   "dreamEntranceDescription": "进入后，对话会暂时停在更轻、更慢的地方。这里与主对话消息流彼此独立。",
   "dreamValidCount": "已经做过 {count} 次有效的梦",
-  "@dreamValidCount": {"placeholders": {"count": {"type": "int"}}},
+  "@dreamValidCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "dreamEntering": "坠入中…",
   "dreamEnterAction": "进入梦境",
   "dreamComposerHint": "在这儿写点什么…",
@@ -387,22 +591,52 @@
   "closeAction": "关闭",
   "startGameAction": "开局",
   "groupDeleteTitle": "删除「{title}」？",
-  "@groupDeleteTitle": {"placeholders": {"title": {"type": "String"}}},
+  "@groupDeleteTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "groupDeleteWarning": "聊天记录一并清除，不可恢复。",
   "groupTitle": "群聊",
   "groupEyebrow": "多角色一起聊",
   "groupCreateAction": "新建群聊",
   "groupEmpty": "还没有群聊",
   "groupRosterDeleteHint": "{members} · 长按删除",
-  "@groupRosterDeleteHint": {"placeholders": {"members": {"type": "String"}}},
+  "@groupRosterDeleteHint": {
+    "placeholders": {
+      "members": {
+        "type": "String"
+      }
+    }
+  },
   "groupSelectAtLeastOne": "至少选择 1 位角色",
   "groupSelectedCount": "选择成员（已选 {count} 位）",
-  "@groupSelectedCount": {"placeholders": {"count": {"type": "int"}}},
+  "@groupSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "groupNoCharacters": "暂无可用角色",
   "groupMinResponders": "N 最少回应人数：{count}",
-  "@groupMinResponders": {"placeholders": {"count": {"type": "int"}}},
+  "@groupMinResponders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "groupMaxResponders": "M 最多回应人数：{count}",
-  "@groupMaxResponders": {"placeholders": {"count": {"type": "int"}}},
+  "@groupMaxResponders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "groupCreating": "建群中…",
   "groupConfirmCreate": "确认建群",
   "groupSendToStart": "发送消息，开始群聊",
@@ -411,7 +645,13 @@
   "groupKeepAtLeastOne": "至少保留 1 位成员",
   "groupSettingsTitle": "群设置",
   "groupManagingCount": "成员管理（已选 {count} 位）",
-  "@groupManagingCount": {"placeholders": {"count": {"type": "int"}}},
+  "@groupManagingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "groupDreamEnterAction": "入梦",
   "groupDreamTitle": "群聊梦境",
   "groupDreamEntering": "坠入中…",
@@ -424,7 +664,13 @@
   "groupDreamExitConfirmBody": "退出后本轮群聊梦境立即结束，无法继续。",
   "groupDreamBlockedHint": "群聊梦境进行中，现实对话暂时锁定",
   "readingDeleteTitle": "删除《{title}》？",
-  "@readingDeleteTitle": {"placeholders": {"title": {"type": "String"}}},
+  "@readingDeleteTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "irreversibleWarning": "此操作不可撤销。",
   "readingInProgress": "阅读中",
   "readingTogetherTitle": "一起看书",
@@ -434,18 +680,45 @@
   "readingAddPdf": "添加 PDF",
   "readingEmptyLibrary": "书库还是空的，先添加一本 PDF 吧",
   "readingBookPages": "{pages} 页 · 长按删除",
-  "@readingBookPages": {"placeholders": {"pages": {"type": "String"}}},
+  "@readingBookPages": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
   "readingPageStatus": "第 {current} 页 / 共 {total} 页",
-  "@readingPageStatus": {"placeholders": {"current": {"type": "String"}, "total": {"type": "String"}}},
+  "@readingPageStatus": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "readingLoadingPage": "加载页面内容…",
   "readingPreviousPage": "← 上一页",
   "readingNextPage": "下一页 →",
   "chessTitle": "国际象棋",
   "chessIntro": "和他下一局国际象棋。你执白先行，点棋子选中，再点目标格落子。",
   "chessGameOver": "对局结束：{result}",
-  "@chessGameOver": {"placeholders": {"result": {"type": "String"}}},
+  "@chessGameOver": {
+    "placeholders": {
+      "result": {
+        "type": "String"
+      }
+    }
+  },
   "chessTurn": "当前走子方：{side}",
-  "@chessTurn": {"placeholders": {"side": {"type": "String"}}},
+  "@chessTurn": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
   "whiteSide": "白方",
   "blackSide": "黑方",
   "gameChatTitle": "棋局闲聊",
@@ -453,9 +726,21 @@
   "gomokuIntro": "和他下一局五子棋。你先手，触屏落子。",
   "drawResult": "平局",
   "gomokuWinner": "{stone} 获胜",
-  "@gomokuWinner": {"placeholders": {"stone": {"type": "String"}}},
+  "@gomokuWinner": {
+    "placeholders": {
+      "stone": {
+        "type": "String"
+      }
+    }
+  },
   "gomokuTurn": "当前落子方：{stone}",
-  "@gomokuTurn": {"placeholders": {"stone": {"type": "String"}}},
+  "@gomokuTurn": {
+    "placeholders": {
+      "stone": {
+        "type": "String"
+      }
+    }
+  },
   "blackStone": "黑棋",
   "whiteStone": "白棋",
   "boardLoading": "棋盘加载中…",
@@ -465,14 +750,26 @@
   "themeNoCustomPresets": "还没有自定义预设",
   "themeBundledReadOnly": "mods/ 内置 · 只读",
   "themeLocalPreset": "{base}底色 · 本机预设",
-  "@themeLocalPreset": {"placeholders": {"base": {"type": "String"}}},
+  "@themeLocalPreset": {
+    "placeholders": {
+      "base": {
+        "type": "String"
+      }
+    }
+  },
   "themeCopyEdit": "复制并编辑",
   "editAction": "编辑",
   "themeResetColors": "重置颜色",
   "themeExportMod": "导出 mod",
   "themeDeleteTitle": "删除颜色预设？",
   "themeDeleteWarning": "“{name}”会从本机删除，此操作无法撤销。",
-  "@themeDeleteWarning": {"placeholders": {"name": {"type": "String"}}},
+  "@themeDeleteWarning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "themeExportSuccess": "已下载颜色 mod；请手动放进项目 mods/ 文件夹。",
   "exportFailed": "导出失败",
   "themeEditTitle": "编辑颜色预设",
@@ -480,9 +777,21 @@
   "themeComponentColors": "组件颜色",
   "themeFreeColor": "自由选色",
   "themeHue": "色相 {value}°",
-  "@themeHue": {"placeholders": {"value": {"type": "int"}}},
+  "@themeHue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
   "themeOpacity": "透明度 {value}%",
-  "@themeOpacity": {"placeholders": {"value": {"type": "int"}}},
+  "@themeOpacity": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
   "themeApplyRgbTooltip": "应用 RGB",
   "previewLabel": "预览",
   "themeCharacterPreview": "角色消息与正文颜色",
@@ -508,7 +817,13 @@
   "closeTooltip": "关闭",
   "themeCustomPaletteTitle": "自定义色盘",
   "themeEditingRole": "正在修改：{role}",
-  "@themeEditingRole": {"placeholders": {"role": {"type": "String"}}},
+  "@themeEditingRole": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
   "themePreviewBody": "这套颜色会应用到聊天、抽屉和设置组件。",
   "themeSidebarPreview": "侧边栏背景 / 文字图标 / 选中态",
   "themeUserBubblePreview": "用户气泡也会跟着变。",
@@ -543,22 +858,58 @@
   "tokenHelp": "填后端签发的 mobile token（emt_ 开头）；旧 admin secret 仍可用但不建议。Token 只保存在 Android 本机私有存储中，不会打包进应用。",
   "tokenRequiredError": "请填写访问 Token",
   "saveFailedMessage": "保存失败：{error}",
-  "@saveFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "@saveFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "deviceAdminRequired": "请先启用“陪伴锁屏确认”的设备管理器权限",
   "accessibilityAuthorized": "陪伴操作助手已授权",
   "shoppingAppMissing": "没有找到 {label}，先手动安装或确认包名",
-  "@shoppingAppMissing": {"placeholders": {"label": {"type": "String"}}},
+  "@shoppingAppMissing": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "orderBubbleShown": "已弹出 {label} 购物车确认悬浮窗",
-  "@orderBubbleShown": {"placeholders": {"label": {"type": "String"}}},
+  "@orderBubbleShown": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "overlayPermissionRequired": "请先允许“显示在其他应用上层”，回来后再点一次",
   "screenPushFailed": "屏幕上下文推送失败：{error}",
-  "@screenPushFailed": {"placeholders": {"error": {"type": "String"}}},
+  "@screenPushFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "accessibilityRequiredForScreen": "请先开启无障碍服务，才能读取屏幕上下文",
   "screenContextEmpty": "暂时没有可读的屏幕上下文",
   "behaviorTestQueued": "已写入主动行为测试：{label}",
-  "@behaviorTestQueued": {"placeholders": {"label": {"type": "String"}}},
+  "@behaviorTestQueued": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "behaviorTestFailed": "主动行为测试失败：{error}",
-  "@behaviorTestFailed": {"placeholders": {"error": {"type": "String"}}},
+  "@behaviorTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "profileNameHint": "留空则显示后端角色名",
   "restoreDefaultAction": "恢复默认",
   "avatarSaveFailed": "头像保存失败",
@@ -587,7 +938,19 @@
   "imageTypeUnsupported": "后端当前只支持 jpg / png / gif / webp / heic / bmp",
   "imageTooLarge": "后端图片上限是单张 10MB",
   "imageCountPreview": "📎 {count}张图片：{names}{suffix}",
-  "@imageCountPreview": {"placeholders": {"count": {"type": "int"}, "names": {"type": "String"}, "suffix": {"type": "String"}}},
+  "@imageCountPreview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
+    }
+  },
   "imageFailureLabel": "图片",
   "meituanName": "美团",
   "taobaoName": "淘宝",
@@ -629,7 +992,13 @@
   "capabilityEditBackendTooltip": "修改后端节点",
   "capabilityDetectBackendTooltip": "检测后端连通",
   "capabilityBackendLastError": "最近连接错误：{error}",
-  "@capabilityBackendLastError": {"placeholders": {"error": {"type": "String"}}},
+  "@capabilityBackendLastError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityBackendNotice": "能力页只显示手机端可验证的状态；adb reverse 本身在电脑侧执行，手机端通过 127.0.0.1 后端是否可达来判断。",
   "relayConnected": "已连接",
   "relayConnecting": "连接中",
@@ -639,31 +1008,88 @@
   "syncStatusTitle": "同步状态",
   "readingStatus": "读取中",
   "failedStatus": "失败：{error}",
-  "@failedStatus": {"placeholders": {"error": {"type": "String"}}},
+  "@failedStatus": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "pendingSyncStatus": "待同步",
   "pollingStatus": "轮询中",
   "activatedStatus": "已激活",
   "pendingActivationStatus": "待激活",
   "syncChatStatus": "聊天记录：{status}",
-  "@syncChatStatus": {"placeholders": {"status": {"type": "String"}}},
+  "@syncChatStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
   "syncGardenStatus": "花园状态：{status}",
-  "@syncGardenStatus": {"placeholders": {"status": {"type": "String"}}},
+  "@syncGardenStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
   "syncMobileStatus": "主动消息：{status}{received}",
-  "@syncMobileStatus": {"placeholders": {"status": {"type": "String"}, "received": {"type": "String"}}},
+  "@syncMobileStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "received": {
+        "type": "String"
+      }
+    }
+  },
   "syncReceivedSuffix": " · 已接收 {count} 条",
-  "@syncReceivedSuffix": {"placeholders": {"count": {"type": "int"}}},
+  "@syncReceivedSuffix": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "syncLatestMessage": "最近一条：{content}",
-  "@syncLatestMessage": {"placeholders": {"content": {"type": "String"}}},
+  "@syncLatestMessage": {
+    "placeholders": {
+      "content": {
+        "type": "String"
+      }
+    }
+  },
   "screenSnapshotEmpty": "暂无屏幕快照",
   "screenDebugTitle": "屏幕上下文调试",
   "readAction": "读取",
   "pushAction": "推送",
   "screenWindow": "窗口：{value}",
-  "@screenWindow": {"placeholders": {"value": {"type": "String"}}},
+  "@screenWindow": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "screenVisible": "可见：{value}",
-  "@screenVisible": {"placeholders": {"value": {"type": "String"}}},
+  "@screenVisible": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "screenClickable": "可点：{value}",
-  "@screenClickable": {"placeholders": {"value": {"type": "String"}}},
+  "@screenClickable": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "behaviorTestTitle": "主动行为测试",
   "behaviorTestDescription": "写入后端 mobile queue，并立刻轮询一次；悬浮/确认类会在前台直接弹。",
   "behaviorOverlayTestMessage": "（测试）我在屏幕边等你一下。",
@@ -683,7 +1109,13 @@
   "behaviorDecisionTitle": "行为裁决状态",
   "behaviorDecisionEmpty": "还没读取。刷新后会显示后端最近一次行为裁决为什么弹或为什么没弹。",
   "readFailedMessage": "读取失败：{error}",
-  "@readFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "@readFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "fieldTime": "时间",
   "fieldReason": "原因",
   "fieldEvent": "事件",
@@ -705,7 +1137,13 @@
   "diagnosticLorebook": "世界书",
   "diagnosticJailbreak": "破限",
   "diagnosticEntries": "{count} 条",
-  "@diagnosticEntries": {"placeholders": {"count": {"type": "int"}}},
+  "@diagnosticEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "diagnosticDream": "梦境",
   "diagnosticDreamLorebook": "梦境世界书",
   "enabledShortStatus": "已启用",
@@ -723,36 +1161,111 @@
   "phoneControlTestEmptyTask": "先写清楚要测试的任务",
   "capabilityLastPollNone": "最近周期补偿：暂无",
   "capabilityLastPoll": "最近周期补偿：{time}",
-  "@capabilityLastPoll": {"placeholders": {"time": {"type": "String"}}},
+  "@capabilityLastPoll": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityLastErrorNone": "最近错误原因：无",
   "capabilityLastError": "最近错误原因：{error}",
-  "@capabilityLastError": {"placeholders": {"error": {"type": "String"}}},
+  "@capabilityLastError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityNativeRelayRunning": "原生中继服务正在运行",
   "capabilityNativeRelayStopped": "原生中继服务未运行；前台由 Flutter 每 5 秒读取主动消息",
   "capabilityGateTestOn": "测试模式已开启：跳过 30 分钟冷却",
   "capabilityGateTestOff": "普通提醒间隔 30 分钟，消息仍会正常接收",
   "noneStatus": "无",
   "capabilityGateSummary": "{mode}。\n被吞计数：{count} / 最近原因：{reason}",
-  "@capabilityGateSummary": {"placeholders": {"mode": {"type": "String"}, "count": {"type": "int"}, "reason": {"type": "String"}}},
+  "@capabilityGateSummary": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityOverlayLastError": "{base}\n权限已授予，但最近一次弹窗失败{time}：{error}",
-  "@capabilityOverlayLastError": {"placeholders": {"base": {"type": "String"}, "time": {"type": "String"}, "error": {"type": "String"}}},
+  "@capabilityOverlayLastError": {
+    "placeholders": {
+      "base": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "capabilitySignalNone": "最近信号时间：暂无",
   "capabilitySignalTime": "最近信号时间：{time}",
-  "@capabilitySignalTime": {"placeholders": {"time": {"type": "String"}}},
+  "@capabilitySignalTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityHeartbeatNone": "最近中继心跳：暂无",
   "capabilityHeartbeatTime": "最近中继心跳：{time}",
-  "@capabilityHeartbeatTime": {"placeholders": {"time": {"type": "String"}}},
+  "@capabilityHeartbeatTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityRelayLastError": "\n最近中继错误：{error}",
-  "@capabilityRelayLastError": {"placeholders": {"error": {"type": "String"}}},
+  "@capabilityRelayLastError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityRelayConfigWarning": "\n已连接不等于后端已配置；请检查后端 relay_base_url / relay_topic 与此处完全一致。",
   "capabilityLoopbackHint": "{url} · 真机调试依赖 adb reverse tcp:8080 tcp:8080",
-  "@capabilityLoopbackHint": {"placeholders": {"url": {"type": "String"}}},
+  "@capabilityLoopbackHint": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
   "capabilityRemoteHint": "{url} · 局域网/VPN/内网穿透需可达",
-  "@capabilityRemoteHint": {"placeholders": {"url": {"type": "String"}}},
+  "@capabilityRemoteHint": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
   "notEnabledStatus": "未开启",
   "sandboxSuffix": "  ⚠ 沙盒",
   "diagnosticReadError": "{label}：读取失败 — {message}",
-  "@diagnosticReadError": {"placeholders": {"label": {"type": "String"}, "message": {"type": "String"}}},
+  "@diagnosticReadError": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "backgroundTestPresenceMessage": "我在这里。你不想说话也没关系。",
   "backgroundTestLockMessage": "已经很晚了。要我替你锁一下屏吗？",
   "backgroundTestTakeoutMessage": "你还没吃东西。要不要我帮你打开外卖页看一眼？",
@@ -760,7 +1273,16 @@
   "checkingStatus": "检测中",
   "notRunStatus": "未运行",
   "chatTodayLine": "今日 · {date} · {time}",
-  "@chatTodayLine": {"placeholders": {"date": {"type": "String"}, "time": {"type": "String"}}},
+  "@chatTodayLine": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "moodNeutral": "平静",
   "moodGentle": "温柔",
   "moodThinking": "在想事情",
@@ -771,7 +1293,13 @@
   "moodSleepy": "困困的",
   "moodYandere": "情绪很浓",
   "oemBackgroundGuide": "厂商后台白名单参考：\n小米：设置 → 应用设置 → 应用管理 → {appName} → 省电策略/自启动 → 无限制并开启自启动\nOPPO：设置 → 应用 → 自启动/耗电管理 → {appName} → 允许后台运行\nvivo：设置 → 电池 → 后台耗电管理 → {appName} → 允许后台高耗电\n华为：设置 → 应用和服务 → 应用启动管理 → {appName} → 手动管理并允许后台活动",
-  "@oemBackgroundGuide": {"placeholders": {"appName": {"type": "String"}}},
+  "@oemBackgroundGuide": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
   "settingsChatSection": "聊天与表情",
   "settingsStickerTitle": "接收表情包",
   "settingsStickerSubtitle": "关闭时不接收表情包消息",
@@ -784,5 +1312,8 @@
   "chatRefreshUnavailable": "暂时无法连接，请检查后端节点和访问 Token。",
   "imageDecodeFailed": "无法显示此图片，请尝试 PNG 或 JPEG 格式。",
   "imageCaptionTitle": "图片说明",
-  "imageCaptionHint": "可选：和图片一起发送的文字"
+  "imageCaptionHint": "可选：和图片一起发送的文字",
+  "dreamNarrationSize": "梦境旁白字号",
+  "dreamChatSize": "梦境聊天字号",
+  "dreamActionSize": "梦境动作字号"
 }

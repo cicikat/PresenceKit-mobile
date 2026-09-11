@@ -156,6 +156,12 @@ extension AppRouteLabel on AppRoute {
 class YxPrefs {
   const YxPrefs({
     this.infoStrip = true,
+    this.dreamNarrationSize = 16,
+    this.dreamChatSize = 16,
+    this.dreamActionSize = 16,
+    this.dreamNarrationColor,
+    this.dreamChatColor,
+    this.dreamActionColor,
     this.fontSize = 16,
     this.showYouAvatar = false,
     this.showChatTime = true,
@@ -168,6 +174,12 @@ class YxPrefs {
   });
 
   final bool infoStrip;
+  final double dreamNarrationSize;
+  final double dreamChatSize;
+  final double dreamActionSize;
+  final int? dreamNarrationColor;
+  final int? dreamChatColor;
+  final int? dreamActionColor;
   final double fontSize;
   final bool showYouAvatar;
   final bool showChatTime;
@@ -182,6 +194,12 @@ class YxPrefs {
 
   YxPrefs copyWith({
     bool? infoStrip,
+    double? dreamNarrationSize,
+    double? dreamChatSize,
+    double? dreamActionSize,
+    int? dreamNarrationColor,
+    int? dreamChatColor,
+    int? dreamActionColor,
     double? fontSize,
     bool? showYouAvatar,
     bool? showChatTime,
@@ -195,6 +213,12 @@ class YxPrefs {
   }) {
     return YxPrefs(
       infoStrip: infoStrip ?? this.infoStrip,
+      dreamNarrationSize: dreamNarrationSize ?? this.dreamNarrationSize,
+      dreamChatSize: dreamChatSize ?? this.dreamChatSize,
+      dreamActionSize: dreamActionSize ?? this.dreamActionSize,
+      dreamNarrationColor: dreamNarrationColor ?? this.dreamNarrationColor,
+      dreamChatColor: dreamChatColor ?? this.dreamChatColor,
+      dreamActionColor: dreamActionColor ?? this.dreamActionColor,
       fontSize: fontSize ?? this.fontSize,
       showYouAvatar: showYouAvatar ?? this.showYouAvatar,
       showChatTime: showChatTime ?? this.showChatTime,

@@ -2308,4 +2308,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get imageCaptionHint => '可选：和图片一起发送的文字';
+
+  @override
+  String get dreamNarrationSize => '梦境旁白字号';
+
+  @override
+  String get dreamChatSize => '梦境聊天字号';
+
+  @override
+  String get dreamActionSize => '梦境动作字号';
 }

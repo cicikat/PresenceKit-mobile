@@ -739,6 +739,12 @@ class _CompanionAppState extends State<CompanionApp>
     setState(() {
       _prefs = YxPrefs(
         infoStrip: _prefs.infoStrip,
+        dreamNarrationSize: _prefs.dreamNarrationSize,
+        dreamChatSize: _prefs.dreamChatSize,
+        dreamActionSize: _prefs.dreamActionSize,
+        dreamNarrationColor: _prefs.dreamNarrationColor,
+        dreamChatColor: _prefs.dreamChatColor,
+        dreamActionColor: _prefs.dreamActionColor,
         fontSize: _prefs.fontSize,
         showYouAvatar: _prefs.showYouAvatar,
         showChatTime: _prefs.showChatTime,
