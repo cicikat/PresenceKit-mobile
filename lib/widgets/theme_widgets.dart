@@ -360,6 +360,28 @@ class _ThemeColorEditorSheetState extends State<ThemeColorEditorSheet> {
     });
   }
 
+  Future<void> _pickPreviewColor(String role) async {
+    setState(() => _selected = role);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
+          child: SingleChildScrollView(child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(themeRoleLabel(context.l10n, role)),
+              const SizedBox(height: 12),
+              FreeColorPicker(c: _draft, color: selectedColor, onChanged: _setColor),
+              TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancelAction)),
+            ],
+          )),
+        ),
+      ),
+    );
+  }
+
   Future<void> _save() async {
     setState(() => _saving = true);
     await widget.onSave(
@@ -394,7 +416,7 @@ class _ThemeColorEditorSheetState extends State<ThemeColorEditorSheet> {
                 ),
               ),
               const SizedBox(height: 12),
-              _ThemePreview(c: _draft),
+              _ThemePreview(c: _draft, onSelect: _pickPreviewColor),
               const SizedBox(height: 14),
               Text(
                 context.l10n.themeComponentColors,
@@ -697,58 +719,60 @@ class _PickerMarkerPainter extends CustomPainter {
 }
 
 class _ThemePreview extends StatelessWidget {
-  const _ThemePreview({required this.c});
+  const _ThemePreview({required this.c, required this.onSelect});
   final YxPalette c;
+  final ValueChanged<String> onSelect;
+
+  Widget area(BuildContext context, String role, Color color, Widget child,
+      {EdgeInsets padding = const EdgeInsets.all(12)}) => Semantics(
+    button: true,
+    label: themeRoleLabel(context.l10n, role),
+    child: Tooltip(
+      message: themeRoleLabel(context.l10n, role),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onSelect(role),
+        child: Container(color: color, padding: padding, child: child),
+      ),
+    ),
+  );
+
+  Widget sample(BuildContext context, String role, Color color) => area(
+    context, role, Colors.transparent,
+    Text('Aa', style: TextStyle(color: color, fontSize: 18)),
+    padding: const EdgeInsets.all(6),
+  );
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: c.surfaceSoft,
-        border: Border.all(color: c.surfaceEdge),
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _ColorDot(color: c.character, border: c.surfaceEdge, size: 28),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(context.l10n.previewLabel, style: serif(c, 17)),
-              ),
-              Container(width: 54, height: 25, color: c.send),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              padding: const EdgeInsets.all(9),
-              color: c.characterSoft,
-              child: Text(
-                context.l10n.themeCharacterPreview,
-                style: serif(c, 14),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Container(
-              padding: const EdgeInsets.all(9),
-              color: c.userBubble,
-              child: Text(
-                context.l10n.themeUserPreview,
-                style: serif(c, 14, color: c.userBubbleText),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(12),
+    child: area(context, 'surfaceEdge', c.surfaceEdge,
+      area(context, 'surface', c.surface, Column(children: [
+        area(context, 'characterDeep', c.characterDeep, Row(children: [
+          area(context, 'character', c.character, const Icon(Icons.person_outline)),
+          sample(context, 'characterOn', c.characterOn),
+          const Spacer(),
+          Icon(Icons.menu, color: c.characterOn),
+        ])),
+        const SizedBox(height: 8),
+        Align(alignment: Alignment.centerLeft, child:
+          area(context, 'characterSoft', c.characterSoft, sample(context, 'ink1', c.ink1))),
+        const SizedBox(height: 8),
+        Align(alignment: Alignment.centerRight, child:
+          area(context, 'userBubble', c.userBubble, sample(context, 'userBubbleText', c.userBubbleText))),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          sample(context, 'ink2', c.ink2), sample(context, 'ink3', c.ink3), sample(context, 'ink4', c.ink4),
+        ]),
+        area(context, 'surfaceSoft', c.surfaceSoft, Row(children: [
+          Expanded(child: area(context, 'surfaceDeep', c.surfaceDeep, sample(context, 'ink2', c.ink2))),
+          area(context, 'send', c.send, Icon(Icons.arrow_upward, color: c.characterOn)),
+        ])),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          for (final entry in {'ok': c.ok, 'warn': c.warn, 'danger': c.danger, 'scrim': c.scrim}.entries)
+            sample(context, entry.key, entry.value),
+        ]),
+      ])), padding: const EdgeInsets.all(2)),
+  );
 }
 
 class _SheetHeader extends StatelessWidget {
@@ -848,10 +872,10 @@ class _NewPresetDialogState extends State<_NewPresetDialog> {
 }
 
 class _ColorDot extends StatelessWidget {
-  const _ColorDot({required this.color, required this.border, this.size = 18});
+  const _ColorDot({required this.color, required this.border});
   final Color color;
   final Color border;
-  final double size;
+  final double size = 18;
 
   @override
   Widget build(BuildContext context) {
