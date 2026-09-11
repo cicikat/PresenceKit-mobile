@@ -165,6 +165,7 @@ class _DiaryPageState extends State<DiaryPage> {
       color: widget.c.character,
       onRefresh: widget.onRefresh,
       child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           if (widget.error != null)
             Padding(
@@ -180,26 +181,7 @@ class _DiaryPageState extends State<DiaryPage> {
               entry: entry,
               onTap: () => _openEntry(entry),
             ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Text(
-                  'END OF JOURNAL',
-                  style: mono(widget.c, 10, color: widget.c.ink4),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  context.l10n.diaryOpenToLoad,
-                  style: serif(
-                    widget.c,
-                    13,
-                    color: widget.c.ink3,
-                  ).copyWith(fontStyle: FontStyle.italic),
-                ),
-              ],
-            ),
-          ),
+
         ],
       ),
     );
@@ -232,11 +214,11 @@ class DiaryCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(color: _emotionColor(c, entry.emotion), width: 3),
-            bottom: BorderSide(color: c.ink4),
-          ),
+          color: c.surfaceSoft,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: c.surfaceEdge.withValues(alpha: 0.5)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,15 +240,7 @@ class DiaryCard extends StatelessWidget {
               ],
             ),
             Text(entry.title, style: serif(c, 17, weight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            Text(
-              context.l10n.diaryTapToLoad,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: serif(c, 13.5, color: c.ink2),
-            ),
-            const SizedBox(height: 8),
-            Text('READ FULL ENTRY →', style: mono(c, 9, color: c.ink4)),
+
           ],
         ),
       ),
@@ -291,8 +265,8 @@ class DiaryDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: c.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(2),
-        side: BorderSide(color: c.ink1),
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: c.surfaceEdge),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 620),
@@ -464,14 +438,3 @@ List<String> _diaryBodyBlocks(String body) {
       .toList(growable: false);
 }
 
-Color _emotionColor(YxPalette c, String? emotion) {
-  if (emotion == null) return Colors.transparent;
-  return switch (emotion) {
-    '日常' => c.ok,
-    '心情' => c.warn,
-    '私语' => c.character,
-    '梦境' => const Color(0xFF5B7BA0),
-    '杂记' => c.send,
-    _ => c.character,
-  };
-}

@@ -275,7 +275,7 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text(l.lifeIntro),
+                Text(l.lifeIntro, style: serif(widget.c, 13, color: widget.c.ink3)),
                 const SizedBox(height: 12),
                 if (!controller.available) Text(l.lifeAndroidOnly),
                 Wrap(
@@ -386,6 +386,10 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                   ),
                 ...records.map(
                   (record) => Card(
+                    elevation: 0,
+                    color: widget.c.surfaceSoft,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: widget.c.surfaceEdge.withValues(alpha: 0.5))),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
@@ -398,7 +402,7 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                             record.title.isEmpty
                                 ? l.lifeUntitled
                                 : record.title,
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: serif(widget.c, 19, weight: FontWeight.w600),
                           ),
                           Text(
                             record.deleted
@@ -415,7 +419,7 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                                     _ => l.lifeRecognizing,
                                   },
                           ),
-                          if (record.note.isNotEmpty) Text(record.note),
+                          if (record.note.isNotEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(record.note, maxLines: 3, overflow: TextOverflow.ellipsis, style: serif(widget.c, 14, color: widget.c.ink2))),
                           ...record.items.map(
                             (item) => Text(
                               [
