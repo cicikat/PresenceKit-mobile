@@ -1,5 +1,13 @@
 # Mobile Channel 协议现状
 
+## 生活记录队列边界（2026-09-11）
+
+生活记录使用独立 proposed `/life-records/*` 与 native `presence_mobile/life_records`。
+不往 mobile durable queue 写识别任务，不使用 `ack_seq`，不改变 chat/poll/ack/relay 字段。
+记录关联键是 record_id + operation_id，版本为 revision；操作确认后才清本机 outbox。
+字段、scope 待办、日期/金额、图片保留期、角色读取权限与观测端点见
+`cc-tasks/18-life-records-backend.md`，尚未有真实后端联调通过证据。
+
 MCP is backend-only and is not part of the desktop/mobile client transport contract.
 
 ## 本机外观设置通道

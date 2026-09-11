@@ -1,5 +1,24 @@
 # 后端集成
 
+## 生活记录（2026-09-11，proposed）
+
+手机新增独立生活记录 UI 和 Android durable outbox。API 草案、schema、幂等和后端验收清单见
+`cc-tasks/18-life-records-backend.md`；后端已放置 `cc-tasks/245-life-records-backend-handoff.md`。
+`GET /life-records/capabilities`、`POST /life-records/sync`、列表/详情和
+`GET /life-records/observability` 均尚未实现，不得作为 current HTTP 清单宣传。
+
+传输由 `LifeRecordsService` → 独立 native channel → `LifeRecordsSync` 完成，使 Flutter
+与 JobScheduler 共用同一队列和 HTTP 策略。复用原生 Keystore/Bearer、可信 origin 与 owner；
+队列精确绑定 origin+owner，当前身份不符即拒绝，不自动向新节点迁移。
+先检查 capability，再发送不可变操作；operation_id 去重，base_revision 乐观并发，确认
+operation_id/record_id/revision/delete 后 ack 出队。金额/数量用十进制字符串，日期采用
+occurred_on 本地日历日期，拍照时刻另存 UTC captured_at；用户编辑字段优先于后端识别。
+
+管理面需要 enabled/effective reason、模型配置、background_sync、角色读取授权与脱敏观测；
+桌面一期 UI 列 roadmap，本次不增加第二个配置真值。照片确认是本机上传授权，不等于后端角色
+权限。不调用 `/upload/ingest` 触发对话，不写 `/sensor/realtime` 或长期记忆，不改已有
+mobile poll/ack/TTL、relay、通知和购物辅助调用链。后台系统限制见 Android 能力文档。
+
 ## API 思考存档（2026-09-09）
 
 后端默认独立保存 API 返回的思考，提供 admin-only
