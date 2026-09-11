@@ -2484,4 +2484,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nightAppearanceTheme => 'Night appearance theme';
+
+  @override
+  String get dreamUi => 'Dream UI';
+
+  @override
+  String get dreamNarrationColorLabel => 'Narration color';
+
+  @override
+  String get dreamChatColorLabel => 'Chat color';
+
+  @override
+  String get dreamActionColorLabel => 'Action color';
+
+  @override
+  String get dreamPreviewNarration => 'Moonlight rests by the window.';
+
+  @override
+  String get dreamPreviewChat => 'Where shall we go tonight?';
+
+  @override
+  String get dreamPreviewAction => 'Gently holds your hand.';
 }

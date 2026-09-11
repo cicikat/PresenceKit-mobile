@@ -1340,5 +1340,12 @@
   "themeImportFailed": "Import failed. Choose a complete mobile theme JSON file up to 256 KB.",
   "reasoningOpacity": "Thought background opacity",
   "dayAppearanceTheme": "Day appearance theme",
-  "nightAppearanceTheme": "Night appearance theme"
+  "nightAppearanceTheme": "Night appearance theme",
+  "dreamUi": "Dream UI",
+  "dreamNarrationColorLabel": "Narration color",
+  "dreamChatColorLabel": "Chat color",
+  "dreamActionColorLabel": "Action color",
+  "dreamPreviewNarration": "Moonlight rests by the window.",
+  "dreamPreviewChat": "Where shall we go tonight?",
+  "dreamPreviewAction": "Gently holds your hand."
 }

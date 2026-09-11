@@ -2373,4 +2373,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get nightAppearanceTheme => '夜间外观主题';
+
+  @override
+  String get dreamUi => '梦境 UI';
+
+  @override
+  String get dreamNarrationColorLabel => '旁白颜色';
+
+  @override
+  String get dreamChatColorLabel => '聊天颜色';
+
+  @override
+  String get dreamActionColorLabel => '动作颜色';
+
+  @override
+  String get dreamPreviewNarration => '月光轻轻落在窗边。';
+
+  @override
+  String get dreamPreviewChat => '今晚，想去哪里看看？';
+
+  @override
+  String get dreamPreviewAction => '轻轻握住你的手。';
 }

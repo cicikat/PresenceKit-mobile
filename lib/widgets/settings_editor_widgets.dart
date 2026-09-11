@@ -878,7 +878,13 @@ class SettingsRow extends StatelessWidget {
                   children: [
                     label,
                     const SizedBox(height: 10),
-                    Align(alignment: Alignment.centerRight, child: child),
+                    SizedBox(
+                      width: double.infinity,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: child,
+                      ),
+                    ),
                   ],
                 )
               : Row(

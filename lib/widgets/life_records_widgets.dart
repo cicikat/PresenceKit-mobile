@@ -275,26 +275,17 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text(l.lifeIntro, style: serif(widget.c, 13, color: widget.c.ink3)),
-                const SizedBox(height: 12),
-                if (!controller.available) Text(l.lifeAndroidOnly),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                Row(
                   children: [
-                    FilledButton.icon(
-                      onPressed: !controller.available || _picking
-                          ? null
-                          : () => _pick(ImageSource.camera),
-                      icon: const Icon(Icons.add_a_photo_outlined),
-                      label: Text(l.lifeCamera),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: !controller.available || _picking
-                          ? null
-                          : () => _pick(ImageSource.gallery),
-                      icon: const Icon(Icons.photo_library_outlined),
-                      label: Text(l.lifeGallery),
+                    Expanded(
+                      child: Text(
+                        lifeStatus(
+                          l,
+                          controller.error ??
+                              controller.syncState['status'] as String?,
+                        ),
+                        style: serif(widget.c, 13),
+                      ),
                     ),
                     IconButton(
                       tooltip: l.lifeSync,
@@ -313,63 +304,72 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                     ),
                   ],
                 ),
-                if (controller.busy || controller.querying)
-                  const LinearProgressIndicator(),
-                const SizedBox(height: 8),
-                Text(
-                  lifeStatus(
-                    l,
-                    controller.error ??
-                        controller.syncState['status'] as String?,
-                  ),
-                ),
-                Text(
-                  controller.cacheOnly ? l.lifeCacheOnly : l.lifeServerResults,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  children: ['', 'diet', 'bill', 'cart']
-                      .map(
-                        (category) => ChoiceChip(
-                          label: Text(lifeCategory(l, category)),
-                          selected: controller.category == category,
-                          onSelected: (_) {
-                            controller.filters(category: category);
-                            unawaited(controller.search());
-                          },
-                        ),
-                      )
-                      .toList(),
-                ),
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: l.lifeSearch,
-                    suffixIcon: IconButton(
-                      tooltip: l.lifeSearch,
-                      onPressed: controller.querying
-                          ? null
-                          : () => controller.search(),
-                      icon: const Icon(Icons.search),
-                    ),
-                  ),
-                  onChanged: (q) => controller.filters(query: q.trim()),
-                  onSubmitted: (_) => controller.search(),
-                ),
-                Wrap(
-                  spacing: 8,
+                if (!controller.available) Text(l.lifeAndroidOnly),
+                Row(
                   children: [
-                    TextButton.icon(
-                      onPressed: _dates,
-                      icon: const Icon(Icons.date_range),
-                      label: Text(
-                        controller.from.isEmpty
-                            ? l.lifeDateRange
-                            : '${controller.from} — ${controller.to}',
+                    Expanded(
+                      child: SizedBox(
+                        height: 72,
+                        child: FilledButton.icon(
+                          onPressed: !controller.available || _picking
+                              ? null
+                              : () => _pick(ImageSource.camera),
+                          icon: const Icon(Icons.add_a_photo_outlined),
+                          label: Text(l.lifeCamera),
+                        ),
                       ),
                     ),
-                    if (controller.from.isNotEmpty)
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 72,
+                        child: OutlinedButton.icon(
+                          onPressed: !controller.available || _picking
+                              ? null
+                              : () => _pick(ImageSource.gallery),
+                          icon: const Icon(Icons.photo_library_outlined),
+                          label: Text(l.lifeGallery),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: l.lifeSearch,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          prefixIcon: IconButton(
+                            tooltip: l.lifeSearch,
+                            onPressed: controller.querying
+                                ? null
+                                : () => controller.search(),
+                            icon: const Icon(Icons.search),
+                          ),
+                        ),
+                        onChanged: (q) => controller.filters(query: q.trim()),
+                        onSubmitted: (_) => controller.search(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.outlined(
+                      tooltip: l.lifeDateRange,
+                      onPressed: _dates,
+                      icon: const Icon(Icons.calendar_month_outlined),
+                    ),
+                  ],
+                ),
+                if (controller.from.isNotEmpty)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text('${controller.from} ? ${controller.to}'),
+                      ),
                       TextButton(
                         onPressed: () {
                           controller.filters(from: '', to: '');
@@ -377,7 +377,38 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                         },
                         child: Text(l.lifeClearDates),
                       ),
-                  ],
+                    ],
+                  ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final category in ['', 'diet', 'bill', 'cart'])
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(lifeCategory(l, category)),
+                            selected: controller.category == category,
+                            onSelected: (_) {
+                              controller.filters(category: category);
+                              unawaited(controller.search());
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (controller.busy || controller.querying)
+                  const LinearProgressIndicator(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    controller.cacheOnly
+                        ? l.lifeCacheOnly
+                        : l.lifeServerResults,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
                 if (records.isEmpty)
                   Padding(
@@ -389,71 +420,128 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                     elevation: 0,
                     color: widget.c.surfaceSoft,
                     margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: widget.c.surfaceEdge.withValues(alpha: 0.5))),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: widget.c.surfaceEdge.withValues(alpha: 0.5),
+                      ),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '${record.date} · ${lifeCategory(l, record.category)}',
-                          ),
-                          Text(
-                            record.title.isEmpty
-                                ? l.lifeUntitled
-                                : record.title,
-                            style: serif(widget.c, 19, weight: FontWeight.w600),
-                          ),
-                          Text(
-                            record.deleted
-                                ? l.lifeDeleting
-                                : record.conflict
-                                ? l.lifeConflict
-                                : record.failed
-                                ? l.lifeRejected
-                                : record.pending
-                                ? l.lifeQueued
-                                : switch (record.recognition) {
-                                    'ready' => l.lifeRecognized,
-                                    'failed' => l.lifeRecognitionFailed,
-                                    _ => l.lifeRecognizing,
-                                  },
-                          ),
-                          if (record.note.isNotEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(record.note, maxLines: 3, overflow: TextOverflow.ellipsis, style: serif(widget.c, 14, color: widget.c.ink2))),
-                          ...record.items.map(
-                            (item) => Text(
-                              [
-                                    item['name'],
-                                    item['quantity'],
-                                    item['unit'],
-                                    item['amount'],
-                                    item['currency'],
-                                  ]
-                                  .where(
-                                    (v) => v != null && v.toString().isNotEmpty,
-                                  )
-                                  .join(' · '),
-                            ),
-                          ),
-                          Wrap(
-                            spacing: 8,
+                          Row(
                             children: [
-                              if (!record.deleted && !record.conflict)
-                                TextButton(
-                                  onPressed: () => _edit(record),
-                                  child: Text(l.lifeEdit),
+                              Expanded(child: Text(record.date)),
+                              Chip(
+                                label: Text(lifeCategory(l, record.category)),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _LifeRecordThumbnail(
+                                key: ValueKey(
+                                  '${controller.realm}/${record.id}/${record.revision}',
                                 ),
-                              if (!record.deleted && !record.conflict)
-                                TextButton(
-                                  onPressed: () => _confirm(record),
-                                  child: Text(l.lifeDelete),
+                                controller: controller,
+                                record: record,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      record.deleted
+                                          ? l.lifeDeleting
+                                          : record.conflict
+                                          ? l.lifeConflict
+                                          : record.failed
+                                          ? l.lifeRejected
+                                          : record.pending
+                                          ? l.lifeQueued
+                                          : switch (record.recognition) {
+                                              'ready' => l.lifeRecognized,
+                                              'failed' =>
+                                                l.lifeRecognitionFailed,
+                                              _ => l.lifeRecognizing,
+                                            },
+                                    ),
+                                    Text(
+                                      record.title.isEmpty
+                                          ? l.lifeUntitled
+                                          : record.title,
+                                      style: serif(
+                                        widget.c,
+                                        19,
+                                        weight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (record.note.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 8,
+                                        ),
+                                        child: Text(
+                                          record.note,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: serif(
+                                            widget.c,
+                                            14,
+                                            color: widget.c.ink2,
+                                          ),
+                                        ),
+                                      ),
+                                    ...record.items.map(
+                                      (item) => Text(
+                                        [
+                                              item['name'],
+                                              item['quantity'],
+                                              item['unit'],
+                                              item['amount'],
+                                              item['currency'],
+                                            ]
+                                            .where(
+                                              (v) =>
+                                                  v != null &&
+                                                  v.toString().isNotEmpty,
+                                            )
+                                            .join(' · '),
+                                      ),
+                                    ),
+                                    Wrap(
+                                      alignment: WrapAlignment.end,
+                                      spacing: 8,
+                                      children: [
+                                        if (!record.deleted && !record.conflict)
+                                          TextButton(
+                                            onPressed: () => _edit(record),
+                                            child: Text(l.lifeEdit),
+                                          ),
+                                        if (!record.deleted && !record.conflict)
+                                          TextButton(
+                                            onPressed: () => _confirm(record),
+                                            child: Text(l.lifeDelete),
+                                          ),
+                                        if (record.conflict)
+                                          TextButton(
+                                            onPressed: () => _confirm(
+                                              record,
+                                              conflict: true,
+                                            ),
+                                            child: Text(l.lifeAcceptServer),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                              if (record.conflict)
-                                TextButton(
-                                  onPressed: () =>
-                                      _confirm(record, conflict: true),
-                                  child: Text(l.lifeAcceptServer),
-                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -483,6 +571,46 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
         ],
       );
     },
+  );
+}
+
+class _LifeRecordThumbnail extends StatefulWidget {
+  const _LifeRecordThumbnail({
+    super.key,
+    required this.controller,
+    required this.record,
+  });
+  final LifeRecordsController controller;
+  final LifeRecord record;
+  @override
+  State<_LifeRecordThumbnail> createState() => _LifeRecordThumbnailState();
+}
+
+class _LifeRecordThumbnailState extends State<_LifeRecordThumbnail> {
+  late final Future<Uint8List?> image = widget.controller.service.image(
+    widget.controller.origin(),
+    widget.controller.owner(),
+    widget.record.id,
+  );
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(12),
+    child: SizedBox(
+      width: 96,
+      height: 112,
+      child: FutureBuilder<Uint8List?>(
+        future: image,
+        builder: (context, snapshot) => snapshot.data == null
+            ? const Center(child: Icon(Icons.image_outlined))
+            : Image.memory(
+                snapshot.data!,
+                fit: BoxFit.cover,
+                cacheWidth: 288,
+                errorBuilder: (_, _, _) =>
+                    const Icon(Icons.broken_image_outlined),
+              ),
+      ),
+    ),
   );
 }
 

@@ -9,9 +9,15 @@ class PersonalizationController extends ChangeNotifier {
   PersonalizationController(this.store);
   bool _disposed = false;
   @override
-  void notifyListeners() { if (!_disposed) super.notifyListeners(); }
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
+
   @override
-  void dispose() { _disposed = true; super.dispose(); }
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 
   final AppSettingsStore store;
   String name = '';
@@ -41,7 +47,10 @@ class PersonalizationController extends ChangeNotifier {
           if (!RegExp(r'^font-[0-9]+$').hasMatch(id)) continue;
           final font = File('$path/$id');
           if (!await font.exists()) continue;
-          final loader = FontLoader(id)..addFont(Future.value(ByteData.sublistView(await font.readAsBytes())));
+          final loader = FontLoader(id)
+            ..addFont(
+              Future.value(ByteData.sublistView(await font.readAsBytes())),
+            );
           await loader.load();
           fonts[id] = entry.value.toString();
         }
@@ -49,11 +58,19 @@ class PersonalizationController extends ChangeNotifier {
       }
       final image = File('$path/avatar');
       if (await image.exists()) avatar = await image.readAsBytes();
-    } catch (_) { family = null; }
+    } catch (_) {
+      family = null;
+    }
     notifyListeners();
   }
 
-  Future<void> save({String? userName, String? userSignature, double? size, String? font, bool systemFont = false}) async {
+  Future<void> save({
+    String? userName,
+    String? userSignature,
+    double? size,
+    String? font,
+    bool systemFont = false,
+  }) async {
     if (userName != null) name = userName.trim();
     if (userSignature != null) signature = userSignature.trim();
     if (size != null) themeSize = size.clamp(12, 24);
@@ -62,7 +79,13 @@ class PersonalizationController extends ChangeNotifier {
     notifyListeners();
     final path = _directory?.path;
     if (path == null) return;
-    final value = jsonEncode({'name': name, 'signature': signature, 'themeSize': themeSize, 'family': family, 'fonts': fonts});
+    final value = jsonEncode({
+      'name': name,
+      'signature': signature,
+      'themeSize': themeSize,
+      'family': family,
+      'fonts': fonts,
+    });
     _writes = _writes.catchError((_) {}).then((_) async {
       final temporary = File('$path/preferences.tmp');
       await temporary.writeAsString(value, flush: true);
@@ -71,10 +94,18 @@ class PersonalizationController extends ChangeNotifier {
     await _writes;
   }
 
-  Future<void> pickAvatar() async {
-    final image = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1024, maxHeight: 1024, requestFullMetadata: false);
+  Future<void> pickAvatar({
+    required Future<Uint8List?> Function(Uint8List) crop,
+  }) async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      requestFullMetadata: false,
+    );
     if (image == null || _directory == null) return;
-    final bytes = await image.readAsBytes();
+    final bytes = await crop(await image.readAsBytes());
+    if (bytes == null || _disposed) return;
     await File('${_directory!.path}/avatar').writeAsBytes(bytes, flush: true);
     avatar = bytes;
     notifyListeners();
@@ -84,15 +115,27 @@ class PersonalizationController extends ChangeNotifier {
     if (_directory == null) return false;
     final file = await store.pickUploadFile();
     if (file == null) return true;
-    if (!RegExp(r'\.(ttf|otf|ttc)$', caseSensitive: false).hasMatch(file.name) || file.bytes.length > 20 * 1024 * 1024 || fonts.length >= 10) return false;
+    if (!RegExp(
+          r'\.(ttf|otf|ttc)$',
+          caseSensitive: false,
+        ).hasMatch(file.name) ||
+        file.bytes.length > 20 * 1024 * 1024 ||
+        fonts.length >= 10) {
+      return false;
+    }
     final id = 'font-${DateTime.now().microsecondsSinceEpoch}';
     try {
-      final loader = FontLoader(id)..addFont(Future.value(ByteData.sublistView(file.bytes)));
+      final loader = FontLoader(id)
+        ..addFont(Future.value(ByteData.sublistView(file.bytes)));
       await loader.load();
-      await File('${_directory!.path}/$id').writeAsBytes(file.bytes, flush: true);
+      await File(
+        '${_directory!.path}/$id',
+      ).writeAsBytes(file.bytes, flush: true);
       fonts[id] = file.name;
       await save(font: id);
       return true;
-    } catch (_) { return false; }
+    } catch (_) {
+      return false;
+    }
   }
 }

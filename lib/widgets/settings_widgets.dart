@@ -1,7 +1,7 @@
 import '../controllers/personalization_controller.dart';
 import 'personalization_widgets.dart';
 import 'package:flutter/material.dart';
-import 'theme_widgets.dart';
+import 'dream_appearance_settings.dart';
 import 'package:flutter/services.dart';
 import '../controllers/locale_controller.dart';
 import '../l10n/l10n.dart';
@@ -359,11 +359,27 @@ class SettingsPage extends StatelessWidget {
                   ),
                   for (final night in [false, true])
                     ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      title: Text(night ? l10n.nightAppearanceTheme : l10n.dayAppearanceTheme, style: serif(c, 16)),
-                      subtitle: Text(night ? (darkThemePresetName ?? l10n.themeNight) : (lightThemePresetName ?? l10n.themePaper), style: mono(c, 12)),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      title: Text(
+                        night
+                            ? l10n.nightAppearanceTheme
+                            : l10n.dayAppearanceTheme,
+                        style: serif(c, 16),
+                      ),
+                      subtitle: Text(
+                        night
+                            ? (darkThemePresetName ?? l10n.themeNight)
+                            : (lightThemePresetName ?? l10n.themePaper),
+                        style: mono(c, 12),
+                      ),
                       trailing: Icon(Icons.chevron_right, color: c.ink3),
-                      onTap: () => (onManageThemesForMode ?? (_) => onManageThemes())(night),
+                      onTap: () =>
+                          (onManageThemesForMode ?? (_) => onManageThemes())(
+                            night,
+                          ),
                     ),
                   SettingsRow(
                     c: c,
@@ -419,7 +435,7 @@ class SettingsPage extends StatelessWidget {
                       prefs.fontSize.round(),
                     ),
                     child: SizedBox(
-                      width: 130,
+                      width: double.infinity,
                       child: Slider(
                         value: prefs.fontSize,
                         min: 14,
@@ -431,16 +447,44 @@ class SettingsPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (personalization != null) FontSettings(controller: personalization!),
-                  SettingsRow(c: c, title: l10n.showReasoning, subtitle: l10n.reasoningLocal, child: Switch(value: prefs.showReasoning, onChanged: (value) => onPrefs(prefs.copyWith(showReasoning: value)))),
-                  SettingsRow(c: c, title: l10n.expandReasoning, subtitle: l10n.reasoningLocal, child: Switch(value: prefs.expandReasoning, onChanged: (value) => onPrefs(prefs.copyWith(expandReasoning: value)))),
-                  SettingsRow(c: c, title: l10n.reasoningOpacity, subtitle: '${(prefs.reasoningOpacity * 100).round()}%', child: SizedBox(width: 160, child: Slider(value: prefs.reasoningOpacity, min: 0, max: 1, divisions: 20, onChanged: (value) => onPrefs(prefs.copyWith(reasoningOpacity: value))))),
-                  SettingsRow(c: c, title: l10n.dreamNarrationSize, subtitle: l10n.themeComponentColors, child: TextButton(onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: SingleChildScrollView(child: FreeColorPicker(c: c, color: prefs.dreamNarrationColor == null ? c.ink2 : Color(prefs.dreamNarrationColor!), onChanged: (value) => onPrefs(prefs.copyWith(dreamNarrationColor: value.toARGB32()))))))), child: Text('Aa', style: TextStyle(color: prefs.dreamNarrationColor == null ? c.ink2 : Color(prefs.dreamNarrationColor!), fontSize: 22)))),
-                  SettingsRow(c: c, title: l10n.dreamChatSize, subtitle: l10n.themeComponentColors, child: TextButton(onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: SingleChildScrollView(child: FreeColorPicker(c: c, color: prefs.dreamChatColor == null ? c.ink2 : Color(prefs.dreamChatColor!), onChanged: (value) => onPrefs(prefs.copyWith(dreamChatColor: value.toARGB32()))))))), child: Text('Aa', style: TextStyle(color: prefs.dreamChatColor == null ? c.ink2 : Color(prefs.dreamChatColor!), fontSize: 22)))),
-                  SettingsRow(c: c, title: l10n.dreamActionSize, subtitle: l10n.themeComponentColors, child: TextButton(onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: SingleChildScrollView(child: FreeColorPicker(c: c, color: prefs.dreamActionColor == null ? c.ink2 : Color(prefs.dreamActionColor!), onChanged: (value) => onPrefs(prefs.copyWith(dreamActionColor: value.toARGB32()))))))), child: Text('Aa', style: TextStyle(color: prefs.dreamActionColor == null ? c.ink2 : Color(prefs.dreamActionColor!), fontSize: 22)))),
-                  SettingsRow(c: c, title: l10n.dreamNarrationSize, subtitle: '${prefs.dreamNarrationSize.round()}', child: SizedBox(width: 130, child: Slider(value: prefs.dreamNarrationSize, min: 12, max: 28, divisions: 16, onChanged: (value) => onPrefs(prefs.copyWith(dreamNarrationSize: value))))),
-                  SettingsRow(c: c, title: l10n.dreamChatSize, subtitle: '${prefs.dreamChatSize.round()}', child: SizedBox(width: 130, child: Slider(value: prefs.dreamChatSize, min: 12, max: 28, divisions: 16, onChanged: (value) => onPrefs(prefs.copyWith(dreamChatSize: value))))),
-                  SettingsRow(c: c, title: l10n.dreamActionSize, subtitle: '${prefs.dreamActionSize.round()}', child: SizedBox(width: 130, child: Slider(value: prefs.dreamActionSize, min: 12, max: 28, divisions: 16, onChanged: (value) => onPrefs(prefs.copyWith(dreamActionSize: value))))),
+                  if (personalization != null)
+                    FontSettings(c: c, controller: personalization!),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.showReasoning,
+                    subtitle: l10n.reasoningLocal,
+                    child: Switch(
+                      value: prefs.showReasoning,
+                      onChanged: (value) =>
+                          onPrefs(prefs.copyWith(showReasoning: value)),
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.expandReasoning,
+                    subtitle: l10n.reasoningLocal,
+                    child: Switch(
+                      value: prefs.expandReasoning,
+                      onChanged: (value) =>
+                          onPrefs(prefs.copyWith(expandReasoning: value)),
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.reasoningOpacity,
+                    subtitle: '${(prefs.reasoningOpacity * 100).round()}%',
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Slider(
+                        value: prefs.reasoningOpacity,
+                        min: 0,
+                        max: 1,
+                        divisions: 20,
+                        onChanged: (value) =>
+                            onPrefs(prefs.copyWith(reasoningOpacity: value)),
+                      ),
+                    ),
+                  ),
                   SettingsRow(
                     c: c,
                     title: l10n.settingsShowChatTimeTitle,
@@ -468,40 +512,53 @@ class SettingsPage extends StatelessWidget {
                 title: l10n.settingsDreamModule,
                 icon: Icons.nightlight_outlined,
                 children: [
-                  SettingsRow(
+                  _SettingsModule(
                     c: c,
-                    title: l10n.settingsDreamBackgroundTitle,
-                    subtitle: l10n.settingsChatBackgroundSubtitle,
-                    child: Wrap(
-                      spacing: 8,
-                      children: [
-                        if (prefs.dreamBackground != null)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: Image.memory(
-                              prefs.dreamBackground!,
-                              width: 64,
-                              height: 40,
-                              fit: BoxFit.cover,
+                    title: l10n.dreamUi,
+                    icon: Icons.palette_outlined,
+                    children: [
+                      SettingsRow(
+                        c: c,
+                        title: l10n.settingsDreamBackgroundTitle,
+                        subtitle: l10n.settingsChatBackgroundSubtitle,
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            if (prefs.dreamBackground != null)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.memory(
+                                  prefs.dreamBackground!,
+                                  width: 64,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            YxIconButton(
+                              c: c,
+                              icon: Icons.add_photo_alternate_outlined,
+                              onPressed: onImportDreamBackground ?? () {},
+                              tooltip: l10n.settingsImportChatBackgroundTooltip,
+                              size: 30,
                             ),
-                          ),
-                        YxIconButton(
-                          c: c,
-                          icon: Icons.add_photo_alternate_outlined,
-                          onPressed: onImportDreamBackground ?? () {},
-                          tooltip: l10n.settingsImportChatBackgroundTooltip,
-                          size: 30,
+                            if (prefs.dreamBackground != null)
+                              YxIconButton(
+                                c: c,
+                                icon: Icons.restore_rounded,
+                                onPressed: onResetDreamBackground ?? () {},
+                                tooltip:
+                                    l10n.settingsResetChatBackgroundTooltip,
+                                size: 30,
+                              ),
+                          ],
                         ),
-                        if (prefs.dreamBackground != null)
-                          YxIconButton(
-                            c: c,
-                            icon: Icons.restore_rounded,
-                            onPressed: onResetDreamBackground ?? () {},
-                            tooltip: l10n.settingsResetChatBackgroundTooltip,
-                            size: 30,
-                          ),
-                      ],
-                    ),
+                      ),
+                      DreamAppearanceSettings(
+                        c: c,
+                        prefs: prefs,
+                        onPrefs: onPrefs,
+                      ),
+                    ],
                   ),
                   for (final entry
                       in <String, (String, String?, Map<String, String>)>{

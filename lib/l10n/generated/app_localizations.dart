@@ -4458,6 +4458,48 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'夜间外观主题'**
   String get nightAppearanceTheme;
+
+  /// No description provided for @dreamUi.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境 UI'**
+  String get dreamUi;
+
+  /// No description provided for @dreamNarrationColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'旁白颜色'**
+  String get dreamNarrationColorLabel;
+
+  /// No description provided for @dreamChatColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天颜色'**
+  String get dreamChatColorLabel;
+
+  /// No description provided for @dreamActionColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'动作颜色'**
+  String get dreamActionColorLabel;
+
+  /// No description provided for @dreamPreviewNarration.
+  ///
+  /// In zh, this message translates to:
+  /// **'月光轻轻落在窗边。'**
+  String get dreamPreviewNarration;
+
+  /// No description provided for @dreamPreviewChat.
+  ///
+  /// In zh, this message translates to:
+  /// **'今晚，想去哪里看看？'**
+  String get dreamPreviewChat;
+
+  /// No description provided for @dreamPreviewAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'轻轻握住你的手。'**
+  String get dreamPreviewAction;
 }
 
 class _AppLocalizationsDelegate
