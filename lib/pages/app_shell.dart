@@ -12,7 +12,6 @@ import '../controllers/dream_controller.dart';
 import '../controllers/diary_controller.dart';
 import '../controllers/garden_controller.dart';
 import '../controllers/locale_controller.dart';
-import '../controllers/prompt_entries_controller.dart';
 import '../controllers/profile_status_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/voice_input_controller.dart';
@@ -89,7 +88,6 @@ class _CompanionAppState extends State<CompanionApp>
   late final LifeRecordsController _lifeRecordsController;
   YxPrefs _prefs = const YxPrefs();
   late final ThemeController _themeController;
-  late final PromptEntriesController _promptEntries;
   late final ProfileStatusController _profileStatusController;
   late final LocaleController _localeController;
   late final bool _ownsLocaleController;
@@ -153,11 +151,6 @@ class _CompanionAppState extends State<CompanionApp>
       savePersisted: _settings.saveCustomThemePalette,
     );
     _themeController.addListener(_handleThemeChanged);
-    _promptEntries = PromptEntriesController(
-      backend: () => _backend,
-      token: () => _adminToken,
-    );
-    _promptEntries.addListener(_handlePromptEntriesChanged);
 
     _deviceService = DeviceControlService(settingsStore);
     _screenService = ScreenSensorService(settingsStore);
@@ -295,7 +288,9 @@ class _CompanionAppState extends State<CompanionApp>
 
   @override
   void dispose() {
-    _connectionController.removeListener(_lifeRecordsController.connectionChanged);
+    _connectionController.removeListener(
+      _lifeRecordsController.connectionChanged,
+    );
     _lifeRecordsController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _gardenController.dispose();
@@ -307,8 +302,6 @@ class _CompanionAppState extends State<CompanionApp>
     _dreamController.dispose();
     _themeController.removeListener(_handleThemeChanged);
     _themeController.dispose();
-    _promptEntries.removeListener(_handlePromptEntriesChanged);
-    _promptEntries.dispose();
     _profileStatusController.removeListener(_handleProfileStatusChanged);
     _profileStatusController.dispose();
     if (_ownsLocaleController) _localeController.dispose();
@@ -325,11 +318,6 @@ class _CompanionAppState extends State<CompanionApp>
   void didChangePlatformBrightness() {
     _themeController.updateSystemBrightness();
     _applySystemUi();
-  }
-
-  void _handlePromptEntriesChanged() {
-    if (!mounted) return;
-    setState(() {});
   }
 
   void _handleProfileStatusChanged() {
@@ -812,13 +800,14 @@ class _CompanionAppState extends State<CompanionApp>
     ]);
   }
 
-  void _openCapabilityCheck() {
+  void _openCapabilityCheck({bool controlsOnly = false}) {
     showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => CapabilitySheet(
+        controlsOnly: controlsOnly,
         c: c,
         onLoadStatus: _loadCapabilityStatus,
         onRequestNotifications: _deviceService.requestNotificationPermission,
@@ -986,144 +975,175 @@ class _CompanionAppState extends State<CompanionApp>
     var notificationTestMode = false;
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (context) => StatefulBuilder(
-          builder: (context, sheetSetState) {
-            if (!requestedBackendSettings) {
-              requestedBackendSettings = true;
-              unawaited(() async {
-                final results = await Future.wait<dynamic>([
-                  _loadPromptAssets(),
-                  _promptEntries.load(),
-                  _dreamController.loadSettings(),
-                  _relayService.loadNotificationGateStatus(),
-                ]);
-                notificationTestMode =
-                    (results[3] as NotificationGateStatus).testModeEnabled;
-                if (context.mounted) sheetSetState(() {});
-              }());
-            }
+        builder: (context) => ListenableBuilder(
+          listenable: Listenable.merge([
+            _dreamController,
+            _connectionController,
+            _themeController,
+            _localeController,
+          ]),
+          builder: (context, _) => StatefulBuilder(
+            builder: (context, sheetSetState) {
+              if (!requestedBackendSettings) {
+                requestedBackendSettings = true;
+                unawaited(
+                  Future<void>(() async {
+                    final results = await Future.wait<dynamic>([
+                      _dreamController.loadSettings(),
+                      _relayService.loadNotificationGateStatus(),
+                    ]);
+                    notificationTestMode =
+                        (results[1] as NotificationGateStatus).testModeEnabled;
+                    if (context.mounted) sheetSetState(() {});
+                  }),
+                );
+              }
 
-            void updatePrefs(YxPrefs prefs) {
-              sheetSetState(() => _prefs = prefs);
-              setState(() {});
-              unawaited(_settings.saveAppearancePrefs(prefs));
-            }
+              void updatePrefs(YxPrefs prefs) {
+                sheetSetState(() => _prefs = prefs);
+                setState(() {});
+                unawaited(_settings.saveAppearancePrefs(prefs));
+              }
 
-            void updateTheme(bool dark) {
-              unawaited(
-                _themeController.setMode(
-                  dark ? AppThemeMode.dark : AppThemeMode.light,
-                ),
-              );
-            }
+              void updateTheme(bool dark) {
+                unawaited(
+                  _themeController.setMode(
+                    dark ? AppThemeMode.dark : AppThemeMode.light,
+                  ),
+                );
+              }
 
-            void manageThemes(bool selectingDark) {
-              Navigator.pop(context);
-              unawaited(_openThemePresetManager(selectingDark: selectingDark));
-            }
+              void manageThemes(bool selectingDark) {
+                Navigator.pop(context);
+                unawaited(
+                  _openThemePresetManager(selectingDark: selectingDark),
+                );
+              }
 
-            return SettingsPage(
-              c: c,
-              language: _localeController.language,
-              dark: _themeController.isDark,
-              lightThemePresetName: _themeController.lightThemePreset?.name,
-              darkThemePresetName: _themeController.darkThemePreset?.name,
-              themePresetCount: _themeController.presets.length,
-              prefs: _prefs,
-              profileDisplayName: _profileDisplayName,
-              profileAvatarBytes: _profileAvatarBytes,
-              chatBackground: _prefs.chatBackground,
-              promptAssets: _promptAssets,
-              loreEntries: _promptEntries.loreEntries,
-              jailbreakEntries: _promptEntries.jailbreakEntries,
-              dreamSettings: _dreamController.settings,
-              settingsBusy:
-                  _loadingPromptAssets ||
-                  _savingPromptAssets ||
-                  _dreamController.loadingSettings ||
-                  _dreamController.savingSettings,
-              settingsError:
-                  _promptAssetsError ??
-                  _promptEntries.error ??
-                  _dreamController.settingsError,
-              promptEntriesSaving: _promptEntries.saving,
-              onTheme: updateTheme,
-              onLanguage: (language) {
-                unawaited(_localeController.setLanguage(language));
-                sheetSetState(() {});
-              },
-              onManageThemes: () => manageThemes(_themeController.isDark),
-              onManageThemesForMode: manageThemes,
-              onPrefs: updatePrefs,
-              onEditProfileName: _editProfileName,
-              onImportProfileAvatar: _importProfileAvatar,
-              onResetProfileAvatar: _resetProfileAvatar,
-              onImportChatBackground: _importChatBackground,
-              onResetChatBackground: _resetChatBackground,
-              onImportDreamBackground: _importDreamBackground,
-              onResetDreamBackground: _resetDreamBackground,
-              onOpenProfile: _openProfilePage,
-              hasAdminToken: _hasAdminToken,
-              backgroundNotifications: _backgroundNotifications,
-              backendBaseUrl: _backendBaseUrl,
-              ownerUserId: _ownerUserId,
-              notificationTestMode: notificationTestMode,
-              onEditCredential: _openAdminTokenSettings,
-              onEditBackend: _openBackendSettings,
-              onEditRelay: _openRelaySettings,
-              onBackgroundNotifications: (enabled) {
-                sheetSetState(() => _backgroundNotifications = enabled);
-                unawaited(_changeBackgroundNotifications(enabled));
-              },
-              onNotificationTestMode: (enabled) {
-                sheetSetState(() => notificationTestMode = enabled);
-                unawaited(_deviceService.setNotificationTestMode(enabled));
-              },
-              onOpenCapabilities: _openCapabilityCheck,
-              stickerEnabled: _stickerEnabled,
-              autoPlayVoice: _autoPlayVoice,
-              onStickerEnabledChanged: (enabled) {
-                sheetSetState(() => _stickerEnabled = enabled);
-                unawaited(_settings.saveStickerEnabled(enabled));
-              },
-              onAutoPlayVoiceChanged: (enabled) {
-                sheetSetState(() => _autoPlayVoice = enabled);
-                unawaited(_settings.saveAutoPlayVoice(enabled));
-              },
-              onToggleLorebook: (id) {
-                unawaited(() async {
-                  await _promptEntries.toggleLore(id);
-                  if (context.mounted) sheetSetState(() {});
-                }());
-              },
-              onToggleJailbreak: (id) {
-                unawaited(() async {
-                  await _promptEntries.toggleJailbreak(id);
-                  if (context.mounted) sheetSetState(() {});
-                }());
-              },
-              onDreamLorebook: (value) {
-                unawaited(() async {
+              return SettingsPage(
+                c: c,
+                language: _localeController.language,
+                dark: _themeController.isDark,
+                lightThemePresetName: _themeController.lightThemePreset?.name,
+                darkThemePresetName: _themeController.darkThemePreset?.name,
+                themePresetCount: _themeController.presets.length,
+                prefs: _prefs,
+                profileDisplayName: _profileDisplayName,
+                profileAvatarBytes: _profileAvatarBytes,
+                chatBackground: _prefs.chatBackground,
+
+                dreamSettings: _dreamController.settings,
+                onDreamContext: (field, value) async {
                   await _dreamController.updateSettings(
-                    enableDreamLorebook: value,
+                    memoryAccess: field == 'memory_access' ? value : null,
+                    boundaryLevel: field == 'boundary_level' ? value : null,
+                    lucidMode: field == 'lucid_mode' ? value : null,
                   );
                   if (context.mounted) sheetSetState(() {});
-                }());
-              },
-              onDreamWorldLayer: (value) {
-                unawaited(() async {
-                  await _dreamController.updateSettings(worldLayer: value);
+                },
+                dreamWorlds: _dreamController.worlds,
+                dreamPresets: _dreamController.presets,
+                onOpenSystemControls: () =>
+                    _openCapabilityCheck(controlsOnly: true),
+                onRetryDream: () async {
+                  await _dreamController.loadSettings();
                   if (context.mounted) sheetSetState(() {});
-                }());
-              },
-              onDreamJailbreak: (value) {
-                unawaited(() async {
-                  await _dreamController.updateSettings(jailbreakPreset: value);
+                },
+                dreamActive: _dreamController.state?.isActive == true,
+                settingsBusy:
+                    _dreamController.loadingSettings ||
+                    _dreamController.savingSettings,
+                settingsError: _dreamController.settingsError,
+
+                onTheme: updateTheme,
+                onLanguage: (language) {
+                  unawaited(_localeController.setLanguage(language));
+                  sheetSetState(() {});
+                },
+                onManageThemes: () => manageThemes(_themeController.isDark),
+                onManageThemesForMode: manageThemes,
+                onPrefs: updatePrefs,
+                onEditProfileName: () async {
+                  await _editProfileName();
                   if (context.mounted) sheetSetState(() {});
-                }());
-              },
-            );
-          },
+                },
+                onImportProfileAvatar: () async {
+                  await _importProfileAvatar();
+                  if (context.mounted) sheetSetState(() {});
+                },
+                onResetProfileAvatar: _resetProfileAvatar,
+                onImportChatBackground: () async {
+                  await _importChatBackground();
+                  if (context.mounted) sheetSetState(() {});
+                },
+                onResetChatBackground: _resetChatBackground,
+                onImportDreamBackground: () async {
+                  await _importDreamBackground();
+                  if (context.mounted) sheetSetState(() {});
+                },
+                onResetDreamBackground: _resetDreamBackground,
+                onOpenProfile: _openProfilePage,
+                hasAdminToken: _hasAdminToken,
+                backgroundNotifications: _backgroundNotifications,
+                backendBaseUrl: _backendBaseUrl,
+                ownerUserId: _ownerUserId,
+                notificationTestMode: notificationTestMode,
+                onEditCredential: () async {
+                  await _openAdminTokenSettings();
+                  await _dreamController.loadSettings();
+                },
+                onEditBackend: () async {
+                  await _openBackendSettings();
+                  await _dreamController.loadSettings();
+                },
+                onEditRelay: _openRelaySettings,
+                onBackgroundNotifications: (enabled) {
+                  sheetSetState(() => _backgroundNotifications = enabled);
+                  unawaited(_changeBackgroundNotifications(enabled));
+                },
+                onNotificationTestMode: (enabled) {
+                  sheetSetState(() => notificationTestMode = enabled);
+                  unawaited(_deviceService.setNotificationTestMode(enabled));
+                },
+                onOpenCapabilities: _openCapabilityCheck,
+                stickerEnabled: _stickerEnabled,
+                autoPlayVoice: _autoPlayVoice,
+                onStickerEnabledChanged: (enabled) {
+                  sheetSetState(() => _stickerEnabled = enabled);
+                  unawaited(_settings.saveStickerEnabled(enabled));
+                },
+                onAutoPlayVoiceChanged: (enabled) {
+                  sheetSetState(() => _autoPlayVoice = enabled);
+                  unawaited(_settings.saveAutoPlayVoice(enabled));
+                },
+                onDreamLorebook: (value) {
+                  unawaited(() async {
+                    await _dreamController.updateSettings(
+                      enableDreamLorebook: value,
+                    );
+                    if (context.mounted) sheetSetState(() {});
+                  }());
+                },
+                onDreamWorldLayer: (value) {
+                  unawaited(() async {
+                    await _dreamController.updateSettings(worldLayer: value);
+                    if (context.mounted) sheetSetState(() {});
+                  }());
+                },
+                onDreamJailbreak: (value) {
+                  unawaited(() async {
+                    final selected = _dreamController.settings!.jailbreakPresets
+                        .toSet();
+                    if (!selected.remove(value)) selected.add(value);
+                    await _dreamController.updateSettings(
+                      jailbreakPresets: selected.toList(),
+                    );
+                    if (context.mounted) sheetSetState(() {});
+                  }());
+                },
+              );
+            },
+          ),
         ),
       ),
     );

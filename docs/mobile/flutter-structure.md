@@ -1,5 +1,13 @@
 # Flutter 结构
 
+## 设置分组（2026-09-11）
+
+`SettingsPage` 顶部固定显示访问 Token、后端节点和用户 ID；未配齐时解释自部署后端与鉴权初始化，配齐后仅显示「已配置」（不等同于联网验证成功）。其余按系统配置、外观、梦境折叠分组，能力检查单独入口。简单开关同行排列，复杂编辑器纵向布局适配窄屏。
+
+主聊天世界书/破限编辑已移除，设置页不再请求 `/lorebook`、`/jailbreak-entries` 或 Reality prompt assets。DreamController 负责动态世界/破限列表与独立设置，UI 不硬编码资产名；保留旧单选字段的读取兼容，写入使用 `jailbreak_presets`。记忆范围、感知边界、清明模式与桌面端共用后端字段，梦境中禁止修改。设置路由订阅控制器以同步保存状态、语言、主题及连接变化。
+
+`CapabilitySheet.controlsOnly` 复用原权限确认与设备门面，系统配置入口提供权限和功能操作；能力检查入口只提供观测、连通测试与刷新。无新增领域 Timer、持久状态或原生通道。
+
 ## 生活记录（2026-09-11）
 
 侧栏 `AppRoute.lifeRecords` → `LifeRecordsPage`，由独立 `LifeRecordsController`

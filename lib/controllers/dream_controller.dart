@@ -21,6 +21,8 @@ class DreamController extends ChangeNotifier {
   DreamState? state;
   DreamStats? stats;
   DreamSettings? settings;
+  List<PromptAssetOption> worlds = [];
+  List<PromptAssetOption> presets = [];
   String? error;
   String? settingsError;
   bool loadingState = false;
@@ -104,7 +106,12 @@ class DreamController extends ChangeNotifier {
   void send(String text) {
     final message = text.trim();
     if (message.isEmpty || state?.isActive != true) return;
-    if (sending) { _pending.add(message); messages.add(ChatMessage(role: 'you', text: message, time: _nowLabel())); notifyListeners(); return; }
+    if (sending) {
+      _pending.add(message);
+      messages.add(ChatMessage(role: 'you', text: message, time: _nowLabel()));
+      notifyListeners();
+      return;
+    }
     sending = true;
     error = null;
     messages.add(ChatMessage(role: 'you', text: message, time: _nowLabel()));
@@ -205,17 +212,47 @@ class DreamController extends ChangeNotifier {
 
   Future<void> loadSettings() async {
     final token = _accessToken;
-    if (loadingSettings || token == null) return;
+    if (loadingSettings) return;
+    if (token == null) {
+      settings = null;
+      worlds = [];
+      presets = [];
+      settingsError = null;
+      notifyListeners();
+      return;
+    }
+    final backend = _backend();
     loadingSettings = true;
     settingsError = null;
+    settings = null;
+    worlds = [];
+    presets = [];
     notifyListeners();
     try {
-      settings = await _backend().loadDreamSettings(token: token);
+      final loadedSettings = await backend.loadDreamSettings(token: token);
+      final loadedWorlds = await backend.loadDreamOptions(
+        token: token,
+        worlds: true,
+      );
+      final loadedPresets = await backend.loadDreamOptions(
+        token: token,
+        worlds: false,
+      );
+      if (token == _accessToken && identical(backend, _backend())) {
+        settings = loadedSettings;
+        worlds = loadedWorlds;
+        presets = loadedPresets;
+      }
     } on BackendException catch (e) {
-      settingsError = e.message;
+      if (token == _accessToken && identical(backend, _backend())) {
+        settingsError = e.message;
+      }
     } finally {
       loadingSettings = false;
       notifyListeners();
+    }
+    if (token != _accessToken || !identical(backend, _backend())) {
+      await loadSettings();
     }
   }
 
@@ -223,9 +260,18 @@ class DreamController extends ChangeNotifier {
     bool? enableDreamLorebook,
     String? worldLayer,
     String? jailbreakPreset,
+    List<String>? jailbreakPresets,
+    String? memoryAccess,
+    String? boundaryLevel,
+    String? lucidMode,
   }) async {
     final token = _accessToken;
-    if (savingSettings || token == null) return;
+    if (savingSettings ||
+        loadingSettings ||
+        state?.isActive == true ||
+        token == null) {
+      return;
+    }
     savingSettings = true;
     settingsError = null;
     notifyListeners();
@@ -235,6 +281,10 @@ class DreamController extends ChangeNotifier {
         enableDreamLorebook: enableDreamLorebook,
         worldLayer: worldLayer,
         jailbreakPreset: jailbreakPreset,
+        jailbreakPresets: jailbreakPresets,
+        memoryAccess: memoryAccess,
+        boundaryLevel: boundaryLevel,
+        lucidMode: lucidMode,
       );
     } on BackendException catch (e) {
       settingsError = e.message;

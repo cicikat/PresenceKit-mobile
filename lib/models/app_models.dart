@@ -122,7 +122,16 @@ class BehaviorDecisionStatus {
   }
 }
 
-enum AppRoute { chat, dream, profile, diary, garden, activity, group, lifeRecords }
+enum AppRoute {
+  chat,
+  dream,
+  profile,
+  diary,
+  garden,
+  activity,
+  group,
+  lifeRecords,
+}
 
 extension AppRouteLabel on AppRoute {
   String get label {
@@ -796,17 +805,32 @@ class DreamSettings {
     required this.enableDreamLorebook,
     required this.worldLayer,
     required this.jailbreakPreset,
-  });
+    List<String>? jailbreakPresets,
+    this.memoryAccess = 'relationship_summary',
+    this.boundaryLevel = 'body_perceptible',
+    this.lucidMode = 'lucid_shared',
+  }) : _jailbreakPresets = jailbreakPresets;
 
   final bool enableDreamLorebook;
   final String worldLayer;
+  final String memoryAccess;
+  final String boundaryLevel;
+  final String lucidMode;
   final String jailbreakPreset;
+  final List<String>? _jailbreakPresets;
+  List<String> get jailbreakPresets => _jailbreakPresets ?? [jailbreakPreset];
 
   factory DreamSettings.fromJson(Map<String, dynamic> json) {
     return DreamSettings(
+      memoryAccess: json['memory_access']?.toString() ?? 'relationship_summary',
+      boundaryLevel: json['boundary_level']?.toString() ?? 'body_perceptible',
+      lucidMode: json['lucid_mode']?.toString() ?? 'lucid_shared',
       enableDreamLorebook: json['enable_dream_lorebook'] != false,
       worldLayer: json['world_layer']?.toString() ?? 'reality_derived',
       jailbreakPreset: json['jailbreak_preset']?.toString() ?? 'default',
+      jailbreakPresets: json['jailbreak_presets'] is List
+          ? (json['jailbreak_presets'] as List).whereType<String>().toList()
+          : null,
     );
   }
 }
@@ -1438,7 +1462,9 @@ class BackendDreamSettingsSummary {
     return BackendDreamSettingsSummary(
       enableDreamLorebook: json['enable_dream_lorebook'] as bool?,
       worldLayer: json['world_layer']?.toString(),
-      jailbreakPreset: json['jailbreak_preset']?.toString(),
+      jailbreakPreset: json['jailbreak_presets'] is List
+          ? (json['jailbreak_presets'] as List).whereType<String>().join(', ')
+          : json['jailbreak_preset']?.toString(),
     );
   }
 

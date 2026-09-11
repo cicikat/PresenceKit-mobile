@@ -1,5 +1,12 @@
 # 测试与开发
 
+## 设置 UI 与 Dream 设置对齐（2026-09-11）
+
+- `flutter gen-l10n`、`flutter analyze --no-pub` 通过，0 issues。
+- 全量 `flutter test --no-pub` 152 项通过；最后收尾后相关 widget、请求、本地化与结构测试 25 项再次通过。覆盖顶部连接配置、折叠分组、320px 展开无溢出、动态 Dream 资产与多选/上下文字段 PATCH。
+- `flutter build apk --debug --flavor dev --no-pub` 通过，产物为 `build/app/outputs/flutter-apk/app-dev-debug.apk`。未发布正式包或安装设备。
+- 390×844 设置首页已通过离屏渲染检查；真实设备的权限往返、后台/夜间提醒和后端在线保存仍须联调，不能将静态 UI 检查作为真机证明。
+
 ## 生活记录前端验收（2026-09-11）
 
 - `flutter gen-l10n`、`flutter analyze --no-pub` 通过，0 issues。

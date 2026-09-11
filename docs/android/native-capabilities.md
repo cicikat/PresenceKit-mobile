@@ -20,7 +20,7 @@ Android 原生层位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
 
 ## MainActivity.kt
 
-The `presence_mobile/settings` channel also persists mobile appearance preferences through `getAppearancePrefs` and `setAppearancePrefs`. `nightSilent` gates native notification quiet hours from 23:30 to 06:30. Proactive message frequency is not exposed until a backend consumer exists.
+The `presence_mobile/settings` channel also persists mobile appearance preferences through `getAppearancePrefs` and `setAppearancePrefs`. The legacy `nightSilent` value remains readable/writable for compatibility but no longer suppresses notifications. Fixed 23:30–06:30 quiet hours and their settings entry were removed. Proactive message frequency is not exposed until a backend consumer exists.
 
 职责：
 
@@ -66,7 +66,7 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 - 中继与轮询共用 generation 裁决和同一条 `message.id` 去重、behavior、通知闸门消费管线；
   中继接管时会打断在途轮询并丢弃旧 generation 结果，避免双重弹出。
 - 根据 behavior metadata 决定悬浮窗或普通通知。
-- 普通通知受静音时段和 30 分钟冷却控制。
+- 普通通知保留 30 分钟冷却；不再按本机固定深夜时段静音。
 - 普通通知标题使用 `cachedCharacterDisplayName`（Flutter 侧 `resolveCharacterDisplayName()` 的结果，
   由 `AppSettingsStore.cacheCharacterDisplayName()` 经 `MethodChannel` 写入，取不到时回退中性占位），
   不再固定显示应用名；API 28+ 用 `Notification.MessagingStyle` 让头像出现在左侧、更贴近聊天气泡观感，
@@ -76,7 +76,11 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
   截断并加"…"（两行 × 15 字算下来是 30，但实测 30 会挤成三行，留了余量压到 25）；展开态也是同一份
   裁过的文本，不会露出完整多段回复。已静默收取的条数不再拼进这条弹窗，能力检查页和常驻前台状态栏
   已经展示。
-- 能力检查页展示被静音/冷却拦截的累计计数和最近原因；测试模式默认关闭，开启时只绕过静音与冷却闸门，不改变消息消费逻辑。
+- 能力检查页只读展示提醒冷却拦截的累计计数和最近原因（历史原因可能含静音）；系统配置内的通知测试模式默认关闭，开启时只绕过冷却，不改变消息消费逻辑。
+
+### 设置入口调整（2026-09-11）
+
+权限申请、电池优化引导、屏幕上下文上报开关及开发测试操作迁至「系统配置 → 权限与功能」。能力检查保留权限、连接、中继、后台服务、通知闸门和后端诊断的只读观测与刷新。后台通知开关只在系统配置出现，控制后台接收服务；通知闸门是提醒决策的观测，不是第二个服务开关。授权确认仍复用原设备门面及系统授权流程；不变更 channel、存储键、poll/ack、去重、TTL 或前后台交接。
 
 注意：
 

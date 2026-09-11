@@ -159,6 +159,69 @@ void main() {
     );
   });
 
+  test(
+    'dream assets come from backend catalogs and retain custom IDs',
+    () async {
+      fakeClient.responseBody = jsonEncode({
+        'worlds': [
+          'custom_world',
+          {'id': 'garden', 'label': 'Garden'},
+        ],
+      });
+      final worlds = await backend.loadDreamOptions(
+        token: 'mobile-token',
+        worlds: true,
+      );
+      expect(fakeClient.requestedUri, Uri.parse('$baseUrl/dream/worlds'));
+      expect(
+        fakeClient.lastRequestHeaders['authorization'],
+        'Bearer mobile-token',
+      );
+      expect(worlds.map((o) => o.id), ['custom_world', 'garden']);
+      expect(worlds.last.label, 'Garden');
+      fakeClient.responseBody = jsonEncode({
+        'presets': ['custom_preset'],
+      });
+      final presets = await backend.loadDreamOptions(
+        token: 'mobile-token',
+        worlds: false,
+      );
+      expect(fakeClient.requestedUri, Uri.parse('$baseUrl/dream/presets'));
+      expect(presets.single.id, 'custom_preset');
+    },
+  );
+
+  test(
+    'dream patch uses plural presets and preserves backend context fields',
+    () async {
+      fakeClient.responseBody = jsonEncode({
+        'settings': {
+          'jailbreak_presets': ['one', 'two'],
+          'world_layer': 'garden',
+          'memory_access': 'card_only',
+          'boundary_level': 'vague',
+          'lucid_mode': 'non_lucid',
+        },
+      });
+      final settings = await backend.updateDreamSettings(
+        token: 'mobile-token',
+        jailbreakPresets: ['one', 'two'],
+        memoryAccess: 'card_only',
+      );
+      expect(fakeClient.method, 'PATCH');
+      expect(fakeClient.requestedUri, Uri.parse('$baseUrl/dream/settings'));
+      expect(jsonDecode(fakeClient.lastRequestBody), {
+        'jailbreak_presets': ['one', 'two'],
+        'memory_access': 'card_only',
+      });
+      expect(settings.jailbreakPresets, ['one', 'two']);
+      expect(settings.worldLayer, 'garden');
+      expect(settings.memoryAccess, 'card_only');
+      expect(settings.boundaryLevel, 'vague');
+      expect(settings.lucidMode, 'non_lucid');
+    },
+  );
+
   group('base url 拼接与鉴权前置检查', () {
     test('GET requests hit baseUrl + path with a Bearer token header', () async {
       fakeClient.responseBody = jsonEncode({'entries': []});

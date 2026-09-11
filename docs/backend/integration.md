@@ -1,5 +1,12 @@
 # 后端集成
 
+## 设置控制面调整（2026-09-11）
+
+- Reality 主聊天世界书与破限由后端管理面维护，手机设置不再读取条目列表或提交启用修改。
+- Dream 独立设置使用 `GET /dream/settings`、`GET /dream/worlds`（`worlds` 列表）、`GET /dream/presets`（`presets` 列表），均沿用 Bearer mobile token 的 `activity` scope。资产 ID/label 原样显示，不以内置名字替代自定义项；加载失败显示错误与重试，不伪装成功。
+- `PATCH /dream/settings` 只提交修改字段：`enable_dream_lorebook`、`world_layer`、`jailbreak_presets`、`memory_access`、`boundary_level`、`lucid_mode`。读取兼容旧 `jailbreak_preset`，优先使用新数组；保存使用新数组。后端仍负责枚举校验和入梦快照，本场梦境中手机禁用编辑。
+- 三面核对：管理面的 Reality 资产、Dream CRUD/默认值/effective state 与审计保持后端负责；桌面 Dream 动态资产与上下文设置用作契约依据，未修改桌面/后端代码。本次不新增队列、trace 或台账；mobile chat/poll/ack、消息关联键、去重、TTL、鉴权和生命周期不变。固定深夜静音取消仅影响 Android 提醒，后台接收与提醒冷却仍分离。
+
 ## 生活记录（2026-09-11，proposed）
 
 手机新增独立生活记录 UI 和 Android durable outbox。API 草案、schema、幂等和后端验收清单见

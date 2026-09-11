@@ -16,6 +16,7 @@ class CapabilitySheet extends StatefulWidget {
   const CapabilitySheet({
     super.key,
     required this.c,
+    this.controlsOnly = false,
     required this.onLoadStatus,
     required this.onRequestNotifications,
     required this.onRequestIgnoreBatteryOptimizations,
@@ -48,6 +49,7 @@ class CapabilitySheet extends StatefulWidget {
   });
 
   final YxPalette c;
+  final bool controlsOnly;
   final Future<CapabilityStatus> Function() onLoadStatus;
   final Future<void> Function() onRequestNotifications;
   final Future<void> Function() onRequestIgnoreBatteryOptimizations;
@@ -225,7 +227,9 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          context.l10n.capabilityTitle,
+                          widget.controlsOnly
+                              ? context.l10n.settingsPermissionsTitle
+                              : context.l10n.capabilityTitle,
                           style: serif(c, 22, weight: FontWeight.w500),
                         ),
                       ),
@@ -278,7 +282,8 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     actionLabel: status.notificationsEnabled
                         ? context.l10n.enabledStatus
                         : context.l10n.enableAction,
-                    onPressed: status.notificationsEnabled
+                    onPressed:
+                        !widget.controlsOnly || status.notificationsEnabled
                         ? null
                         : () => _run(widget.onRequestNotifications),
                   ),
@@ -293,12 +298,15 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     actionLabel: status.ignoringBatteryOptimizations
                         ? context.l10n.authorizedStatus
                         : context.l10n.authorizeAction,
-                    onPressed: status.ignoringBatteryOptimizations
+                    onPressed:
+                        !widget.controlsOnly ||
+                            status.ignoringBatteryOptimizations
                         ? null
                         : () =>
                               _run(widget.onRequestIgnoreBatteryOptimizations),
                   ),
-                  _OemBackgroundGuide(c: c, appDisplayName: appDisplayName),
+                  if (widget.controlsOnly)
+                    _OemBackgroundGuide(c: c, appDisplayName: appDisplayName),
                   CapabilityRow(
                     c: c,
                     icon: Icons.picture_in_picture_alt_outlined,
@@ -312,7 +320,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     actionLabel: status.overlayEnabled
                         ? context.l10n.enabledStatus
                         : context.l10n.configureAction,
-                    onPressed: status.overlayEnabled
+                    onPressed: !widget.controlsOnly || status.overlayEnabled
                         ? null
                         : () => _run(widget.onRequestOverlay),
                   ),
@@ -325,7 +333,8 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     actionLabel: status.accessibilityEnabled
                         ? context.l10n.enabledStatus
                         : context.l10n.configureAction,
-                    onPressed: status.accessibilityEnabled
+                    onPressed:
+                        !widget.controlsOnly || status.accessibilityEnabled
                         ? null
                         : () => _run(widget.onRequestAccessibility),
                   ),
@@ -340,22 +349,27 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     actionLabel: status.screenContextUploadEnabled
                         ? context.l10n.enabledStatus
                         : context.l10n.disabledStatus,
-                    trailing: Switch(
-                      value: status.screenContextUploadEnabled,
-                      onChanged: _acting
-                          ? null
-                          : (value) => _run(
-                              () => widget.onToggleScreenContextUpload(value),
-                            ),
+                    trailing: !widget.controlsOnly
+                        ? null
+                        : Switch(
+                            value: status.screenContextUploadEnabled,
+                            onChanged: _acting
+                                ? null
+                                : (value) => _run(
+                                    () => widget.onToggleScreenContextUpload(
+                                      value,
+                                    ),
+                                  ),
+                          ),
+                  ),
+                  if (widget.controlsOnly)
+                    _DeveloperDiagnosticsToggle(
+                      c: c,
+                      enabled: _developerDiagnostics,
+                      onChanged: (value) =>
+                          setState(() => _developerDiagnostics = value),
                     ),
-                  ),
-                  _DeveloperDiagnosticsToggle(
-                    c: c,
-                    enabled: _developerDiagnostics,
-                    onChanged: (value) =>
-                        setState(() => _developerDiagnostics = value),
-                  ),
-                  if (_developerDiagnostics) ...[
+                  if (widget.controlsOnly && _developerDiagnostics) ...[
                     ScreenContextDebugCard(
                       c: c,
                       snapshot: _screenSnapshot,
@@ -406,125 +420,128 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     actionLabel: status.deviceAdminEnabled
                         ? context.l10n.enabledStatus
                         : context.l10n.authorizeAction,
-                    onPressed: status.deviceAdminEnabled
+                    onPressed: !widget.controlsOnly || status.deviceAdminEnabled
                         ? null
                         : () => _run(widget.onRequestDeviceAdmin),
                   ),
-                  CapabilityRow(
-                    c: c,
-                    icon: Icons.sync_lock_outlined,
-                    title: context.l10n.capabilityBackgroundServiceTitle,
-                    subtitle: _backgroundServiceSubtitle(status),
-                    enabled: status.backgroundNotificationsEnabled,
-                    actionLabel: status.backgroundNotificationsEnabled
-                        ? context.l10n.switchEnabledStatus
-                        : context.l10n.disabledStatus,
-                    trailing: Switch(
-                      value: status.backgroundNotificationsEnabled,
-                      onChanged: _acting
+                  if (!widget.controlsOnly) ...[
+                    CapabilityRow(
+                      c: c,
+                      icon: Icons.sync_lock_outlined,
+                      title: context.l10n.capabilityBackgroundServiceTitle,
+                      subtitle: _backgroundServiceSubtitle(status),
+                      enabled: status.backgroundNotificationsEnabled,
+                      actionLabel: status.backgroundNotificationsEnabled
+                          ? context.l10n.switchEnabledStatus
+                          : context.l10n.disabledStatus,
+                      trailing: !widget.controlsOnly
                           ? null
-                          : (value) => _run(
-                              () =>
-                                  widget.onToggleBackgroundNotifications(value),
+                          : Switch(
+                              value: status.backgroundNotificationsEnabled,
+                              onChanged: _acting
+                                  ? null
+                                  : (value) => _run(
+                                      () => widget
+                                          .onToggleBackgroundNotifications(
+                                            value,
+                                          ),
+                                    ),
                             ),
                     ),
-                  ),
-                  _SyncStatusSection(c: c, sheet: widget),
-                  CapabilityRow(
-                    c: c,
-                    icon: Icons.cell_tower_outlined,
-                    title: context.l10n.capabilityRelayTitle,
-                    subtitle: _relayConnectionSubtitle(status),
-                    enabled:
-                        status.relayConnectionStatus.displayStatus ==
-                        RelayDisplayStatus.connected,
-                    actionLabel: _relayConnectionLabel(
-                      status.relayConnectionStatus,
-                    ),
-                    trailing: _relayStatusPill(c, status.relayConnectionStatus),
-                  ),
-                  CapabilityRow(
-                    c: c,
-                    icon: Icons.notifications_paused_outlined,
-                    title: context.l10n.capabilityGateTitle,
-                    subtitle: _notificationGateSubtitle(status),
-                    enabled: status.notificationGateStatus.testModeEnabled,
-                    actionLabel: status.notificationGateStatus.testModeEnabled
-                        ? context.l10n.testingStatus
-                        : context.l10n.normalStatus,
-                  ),
-                  CapabilityRow(
-                    c: c,
-                    icon: Icons.hub_outlined,
-                    title: context.l10n.capabilityBackendTitle,
-                    subtitle: _backendCapabilitySubtitle(status),
-                    enabled: status.backendReachable,
-                    actionLabel: status.backendBusy
-                        ? context.l10n.detectingStatus
-                        : status.backendReachable
-                        ? context.l10n.connectedStatus
-                        : context.l10n.detectAction,
-                    trailing: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        YxStatusPill(
-                          c: c,
-                          enabled: status.backendReachable,
-                          waiting: status.backendBusy,
-                          enabledLabel: context.l10n.connectedStatus,
-                          disabledLabel: context.l10n.notConnectedStatus,
-                        ),
-                        YxIconButton(
-                          c: c,
-                          icon: Icons.edit_location_alt_rounded,
-                          onPressed: widget.onEditBackend,
-                          tooltip: context.l10n.capabilityEditBackendTooltip,
-                          size: 30,
-                        ),
-                        YxIconButton(
-                          c: c,
-                          icon: Icons.wifi_tethering_rounded,
-                          onPressed: _acting
-                              ? () {}
-                              : () => _run(widget.onTestBackend),
-                          tooltip: context.l10n.capabilityDetectBackendTooltip,
-                          size: 30,
-                        ),
-                      ],
-                    ),
-                  ),
-                  BackendDiagnosticsCard(
-                    c: c,
-                    diagnostics: _diagnostics,
-                    error: _diagnosticsError,
-                    loading: _loadingDiagnostics,
-                    onRefresh: _loadDiagnostics,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 22),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: c.surfaceSoft,
-                        border: Border.all(color: c.ink4),
+                    _SyncStatusSection(c: c, sheet: widget),
+                    CapabilityRow(
+                      c: c,
+                      icon: Icons.cell_tower_outlined,
+                      title: context.l10n.capabilityRelayTitle,
+                      subtitle: _relayConnectionSubtitle(status),
+                      enabled:
+                          status.relayConnectionStatus.displayStatus ==
+                          RelayDisplayStatus.connected,
+                      actionLabel: _relayConnectionLabel(
+                        status.relayConnectionStatus,
                       ),
-                      child: Text(
-                        status.backendError != null
-                            ? context.l10n.capabilityBackendLastError(
-                                status.backendError!,
-                              )
-                            : context.l10n.capabilityBackendNotice,
-                        style: serif(
-                          c,
-                          13,
-                          color: c.ink2,
-                        ).copyWith(fontStyle: FontStyle.italic),
+                      trailing: _relayStatusPill(
+                        c,
+                        status.relayConnectionStatus,
                       ),
                     ),
-                  ),
+                    CapabilityRow(
+                      c: c,
+                      icon: Icons.notifications_paused_outlined,
+                      title: context.l10n.capabilityGateTitle,
+                      subtitle: _notificationGateSubtitle(status),
+                      enabled: status.notificationGateStatus.testModeEnabled,
+                      actionLabel: status.notificationGateStatus.testModeEnabled
+                          ? context.l10n.testingStatus
+                          : context.l10n.normalStatus,
+                    ),
+                    CapabilityRow(
+                      c: c,
+                      icon: Icons.hub_outlined,
+                      title: context.l10n.capabilityBackendTitle,
+                      subtitle: _backendCapabilitySubtitle(status),
+                      enabled: status.backendReachable,
+                      actionLabel: status.backendBusy
+                          ? context.l10n.detectingStatus
+                          : status.backendReachable
+                          ? context.l10n.connectedStatus
+                          : context.l10n.detectAction,
+                      trailing: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          YxStatusPill(
+                            c: c,
+                            enabled: status.backendReachable,
+                            waiting: status.backendBusy,
+                            enabledLabel: context.l10n.connectedStatus,
+                            disabledLabel: context.l10n.notConnectedStatus,
+                          ),
+                          YxIconButton(
+                            c: c,
+                            icon: Icons.wifi_tethering_rounded,
+                            onPressed: _acting
+                                ? () {}
+                                : () => _run(widget.onTestBackend),
+                            tooltip:
+                                context.l10n.capabilityDetectBackendTooltip,
+                            size: 30,
+                          ),
+                        ],
+                      ),
+                    ),
+                    BackendDiagnosticsCard(
+                      c: c,
+                      diagnostics: _diagnostics,
+                      error: _diagnosticsError,
+                      loading: _loadingDiagnostics,
+                      onRefresh: _loadDiagnostics,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 22),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: c.surfaceSoft,
+                          border: Border.all(color: c.ink4),
+                        ),
+                        child: Text(
+                          status.backendError != null
+                              ? context.l10n.capabilityBackendLastError(
+                                  status.backendError!,
+                                )
+                              : context.l10n.capabilityBackendNotice,
+                          style: serif(
+                            c,
+                            13,
+                            color: c.ink2,
+                          ).copyWith(fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ],
             ),

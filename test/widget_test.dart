@@ -124,7 +124,7 @@ void main() {
     },
   );
 
-  testWidgets('settings page puts language above token', (
+  testWidgets('settings page prioritizes connection and collapses modules', (
     WidgetTester tester,
   ) async {
     var credentialTapped = false;
@@ -148,13 +148,11 @@ void main() {
             prefs: const YxPrefs(),
             profileDisplayName: 'Nova',
             profileAvatarBytes: null,
-            promptAssets: null,
-            loreEntries: const [],
-            jailbreakEntries: const [],
+
             dreamSettings: null,
             settingsBusy: false,
             settingsError: null,
-            promptEntriesSaving: false,
+
             notificationTestMode: false,
             stickerEnabled: false,
             autoPlayVoice: false,
@@ -170,8 +168,7 @@ void main() {
             onNotificationTestMode: (_) {},
             onStickerEnabledChanged: (_) {},
             onAutoPlayVoiceChanged: (_) {},
-            onToggleLorebook: (_) {},
-            onToggleJailbreak: (_) {},
+
             onDreamLorebook: (_) {},
             onDreamWorldLayer: (_) {},
             onDreamJailbreak: (_) {},
@@ -184,21 +181,36 @@ void main() {
       ),
     );
 
-    expect(find.text('设置'), findsOneWidget);
-    expect(find.text('语言'), findsOneWidget);
-    expect(find.text('访问 Token'), findsOneWidget);
-    expect(find.textContaining('中继只承载新消息信号'), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.text('语言')).dy,
-      lessThan(tester.getTopLeft(find.text('访问 Token')).dy),
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(SettingsPage)),
     );
+    expect(find.text(l10n.settingsSetupComplete), findsWidgets);
+    expect(find.text(l10n.settingsLanguageTitle), findsNothing);
+    expect(find.text(l10n.settingsChatLorebookTitle), findsNothing);
+    expect(find.text(l10n.settingsChatJailbreakTitle), findsNothing);
+    expect(find.text(l10n.settingsNightSilentTitle), findsNothing);
     expect(
-      tester.getTopLeft(find.text('访问 Token')).dy,
-      lessThan(tester.getTopLeft(find.text('能力检查')).dy),
+      tester.getTopLeft(find.text(l10n.settingsAccessTokenTitle)).dy,
+      lessThan(tester.getTopLeft(find.text(l10n.settingsSystemModule)).dy),
     );
-
     await tester.tap(find.text('更换'));
     expect(credentialTapped, isTrue);
+    await tester.binding.setSurfaceSize(const Size(320, 740));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final title in [
+      l10n.settingsSystemModule,
+      l10n.settingsAppearanceSection,
+      l10n.settingsDreamModule,
+    ]) {
+      final tile = find.text(title);
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+    }
   });
 
   testWidgets('drawer keeps navigation scrollable and local settings visible', (

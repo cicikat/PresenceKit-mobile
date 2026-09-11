@@ -30,7 +30,6 @@ import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.net.URL
-import java.util.Calendar
 import java.util.concurrent.atomic.AtomicInteger
 
 class MobileNotificationService : Service() {
@@ -40,8 +39,6 @@ class MobileNotificationService : Service() {
     private val serviceChannelId = NotificationChannels.SERVICE_ID
     private val messageChannelId = NotificationChannels.MESSAGE_ID
     private val foregroundId = 10434
-    private val quietStartMinute = 23 * 60 + 30
-    private val quietEndMinute = 6 * 60 + 30
     private val messageCooldownMs = 30 * 60 * 1000L
     private val initialRetryDelayMs = 1000L
     private val maximumRetryDelayMs = 60_000L
@@ -1083,24 +1080,11 @@ class MobileNotificationService : Service() {
         if (servicePrefs().getBoolean("notificationTestMode", false)) {
             return null
         }
-        if (isQuietMinute(currentMinuteOfDay())) {
-            return "\u9759\u97f3\u65f6\u6bb5 23:30-06:30"
-        }
         val lastShown = servicePrefs().getLong("lastMessageNotificationAt", 0L)
         if (lastShown > 0 && now - lastShown < messageCooldownMs) {
             return "30 \u5206\u949f\u51b7\u5374\u4e2d"
         }
         return null
-    }
-
-    private fun currentMinuteOfDay(): Int {
-        val calendar = Calendar.getInstance()
-        return calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
-    }
-
-    private fun isQuietMinute(minute: Int): Boolean {
-        if (!servicePrefs().getBoolean("nightSilent", true)) return false
-        return minute >= quietStartMinute || minute < quietEndMinute
     }
 
     private fun recordSuppressedMessage(reason: String) {

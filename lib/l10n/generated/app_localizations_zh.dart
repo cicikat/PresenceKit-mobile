@@ -9,6 +9,67 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get settingsSystemModule => '系统配置';
+
+  @override
+  String get settingsDreamMemory => '记忆范围';
+
+  @override
+  String get settingsDreamCardOnly => '仅角色卡';
+
+  @override
+  String get settingsDreamRelationship => '关系摘要';
+
+  @override
+  String get settingsDreamSnapshot => '完整快照';
+
+  @override
+  String get settingsDreamBoundary => '感知边界';
+
+  @override
+  String get settingsDreamVague => '模糊';
+
+  @override
+  String get settingsDreamBody => '身体可感知';
+
+  @override
+  String get settingsDreamNumbers => '数值可见';
+
+  @override
+  String get settingsDreamThreshold => '阈值突破';
+
+  @override
+  String get settingsDreamLucidity => '清明模式';
+
+  @override
+  String get settingsDreamLucid => '清明共享';
+
+  @override
+  String get settingsDreamNonLucid => '非清明';
+
+  @override
+  String get settingsDreamModule => '梦境设置';
+
+  @override
+  String get settingsPermissionsTitle => '权限与功能';
+
+  @override
+  String get settingsSetupComplete => '已配置';
+
+  @override
+  String get settingsSetupHelp =>
+      '本端仅为前端，需在自己的电脑或服务器上部署后端。完成后端鉴权初始化后，获取 mobile 访问 Token，再填写节点和用户 ID。';
+
+  @override
+  String get settingsDreamBackgroundTitle => '梦境背景';
+
+  @override
+  String get settingsDreamNextEntry => '下次入梦生效，梦境中不可修改';
+
+  @override
+  String get settingsDreamUnavailable => '尚未读取梦境设置，请配置连接后重试';
+
+  @override
   String get lifeTitle => '生活记录';
 
   @override
@@ -279,7 +340,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAccessTokenTitle => '访问 Token';
 
   @override
-  String get settingsAccessTokenConfigured => '已设置 · 保存在本机 Android 私有存储';
+  String get settingsAccessTokenConfigured => '已配置';
 
   @override
   String get settingsAccessTokenMissing => '尚未设置 · 连接后端前必须填写';
@@ -541,7 +602,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRelayTitle => '推送中继 ntfy';
 
   @override
-  String get settingsRelaySubtitle => '中继只承载新消息信号，正文会从已鉴权后端回源读取。';
+  String get settingsRelaySubtitle => '配置后台推送连接';
 
   @override
   String get settingsEditRelayTooltip => '修改中继地址';
@@ -553,14 +614,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsBackgroundNotificationsTitle => '后台通知';
 
   @override
-  String get settingsBackgroundNotificationsSubtitle =>
-      '中继实时订阅 · 长时间断线周期补偿 · 静音/冷却';
+  String get settingsBackgroundNotificationsSubtitle => '离开应用后继续接收消息';
 
   @override
   String get settingsNotificationTestTitle => '通知闸门测试模式（仅调试）';
 
   @override
-  String get settingsNotificationTestSubtitle => '仅绕过静音时段和 30 分钟冷却，不改变消息消费逻辑。';
+  String get settingsNotificationTestSubtitle => '临时跳过 30 分钟提醒冷却';
 
   @override
   String get settingsAppearanceSection => '外观与显示';
@@ -1760,7 +1820,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get capabilityRelayTitle => '中继连接状态';
 
   @override
-  String get capabilityGateTitle => '通知闸门状态';
+  String get capabilityGateTitle => '提醒冷却状态';
 
   @override
   String get testingStatus => '测试中';
@@ -2085,10 +2145,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '原生中继服务未运行；前台由 Flutter 每 5 秒读取主动消息';
 
   @override
-  String get capabilityGateTestOn => '测试模式已开启：仅绕过静音时段和 30 分钟冷却';
+  String get capabilityGateTestOn => '测试模式已开启：跳过 30 分钟冷却';
 
   @override
-  String get capabilityGateTestOff => '测试模式关闭：静音时段 23:30–06:30，普通通知间隔 30 分钟';
+  String get capabilityGateTestOff => '普通提醒间隔 30 分钟，消息仍会正常接收';
 
   @override
   String get noneStatus => '无';

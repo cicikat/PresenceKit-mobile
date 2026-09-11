@@ -9,6 +9,69 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get settingsSystemModule => 'System';
+
+  @override
+  String get settingsDreamMemory => 'Memory access';
+
+  @override
+  String get settingsDreamCardOnly => 'Character card only';
+
+  @override
+  String get settingsDreamRelationship => 'Relationship summary';
+
+  @override
+  String get settingsDreamSnapshot => 'Full snapshot';
+
+  @override
+  String get settingsDreamBoundary => 'Perception boundary';
+
+  @override
+  String get settingsDreamVague => 'Vague';
+
+  @override
+  String get settingsDreamBody => 'Body perceptible';
+
+  @override
+  String get settingsDreamNumbers => 'Numbers visible';
+
+  @override
+  String get settingsDreamThreshold => 'Threshold break';
+
+  @override
+  String get settingsDreamLucidity => 'Lucidity';
+
+  @override
+  String get settingsDreamLucid => 'Shared lucid';
+
+  @override
+  String get settingsDreamNonLucid => 'Non-lucid';
+
+  @override
+  String get settingsDreamModule => 'Dream';
+
+  @override
+  String get settingsPermissionsTitle => 'Permissions & features';
+
+  @override
+  String get settingsSetupComplete => 'Configured';
+
+  @override
+  String get settingsSetupHelp =>
+      'This app is a frontend. Deploy the backend on your own computer or server, initialize authentication, then obtain a mobile access token and enter your server address and user ID.';
+
+  @override
+  String get settingsDreamBackgroundTitle => 'Dream background';
+
+  @override
+  String get settingsDreamNextEntry =>
+      'Applies on next entry; locked during a dream';
+
+  @override
+  String get settingsDreamUnavailable =>
+      'Dream settings have not loaded. Set up your connection and retry.';
+
+  @override
   String get lifeTitle => 'Life records';
 
   @override
@@ -573,8 +636,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsRelayTitle => 'ntfy push relay';
 
   @override
-  String get settingsRelaySubtitle =>
-      'The relay only carries new-message signals; content is fetched from the authenticated backend.';
+  String get settingsRelaySubtitle => 'Set up background push delivery';
 
   @override
   String get settingsEditRelayTooltip => 'Edit relay address';
@@ -595,7 +657,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNotificationTestSubtitle =>
-      'Only bypasses quiet hours and the 30-minute cooldown; message consumption is unchanged.';
+      'Temporarily skip the 30-minute notification cooldown';
 
   @override
   String get settingsAppearanceSection => 'Appearance & display';
@@ -1848,7 +1910,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get capabilityRelayTitle => 'Relay connection';
 
   @override
-  String get capabilityGateTitle => 'Notification gate';
+  String get capabilityGateTitle => 'Notification cooldown';
 
   @override
   String get testingStatus => 'Testing';
@@ -2183,11 +2245,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get capabilityGateTestOn =>
-      'Test mode is on: quiet hours and the 30-minute cooldown are bypassed';
+      'Test mode is on: the 30-minute cooldown is bypassed';
 
   @override
   String get capabilityGateTestOff =>
-      'Test mode is off: quiet hours 23:30–06:30; regular notifications are 30 minutes apart';
+      'Regular alerts are 30 minutes apart; messages are still received';
 
   @override
   String get noneStatus => 'None';

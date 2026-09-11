@@ -98,6 +98,126 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @settingsSystemModule.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统配置'**
+  String get settingsSystemModule;
+
+  /// No description provided for @settingsDreamMemory.
+  ///
+  /// In zh, this message translates to:
+  /// **'记忆范围'**
+  String get settingsDreamMemory;
+
+  /// No description provided for @settingsDreamCardOnly.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅角色卡'**
+  String get settingsDreamCardOnly;
+
+  /// No description provided for @settingsDreamRelationship.
+  ///
+  /// In zh, this message translates to:
+  /// **'关系摘要'**
+  String get settingsDreamRelationship;
+
+  /// No description provided for @settingsDreamSnapshot.
+  ///
+  /// In zh, this message translates to:
+  /// **'完整快照'**
+  String get settingsDreamSnapshot;
+
+  /// No description provided for @settingsDreamBoundary.
+  ///
+  /// In zh, this message translates to:
+  /// **'感知边界'**
+  String get settingsDreamBoundary;
+
+  /// No description provided for @settingsDreamVague.
+  ///
+  /// In zh, this message translates to:
+  /// **'模糊'**
+  String get settingsDreamVague;
+
+  /// No description provided for @settingsDreamBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'身体可感知'**
+  String get settingsDreamBody;
+
+  /// No description provided for @settingsDreamNumbers.
+  ///
+  /// In zh, this message translates to:
+  /// **'数值可见'**
+  String get settingsDreamNumbers;
+
+  /// No description provided for @settingsDreamThreshold.
+  ///
+  /// In zh, this message translates to:
+  /// **'阈值突破'**
+  String get settingsDreamThreshold;
+
+  /// No description provided for @settingsDreamLucidity.
+  ///
+  /// In zh, this message translates to:
+  /// **'清明模式'**
+  String get settingsDreamLucidity;
+
+  /// No description provided for @settingsDreamLucid.
+  ///
+  /// In zh, this message translates to:
+  /// **'清明共享'**
+  String get settingsDreamLucid;
+
+  /// No description provided for @settingsDreamNonLucid.
+  ///
+  /// In zh, this message translates to:
+  /// **'非清明'**
+  String get settingsDreamNonLucid;
+
+  /// No description provided for @settingsDreamModule.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境设置'**
+  String get settingsDreamModule;
+
+  /// No description provided for @settingsPermissionsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'权限与功能'**
+  String get settingsPermissionsTitle;
+
+  /// No description provided for @settingsSetupComplete.
+  ///
+  /// In zh, this message translates to:
+  /// **'已配置'**
+  String get settingsSetupComplete;
+
+  /// No description provided for @settingsSetupHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'本端仅为前端，需在自己的电脑或服务器上部署后端。完成后端鉴权初始化后，获取 mobile 访问 Token，再填写节点和用户 ID。'**
+  String get settingsSetupHelp;
+
+  /// No description provided for @settingsDreamBackgroundTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境背景'**
+  String get settingsDreamBackgroundTitle;
+
+  /// No description provided for @settingsDreamNextEntry.
+  ///
+  /// In zh, this message translates to:
+  /// **'下次入梦生效，梦境中不可修改'**
+  String get settingsDreamNextEntry;
+
+  /// No description provided for @settingsDreamUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'尚未读取梦境设置，请配置连接后重试'**
+  String get settingsDreamUnavailable;
+
   /// No description provided for @lifeTitle.
   ///
   /// In zh, this message translates to:
@@ -629,7 +749,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAccessTokenConfigured.
   ///
   /// In zh, this message translates to:
-  /// **'已设置 · 保存在本机 Android 私有存储'**
+  /// **'已配置'**
   String get settingsAccessTokenConfigured;
 
   /// No description provided for @settingsAccessTokenMissing.
@@ -1109,7 +1229,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsRelaySubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'中继只承载新消息信号，正文会从已鉴权后端回源读取。'**
+  /// **'配置后台推送连接'**
   String get settingsRelaySubtitle;
 
   /// No description provided for @settingsEditRelayTooltip.
@@ -1133,7 +1253,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackgroundNotificationsSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'中继实时订阅 · 长时间断线周期补偿 · 静音/冷却'**
+  /// **'离开应用后继续接收消息'**
   String get settingsBackgroundNotificationsSubtitle;
 
   /// No description provided for @settingsNotificationTestTitle.
@@ -1145,7 +1265,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNotificationTestSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'仅绕过静音时段和 30 分钟冷却，不改变消息消费逻辑。'**
+  /// **'临时跳过 30 分钟提醒冷却'**
   String get settingsNotificationTestSubtitle;
 
   /// No description provided for @settingsAppearanceSection.
@@ -3346,7 +3466,7 @@ abstract class AppLocalizations {
   /// No description provided for @capabilityGateTitle.
   ///
   /// In zh, this message translates to:
-  /// **'通知闸门状态'**
+  /// **'提醒冷却状态'**
   String get capabilityGateTitle;
 
   /// No description provided for @testingStatus.
@@ -3928,13 +4048,13 @@ abstract class AppLocalizations {
   /// No description provided for @capabilityGateTestOn.
   ///
   /// In zh, this message translates to:
-  /// **'测试模式已开启：仅绕过静音时段和 30 分钟冷却'**
+  /// **'测试模式已开启：跳过 30 分钟冷却'**
   String get capabilityGateTestOn;
 
   /// No description provided for @capabilityGateTestOff.
   ///
   /// In zh, this message translates to:
-  /// **'测试模式关闭：静音时段 23:30–06:30，普通通知间隔 30 分钟'**
+  /// **'普通提醒间隔 30 分钟，消息仍会正常接收'**
   String get capabilityGateTestOff;
 
   /// No description provided for @noneStatus.

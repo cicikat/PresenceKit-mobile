@@ -855,8 +855,13 @@ class SettingsRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: serif(c, 16, weight: FontWeight.w500)),
-            const SizedBox(height: 2),
-            Text(subtitle, style: mono(c, 10.5, color: c.ink3)),
+            if (subtitle.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 12, color: c.ink3, height: 1.4),
+              ),
+            ],
           ],
         );
         return Container(
@@ -864,7 +869,10 @@ class SettingsRow extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: c.surfaceEdge)),
           ),
-          child: constraints.maxWidth < 430
+          child:
+              !(child is Switch ||
+                  child is YxIconButton ||
+                  child is FilledButton)
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

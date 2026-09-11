@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/locale_controller.dart';
@@ -23,13 +21,9 @@ class SettingsPage extends StatelessWidget {
     required this.profileDisplayName,
     required this.profileAvatarBytes,
     this.chatBackground,
-    required this.promptAssets,
-    required this.loreEntries,
-    required this.jailbreakEntries,
     required this.dreamSettings,
     required this.settingsBusy,
     required this.settingsError,
-    required this.promptEntriesSaving,
     required this.onTheme,
     required this.onLanguage,
     required this.onManageThemes,
@@ -43,11 +37,15 @@ class SettingsPage extends StatelessWidget {
     this.onImportDreamBackground,
     this.onResetDreamBackground,
     required this.onOpenProfile,
-    required this.onToggleLorebook,
-    required this.onToggleJailbreak,
     required this.onDreamLorebook,
     required this.onDreamWorldLayer,
     required this.onDreamJailbreak,
+    this.dreamWorlds = const [],
+    this.dreamPresets = const [],
+    this.onOpenSystemControls,
+    this.onRetryDream,
+    this.onDreamContext,
+    this.dreamActive = false,
     required this.hasAdminToken,
     required this.backgroundNotifications,
     required this.backendBaseUrl,
@@ -76,13 +74,9 @@ class SettingsPage extends StatelessWidget {
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
   final Uint8List? chatBackground;
-  final PromptAssets? promptAssets;
-  final List<LoreEntry> loreEntries;
-  final List<JailbreakEntry> jailbreakEntries;
   final DreamSettings? dreamSettings;
   final bool settingsBusy;
   final String? settingsError;
-  final bool promptEntriesSaving;
   final ValueChanged<bool> onTheme;
   final ValueChanged<AppLanguage> onLanguage;
   final VoidCallback onManageThemes;
@@ -96,11 +90,15 @@ class SettingsPage extends StatelessWidget {
   final VoidCallback? onImportDreamBackground;
   final VoidCallback? onResetDreamBackground;
   final VoidCallback onOpenProfile;
-  final ValueChanged<String> onToggleLorebook;
-  final ValueChanged<String> onToggleJailbreak;
   final ValueChanged<bool> onDreamLorebook;
   final ValueChanged<String> onDreamWorldLayer;
   final ValueChanged<String> onDreamJailbreak;
+  final List<PromptAssetOption> dreamWorlds;
+  final List<PromptAssetOption> dreamPresets;
+  final VoidCallback? onOpenSystemControls;
+  final VoidCallback? onRetryDream;
+  final bool dreamActive;
+  final void Function(String field, String value)? onDreamContext;
   final bool hasAdminToken;
   final bool backgroundNotifications;
   final String backendBaseUrl;
@@ -141,42 +139,33 @@ class SettingsPage extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _SettingsSection(title: l10n.settingsGeneralSection),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsLanguageTitle,
-                subtitle: l10n.settingsLanguageSubtitle,
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<AppLanguage>(
-                    value: language,
-                    alignment: AlignmentDirectional.centerEnd,
-                    borderRadius: BorderRadius.circular(8),
-                    selectedItemBuilder: (context) => [
-                      for (final _ in AppLanguage.values)
-                        Text(languageLabel, style: serif(c, 14)),
-                    ],
-                    items: [
-                      DropdownMenuItem(
-                        value: AppLanguage.system,
-                        child: Text(l10n.languageSystem),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.settingsConnectionAccountSection,
+                      style: serif(c, 18, weight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      hasAdminToken &&
+                              backendBaseUrl.trim().isNotEmpty &&
+                              ownerUserId.trim().isNotEmpty
+                          ? l10n.settingsSetupComplete
+                          : l10n.settingsSetupHelp,
+                      style: TextStyle(
+                        color: c.ink2,
+                        fontSize: 13,
+                        height: 1.6,
                       ),
-                      DropdownMenuItem(
-                        value: AppLanguage.simplifiedChinese,
-                        child: Text(l10n.languageSimplifiedChinese),
-                      ),
-                      DropdownMenuItem(
-                        value: AppLanguage.english,
-                        child: Text(l10n.languageEnglish),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) onLanguage(value);
-                    },
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              _SettingsSection(title: l10n.settingsConnectionAccountSection),
               SettingsRow(
                 c: c,
                 title: l10n.settingsAccessTokenTitle,
@@ -207,404 +196,500 @@ class SettingsPage extends StatelessWidget {
                   tooltip: l10n.settingsEditBackendTooltip,
                 ),
               ),
-              SettingsRow(
+              _SettingsModule(
                 c: c,
-                title: l10n.settingsRelayTitle,
-                subtitle: l10n.settingsRelaySubtitle,
-                child: YxIconButton(
-                  c: c,
-                  icon: Icons.cell_tower_outlined,
-                  onPressed: () => onEditRelay(),
-                  tooltip: l10n.settingsEditRelayTooltip,
-                ),
-              ),
-              _SettingsSection(title: l10n.settingsNotificationsSection),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsBackgroundNotificationsTitle,
-                subtitle: l10n.settingsBackgroundNotificationsSubtitle,
-                child: Switch(
-                  value: backgroundNotifications,
-                  onChanged: onBackgroundNotifications,
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsNotificationTestTitle,
-                subtitle: l10n.settingsNotificationTestSubtitle,
-                child: Switch(
-                  value: notificationTestMode,
-                  onChanged: onNotificationTestMode,
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsNightSilentTitle,
-                subtitle: l10n.settingsNightSilentSubtitle,
-                child: Switch(
-                  value: prefs.nightSilent,
-                  onChanged: (value) =>
-                      onPrefs(prefs.copyWith(nightSilent: value)),
-                ),
-              ),
-              _SettingsSection(title: l10n.settingsChatSection),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsStickerTitle,
-                subtitle: l10n.settingsStickerSubtitle,
-                child: Switch(
-                  value: stickerEnabled,
-                  onChanged: onStickerEnabledChanged,
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsAutoPlayVoiceTitle,
-                subtitle: l10n.settingsAutoPlayVoiceSubtitle,
-                child: Switch(
-                  value: autoPlayVoice,
-                  onChanged: onAutoPlayVoiceChanged,
-                ),
-              ),
-              _SettingsSection(title: l10n.settingsAppearanceSection),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsProfileTitle,
-                subtitle: l10n.settingsProfileSubtitle,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    YxAvatar(
+                title: l10n.settingsSystemModule,
+                icon: Icons.tune_rounded,
+                children: [
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsLanguageTitle,
+                    subtitle: l10n.settingsLanguageSubtitle,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<AppLanguage>(
+                        value: language,
+                        alignment: AlignmentDirectional.centerEnd,
+                        borderRadius: BorderRadius.circular(8),
+                        selectedItemBuilder: (context) => [
+                          for (final _ in AppLanguage.values)
+                            Text(languageLabel, style: serif(c, 14)),
+                        ],
+                        items: [
+                          DropdownMenuItem(
+                            value: AppLanguage.system,
+                            child: Text(l10n.languageSystem),
+                          ),
+                          DropdownMenuItem(
+                            value: AppLanguage.simplifiedChinese,
+                            child: Text(l10n.languageSimplifiedChinese),
+                          ),
+                          DropdownMenuItem(
+                            value: AppLanguage.english,
+                            child: Text(l10n.languageEnglish),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) onLanguage(value);
+                        },
+                      ),
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsBackgroundNotificationsTitle,
+                    subtitle: l10n.settingsBackgroundNotificationsSubtitle,
+                    child: Switch(
+                      value: backgroundNotifications,
+                      onChanged: onBackgroundNotifications,
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsRelayTitle,
+                    subtitle: l10n.settingsRelaySubtitle,
+                    child: YxIconButton(
                       c: c,
-                      size: 38,
-                      imageBytes: profileAvatarBytes,
-                      text: profileDisplayName.characters.first,
+                      icon: Icons.cell_tower_outlined,
+                      onPressed: () => onEditRelay(),
+                      tooltip: l10n.settingsEditRelayTooltip,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      profileDisplayName,
-                      style: serif(c, 16, weight: FontWeight.w500),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsStickerTitle,
+                    subtitle: l10n.settingsStickerSubtitle,
+                    child: Switch(
+                      value: stickerEnabled,
+                      onChanged: onStickerEnabledChanged,
                     ),
-                    YxIconButton(
-                      c: c,
-                      icon: Icons.open_in_new_rounded,
-                      onPressed: onOpenProfile,
-                      tooltip: l10n.settingsOpenProfileTooltip,
-                      size: 30,
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsAutoPlayVoiceTitle,
+                    subtitle: l10n.settingsAutoPlayVoiceSubtitle,
+                    child: Switch(
+                      value: autoPlayVoice,
+                      onChanged: onAutoPlayVoiceChanged,
                     ),
-                    YxIconButton(
-                      c: c,
-                      icon: Icons.badge_outlined,
-                      onPressed: onEditProfileName,
-                      tooltip: l10n.settingsEditProfileNameTooltip,
-                      size: 30,
-                    ),
-                    YxIconButton(
-                      c: c,
-                      icon: Icons.add_photo_alternate_outlined,
-                      onPressed: onImportProfileAvatar,
-                      tooltip: l10n.settingsImportAvatarTooltip,
-                      size: 30,
-                    ),
-                    if (profileAvatarBytes != null)
-                      YxIconButton(
+                  ),
+                  ListTile(
+                    title: Text(l10n.settingsPermissionsTitle),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: onOpenSystemControls,
+                  ),
+                  ExpansionTile(
+                    title: Text(l10n.settingsNotificationTestTitle),
+                    children: [
+                      SettingsRow(
                         c: c,
-                        icon: Icons.restore_rounded,
-                        onPressed: onResetProfileAvatar,
-                        tooltip: l10n.settingsResetAvatarTooltip,
-                        size: 30,
-                      ),
-                  ],
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsThemeTitle,
-                subtitle: l10n.settingsThemeBuiltInSubtitle(themePresetCount),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    ChoiceChip(
-                      label: Text(l10n.themePaper),
-                      selected: !dark,
-                      onSelected: (_) => onTheme(false),
-                    ),
-                    ChoiceChip(
-                      label: Text(l10n.themeNight),
-                      selected: dark,
-                      onSelected: (_) => onTheme(true),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () =>
-                          (onManageThemesForMode ?? (_) => onManageThemes())(
-                            false,
-                          ),
-                      icon: const Icon(Icons.palette_outlined, size: 17),
-                      label: Text(
-                        lightThemePresetName ??
-                            activeThemePresetName ??
-                            l10n.settingsColorPresets(themePresetCount),
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () =>
-                          (onManageThemesForMode ?? (_) => onManageThemes())(
-                            true,
-                          ),
-                      icon: const Icon(Icons.palette_outlined, size: 17),
-                      label: Text(
-                        darkThemePresetName ??
-                            activeThemePresetName ??
-                            l10n.settingsColorPresets(themePresetCount),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsChatBackgroundTitle,
-                subtitle: l10n.settingsChatBackgroundSubtitle,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (chatBackground != null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: Image.memory(
-                          chatBackground!,
-                          width: 64,
-                          height: 40,
-                          fit: BoxFit.cover,
+                        title: l10n.settingsNotificationTestTitle,
+                        subtitle: l10n.settingsNotificationTestSubtitle,
+                        child: Switch(
+                          value: notificationTestMode,
+                          onChanged: onNotificationTestMode,
                         ),
                       ),
-                    YxIconButton(
+                    ],
+                  ),
+                ],
+              ),
+              _SettingsModule(
+                c: c,
+                title: l10n.settingsAppearanceSection,
+                icon: Icons.palette_outlined,
+                children: [
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsProfileTitle,
+                    subtitle: l10n.settingsProfileSubtitle,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        YxAvatar(
+                          c: c,
+                          size: 38,
+                          imageBytes: profileAvatarBytes,
+                          text: profileDisplayName.isEmpty
+                              ? '?'
+                              : profileDisplayName.characters.first,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          profileDisplayName,
+                          style: serif(c, 16, weight: FontWeight.w500),
+                        ),
+                        YxIconButton(
+                          c: c,
+                          icon: Icons.open_in_new_rounded,
+                          onPressed: onOpenProfile,
+                          tooltip: l10n.settingsOpenProfileTooltip,
+                          size: 30,
+                        ),
+                        YxIconButton(
+                          c: c,
+                          icon: Icons.badge_outlined,
+                          onPressed: onEditProfileName,
+                          tooltip: l10n.settingsEditProfileNameTooltip,
+                          size: 30,
+                        ),
+                        YxIconButton(
+                          c: c,
+                          icon: Icons.add_photo_alternate_outlined,
+                          onPressed: onImportProfileAvatar,
+                          tooltip: l10n.settingsImportAvatarTooltip,
+                          size: 30,
+                        ),
+                        if (profileAvatarBytes != null)
+                          YxIconButton(
+                            c: c,
+                            icon: Icons.restore_rounded,
+                            onPressed: onResetProfileAvatar,
+                            tooltip: l10n.settingsResetAvatarTooltip,
+                            size: 30,
+                          ),
+                      ],
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsThemeTitle,
+                    subtitle: l10n.settingsThemeBuiltInSubtitle(
+                      themePresetCount,
+                    ),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        ChoiceChip(
+                          label: Text(l10n.themePaper),
+                          selected: !dark,
+                          onSelected: (_) => onTheme(false),
+                        ),
+                        ChoiceChip(
+                          label: Text(l10n.themeNight),
+                          selected: dark,
+                          onSelected: (_) => onTheme(true),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () =>
+                              (onManageThemesForMode ??
+                              (_) => onManageThemes())(false),
+                          icon: const Icon(Icons.palette_outlined, size: 17),
+                          label: Text(
+                            lightThemePresetName ??
+                                activeThemePresetName ??
+                                l10n.settingsColorPresets(themePresetCount),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () =>
+                              (onManageThemesForMode ??
+                              (_) => onManageThemes())(true),
+                          icon: const Icon(Icons.palette_outlined, size: 17),
+                          label: Text(
+                            darkThemePresetName ??
+                                activeThemePresetName ??
+                                l10n.settingsColorPresets(themePresetCount),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsChatBackgroundTitle,
+                    subtitle: l10n.settingsChatBackgroundSubtitle,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (chatBackground != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Image.memory(
+                              chatBackground!,
+                              width: 64,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        YxIconButton(
+                          c: c,
+                          icon: Icons.add_photo_alternate_outlined,
+                          onPressed: onImportChatBackground ?? () {},
+                          tooltip: l10n.settingsImportChatBackgroundTooltip,
+                          size: 30,
+                        ),
+                        if (chatBackground != null)
+                          YxIconButton(
+                            c: c,
+                            icon: Icons.restore_rounded,
+                            onPressed: onResetChatBackground ?? () {},
+                            tooltip: l10n.settingsResetChatBackgroundTooltip,
+                            size: 30,
+                          ),
+                      ],
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsInfoStripTitle,
+                    subtitle: l10n.settingsInfoStripSubtitle,
+                    child: Switch(
+                      value: prefs.infoStrip,
+                      onChanged: (value) =>
+                          onPrefs(prefs.copyWith(infoStrip: value)),
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsFontSizeTitle,
+                    subtitle: l10n.settingsFontSizeSubtitle(
+                      prefs.fontSize.round(),
+                    ),
+                    child: SizedBox(
+                      width: 130,
+                      child: Slider(
+                        value: prefs.fontSize,
+                        min: 14,
+                        max: 20,
+                        divisions: 6,
+                        activeColor: c.character,
+                        onChanged: (value) =>
+                            onPrefs(prefs.copyWith(fontSize: value)),
+                      ),
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsShowAvatarTitle,
+                    subtitle: l10n.settingsShowAvatarSubtitle,
+                    child: Switch(
+                      value: prefs.showYouAvatar,
+                      onChanged: (value) =>
+                          onPrefs(prefs.copyWith(showYouAvatar: value)),
+                    ),
+                  ),
+                ],
+              ),
+              _SettingsModule(
+                c: c,
+                title: l10n.settingsDreamModule,
+                icon: Icons.nightlight_outlined,
+                children: [
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsDreamBackgroundTitle,
+                    subtitle: l10n.settingsChatBackgroundSubtitle,
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        if (prefs.dreamBackground != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Image.memory(
+                              prefs.dreamBackground!,
+                              width: 64,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        YxIconButton(
+                          c: c,
+                          icon: Icons.add_photo_alternate_outlined,
+                          onPressed: onImportDreamBackground ?? () {},
+                          tooltip: l10n.settingsImportChatBackgroundTooltip,
+                          size: 30,
+                        ),
+                        if (prefs.dreamBackground != null)
+                          YxIconButton(
+                            c: c,
+                            icon: Icons.restore_rounded,
+                            onPressed: onResetDreamBackground ?? () {},
+                            tooltip: l10n.settingsResetChatBackgroundTooltip,
+                            size: 30,
+                          ),
+                      ],
+                    ),
+                  ),
+                  for (final entry
+                      in <String, (String, String?, Map<String, String>)>{
+                        'memory_access': (
+                          l10n.settingsDreamMemory,
+                          dreamSettings?.memoryAccess,
+                          {
+                            'card_only': l10n.settingsDreamCardOnly,
+                            'relationship_summary':
+                                l10n.settingsDreamRelationship,
+                            'full_snapshot': l10n.settingsDreamSnapshot,
+                          },
+                        ),
+                        'boundary_level': (
+                          l10n.settingsDreamBoundary,
+                          dreamSettings?.boundaryLevel,
+                          {
+                            'vague': l10n.settingsDreamVague,
+                            'body_perceptible': l10n.settingsDreamBody,
+                            'numbers_visible': l10n.settingsDreamNumbers,
+                            'threshold_break': l10n.settingsDreamThreshold,
+                          },
+                        ),
+                        'lucid_mode': (
+                          l10n.settingsDreamLucidity,
+                          dreamSettings?.lucidMode,
+                          {
+                            'lucid_shared': l10n.settingsDreamLucid,
+                            'non_lucid': l10n.settingsDreamNonLucid,
+                          },
+                        ),
+                      }.entries)
+                    SettingsRow(
                       c: c,
-                      icon: Icons.add_photo_alternate_outlined,
-                      onPressed: onImportChatBackground ?? () {},
-                      tooltip: l10n.settingsImportChatBackgroundTooltip,
-                      size: 30,
-                    ),
-                    if (chatBackground != null)
-                      YxIconButton(
-                        c: c,
-                        icon: Icons.restore_rounded,
-                        onPressed: onResetChatBackground ?? () {},
-                        tooltip: l10n.settingsResetChatBackgroundTooltip,
-                        size: 30,
+                      title: entry.value.$1,
+                      subtitle: l10n.settingsDreamNextEntry,
+                      child: SizedBox(
+                        width: 220,
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          value: entry.value.$2,
+                          items: [
+                            for (final option in {
+                              ...entry.value.$3,
+                              if (entry.value.$2 != null &&
+                                  !entry.value.$3.containsKey(entry.value.$2))
+                                entry.value.$2!: entry.value.$2!,
+                            }.entries)
+                              DropdownMenuItem(
+                                value: option.key,
+                                child: Text(option.value),
+                              ),
+                          ],
+                          onChanged:
+                              settingsBusy ||
+                                  dreamActive ||
+                                  dreamSettings == null
+                              ? null
+                              : (v) {
+                                  if (v != null) {
+                                    onDreamContext?.call(entry.key, v);
+                                  }
+                                },
+                        ),
                       ),
-                  ],
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: '${l10n.settingsChatBackgroundTitle} · Dream',
-                subtitle: l10n.settingsChatBackgroundSubtitle,
-                child: Wrap(spacing: 8, children: [
-                  if (prefs.dreamBackground != null) ClipRRect(borderRadius: BorderRadius.circular(4), child: Image.memory(prefs.dreamBackground!, width: 64, height: 40, fit: BoxFit.cover)),
-                  YxIconButton(c: c, icon: Icons.add_photo_alternate_outlined, onPressed: onImportDreamBackground ?? () {}, tooltip: l10n.settingsImportChatBackgroundTooltip, size: 30),
-                  if (prefs.dreamBackground != null) YxIconButton(c: c, icon: Icons.restore_rounded, onPressed: onResetDreamBackground ?? () {}, tooltip: l10n.settingsResetChatBackgroundTooltip, size: 30),
-                ]),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsInfoStripTitle,
-                subtitle: l10n.settingsInfoStripSubtitle,
-                child: Switch(
-                  value: prefs.infoStrip,
-                  onChanged: (value) =>
-                      onPrefs(prefs.copyWith(infoStrip: value)),
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsFontSizeTitle,
-                subtitle: l10n.settingsFontSizeSubtitle(prefs.fontSize.round()),
-                child: SizedBox(
-                  width: 130,
-                  child: Slider(
-                    value: prefs.fontSize,
-                    min: 14,
-                    max: 20,
-                    divisions: 6,
-                    activeColor: c.character,
-                    onChanged: (value) =>
-                        onPrefs(prefs.copyWith(fontSize: value)),
+                    ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsDreamLorebookTitle,
+                    subtitle: l10n.settingsDreamLorebookSubtitle,
+                    child: Switch(
+                      value: dreamSettings?.enableDreamLorebook ?? true,
+                      onChanged:
+                          settingsBusy || dreamActive || dreamSettings == null
+                          ? null
+                          : onDreamLorebook,
+                    ),
                   ),
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsShowAvatarTitle,
-                subtitle: l10n.settingsShowAvatarSubtitle,
-                child: Switch(
-                  value: prefs.showYouAvatar,
-                  onChanged: (value) =>
-                      onPrefs(prefs.copyWith(showYouAvatar: value)),
-                ),
-              ),
-              _SettingsSection(title: l10n.settingsChatContentSection),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsChatLorebookTitle,
-                subtitle: l10n.settingsChatLorebookSubtitle,
-                child: PromptOptionChips(
-                  c: c,
-                  options: [
-                    for (final entry in loreEntries)
-                      PromptAssetOption(
-                        id: entry.id,
-                        label: entry.displayLabel,
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsDreamWorldTitle,
+                    subtitle: l10n.settingsDreamNextEntry,
+                    child: SizedBox(
+                      width: 220,
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: dreamSettings?.worldLayer,
+                        items: [
+                          for (final option in {
+                            for (final o in dreamWorlds) o.id: o.label,
+                            if (dreamSettings != null &&
+                                !dreamWorlds.any(
+                                  (o) => o.id == dreamSettings!.worldLayer,
+                                ))
+                              dreamSettings!.worldLayer:
+                                  dreamSettings!.worldLayer,
+                          }.entries)
+                            DropdownMenuItem(
+                              value: option.key,
+                              child: Text(
+                                option.value,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
+                        onChanged:
+                            settingsBusy ||
+                                dreamActive ||
+                                dreamSettings == null ||
+                                dreamWorlds.isEmpty
+                            ? null
+                            : (v) {
+                                if (v != null) onDreamWorldLayer(v);
+                              },
                       ),
-                  ],
-                  selected: {
-                    for (final entry in loreEntries)
-                      if (entry.enabled) entry.id,
-                  },
-                  disabled: settingsBusy || promptEntriesSaving,
-                  onToggle: onToggleLorebook,
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsChatJailbreakTitle,
-                subtitle: l10n.settingsChatJailbreakSubtitle,
-                child: PromptOptionChips(
-                  c: c,
-                  options: [
-                    for (final entry in jailbreakEntries)
-                      PromptAssetOption(
-                        id: entry.id,
-                        label: entry.displayLabel,
-                      ),
-                  ],
-                  selected: {
-                    for (final entry in jailbreakEntries)
-                      if (entry.enabled) entry.id,
-                  },
-                  disabled: settingsBusy || promptEntriesSaving,
-                  onToggle: onToggleJailbreak,
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsDreamLorebookTitle,
-                subtitle: l10n.settingsDreamLorebookSubtitle,
-                child: Switch(
-                  value: dreamSettings?.enableDreamLorebook ?? true,
-                  onChanged: settingsBusy ? null : onDreamLorebook,
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsDreamWorldTitle,
-                subtitle: l10n.settingsDreamWorldSubtitle,
-                child: DropdownButton<String>(
-                  value: dreamSettings?.worldLayer ?? 'reality_derived',
-                  onChanged: settingsBusy
-                      ? null
-                      : (value) {
-                          if (value != null) onDreamWorldLayer(value);
-                        },
-                  items: [
-                    DropdownMenuItem(
-                      value: 'reality_derived',
-                      child: Text(l10n.dreamWorldRealityDerived),
                     ),
-                    DropdownMenuItem(
-                      value: 'abo',
-                      child: Text(l10n.dreamWorldAbo),
-                    ),
-                    DropdownMenuItem(
-                      value: 'vampire',
-                      child: Text(l10n.dreamWorldVampire),
-                    ),
-                    DropdownMenuItem(
-                      value: 'cat',
-                      child: Text(l10n.dreamWorldCat),
-                    ),
-                    DropdownMenuItem(
-                      value: 'flower_bud',
-                      child: Text(l10n.dreamWorldFlowerBud),
-                    ),
-                    DropdownMenuItem(
-                      value: 'custom',
-                      child: Text(l10n.customOption),
-                    ),
-                  ],
-                ),
-              ),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsDreamJailbreakTitle,
-                subtitle: l10n.settingsDreamJailbreakSubtitle,
-                child: DropdownButton<String>(
-                  value: dreamSettings?.jailbreakPreset ?? 'default',
-                  onChanged: settingsBusy
-                      ? null
-                      : (value) {
-                          if (value != null) onDreamJailbreak(value);
-                        },
-                  items: [
-                    DropdownMenuItem(
-                      value: 'default',
-                      child: Text(l10n.defaultOption),
-                    ),
-                    DropdownMenuItem(
-                      value: 'abo',
-                      child: Text(l10n.dreamWorldAbo),
-                    ),
-                    DropdownMenuItem(
-                      value: 'custom',
-                      child: Text(l10n.customOption),
-                    ),
-                  ],
-                ),
-              ),
-              if (settingsError != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    l10n.settingsBackendSaveError(settingsError!),
-                    style: mono(c, 10, color: c.danger),
                   ),
-                ),
-              _SettingsSection(title: l10n.settingsDiagnosticsSection),
-              SettingsRow(
-                c: c,
-                title: l10n.settingsCapabilitiesTitle,
-                subtitle: l10n.settingsCapabilitiesSubtitle,
-                child: FilledButton.icon(
-                  onPressed: onOpenCapabilities,
-                  icon: const Icon(Icons.health_and_safety_outlined, size: 18),
-                  label: Text(l10n.openAction),
-                ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsDreamJailbreakTitle,
+                    subtitle: l10n.settingsDreamNextEntry,
+                    child: PromptOptionChips(
+                      c: c,
+                      options: [
+                        for (final option in {
+                          for (final o in dreamPresets) o.id: o.label,
+                          for (final id
+                              in dreamSettings?.jailbreakPresets ?? <String>[])
+                            if (!dreamPresets.any((o) => o.id == id)) id: id,
+                        }.entries)
+                          PromptAssetOption(
+                            id: option.key,
+                            label: option.value,
+                          ),
+                      ],
+                      selected: dreamSettings?.jailbreakPresets.toSet() ?? {},
+                      disabled:
+                          settingsBusy ||
+                          dreamActive ||
+                          dreamSettings == null ||
+                          dreamPresets.isEmpty,
+                      onToggle: onDreamJailbreak,
+                    ),
+                  ),
+                  if (settingsBusy) const LinearProgressIndicator(),
+                  if (settingsError != null ||
+                      dreamSettings == null && !settingsBusy)
+                    ListTile(
+                      title: Text(
+                        settingsError ?? l10n.settingsDreamUnavailable,
+                      ),
+                      trailing: IconButton(
+                        onPressed: onRetryDream,
+                        icon: const Icon(Icons.refresh_rounded),
+                        tooltip: l10n.capabilityRefreshTooltip,
+                      ),
+                    ),
+                ],
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 22),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: c.surfaceSoft,
-                    border: Border.all(color: c.ink4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.health_and_safety_outlined,
+                    color: c.character,
                   ),
-                  child: Text(
-                    l10n.settingsThinClientNotice,
-                    style: serif(
-                      c,
-                      13,
-                      color: c.ink2,
-                    ).copyWith(fontStyle: FontStyle.italic),
-                  ),
+                  title: Text(l10n.settingsCapabilitiesTitle),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: onOpenCapabilities,
                 ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -613,305 +698,39 @@ class SettingsPage extends StatelessWidget {
   }
 }
 
-class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({required this.title});
-
+class _SettingsModule extends StatelessWidget {
+  const _SettingsModule({
+    required this.c,
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
+  final YxPalette c;
   final String title;
-
+  final IconData icon;
+  final List<Widget> children;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 22, 16, 4),
-    child: Text(
-      title,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+    child: Material(
+      color: c.surfaceSoft,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
+        leading: Icon(icon, color: c.character),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            color: c.ink1,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        childrenPadding: const EdgeInsets.only(bottom: 12),
+        children: children,
+      ),
     ),
   );
-}
-
-// Legacy layout retained temporarily for source compatibility while settings
-// navigation moves to SettingsPage; it is no longer constructed by the app.
-// ignore: unused_element
-class _LegacySystemSettingsSheet extends StatelessWidget {
-  const _LegacySystemSettingsSheet({
-    required this.c,
-    required this.hasAdminToken,
-    required this.backgroundNotifications,
-    required this.backendBaseUrl,
-    required this.ownerUserId,
-    required this.historyLoaded,
-    required this.loadingHistory,
-    required this.historyError,
-    required this.gardenLoaded,
-    required this.loadingGarden,
-    required this.gardenError,
-    required this.mobileActive,
-    required this.pollingMobile,
-    required this.mobileError,
-    required this.mobileReceivedCount,
-    required this.lastMobileContent,
-    required this.backendBusy,
-    required this.backendError,
-    required this.lastBackendReply,
-    required this.onEditCredential,
-    required this.onOpenCapabilities,
-    required this.onEditBackend,
-    required this.onBackgroundNotifications,
-  });
-
-  final YxPalette c;
-  final bool hasAdminToken;
-  final bool backgroundNotifications;
-  final String backendBaseUrl;
-  final String ownerUserId;
-  final bool historyLoaded;
-  final bool loadingHistory;
-  final String? historyError;
-  final bool gardenLoaded;
-  final bool loadingGarden;
-  final String? gardenError;
-  final bool mobileActive;
-  final bool pollingMobile;
-  final String? mobileError;
-  final int mobileReceivedCount;
-  final String? lastMobileContent;
-  final bool backendBusy;
-  final String? backendError;
-  final BackendChatResponse? lastBackendReply;
-  final VoidCallback onEditCredential;
-  final VoidCallback onOpenCapabilities;
-  final VoidCallback onEditBackend;
-  final ValueChanged<bool> onBackgroundNotifications;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.92,
-      ),
-      decoration: BoxDecoration(
-        color: c.surface,
-        border: Border(top: BorderSide(color: c.surfaceEdge)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: c.ink4.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-              child: Row(
-                children: [
-                  Icon(Icons.settings_outlined, color: c.ink2),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      '系统设置',
-                      style: serif(c, 22, weight: FontWeight.w500),
-                    ),
-                  ),
-                  YxIconButton(
-                    c: c,
-                    icon: Icons.close_rounded,
-                    onPressed: () => Navigator.pop(context),
-                    tooltip: '关闭',
-                  ),
-                ],
-              ),
-            ),
-            SettingsRow(
-              c: c,
-              title: '访问 Token',
-              subtitle: hasAdminToken
-                  ? '已设置 · 保存在本机 Android 私有存储'
-                  : '尚未设置 · 连接后端前必须填写',
-              child: FilledButton.icon(
-                onPressed: onEditCredential,
-                icon: const Icon(Icons.key_rounded, size: 18),
-                label: Text(hasAdminToken ? '更换' : '设置'),
-              ),
-            ),
-            SettingsRow(
-              c: c,
-              title: '能力检查',
-              subtitle: '权限状态 · 后端连通 · 后台服务',
-              child: FilledButton.icon(
-                onPressed: onOpenCapabilities,
-                icon: const Icon(Icons.health_and_safety_outlined, size: 18),
-                label: const Text('打开'),
-              ),
-            ),
-            SettingsRow(
-              c: c,
-              title: '后端节点',
-              subtitle: '$backendBaseUrl · 用户 $ownerUserId',
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    backendBusy
-                        ? '● 等待'
-                        : backendError != null
-                        ? '● 异常'
-                        : lastBackendReply != null
-                        ? '● 已接入'
-                        : '● 待验证',
-                    style: mono(
-                      c,
-                      11,
-                      color: backendBusy
-                          ? c.warn
-                          : backendError != null
-                          ? c.danger
-                          : lastBackendReply != null
-                          ? c.ok
-                          : c.ink3,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  YxIconButton(
-                    c: c,
-                    icon: Icons.edit_location_alt_rounded,
-                    onPressed: onEditBackend,
-                    tooltip: '修改后端地址',
-                    size: 30,
-                  ),
-                ],
-              ),
-            ),
-            SettingsRow(
-              c: c,
-              title: '聊天记录',
-              subtitle: '向上滑动时加载更早的对话',
-              child: Text(
-                loadingHistory
-                    ? '● 读取'
-                    : historyError != null
-                    ? '● 失败'
-                    : historyLoaded
-                    ? '● 已同步'
-                    : '● 待同步',
-                style: mono(
-                  c,
-                  11,
-                  color: loadingHistory
-                      ? c.warn
-                      : historyError != null
-                      ? c.danger
-                      : historyLoaded
-                      ? c.ok
-                      : c.ink3,
-                ),
-              ),
-            ),
-            SettingsRow(
-              c: c,
-              title: '花园状态',
-              subtitle: '自动同步今天的心境花园',
-              child: Text(
-                loadingGarden
-                    ? '● 读取'
-                    : gardenError != null
-                    ? '● 失败'
-                    : gardenLoaded
-                    ? '● 已同步'
-                    : '● 待同步',
-                style: mono(
-                  c,
-                  11,
-                  color: loadingGarden
-                      ? c.warn
-                      : gardenError != null
-                      ? c.danger
-                      : gardenLoaded
-                      ? c.ok
-                      : c.ink3,
-                ),
-              ),
-            ),
-            SettingsRow(
-              c: c,
-              title: '主动消息',
-              subtitle: mobileReceivedCount > 0
-                  ? '已接收 $mobileReceivedCount 条后台主动消息'
-                  : '中继优先 · 不可用时每 5 秒检查补偿队列',
-              child: Text(
-                pollingMobile
-                    ? '● 轮询'
-                    : mobileError != null
-                    ? '● 失败'
-                    : mobileActive
-                    ? '● 已激活'
-                    : '● 待激活',
-                style: mono(
-                  c,
-                  11,
-                  color: pollingMobile
-                      ? c.warn
-                      : mobileError != null
-                      ? c.danger
-                      : mobileActive
-                      ? c.ok
-                      : c.ink3,
-                ),
-              ),
-            ),
-            SettingsRow(
-              c: c,
-              title: '后台通知',
-              subtitle: '中继实时订阅 · 长时间断线周期补偿 · 静音/冷却',
-              child: Switch(
-                value: backgroundNotifications,
-                onChanged: onBackgroundNotifications,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: c.warn.withValues(alpha: 0.08),
-                  border: Border.all(color: c.warn.withValues(alpha: 0.45)),
-                ),
-                child: Text(
-                  '隐私提示：中继只承载新消息信号，正文会从已鉴权后端回源读取。'
-                  'topic 与访问 token 仍应保持私密。',
-                  style: serif(c, 13, color: c.ink2),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 22),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: c.surfaceSoft,
-                  border: Border.all(color: c.ink4),
-                ),
-                child: Text(
-                  lastMobileContent != null
-                      ? '最近一条主动消息：$lastMobileContent'
-                      : '手机端负责聊天、通知、悬浮窗和本机显示；人格、记忆与调度仍由后端维护。',
-                  style: serif(
-                    c,
-                    13,
-                    color: c.ink2,
-                  ).copyWith(fontStyle: FontStyle.italic),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

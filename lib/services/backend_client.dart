@@ -41,6 +41,7 @@ import '../models/app_models.dart'
         MoodStateSnapshot,
         PhoneControlDebugResult,
         PromptAssets,
+        PromptAssetOption,
         ReplyTarget,
         ReadingLibraryBook,
         ReadingPageResult,
@@ -411,11 +412,39 @@ class BackendClient {
     );
   }
 
+  Future<List<PromptAssetOption>> loadDreamOptions({
+    required String token,
+    required bool worlds,
+  }) async {
+    final key = worlds ? 'worlds' : 'presets';
+    final json = await _request('/dream/$key', token: token);
+    final items = json[key];
+    return items is List
+        ? items
+              .map((item) {
+                if (item is Map) {
+                  return PromptAssetOption(
+                    id: (item['id'] ?? item['name'] ?? '').toString(),
+                    label: (item['label'] ?? item['name'] ?? item['id'] ?? '')
+                        .toString(),
+                  );
+                }
+                return PromptAssetOption.fromJson(item);
+              })
+              .where((o) => o.id.isNotEmpty)
+              .toList()
+        : [];
+  }
+
   Future<DreamSettings> updateDreamSettings({
     required String token,
     bool? enableDreamLorebook,
     String? worldLayer,
     String? jailbreakPreset,
+    List<String>? jailbreakPresets,
+    String? memoryAccess,
+    String? boundaryLevel,
+    String? lucidMode,
   }) async {
     final decoded = await _request(
       '/dream/settings',
@@ -424,8 +453,12 @@ class BackendClient {
       body: {
         if (enableDreamLorebook != null)
           'enable_dream_lorebook': enableDreamLorebook,
+        if (memoryAccess != null) 'memory_access': memoryAccess,
+        if (boundaryLevel != null) 'boundary_level': boundaryLevel,
+        if (lucidMode != null) 'lucid_mode': lucidMode,
         if (worldLayer != null) 'world_layer': worldLayer,
         if (jailbreakPreset != null) 'jailbreak_preset': jailbreakPreset,
+        if (jailbreakPresets != null) 'jailbreak_presets': jailbreakPresets,
       },
     );
     final settings = decoded['settings'];
