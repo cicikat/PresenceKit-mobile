@@ -1,5 +1,13 @@
 # Mobile Channel 协议现状
 
+## IME awareness (2026-09-11)
+
+Backend-owned `ime_ingest` / `ime_awareness` flags and `ime_judge` routing are managed in the admin UI.
+IME Android owns recording, upload and realtime batching switches. This client keeps the existing proactive
+message/notification path; no new native switch, raw IME read permission, WS payload or ack protocol.
+Physical device delivery remains observe. Backend contract: docs/ime-ingest.md.
+
+
 ## 生活记录队列边界（2026-09-11）
 
 生活记录使用独立 proposed `/life-records/*` 与 native `presence_mobile/life_records`。
