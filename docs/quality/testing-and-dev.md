@@ -1,5 +1,14 @@
 # 测试与开发
 
+## 生活记录前端验收（2026-09-11）
+
+- `flutter gen-l10n`、`flutter analyze --no-pub` 通过，0 issues。
+- `flutter test --no-pub test/life_records_test.dart test/localization_contract_test.dart test/widget_test.dart test/method_channel_contract_test.dart test/chat_recovery_upload_test.dart test/chat_interaction_regression_test.dart`：71 项通过。本功能 9 项覆盖本机日期/分类/条目查询、离线降级、分页、跨 owner 迟到响应、保存成功但刷新失败不重复创建、落盘失败、双语页面及金额币种校验；同时回归既有聊天图片/重试、壳层、抽屉和 settings channel。
+- Android 目录执行 `gradlew.bat :app:testDevDebugUnitTest --tests com.presencekit.mobile.LifeRecordsTest --tests com.presencekit.mobile.BackendSecurityPolicyTest --tests com.presencekit.mobile.CredentialMigrationTest --console=plain`：22 项通过（生活记录 15、安全策略 2、凭据迁移 5）。使用 Robolectric 4.16 / API 28 验证 SQLite、源图恢复、相同请求重试、顺序编辑/删除、错 ack、冲突、拒绝后的校正、容量限制、后台 capability 和过期编辑器，不等同 OEM 真机验收。
+- `flutter build apk --debug --flavor dev --no-pub` 成功，产物 `build/app/outputs/flutter-apk/app-dev-debug.apk`。未升级发布版本、未使用正式签名、未发布或安装到手机。
+- 本机没有已连接 Android 设备或已配置 AVD。后端 `/life-records/*` 待接入；实际 OCR、角色查询、相机授权/回收、断网恢复、Doze/强停/重启和跨端删除列工单 17 的 I1–I4 未勾选项。
+- 首轮测试曾发现请求首次发送/重试的 JSON 字段顺序不一致及旧 Flutter 的 dropdown 参数不兼容，均已修复后重跑通过；不将失败运行计作通过。
+
 ## 外观跟进验证（2026-09-09）
 
 - 图片预览宽高各缩小 50%，附言独立气泡；删除仿导航条和空草稿占位行，系统底部安全区按实际 inset 填色。

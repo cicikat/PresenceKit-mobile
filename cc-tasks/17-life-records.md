@@ -14,7 +14,7 @@
 - [x] M2：独立模型、持久化队列和同步控制器；隔离节点/owner，失败不丢图，重试不重复入账。Android Robolectric 队列测试 15 项通过，覆盖不确定回包重试、重启、修改、删除、冲突、能力关闭、容量拒绝及过期编辑器；另 7 项安全策略/凭据迁移回归通过。
 - [x] M3：生活记录入口、拍照/选图确认、分类和日期查询、结构化编辑/删除、状态与队列观测；中英双语。`gen-l10n`、`analyze --no-pub` 通过，Flutter 相关测试 71 项通过（包括本功能 9 项）。
 - [x] M4：恢复网络自动重试及生命周期接入；明确前后台/系统限制，后端未接入正确降级。前台 30 秒、Android 网络约束持久 Job、凭据暂停/退避及同队列互斥已落地；设备验收仍为 I3 未完成。
-- [ ] M5：队列/同步/页面回归，静态分析与 Dev APK；更新架构、集成、风险文档，提交实现。
+- [x] M5：队列/同步/页面回归，静态分析与 Dev APK；更新架构、集成、风险文档，提交实现。Dev 构建成功，产物 `build/app/outputs/flutter-apk/app-dev-debug.apk`；未对外发布、未安装真机。
 
 M1 完成后后端可独立施工；手机 M2 → M3/M4 → M5。真实后端联调和真机网络/后台验收依赖后端交付，不能提前打勾。
 
@@ -27,4 +27,6 @@ M1 完成后后端可独立施工；手机 M2 → M3/M4 → M5。真实后端联
 
 ## 验证与遗留
 
-施工中逐条记录测试证据；当前尚未执行实现验收。
+验收：`flutter gen-l10n`、`flutter analyze --no-pub`（0 issues）；定向 Flutter 测试 71 项通过；Android `LifeRecordsTest` 15 项 + `BackendSecurityPolicyTest` 2 项 + `CredentialMigrationTest` 5 项均通过；`flutter build apk --debug --flavor dev --no-pub` 成功。
+
+测试清单和命令见 `docs/quality/testing-and-dev.md`。后端本轮只新增工单和三仓总账说明（提交 `1459252`），没有改后端代码或桌面仓库；后端原有并行施工改动未暂存/提交。手机实现分步提交：`b632b39`、`f663c20`、`b99f692`。后续从 I1–I4 接力，不重新做已勾选项。

@@ -1,5 +1,11 @@
 # ARCHITECTURE.md - Emerald-mobile 架构总览
 
+生活记录（2026-09-11）：独立 `LifeRecordsController` / `LifeRecordsPage` 处理饮食、账单、
+购物车的图片确认、结构化校正和日期查询；`LifeRecordsService` 经专用 native channel 调用
+Android SQLite outbox 与 JobScheduler。前后台共享 `LifeRecordsSync`，复用安全策略和凭据，
+不走聊天 ingest 或 mobile 消息 ack。识别、正式数据、角色查询及管理开关属于后端，当前仍为
+proposed 对接工单；手机完成与联调未完的边界见 `cc-tasks/17-life-records.md`。
+
 `Emerald-mobile` 是陪伴系统的 Android 优先移动客户端。它连接 Emerald-presence（旧名 qq-st-bot）后端，提供手机聊天、后台主动消息、屏幕上下文上报、悬浮提醒和用户确认后的本机动作。
 
 ## 系统边界
