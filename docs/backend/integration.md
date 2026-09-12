@@ -2,6 +2,12 @@
 
 ## Conversation calendar (2026-09-12)
 
+Admin settings update: image connections and purpose routing are edited separately; phone vision keeps
+its existing inheritance. Saved-connection probes are admin-only and use synthetic media, not phone
+actions. Owner identity has one setup editor. No Flutter settings, uploads, queue/poll/ack/TTL or notification
+changes are required. Native and real provider verification remain observe; backend details are in
+docs/admin-settings-visual-review.md.
+
 Current: GET /chat-log/stats/calendar requires memory.read + state.read. All four metrics are scoped to owner + character; period=day/week/month/year with date, or start/end (up to 366 days). Missing history is null, never zero. Coverage and totals_partial disclose incomplete data. See backend docs/conversation-calendar.md.
 Roadmap: native desktop/mobile heatmap and day detail UI. Observe: real provider streaming usage and independent automation transport coverage. Existing history, WS/poll/ack/TTL remain unchanged.
 
