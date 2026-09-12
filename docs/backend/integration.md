@@ -1,5 +1,10 @@
 # 后端集成
 
+## Conversation calendar (2026-09-12)
+
+Current: GET /chat-log/stats/calendar requires memory.read + state.read. All four metrics are scoped to owner + character; period=day/week/month/year with date, or start/end (up to 366 days). Missing history is null, never zero. Coverage and totals_partial disclose incomplete data. See backend docs/conversation-calendar.md.
+Roadmap: native desktop/mobile heatmap and day detail UI. Observe: real provider streaming usage and independent automation transport coverage. Existing history, WS/poll/ack/TTL remain unchanged.
+
 ## 工单 19：历史恢复与生活记录核查（2026-09-12）
 
 手机恢复/通知进入先重读 /chat-log/*，再执行原 mobile activation/catch-up，避免后台 ack 已推进后前台只读队列而漏显。历史读取既有 assistant_display_text 字段，经 canonical 文本一致性校验后按段呈现，不新增 HTTP 字段或修改后端；缺失/不匹配时保留普通正文。自回复仍发送原 reply_to，复制/选区只操作本机 UI，思考仍按 canonical turn_id 读取。
