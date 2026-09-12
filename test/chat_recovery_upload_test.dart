@@ -30,11 +30,16 @@ class _Backend extends BackendClient {
   Future<ChatLogDates> loadChatLogDates({required String token}) async {
     historyReads++;
     if (offline) throw const BackendException('offline');
-    return ChatLogDates.fromJson({'dates': day == null ? [] : [day!.date]});
+    return ChatLogDates.fromJson({
+      'dates': day == null ? [] : [day!.date],
+    });
   }
 
   @override
-  Future<ChatLogDay> loadChatLogDay(String date, {required String token}) async => day!;
+  Future<ChatLogDay> loadChatLogDay(
+    String date, {
+    required String token,
+  }) async => day!;
 
   @override
   Future<MobileActivationResult> activateMobile({required String token}) async {
@@ -92,6 +97,39 @@ void main() {
   tearDown(() => controller.dispose());
 
   test(
+    'notification opens reread history after native ack and preserve inline display',
+    () async {
+      backend.offline = false;
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-09-12',
+        'entries': [
+          {'time': '12:00', 'user': 'hi', 'assistant': 'old'},
+        ],
+      });
+      await controller.start();
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-09-12',
+        'entries': [
+          {
+            'time': '12:01',
+            'user': 'hi',
+            'assistant': 'new message',
+            'turn_id': 't1',
+            'assistant_display_text': '<hl>new</hl> message',
+          },
+        ],
+      });
+      await controller.catchUpFromNotification();
+      expect(controller.history.last.text, 'new message');
+      expect(controller.history.last.displayText, '<hl>new</hl> message');
+      expect(
+        controller.history.where((m) => m.role == 'reasoning').single.dateKey,
+        '2026-09-12',
+      );
+      expect(backend.historyReads, 2);
+    },
+  );
+  test(
     'manual refresh recovers failed startup and coalesces repeated refreshes',
     () async {
       await controller.start();
@@ -121,26 +159,46 @@ void main() {
     },
   );
 
-  test('refresh adds missed history, reconciles occurrences and retains a pending send', () async {
-    backend.offline = false;
-    final now = DateTime.now();
-    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    backend.day = ChatLogDay.fromJson({'date': date, 'entries': [
-      {'time': '10:00', 'user': 'hello', 'assistant': 'reply'},
-      {'time': '10:01', 'user': 'other device', 'assistant': 'missed'},
-    ]});
-    final reply = ChatMessage(role: 'him', text: 'reply', time: '10:00');
-    final pending = ChatMessage(role: 'you', text: 'still sending', time: '10:02');
-    controller.sent.addAll([ChatMessage(role: 'you', text: 'hello', time: '10:00'), reply, pending]);
-    controller.sending = true;
-    await controller.refreshConnection();
-    expect(controller.history.map((m) => m.text), ['hello', 'reply', 'other device', 'missed']);
-    expect(controller.history[1].id, reply.id);
-    expect(controller.sent.single.id, pending.id);
-    await controller.refreshConnection();
-    expect(controller.history.where((m) => m.text == 'reply'), hasLength(1));
-    expect(controller.sent.single.id, pending.id);
-  });
+  test(
+    'refresh adds missed history, reconciles occurrences and retains a pending send',
+    () async {
+      backend.offline = false;
+      final now = DateTime.now();
+      final date =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      backend.day = ChatLogDay.fromJson({
+        'date': date,
+        'entries': [
+          {'time': '10:00', 'user': 'hello', 'assistant': 'reply'},
+          {'time': '10:01', 'user': 'other device', 'assistant': 'missed'},
+        ],
+      });
+      final reply = ChatMessage(role: 'him', text: 'reply', time: '10:00');
+      final pending = ChatMessage(
+        role: 'you',
+        text: 'still sending',
+        time: '10:02',
+      );
+      controller.sent.addAll([
+        ChatMessage(role: 'you', text: 'hello', time: '10:00'),
+        reply,
+        pending,
+      ]);
+      controller.sending = true;
+      await controller.refreshConnection();
+      expect(controller.history.map((m) => m.text), [
+        'hello',
+        'reply',
+        'other device',
+        'missed',
+      ]);
+      expect(controller.history[1].id, reply.id);
+      expect(controller.sent.single.id, pending.id);
+      await controller.refreshConnection();
+      expect(controller.history.where((m) => m.text == 'reply'), hasLength(1));
+      expect(controller.sent.single.id, pending.id);
+    },
+  );
 
   test(
     'image bytes and caption survive failure and multipart retry without duplicating bubble',

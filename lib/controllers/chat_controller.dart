@@ -34,8 +34,6 @@ class ChatController extends ChangeNotifier {
   static const initialVisibleMessageCount = 80;
   static const visibleMessageStep = 50;
   static const _staleDeliveryThreshold = Duration(seconds: 15);
-  static const _foregroundCatchUpRetryDelay = Duration(milliseconds: 250);
-  static const _foregroundCatchUpAttempts = 8;
   // Mirrors chat_widgets.dart AnimatedRevealText (kept in sync with
   // Emerald-client/src/windows/room/useVnPresenter.ts, 40 CPS).
   static const revealCps = 40.0;
@@ -134,7 +132,7 @@ class ChatController extends ChangeNotifier {
       return;
     }
     _ensurePollTimer();
-    unawaited(_catchUpAfterBackgroundStops());
+    unawaited(refreshConnection());
   }
 
   Future<void> catchUpFromNotification() async {
@@ -149,7 +147,7 @@ class ChatController extends ChangeNotifier {
       lastMobileContent = pending.last;
       notifyListeners();
     }
-    await _catchUpAfterBackgroundStops();
+    await refreshConnection();
     scrollToBottom();
   }
 
@@ -164,20 +162,6 @@ class ChatController extends ChangeNotifier {
     if (mobileActive && mobileError == null) backendError = null;
     _ensurePollTimer();
     notifyListeners();
-  }
-
-  Future<void> _catchUpAfterBackgroundStops() async {
-    for (var attempt = 0; attempt < _foregroundCatchUpAttempts; attempt++) {
-      if (!await _relay.isBackgroundServiceRunning()) {
-        if (pollingMobile) {
-          await Future<void>.delayed(_foregroundCatchUpRetryDelay);
-          continue;
-        }
-        await pollMobile(source: ChatDeliverySource.catchUp);
-        return;
-      }
-      await Future<void>.delayed(_foregroundCatchUpRetryDelay);
-    }
   }
 
   Future<void> resetForConnectionChange() async {
@@ -265,7 +249,8 @@ class ChatController extends ChangeNotifier {
     sent[index] = sent[index].settled();
   }
 
-  Future<String> loadReasoning(String turnId) => _backend().loadTurnReasoning(turnId, token: _accessToken!);
+  Future<String> loadReasoning(String turnId) =>
+      _backend().loadTurnReasoning(turnId, token: _accessToken!);
 
   Future<void> _send(String text, {ReplyTarget? replyTo}) async {
     final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
@@ -278,7 +263,15 @@ class ChatController extends ChangeNotifier {
         replyTo: replyTo,
       );
       final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
-      if (anchorIndex >= 0) sent[anchorIndex] = ChatMessage(id: anchor.id, role: 'reasoning', text: response.turnId ?? '', time: anchor.time, failed: response.turnId == null);
+      if (anchorIndex >= 0) {
+        sent[anchorIndex] = ChatMessage(
+          id: anchor.id,
+          role: 'reasoning',
+          text: response.turnId ?? '',
+          time: anchor.time,
+          failed: response.turnId == null,
+        );
+      }
       notifyListeners();
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
@@ -338,7 +331,9 @@ class ChatController extends ChangeNotifier {
     if (loadingHistory || token == null) return;
     final backend = _backend();
     final localSnapshot = List<ChatMessage>.of(sent);
-    final protectedFrom = sending ? localSnapshot.lastIndexWhere((m) => m.role == 'you') : localSnapshot.length;
+    final protectedFrom = sending
+        ? localSnapshot.lastIndexWhere((m) => m.role == 'you')
+        : localSnapshot.length;
     loadingHistory = true;
     historyError = null;
     notifyListeners();
@@ -370,13 +365,23 @@ class ChatController extends ChangeNotifier {
       if (reconcileLocal) {
         final consumed = <int>{};
         // Count occurrences, not a set of text: repeated messages remain distinct.
-        for (final local in localSnapshot.take(protectedFrom < 0 ? 0 : protectedFrom)) {
-          if (local.failed || local.attachments.isNotEmpty || local.sticker != null) continue;
+        for (final local in localSnapshot.take(
+          protectedFrom < 0 ? 0 : protectedFrom,
+        )) {
+          if (local.failed ||
+              local.attachments.isNotEmpty ||
+              local.sticker != null) {
+            continue;
+          }
           final date = local.dateKey ?? _dateKey(local.timestamp);
-          final index = messages.lastIndexWhere((remote) =>
-            !consumed.contains(remote.id) && remote.role == local.role &&
-            remote.text == local.text && remote.time == local.time &&
-            (local.role == 'reasoning' || remote.dateKey == date));
+          final index = messages.lastIndexWhere(
+            (remote) =>
+                !consumed.contains(remote.id) &&
+                remote.role == local.role &&
+                remote.text == local.text &&
+                remote.time == local.time &&
+                (local.role == 'reasoning' || remote.dateKey == date),
+          );
           if (index < 0) continue;
           consumed.add(messages[index].id);
           consumed.add(local.id);
@@ -750,7 +755,15 @@ class ChatController extends ChangeNotifier {
         message: message,
       );
       final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
-      if (anchorIndex >= 0) sent[anchorIndex] = ChatMessage(id: anchor.id, role: 'reasoning', text: response.turnId ?? '', time: anchor.time, failed: response.turnId == null);
+      if (anchorIndex >= 0) {
+        sent[anchorIndex] = ChatMessage(
+          id: anchor.id,
+          role: 'reasoning',
+          text: response.turnId ?? '',
+          time: anchor.time,
+          failed: response.turnId == null,
+        );
+      }
       notifyListeners();
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
@@ -839,11 +852,14 @@ class ChatController extends ChangeNotifier {
           himTyping = true;
           notifyListeners();
           final revealMs = (message.text.characters.length / revealCps * 1000)
-              .round().clamp(1, 4000);
+              .round()
+              .clamp(1, 4000);
           final wake = Completer<void>();
           _revealWake = wake;
           await Future.any<void>([
-            Future<void>.delayed(Duration(milliseconds: revealMs + 100 + random.nextInt(901))),
+            Future<void>.delayed(
+              Duration(milliseconds: revealMs + 100 + random.nextInt(901)),
+            ),
             wake.future,
           ]);
           if (identical(_revealWake, wake)) _revealWake = null;
@@ -946,11 +962,21 @@ class ChatController extends ChangeNotifier {
           dateKey: day.date,
         ),
       if (entry.turnId?.isNotEmpty == true)
-        ChatMessage(role: 'reasoning', text: entry.turnId!, time: entry.time),
-      for (final part in _splitHistory(entry.assistant))
+        ChatMessage(
+          role: 'reasoning',
+          text: entry.turnId!,
+          time: '',
+          dateKey: day.date,
+        ),
+      for (final part in _splitHistory(entry.assistant).asMap().entries)
         ChatMessage(
           role: 'him',
-          text: part,
+          text: part.value,
+          displayText: inlineDisplayParts(
+            entry.assistant,
+            entry.assistantDisplayText,
+            _splitHistory(entry.assistant),
+          )[part.key],
           time: entry.time,
           dateKey: day.date,
         ),

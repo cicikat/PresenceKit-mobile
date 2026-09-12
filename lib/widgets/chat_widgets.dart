@@ -201,7 +201,16 @@ class ChatScene extends StatelessWidget {
                         m.dateKey != null && m.dateKey != previous?.dateKey;
                     if (m.role == 'reasoning') {
                       if (!prefs.showReasoning) return const SizedBox.shrink();
-                      return ReasoningPanel(key: ValueKey('reasoning-${m.id}'), c: c, turnId: m.text, unavailable: m.failed, name: profileDisplayName, initiallyExpanded: prefs.expandReasoning, opacity: prefs.reasoningOpacity, load: controller.loadReasoning);
+                      return ReasoningPanel(
+                        key: ValueKey('reasoning-${m.id}'),
+                        c: c,
+                        turnId: m.text,
+                        unavailable: m.failed,
+                        name: profileDisplayName,
+                        initiallyExpanded: prefs.expandReasoning,
+                        opacity: prefs.reasoningOpacity,
+                        load: controller.loadReasoning,
+                      );
                     }
                     return RepaintBoundary(
                       key: ValueKey('chat-${m.id}'),
@@ -608,8 +617,31 @@ Future<ChatBubbleAction?> showChatBubbleMenu({
   );
 }
 
-Future<void> showChatTextSelection(BuildContext context, String text) async {
-  final controller = TextEditingController(text: text)
+class _ChatSelectionController extends TextEditingController {
+  _ChatSelectionController(String text, this.displayText, this.accent)
+    : super(text: text);
+  final String? displayText;
+  final Color accent;
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) => inlineDisplaySpan(
+    text: text,
+    displayText: displayText,
+    style: style ?? const TextStyle(),
+    accent: accent,
+  );
+}
+
+Future<void> showChatTextSelection(
+  BuildContext context,
+  String text, {
+  String? displayText,
+  Color accent = Colors.red,
+}) async {
+  final controller = _ChatSelectionController(text, displayText, accent)
     ..selection = TextSelection(baseOffset: 0, extentOffset: text.length);
   try {
     await showDialog<void>(
@@ -631,9 +663,11 @@ Future<void> showChatTextSelection(BuildContext context, String text) async {
           TextButton(
             onPressed: () async {
               final selection = controller.selection;
-              await Clipboard.setData(ClipboardData(
-                text: selection.isValid ? selection.textInside(text) : text,
-              ));
+              await Clipboard.setData(
+                ClipboardData(
+                  text: selection.isValid ? selection.textInside(text) : text,
+                ),
+              );
               if (context.mounted) Navigator.pop(context);
             },
             child: Text(context.l10n.copyAction),
@@ -813,7 +847,6 @@ class HimMessage extends StatefulWidget {
 }
 
 class _HimMessageState extends State<HimMessage> {
-
   Future<void> _handleLongPress(Offset globalPosition) async {
     final action = await showChatBubbleMenu(
       context: context,
@@ -826,7 +859,12 @@ class _HimMessageState extends State<HimMessage> {
         await Clipboard.setData(ClipboardData(text: widget.text));
         break;
       case ChatBubbleAction.selectAll:
-        await showChatTextSelection(context, widget.text);
+        await showChatTextSelection(
+          context,
+          widget.text,
+          displayText: widget.displayText,
+          accent: widget.c.danger,
+        );
         break;
       case ChatBubbleAction.reply:
         widget.onReply?.call();
@@ -1241,7 +1279,6 @@ class YouMessage extends StatefulWidget {
 }
 
 class _YouMessageState extends State<YouMessage> {
-
   Future<void> _handleLongPress(Offset globalPosition) async {
     final action = await showChatBubbleMenu(
       context: context,
@@ -1415,7 +1452,10 @@ class _ImageCaptionBubble extends StatelessWidget {
       color: c.userBubble.withValues(alpha: opacity),
       borderRadius: BorderRadius.circular(6),
     ),
-    child: Text(text, style: contentSerif(c, fontSize, color: c.userBubbleText)),
+    child: Text(
+      text,
+      style: contentSerif(c, fontSize, color: c.userBubbleText),
+    ),
   );
 }
 

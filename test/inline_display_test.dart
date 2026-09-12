@@ -45,12 +45,19 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(label));
       await tester.pumpAndSettle();
-      final selected = tester.widget<SelectableText>(
-        find.byType(SelectableText),
+      final selected = tester.widget<EditableText>(find.byType(EditableText));
+      final span = selected.controller.buildTextSpan(
+        context: tester.element(find.byType(EditableText)),
+        style: selected.style,
+        withComposing: false,
       );
-      expect(selected.textSpan!.toPlainText(), 'red big small');
       expect(
-        (selected.textSpan!.children!.first as TextSpan).style!.color,
+        selected.controller.selection,
+        const TextSelection(baseOffset: 0, extentOffset: 13),
+      );
+      expect(span.toPlainText(), 'red big small');
+      expect(
+        (span.children!.first as TextSpan).style!.color,
         YxPalette.light.danger,
       );
     },

@@ -56,9 +56,11 @@ class _ReasoningPanelState extends State<ReasoningPanel> {
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: widget.c.surfaceSoft.withValues(
-            alpha: widget.opacity.clamp(0, 1),
-          ),
+          color: expanded
+              ? widget.c.surfaceSoft.withValues(
+                  alpha: widget.opacity.clamp(0, 1),
+                )
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Padding(
@@ -68,6 +70,19 @@ class _ReasoningPanelState extends State<ReasoningPanel> {
             children: [
               Center(
                 child: TextButton(
+                  style: TextButton.styleFrom(
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: widget.c.ink2,
+                    backgroundColor: widget.c.surfaceSoft.withValues(
+                      alpha: widget.opacity,
+                    ),
+                    textStyle: mono(widget.c, 9.5, color: widget.c.ink2),
+                  ),
                   onPressed: () {
                     setState(() => expanded = !expanded);
                     if (expanded) controller.fetch(widget.turnId);

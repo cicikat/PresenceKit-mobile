@@ -52,7 +52,9 @@ class _EdgeRefreshState extends State<EdgeRefresh> {
       });
     } else if (event is ScrollUpdateNotification &&
         event.dragDetails != null &&
-        _pull > 0) {
+        _pull > 0 &&
+        event.metrics.extentBefore > 0 &&
+        event.metrics.extentAfter > 0) {
       setState(() => _pull = 0);
     } else if (event is ScrollEndNotification) {
       if (_pull >= _threshold) {

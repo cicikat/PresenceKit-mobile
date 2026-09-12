@@ -956,6 +956,7 @@ class AttachmentPlaceholder {
 class ChatLogEntry {
   const ChatLogEntry({
     this.turnId,
+    this.assistantDisplayText,
     required this.time,
     required this.user,
     required this.assistant,
@@ -964,6 +965,9 @@ class ChatLogEntry {
   factory ChatLogEntry.fromJson(Map<String, dynamic> json) {
     return ChatLogEntry(
       turnId: json['turn_id'] is String ? json['turn_id'] as String : null,
+      assistantDisplayText: json['assistant_display_text'] is String
+          ? json['assistant_display_text'] as String
+          : null,
       time: (json['time'] ?? '').toString(),
       user: (json['user'] ?? '').toString(),
       assistant: (json['assistant'] ?? '').toString(),
@@ -971,6 +975,7 @@ class ChatLogEntry {
   }
 
   final String? turnId;
+  final String? assistantDisplayText;
   final String time;
   final String user;
   final String assistant;
