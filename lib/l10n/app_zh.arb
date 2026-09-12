@@ -1355,5 +1355,52 @@
   "settingsDayChatBackgroundTitle": "日间背景",
   "settingsNightChatBackgroundTitle": "夜间背景",
   "lifeRecognitionDescription": "图片识别描述（未经确认）",
-  "lifeRecognitionHelp": "饮食、购物车用视觉描述，账单用 OCR 提取文字。分类和日期以你选择的为准；手填标题、备注与明细不会被识别覆盖。识别描述单独保存，可在备注中补充或纠正。"
+  "lifeRecognitionHelp": "饮食、购物车用视觉描述，账单用 OCR 提取文字。分类和日期以你选择的为准；手填标题、备注与明细不会被识别覆盖。识别描述单独保存，可在备注中补充或纠正。",
+  "calendarTitle": "聊天情况",
+  "calendarSubtitle": "把每一天，留在色彩里",
+  "calendarPalette": "聊天情况配色",
+  "calendarJade": "苔绿",
+  "calendarBlue": "雾蓝",
+  "calendarRose": "蔷薇",
+  "calendarAmber": "暖杏",
+  "calendarDay": "日",
+  "calendarWeek": "周",
+  "calendarMonth": "月",
+  "calendarYear": "年",
+  "calendarTogether": "和 {name} 的每一天",
+  "calendarStreak": "你已经持续和 {name} 聊了 {days} 天了",
+  "calendarStreakHelp": "连续有对话的日子，从今天或昨天算起；历史缺失时仅显示已确认的天数。",
+  "calendarLess": "少",
+  "calendarMore": "多",
+  "calendarUnknown": "— 暂无数据",
+  "calendarPeriodTotals": "这段时光",
+  "calendarPartial": "部分记录或用量缺失，仅汇总已知数据。",
+  "calendarFuture": "这一天还没有到来",
+  "calendarComplete": "当日记录完整",
+  "calendarRounds": "聊天轮数",
+  "calendarTokens": "Token 用量",
+  "calendarTools": "工具调用",
+  "calendarImages": "图片识别张次",
+  "calendarInput": "输入 Token",
+  "calendarOutput": "输出 Token",
+  "calendarModels": "模型调用",
+  "calendarMissing": "缺失用量的调用",
+  "calendarMetricHelp": "日期按服务器时区统计。聊天轮数为现实对话的一问一答，不含主动消息和梦境。工具调用含执行失败；图片按提交给视觉／OCR 的张次计，重复识别重复计。Token 为当前角色已覆盖模型出口的用量，可含后台与梦境，不等同于完整账单。",
+  "@calendarTogether": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@calendarStreak": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  }
 }

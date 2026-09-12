@@ -2421,4 +2421,99 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get lifeRecognitionHelp =>
       '饮食、购物车用视觉描述，账单用 OCR 提取文字。分类和日期以你选择的为准；手填标题、备注与明细不会被识别覆盖。识别描述单独保存，可在备注中补充或纠正。';
+
+  @override
+  String get calendarTitle => '聊天情况';
+
+  @override
+  String get calendarSubtitle => '把每一天，留在色彩里';
+
+  @override
+  String get calendarPalette => '聊天情况配色';
+
+  @override
+  String get calendarJade => '苔绿';
+
+  @override
+  String get calendarBlue => '雾蓝';
+
+  @override
+  String get calendarRose => '蔷薇';
+
+  @override
+  String get calendarAmber => '暖杏';
+
+  @override
+  String get calendarDay => '日';
+
+  @override
+  String get calendarWeek => '周';
+
+  @override
+  String get calendarMonth => '月';
+
+  @override
+  String get calendarYear => '年';
+
+  @override
+  String calendarTogether(String name) {
+    return '和 $name 的每一天';
+  }
+
+  @override
+  String calendarStreak(String name, String days) {
+    return '你已经持续和 $name 聊了 $days 天了';
+  }
+
+  @override
+  String get calendarStreakHelp => '连续有对话的日子，从今天或昨天算起；历史缺失时仅显示已确认的天数。';
+
+  @override
+  String get calendarLess => '少';
+
+  @override
+  String get calendarMore => '多';
+
+  @override
+  String get calendarUnknown => '— 暂无数据';
+
+  @override
+  String get calendarPeriodTotals => '这段时光';
+
+  @override
+  String get calendarPartial => '部分记录或用量缺失，仅汇总已知数据。';
+
+  @override
+  String get calendarFuture => '这一天还没有到来';
+
+  @override
+  String get calendarComplete => '当日记录完整';
+
+  @override
+  String get calendarRounds => '聊天轮数';
+
+  @override
+  String get calendarTokens => 'Token 用量';
+
+  @override
+  String get calendarTools => '工具调用';
+
+  @override
+  String get calendarImages => '图片识别张次';
+
+  @override
+  String get calendarInput => '输入 Token';
+
+  @override
+  String get calendarOutput => '输出 Token';
+
+  @override
+  String get calendarModels => '模型调用';
+
+  @override
+  String get calendarMissing => '缺失用量的调用';
+
+  @override
+  String get calendarMetricHelp =>
+      '日期按服务器时区统计。聊天轮数为现实对话的一问一答，不含主动消息和梦境。工具调用含执行失败；图片按提交给视觉／OCR 的张次计，重复识别重复计。Token 为当前角色已覆盖模型出口的用量，可含后台与梦境，不等同于完整账单。';
 }

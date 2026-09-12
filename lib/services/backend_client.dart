@@ -1,3 +1,4 @@
+import '../models/conversation_calendar.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -54,6 +55,28 @@ class BackendClient {
   final String baseUrl;
   final AppSettingsStore settingsStore;
   final HttpClient Function() _httpClientFactory;
+
+  Future<ConversationCalendar> fetchConversationCalendar({
+    required String token,
+    String period = 'month',
+    String? date,
+    String? character,
+    String? start,
+    String? end,
+  }) async {
+    final query = Uri(
+      queryParameters: {
+        'period': period,
+        if (date != null) 'date': date,
+        if (character != null) 'char_id': character,
+        if (start != null) 'start': start,
+        if (end != null) 'end': end,
+      },
+    ).query;
+    return ConversationCalendar.fromJson(
+      await _request('/chat-log/stats/calendar?$query', token: token),
+    );
+  }
 
   Future<Uri> _endpoint(String path, {required String token}) async {
     if (token.trim().isEmpty) {
@@ -218,15 +241,29 @@ class BackendClient {
     timeout: const Duration(seconds: 120),
   );
 
-  Future<String> loadTurnReasoning(String turnId, {required String token}) async {
-    final result = await _request('/chat/turns/${Uri.encodeComponent(turnId)}/reasoning', token: token);
-    if (result['turn_id'] != turnId) throw const BackendException('Invalid reasoning response');
+  Future<String> loadTurnReasoning(
+    String turnId, {
+    required String token,
+  }) async {
+    final result = await _request(
+      '/chat/turns/${Uri.encodeComponent(turnId)}/reasoning',
+      token: token,
+    );
+    if (result['turn_id'] != turnId) {
+      throw const BackendException('Invalid reasoning response');
+    }
     final entries = result['entries'];
     if (entries is! List) return '';
-    return entries.whereType<Map>().expand((entry) =>
-      (entry['parts'] is List ? entry['parts'] as List : const []).whereType<Map>())
-      .map((part) => part['text'] is String ? part['text'] as String : '')
-      .where((text) => text.trim().isNotEmpty).join('\n\n');
+    return entries
+        .whereType<Map>()
+        .expand(
+          (entry) =>
+              (entry['parts'] is List ? entry['parts'] as List : const [])
+                  .whereType<Map>(),
+        )
+        .map((part) => part['text'] is String ? part['text'] as String : '')
+        .where((text) => text.trim().isNotEmpty)
+        .join('\n\n');
   }
 
   Future<BackendChatResponse> sendChat(

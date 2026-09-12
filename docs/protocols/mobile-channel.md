@@ -1,5 +1,7 @@
 # Mobile Channel 协议现状
 
+聊天情况（2026-09-12）只读独立 `/chat-log/stats/calendar`，不扩展 mobile 消息字段、msg_id/turn_id、去重、ack、TTL 或通知。`calendarPalette` 仅通过本机 appearance prefs 通道保存，默认 jade，不上传后端；Dart 与 Android 读写键同步。
+
 工单 19（2026-09-12）：通知点击/恢复先重读正式聊天历史，再 catch-up；后台已 ack 的内容可从历史展示。消费历史现有 assistant_display_text，不改 mobile HTTP 字段、scope、msg_id/turn_id、seen、ack 或 TTL。自己消息可作为原 reply_to 引用目标；复制/全选和思考外观不改协议。旧历史无字效字段则保留纯文本。
 
 ## IME awareness (2026-09-11)

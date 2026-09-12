@@ -1355,5 +1355,52 @@
   "settingsDayChatBackgroundTitle": "Day background",
   "settingsNightChatBackgroundTitle": "Night background",
   "lifeRecognitionDescription": "Image description (unconfirmed)",
-  "lifeRecognitionHelp": "Food and carts use visual descriptions; bills use OCR. Your category, date and manually edited fields take priority. Image descriptions are stored separately; add corrections in your notes."
+  "lifeRecognitionHelp": "Food and carts use visual descriptions; bills use OCR. Your category, date and manually edited fields take priority. Image descriptions are stored separately; add corrections in your notes.",
+  "calendarTitle": "Conversations",
+  "calendarSubtitle": "Every day, in color",
+  "calendarPalette": "Conversation colors",
+  "calendarJade": "Jade",
+  "calendarBlue": "Blue",
+  "calendarRose": "Rose",
+  "calendarAmber": "Amber",
+  "calendarDay": "Day",
+  "calendarWeek": "Week",
+  "calendarMonth": "Month",
+  "calendarYear": "Year",
+  "calendarTogether": "Every day with {name}",
+  "calendarStreak": "You've chatted with {name} for {days} days in a row",
+  "calendarStreakHelp": "Consecutive chat days through today or yesterday. Incomplete history shows only confirmed days.",
+  "calendarLess": "Less",
+  "calendarMore": "More",
+  "calendarUnknown": "— No data",
+  "calendarPeriodTotals": "This period",
+  "calendarPartial": "Some records or usage are missing. Totals include known data only.",
+  "calendarFuture": "This day is still ahead",
+  "calendarComplete": "Complete daily records",
+  "calendarRounds": "Chat rounds",
+  "calendarTokens": "Tokens",
+  "calendarTools": "Tool calls",
+  "calendarImages": "Image submissions",
+  "calendarInput": "Input tokens",
+  "calendarOutput": "Output tokens",
+  "calendarModels": "Model calls",
+  "calendarMissing": "Calls without usage",
+  "calendarMetricHelp": "Dates follow the server's timezone. Chat rounds count reality question–answer pairs, excluding proactive messages and dreams. Tool calls include failed attempts. Images count submissions to vision/OCR, including repeats. Tokens cover tracked model calls for this character, including background and dream usage, rather than a complete bill.",
+  "@calendarTogether": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@calendarStreak": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  }
 }

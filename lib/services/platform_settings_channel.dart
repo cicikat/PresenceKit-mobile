@@ -1,3 +1,4 @@
+// Appearance calendarPalette: local heatmap palette (jade/blue/rose/amber).
 import 'dart:io';
 
 import 'package:flutter/services.dart';

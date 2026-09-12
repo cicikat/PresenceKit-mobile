@@ -160,6 +160,42 @@ void main() {
   });
 
   test(
+    'calendar reads use scoped Bearer query and preserve unknown values',
+    () async {
+      fakeClient.responseBody = jsonEncode({
+        'start': '2026-09-01',
+        'end': '2026-09-30',
+        'char_id': 'custom/character',
+        'days': [
+          {
+            'date': '2026-09-01',
+            'coverage': 'unavailable',
+            'chat_rounds': null,
+          },
+        ],
+        'totals_partial': true,
+      });
+      final result = await backend.fetchConversationCalendar(
+        token: 'mobile-token',
+        period: 'month',
+        date: '2026-09-12',
+        character: 'custom/character',
+      );
+      expect(fakeClient.requestedUri!.path, '/chat-log/stats/calendar');
+      expect(
+        fakeClient.requestedUri!.queryParameters['char_id'],
+        'custom/character',
+      );
+      expect(fakeClient.requestedUri!.queryParameters['date'], '2026-09-12');
+      expect(
+        fakeClient.lastRequestHeaders['authorization'],
+        'Bearer mobile-token',
+      );
+      expect(result.days.single.rounds, isNull);
+    },
+  );
+
+  test(
     'dream assets come from backend catalogs and retain custom IDs',
     () async {
       fakeClient.responseBody = jsonEncode({

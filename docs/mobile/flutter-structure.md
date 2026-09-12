@@ -1,5 +1,9 @@
 # Flutter 结构
 
+## 聊天情况与角色资料设置（2026-09-12）
+
+新增 `ConversationCalendarController` / `ConversationCalendarPage` 和类型化日统计模型；页面拥有控制器生命周期，组合根只注入 HTTP 连接、凭据、角色显示名和本机配色。日周月年热力图、日期详情和连续天数的口径见 [conversation-calendar.md](conversation-calendar.md)。角色资料由侧栏移入设置同级折叠卡片，合并头像/名称编辑，去除重复行及开发说明。生活记录编辑器显式覆盖 dialog/input 主题，主聊天“现在”标签使用顶栏前景色。
+
 ## 手机交互工单 19（2026-09-12）
 
 自己的气泡接入回复；长按菜单先释放 composer 焦点，全选打开只读、有选区的富文本窗口，可复制所选文字。ChatController 恢复/通知入口重读正式历史，并解析已有 assistant_display_text；思考使用 9.5px 紧凑按钮，锚点保留日期关联但不显示时间，防止正文重复日期栏。

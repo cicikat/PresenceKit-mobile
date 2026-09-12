@@ -1,5 +1,12 @@
 # 测试与开发
 
+## 聊天情况与资料设置（2026-09-12）
+
+- `flutter gen-l10n`、`flutter analyze --no-pub` 通过；全量 Flutter 173 项通过，最后清理独立资料路由与处理未来日期后，日历/设置/请求/通道/结构 68 项定向回归通过。
+- 覆盖 366 天闰年、连续天数未知边界、过期响应不覆盖、503 不伪装零数据、Bearer/char_id/date 查询、点选日详情、日周月年切换、390px 日夜布局和配色偏好读写；既有生活记录测试新增校正窗口背景、输入框填色及文字对比度断言。
+- Java 21 构建 `flutter build apk --debug --flavor dev --no-pub` 通过，产物 `build/app/outputs/flutter-apk/app-dev-debug.apk`；未进行正式发布或替换手机已安装版本。
+- 离屏日夜图见本机 `build/calendar-day.png`、`build/calendar-night.png`，为合成统计及测试字体；真实后端数据、设备触摸与重启恢复仍待验收。完整日志为 `build/calendar-tests.log`、`build/calendar-final-tests.log`、`build/calendar-build.log`。
+
 ## 工单 19（2026-09-12）
 
 - flutter gen-l10n、flutter analyze --no-pub 通过；全量 Flutter 166 项通过。最后补齐夜间分类标签配色后，生活记录 12 项定向测试再次通过。覆盖自己回复、输入框获焦后复制/全选不弹键盘、可见全选及字效、通知已被原生 ack 后重读历史、日夜图片槽位、紧凑思考与卡片布局/对比度。

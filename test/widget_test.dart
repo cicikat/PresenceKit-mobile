@@ -163,7 +163,6 @@ void main() {
             onEditProfileName: () {},
             onImportProfileAvatar: () {},
             onResetProfileAvatar: () {},
-            onOpenProfile: () {},
             onEditRelay: () async {},
             onNotificationTestMode: (_) {},
             onStickerEnabledChanged: (_) {},
@@ -199,6 +198,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     for (final title in [
       l10n.settingsSystemModule,
+      l10n.settingsProfileTitle,
       l10n.settingsAppearanceSection,
       l10n.settingsDreamModule,
     ]) {

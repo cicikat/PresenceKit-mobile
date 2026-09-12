@@ -1,3 +1,4 @@
+import 'conversation_calendar_widgets.dart';
 import '../controllers/personalization_controller.dart';
 import 'personalization_widgets.dart';
 import 'screen_observation_settings.dart';
@@ -18,6 +19,7 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
     this.personalization,
+    this.profileContent,
     required this.c,
     required this.language,
     required this.dark,
@@ -47,7 +49,6 @@ class SettingsPage extends StatelessWidget {
     this.onResetChatBackground,
     this.onImportDreamBackground,
     this.onResetDreamBackground,
-    required this.onOpenProfile,
     required this.onDreamLorebook,
     required this.onDreamWorldLayer,
     required this.onDreamJailbreak,
@@ -74,6 +75,7 @@ class SettingsPage extends StatelessWidget {
     required this.onAutoPlayVoiceChanged,
   });
 
+  final Widget? profileContent;
   final PersonalizationController? personalization;
   final YxPalette c;
   final AppLanguage language;
@@ -104,7 +106,6 @@ class SettingsPage extends StatelessWidget {
   final VoidCallback? onResetChatBackground;
   final VoidCallback? onImportDreamBackground;
   final VoidCallback? onResetDreamBackground;
-  final VoidCallback onOpenProfile;
   final ValueChanged<bool> onDreamLorebook;
   final ValueChanged<String> onDreamWorldLayer;
   final ValueChanged<String> onDreamJailbreak;
@@ -317,13 +318,11 @@ class SettingsPage extends StatelessWidget {
               ),
               _SettingsModule(
                 c: c,
-                title: l10n.settingsAppearanceSection,
-                icon: Icons.palette_outlined,
+                title: l10n.settingsProfileTitle,
+                icon: Icons.badge_outlined,
                 children: [
-                  SettingsRow(
-                    c: c,
-                    title: l10n.settingsProfileTitle,
-                    subtitle: l10n.settingsProfileSubtitle,
+                  Padding(
+                    padding: const EdgeInsets.all(16),
                     child: Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -341,13 +340,6 @@ class SettingsPage extends StatelessWidget {
                         Text(
                           profileDisplayName,
                           style: serif(c, 16, weight: FontWeight.w500),
-                        ),
-                        YxIconButton(
-                          c: c,
-                          icon: Icons.open_in_new_rounded,
-                          onPressed: onOpenProfile,
-                          tooltip: l10n.settingsOpenProfileTooltip,
-                          size: 30,
                         ),
                         YxIconButton(
                           c: c,
@@ -373,6 +365,20 @@ class SettingsPage extends StatelessWidget {
                           ),
                       ],
                     ),
+                  ),
+                  if (profileContent != null) profileContent!,
+                ],
+              ),
+              _SettingsModule(
+                c: c,
+                title: l10n.settingsAppearanceSection,
+                icon: Icons.palette_outlined,
+                children: [
+                  CalendarPaletteSetting(
+                    c: c,
+                    value: prefs.calendarPalette,
+                    onChanged: (value) =>
+                        onPrefs(prefs.copyWith(calendarPalette: value)),
                   ),
                   for (final night in [false, true])
                     ListTile(

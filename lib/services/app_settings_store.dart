@@ -501,6 +501,7 @@ class AppSettingsStore {
         dreamActionColor: (raw['dreamActionColor'] as num?)?.toInt(),
         showReasoning: raw['showReasoning'] != false,
         expandReasoning: raw['expandReasoning'] == true,
+        calendarPalette: raw['calendarPalette'] as String? ?? 'jade',
         reasoningOpacity:
             (raw['reasoningOpacity'] as num?)?.toDouble().clamp(0, 1) ?? 0.85,
         infoStrip: raw['infoStrip'] != false,
@@ -534,6 +535,7 @@ class AppSettingsStore {
             'dreamActionColor': value.dreamActionColor,
             'showReasoning': value.showReasoning,
             'expandReasoning': value.expandReasoning,
+            'calendarPalette': value.calendarPalette,
             'reasoningOpacity': value.reasoningOpacity,
             'fontSize': value.fontSize,
             'showYouAvatar': value.showYouAvatar,

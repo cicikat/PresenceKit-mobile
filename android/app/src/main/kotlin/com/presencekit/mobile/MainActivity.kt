@@ -635,6 +635,7 @@ class MainActivity : FlutterActivity() {
                                 "dreamActionColor" to if (prefs.contains("dreamActionColor")) prefs.getLong("dreamActionColor", 0L) else null,
                                 "showReasoning" to prefs.getBoolean("showReasoning", true),
                                 "expandReasoning" to prefs.getBoolean("expandReasoning", false),
+                                "calendarPalette" to prefs.getString("calendarPalette", "jade"),
                                 "reasoningOpacity" to prefs.getFloat("reasoningOpacity", 0.85f).toDouble(),
                                 "fontSize" to prefs.getFloat("fontSize", 16f).toDouble(),
                                 "showYouAvatar" to prefs.getBoolean("showYouAvatar", false),
@@ -655,6 +656,7 @@ class MainActivity : FlutterActivity() {
                             .putFloat("dreamActionSize", call.argument<Number>("dreamActionSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
                             .putBoolean("showReasoning", call.argument<Boolean>("showReasoning") ?: true)
                             .putBoolean("expandReasoning", call.argument<Boolean>("expandReasoning") ?: false)
+                            .putString("calendarPalette", call.argument<String>("calendarPalette") ?: "jade")
                             .putFloat("reasoningOpacity", call.argument<Number>("reasoningOpacity")?.toFloat()?.coerceIn(0f, 1f) ?: 0.85f)
                             .putFloat("fontSize", fontSize)
                             .putBoolean("showYouAvatar", call.argument<Boolean>("showYouAvatar") ?: false)

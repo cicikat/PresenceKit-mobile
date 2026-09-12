@@ -4548,6 +4548,186 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'饮食、购物车用视觉描述，账单用 OCR 提取文字。分类和日期以你选择的为准；手填标题、备注与明细不会被识别覆盖。识别描述单独保存，可在备注中补充或纠正。'**
   String get lifeRecognitionHelp;
+
+  /// No description provided for @calendarTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天情况'**
+  String get calendarTitle;
+
+  /// No description provided for @calendarSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'把每一天，留在色彩里'**
+  String get calendarSubtitle;
+
+  /// No description provided for @calendarPalette.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天情况配色'**
+  String get calendarPalette;
+
+  /// No description provided for @calendarJade.
+  ///
+  /// In zh, this message translates to:
+  /// **'苔绿'**
+  String get calendarJade;
+
+  /// No description provided for @calendarBlue.
+  ///
+  /// In zh, this message translates to:
+  /// **'雾蓝'**
+  String get calendarBlue;
+
+  /// No description provided for @calendarRose.
+  ///
+  /// In zh, this message translates to:
+  /// **'蔷薇'**
+  String get calendarRose;
+
+  /// No description provided for @calendarAmber.
+  ///
+  /// In zh, this message translates to:
+  /// **'暖杏'**
+  String get calendarAmber;
+
+  /// No description provided for @calendarDay.
+  ///
+  /// In zh, this message translates to:
+  /// **'日'**
+  String get calendarDay;
+
+  /// No description provided for @calendarWeek.
+  ///
+  /// In zh, this message translates to:
+  /// **'周'**
+  String get calendarWeek;
+
+  /// No description provided for @calendarMonth.
+  ///
+  /// In zh, this message translates to:
+  /// **'月'**
+  String get calendarMonth;
+
+  /// No description provided for @calendarYear.
+  ///
+  /// In zh, this message translates to:
+  /// **'年'**
+  String get calendarYear;
+
+  /// No description provided for @calendarTogether.
+  ///
+  /// In zh, this message translates to:
+  /// **'和 {name} 的每一天'**
+  String calendarTogether(String name);
+
+  /// No description provided for @calendarStreak.
+  ///
+  /// In zh, this message translates to:
+  /// **'你已经持续和 {name} 聊了 {days} 天了'**
+  String calendarStreak(String name, String days);
+
+  /// No description provided for @calendarStreakHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'连续有对话的日子，从今天或昨天算起；历史缺失时仅显示已确认的天数。'**
+  String get calendarStreakHelp;
+
+  /// No description provided for @calendarLess.
+  ///
+  /// In zh, this message translates to:
+  /// **'少'**
+  String get calendarLess;
+
+  /// No description provided for @calendarMore.
+  ///
+  /// In zh, this message translates to:
+  /// **'多'**
+  String get calendarMore;
+
+  /// No description provided for @calendarUnknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'— 暂无数据'**
+  String get calendarUnknown;
+
+  /// No description provided for @calendarPeriodTotals.
+  ///
+  /// In zh, this message translates to:
+  /// **'这段时光'**
+  String get calendarPeriodTotals;
+
+  /// No description provided for @calendarPartial.
+  ///
+  /// In zh, this message translates to:
+  /// **'部分记录或用量缺失，仅汇总已知数据。'**
+  String get calendarPartial;
+
+  /// No description provided for @calendarFuture.
+  ///
+  /// In zh, this message translates to:
+  /// **'这一天还没有到来'**
+  String get calendarFuture;
+
+  /// No description provided for @calendarComplete.
+  ///
+  /// In zh, this message translates to:
+  /// **'当日记录完整'**
+  String get calendarComplete;
+
+  /// No description provided for @calendarRounds.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天轮数'**
+  String get calendarRounds;
+
+  /// No description provided for @calendarTokens.
+  ///
+  /// In zh, this message translates to:
+  /// **'Token 用量'**
+  String get calendarTokens;
+
+  /// No description provided for @calendarTools.
+  ///
+  /// In zh, this message translates to:
+  /// **'工具调用'**
+  String get calendarTools;
+
+  /// No description provided for @calendarImages.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片识别张次'**
+  String get calendarImages;
+
+  /// No description provided for @calendarInput.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入 Token'**
+  String get calendarInput;
+
+  /// No description provided for @calendarOutput.
+  ///
+  /// In zh, this message translates to:
+  /// **'输出 Token'**
+  String get calendarOutput;
+
+  /// No description provided for @calendarModels.
+  ///
+  /// In zh, this message translates to:
+  /// **'模型调用'**
+  String get calendarModels;
+
+  /// No description provided for @calendarMissing.
+  ///
+  /// In zh, this message translates to:
+  /// **'缺失用量的调用'**
+  String get calendarMissing;
+
+  /// No description provided for @calendarMetricHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'日期按服务器时区统计。聊天轮数为现实对话的一问一答，不含主动消息和梦境。工具调用含执行失败；图片按提交给视觉／OCR 的张次计，重复识别重复计。Token 为当前角色已覆盖模型出口的用量，可含后台与梦境，不等同于完整账单。'**
+  String get calendarMetricHelp;
 }
 
 class _AppLocalizationsDelegate

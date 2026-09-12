@@ -1,3 +1,4 @@
+import '../widgets/conversation_calendar_widgets.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -104,9 +105,6 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   bool get _hasAdminToken => _adminToken.trim().isNotEmpty;
-
-  bool get _hasProfileNameOverride =>
-      cleanCharacterDisplayName(_profileNameOverride) != null;
 
   String? get _backendCharacterDisplayName {
     final assets = _promptAssets;
@@ -864,12 +862,6 @@ class _CompanionAppState extends State<CompanionApp>
     );
   }
 
-  void _openProfilePage() {
-    Navigator.of(context).maybePop();
-    setState(() => _route = AppRoute.profile);
-    unawaited(_profileStatusController.load());
-  }
-
   static final RegExp _safeOwnerUserIdPattern = RegExp(r'^[A-Za-z0-9_-]+$');
   static final RegExp _safeRelayTopicPattern = RegExp(r'^[a-z0-9/_-]+$');
 
@@ -996,6 +988,7 @@ class _CompanionAppState extends State<CompanionApp>
             _themeController,
             _personalization,
             _localeController,
+            _profileStatusController,
           ]),
           builder: (context, _) => StatefulBuilder(
             builder: (context, sheetSetState) {
@@ -1006,6 +999,8 @@ class _CompanionAppState extends State<CompanionApp>
                     final results = await Future.wait<dynamic>([
                       _dreamController.loadSettings(),
                       _relayService.loadNotificationGateStatus(),
+                      _loadPromptAssets(),
+                      _profileStatusController.load(),
                     ]);
                     notificationTestMode =
                         (results[1] as NotificationGateStatus).testModeEnabled;
@@ -1036,6 +1031,11 @@ class _CompanionAppState extends State<CompanionApp>
               }
 
               return SettingsPage(
+                profileContent: _buildProfile(
+                  onChanged: () {
+                    if (context.mounted) sheetSetState(() {});
+                  },
+                ),
                 personalization: _personalization,
                 c: c,
                 language: _localeController.language,
@@ -1096,7 +1096,10 @@ class _CompanionAppState extends State<CompanionApp>
                   await _importProfileAvatar();
                   if (context.mounted) sheetSetState(() {});
                 },
-                onResetProfileAvatar: _resetProfileAvatar,
+                onResetProfileAvatar: () {
+                  _resetProfileAvatar();
+                  sheetSetState(() {});
+                },
                 onImportChatBackground: () async {
                   await _importChatBackground();
                   if (context.mounted) sheetSetState(() {});
@@ -1110,7 +1113,6 @@ class _CompanionAppState extends State<CompanionApp>
                   if (context.mounted) sheetSetState(() {});
                 },
                 onResetDreamBackground: _resetDreamBackground,
-                onOpenProfile: _openProfilePage,
                 hasAdminToken: _hasAdminToken,
                 backgroundNotifications: _backgroundNotifications,
                 backendBaseUrl: _backendBaseUrl,
@@ -1284,9 +1286,6 @@ class _CompanionAppState extends State<CompanionApp>
       unawaited(_gardenController.load(silent: true));
     } else if (route == AppRoute.diary) {
       unawaited(_diaryController.load(silent: true));
-    } else if (route == AppRoute.profile) {
-      unawaited(_loadPromptAssets());
-      unawaited(_profileStatusController.load());
     }
   }
 
@@ -1356,8 +1355,44 @@ class _CompanionAppState extends State<CompanionApp>
     );
   }
 
+  Widget _buildProfile({VoidCallback? onChanged}) {
+    return ProfileSettingsContent(
+      c: c,
+      promptAssets: _promptAssets,
+      loadingPromptAssets: _loadingPromptAssets,
+      savingPromptAssets: _savingPromptAssets,
+      promptAssetsError: _promptAssetsError,
+      onSelectCharacter: (value) async {
+        final pending = _updatePromptAssets(activeCharacter: value);
+        onChanged?.call();
+        await pending;
+        onChanged?.call();
+        await _profileStatusController.load();
+      },
+      onReloadPromptAssets: () async {
+        await _loadPromptAssets();
+        onChanged?.call();
+      },
+      activityCurrent: _profileStatusController.activityCurrent,
+      moodState: _profileStatusController.moodState,
+      loadingStatusSnapshot: _profileStatusController.loading,
+      statusSnapshotLastSuccessfulAt: _profileStatusController.lastSuccessfulAt,
+      statusSnapshotError: _profileStatusController.error,
+      onReloadStatusSnapshot: () => unawaited(_profileStatusController.load()),
+    );
+  }
+
   Widget _buildRoute() {
     switch (_route) {
+      case AppRoute.conversationCalendar:
+        return ConversationCalendarPage(
+          c: c,
+          palette: _prefs.calendarPalette,
+          name: _profileDisplayName,
+          backend: _backend,
+          token: _adminToken,
+          onBack: () => setState(() => _route = AppRoute.chat),
+        );
       case AppRoute.lifeRecords:
         return LifeRecordsPage(
           c: c,
@@ -1400,33 +1435,6 @@ class _CompanionAppState extends State<CompanionApp>
           controller: _dreamController,
           onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
           onWake: _wakeFromDream,
-        );
-      case AppRoute.profile:
-        return ProfilePage(
-          key: const ValueKey('profile'),
-          c: c,
-          profileDisplayName: _profileDisplayName,
-          hasProfileNameOverride: _hasProfileNameOverride,
-          profileAvatarBytes: _profileAvatarBytes,
-          onBack: () => setState(() => _route = AppRoute.chat),
-          onEditProfileName: _editProfileName,
-          onImportProfileAvatar: _importProfileAvatar,
-          onResetProfileAvatar: _resetProfileAvatar,
-          promptAssets: _promptAssets,
-          loadingPromptAssets: _loadingPromptAssets,
-          savingPromptAssets: _savingPromptAssets,
-          promptAssetsError: _promptAssetsError,
-          onSelectCharacter: (value) =>
-              unawaited(_updatePromptAssets(activeCharacter: value)),
-          onReloadPromptAssets: () => unawaited(_loadPromptAssets()),
-          activityCurrent: _profileStatusController.activityCurrent,
-          moodState: _profileStatusController.moodState,
-          loadingStatusSnapshot: _profileStatusController.loading,
-          statusSnapshotLastSuccessfulAt:
-              _profileStatusController.lastSuccessfulAt,
-          statusSnapshotError: _profileStatusController.error,
-          onReloadStatusSnapshot: () =>
-              unawaited(_profileStatusController.load()),
         );
       case AppRoute.diary:
         return DiaryPage(

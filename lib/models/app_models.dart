@@ -122,19 +122,27 @@ class BehaviorDecisionStatus {
   }
 }
 
-enum AppRoute { chat, dream, profile, diary, garden, activity, lifeRecords }
+enum AppRoute {
+  chat,
+  dream,
+  diary,
+  garden,
+  activity,
+  lifeRecords,
+  conversationCalendar,
+}
 
 extension AppRouteLabel on AppRoute {
   String get label {
     switch (this) {
+      case AppRoute.conversationCalendar:
+        return 'Conversations';
       case AppRoute.lifeRecords:
         return '生活记录';
       case AppRoute.chat:
         return '主对话';
       case AppRoute.dream:
         return '梦境';
-      case AppRoute.profile:
-        return '资料';
       case AppRoute.diary:
         return '日记';
       case AppRoute.garden:
@@ -147,6 +155,7 @@ extension AppRouteLabel on AppRoute {
 
 class YxPrefs {
   const YxPrefs({
+    this.calendarPalette = 'jade',
     this.infoStrip = true,
     this.dreamNarrationSize = 16,
     this.dreamChatSize = 16,
@@ -169,6 +178,7 @@ class YxPrefs {
     this.chatBubbleOpacity = 0.94,
   });
 
+  final String calendarPalette;
   final bool infoStrip;
   final double dreamNarrationSize;
   final double dreamChatSize;
@@ -193,6 +203,7 @@ class YxPrefs {
   final double chatBubbleOpacity;
 
   YxPrefs copyWith({
+    String? calendarPalette,
     bool? infoStrip,
     double? dreamNarrationSize,
     double? dreamChatSize,
@@ -218,6 +229,7 @@ class YxPrefs {
     double? chatBubbleOpacity,
   }) {
     return YxPrefs(
+      calendarPalette: calendarPalette ?? this.calendarPalette,
       infoStrip: infoStrip ?? this.infoStrip,
       dreamNarrationSize: dreamNarrationSize ?? this.dreamNarrationSize,
       dreamChatSize: dreamChatSize ?? this.dreamChatSize,

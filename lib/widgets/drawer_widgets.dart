@@ -79,14 +79,6 @@ class YxDrawer extends StatelessWidget {
                     ),
                     DrawerItem(
                       c: c,
-                      icon: Icons.badge_outlined,
-                      title: l10n.drawerProfileTitle,
-                      subtitle: l10n.drawerProfileSubtitle,
-                      active: route == AppRoute.profile,
-                      onTap: () => onRoute(AppRoute.profile),
-                    ),
-                    DrawerItem(
-                      c: c,
                       icon: Icons.menu_book_outlined,
                       title: l10n.drawerDiaryTitle(profileDisplayName),
                       subtitle: l10n.drawerDiarySubtitle,
@@ -103,6 +95,10 @@ class YxDrawer extends StatelessWidget {
                     ),
                     _DrawerSectionDivider(c: c),
                     _DrawerSectionLabel(c: c, label: l10n.drawerGrowthSection),
+                    DrawerItem(c: c, icon: Icons.calendar_month_outlined,
+                      title: l10n.calendarTitle, subtitle: l10n.calendarSubtitle,
+                      active: route == AppRoute.conversationCalendar,
+                      onTap: () => onRoute(AppRoute.conversationCalendar)),
                     DrawerItem(
                       c: c,
                       icon: Icons.local_florist_outlined,

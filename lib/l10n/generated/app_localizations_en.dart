@@ -2532,4 +2532,101 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get lifeRecognitionHelp =>
       'Food and carts use visual descriptions; bills use OCR. Your category, date and manually edited fields take priority. Image descriptions are stored separately; add corrections in your notes.';
+
+  @override
+  String get calendarTitle => 'Conversations';
+
+  @override
+  String get calendarSubtitle => 'Every day, in color';
+
+  @override
+  String get calendarPalette => 'Conversation colors';
+
+  @override
+  String get calendarJade => 'Jade';
+
+  @override
+  String get calendarBlue => 'Blue';
+
+  @override
+  String get calendarRose => 'Rose';
+
+  @override
+  String get calendarAmber => 'Amber';
+
+  @override
+  String get calendarDay => 'Day';
+
+  @override
+  String get calendarWeek => 'Week';
+
+  @override
+  String get calendarMonth => 'Month';
+
+  @override
+  String get calendarYear => 'Year';
+
+  @override
+  String calendarTogether(String name) {
+    return 'Every day with $name';
+  }
+
+  @override
+  String calendarStreak(String name, String days) {
+    return 'You\'ve chatted with $name for $days days in a row';
+  }
+
+  @override
+  String get calendarStreakHelp =>
+      'Consecutive chat days through today or yesterday. Incomplete history shows only confirmed days.';
+
+  @override
+  String get calendarLess => 'Less';
+
+  @override
+  String get calendarMore => 'More';
+
+  @override
+  String get calendarUnknown => '— No data';
+
+  @override
+  String get calendarPeriodTotals => 'This period';
+
+  @override
+  String get calendarPartial =>
+      'Some records or usage are missing. Totals include known data only.';
+
+  @override
+  String get calendarFuture => 'This day is still ahead';
+
+  @override
+  String get calendarComplete => 'Complete daily records';
+
+  @override
+  String get calendarRounds => 'Chat rounds';
+
+  @override
+  String get calendarTokens => 'Tokens';
+
+  @override
+  String get calendarTools => 'Tool calls';
+
+  @override
+  String get calendarImages => 'Image submissions';
+
+  @override
+  String get calendarInput => 'Input tokens';
+
+  @override
+  String get calendarOutput => 'Output tokens';
+
+  @override
+  String get calendarModels => 'Model calls';
+
+  @override
+  String get calendarMissing => 'Calls without usage';
+
+  @override
+  String get calendarMetricHelp =>
+      'Dates follow the server\'s timezone. Chat rounds count reality question–answer pairs, excluding proactive messages and dreams. Tool calls include failed attempts. Images count submissions to vision/OCR, including repeats. Tokens cover tracked model calls for this character, including background and dream usage, rather than a complete bill.';
 }

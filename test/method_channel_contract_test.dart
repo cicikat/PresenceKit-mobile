@@ -85,6 +85,7 @@ void main() {
   group('外观偏好', () {
     test('loads appearance prefs from the stable channel', () async {
       reply({
+        'calendarPalette': 'rose',
         'infoStrip': false,
         'fontSize': 18.0,
         'showYouAvatar': true,
@@ -93,6 +94,8 @@ void main() {
       });
       final prefs = await store.loadAppearancePrefs();
       expect(calls.single.method, 'getAppearancePrefs');
+      expect(prefs.calendarPalette, 'rose');
+      expect(prefs.copyWith(fontSize: 20).calendarPalette, 'rose');
       expect(prefs.infoStrip, isFalse);
       expect(prefs.fontSize, 18);
       expect(prefs.showYouAvatar, isTrue);
@@ -116,6 +119,7 @@ void main() {
         'fontSize': 19.0,
         'showReasoning': true,
         'expandReasoning': false,
+        'calendarPalette': 'jade',
         'reasoningOpacity': 0.85,
         'dreamNarrationSize': 16.0,
         'dreamChatSize': 16.0,
