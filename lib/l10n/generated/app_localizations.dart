@@ -4536,6 +4536,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'夜间背景'**
   String get settingsNightChatBackgroundTitle;
+
+  /// No description provided for @lifeRecognitionDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片识别描述（未经确认）'**
+  String get lifeRecognitionDescription;
+
+  /// No description provided for @lifeRecognitionHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'饮食、购物车用视觉描述，账单用 OCR 提取文字。分类和日期以你选择的为准；手填标题、备注与明细不会被识别覆盖。识别描述单独保存，可在备注中补充或纠正。'**
+  String get lifeRecognitionHelp;
 }
 
 class _AppLocalizationsDelegate

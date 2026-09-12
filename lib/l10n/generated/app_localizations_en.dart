@@ -2525,4 +2525,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNightChatBackgroundTitle => 'Night background';
+
+  @override
+  String get lifeRecognitionDescription => 'Image description (unconfirmed)';
+
+  @override
+  String get lifeRecognitionHelp =>
+      'Food and carts use visual descriptions; bills use OCR. Your category, date and manually edited fields take priority. Image descriptions are stored separately; add corrections in your notes.';
 }

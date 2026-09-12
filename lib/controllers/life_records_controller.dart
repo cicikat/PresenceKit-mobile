@@ -150,7 +150,8 @@ class LifeRecordsController extends ChangeNotifier {
                   (r) =>
                       !r.pending &&
                       (r.recognition == 'pending' ||
-                          r.recognition == 'processing'),
+                          r.recognition == 'processing' ||
+                          r.recognition == 'failed'),
                 ))) {
           await search();
         }

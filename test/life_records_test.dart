@@ -257,6 +257,45 @@ void main() {
     home: Scaffold(body: child),
   );
 
+  test('image descriptions participate in offline search', () async {
+    service.rows = [
+      row('image')..['recognition_description'] = 'Green vegetables',
+    ];
+    await controller.reload();
+    controller.filters(query: 'vegetables');
+    expect(controller.visible.single.id, 'image');
+  });
+
+  testWidgets('description is readable separately and saving preserves notes', (
+    tester,
+  ) async {
+    final data = row('image')
+      ..['note'] = 'My correction'
+      ..['recognition_description'] = 'Visible food description'
+      ..['captured_at'] = '2026-09-11T01:00:00Z';
+    await tester.pumpWidget(
+      app(
+        LifeRecordEditor(
+          controller: controller,
+          record: LifeRecord(data),
+          image: null,
+          mime: null,
+          expectedRealm: controller.realm,
+        ),
+      ),
+    );
+    expect(find.text('图片识别描述（未经确认）'), findsOneWidget);
+    expect(find.text('Visible food description'), findsOneWidget);
+    expect(find.text('My correction'), findsOneWidget);
+    await tester.tap(find.text('保存并排队同步'));
+    await tester.pumpAndSettle();
+    final index = service.calls.indexOf('save');
+    expect(index, greaterThanOrEqualTo(0));
+    final saved = jsonDecode(service.arguments[index]['record'] as String);
+    expect(saved['note'], 'My correction');
+    expect(saved['recognition_description'], 'Visible food description');
+  });
+
   testWidgets(
     'page shows queued records and honest backend status in both languages',
     (tester) async {

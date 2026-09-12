@@ -597,6 +597,24 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                                               ).copyWith(height: 1.4),
                                             ),
                                           ),
+                                        if (record
+                                            .recognitionDescription
+                                            .isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 8,
+                                            ),
+                                            child: Text(
+                                              '${l.lifeRecognitionDescription}：${record.recognitionDescription}',
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: serif(
+                                                widget.c,
+                                                13,
+                                                color: widget.c.ink2,
+                                              ).copyWith(height: 1.6),
+                                            ),
+                                          ),
                                         if (record.items.isNotEmpty)
                                           Text(
                                             record.items
@@ -859,6 +877,9 @@ class _LifeRecordEditorState extends State<LifeRecordEditor> {
                       ),
                     ),
                   Text(l.lifeConsent),
+                  const SizedBox(height: 8),
+                  Text(l.lifeRecognitionHelp),
+                  const SizedBox(height: 12),
                   Text(
                     widget.expectedRealm.replaceAll('\n', ' · '),
                     style: Theme.of(context).textTheme.bodySmall,
@@ -907,6 +928,17 @@ class _LifeRecordEditorState extends State<LifeRecordEditor> {
                     maxLength: 2000,
                     decoration: InputDecoration(labelText: l.lifeNote),
                   ),
+                  if (widget.record?.recognitionDescription.isNotEmpty ==
+                      true) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      l.lifeRecognitionDescription,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    SelectableText(widget.record!.recognitionDescription),
+                    const SizedBox(height: 12),
+                  ],
                   Text(l.lifeItems),
                   ..._items.map(
                     (row) => Padding(

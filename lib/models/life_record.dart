@@ -7,6 +7,8 @@ class LifeRecord {
   String get date => data['occurred_on'] as String? ?? '';
   String get title => data['title'] as String? ?? '';
   String get note => data['note'] as String? ?? '';
+  String get recognitionDescription =>
+      data['recognition_description'] as String? ?? '';
   int get revision => (data['revision'] as num?)?.toInt() ?? 0;
   String get recognition => data['recognition_status'] as String? ?? 'pending';
   bool get deleted => data['local_deleted'] == true;
@@ -22,7 +24,8 @@ class LifeRecord {
   bool get failed =>
       operations.any((e) => e['state'] == 'failed' || e['state'] == 'rejected');
   String get searchText =>
-      '$title $note ${items.map((e) => e['name']).join(' ')}'.toLowerCase();
+      '$title $note $recognitionDescription ${items.map((e) => e['name']).join(' ')}'
+          .toLowerCase();
 
   static String day(DateTime value) =>
       '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';

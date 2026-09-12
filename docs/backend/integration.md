@@ -243,3 +243,9 @@ Backend /settings/thinking adds character_voice and a read-only voice_preview un
 管理面提供全局开关、effective state 与 `/perception/screen/status` 无正文观测；电脑视觉观察页、手机系统配置页各有独立本地授权，默认关闭。全局开启时自主工具继承启用，显式工具禁用优先；角色消息继续走原通知/免打扰链路。桌面 IPC 新增可选 onDemandEnabled；手机使用专用 screen_observation 通道与无障碍 worker，不改 mobile poll/ack/relay。
 
 实现及构建/定向测试通过，真实双设备、锁屏、OEM 后台及 VLM/消息联合验收保持 open。管理面既有国际化测试 3 项失败保持 open，详见施工记录，不能将静态检查作为真实设备验收。
+
+## Life records descriptions (2026-09-12)
+
+Backend recognition_routes exposes per-category configuration/effective state: diet/cart use vision, bill uses independent OCR. Optional record fields recognition_description/recognition_format/recognition_route are server-owned, persist in the existing Android JSON cache, and survive old-client saves. User category/date/note and edited title/items take priority. Flutter list/editor display the separate description; offline search includes it. Failed recognition rows are queried on subsequent ready syncs to discover admin retries. Existing owner, life_records scope, operation_id/revision, ack and background service paths remain unchanged.
+
+Validation: 16 life-record/localization tests passed. Physical-device installation, actual OCR and Doze remain observe; conflict UI still lacks keep-local merge (open). Desktop continues to use the backend admin control surface.

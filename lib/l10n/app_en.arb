@@ -1353,5 +1353,7 @@
   "dreamPreviewChat": "Where shall we go tonight?",
   "dreamPreviewAction": "Gently holds your hand.",
   "settingsDayChatBackgroundTitle": "Day background",
-  "settingsNightChatBackgroundTitle": "Night background"
+  "settingsNightChatBackgroundTitle": "Night background",
+  "lifeRecognitionDescription": "Image description (unconfirmed)",
+  "lifeRecognitionHelp": "Food and carts use visual descriptions; bills use OCR. Your category, date and manually edited fields take priority. Image descriptions are stored separately; add corrections in your notes."
 }
