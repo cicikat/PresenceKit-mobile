@@ -1,5 +1,12 @@
 # 测试与开发
 
+## 工单 19（2026-09-12）
+
+- flutter gen-l10n、flutter analyze --no-pub 通过；全量 Flutter 166 项通过。最后补齐夜间分类标签配色后，生活记录 12 项定向测试再次通过。覆盖自己回复、输入框获焦后复制/全选不弹键盘、可见全选及字效、通知已被原生 ack 后重读历史、日夜图片槽位、紧凑思考与卡片布局/对比度。
+- Java 21（Android Studio jbr）执行 Android :app:testDevDebugUnitTest --tests com.presencekit.mobile.LifeRecordsTest，20 项通过；覆盖成功同步/merge/重启后图片仍在、删除清图、隔离与队列。首次使用 PATH Java 26 在 Gradle 启动失败，切换本机既有 JDK 21 后通过。
+- Dev debug APK 构建通过；未发布、未修改发行版本或安装真机。adb devices 当前为空。build/review 保存测试日志和测试字体的离屏布局图；实际相册/OEM/通知/日夜背景迁移仍需真机。
+- 第 7 项旧图恢复保持 open：旧版已经删掉本机源图，后端尚无下载接口。本轮修复后续图片保留，不声称复原旧图片；后端识别失败未修改，证据见 known-issues 与 cc-tasks/19-mobile-interaction-fixes.md。
+
 2026-09-11 外观与历史刷新：Flutter analyze 零问题，全量 159 项测试通过；默认夜间配色调整后主题/界面 15 项通过。正式身份 1.0.1+39 真机覆盖安装成功，系统文件保存器成功导出“夜”JSON，已有背景/角色资料保留。随后 1.0.1+40 同签名覆盖安装成功，侧栏实测显示 1.0.1+40、用户占位和无群聊入口，已恢复夜间模式；包含导出色值作为默认夜间配置。没有对外发布。字体文件导入、JSON 导入及思考真实后端读取未完成真机全链路验收，不能以自动测试代替。
 
 ## 设置 UI 与 Dream 设置对齐（2026-09-11）

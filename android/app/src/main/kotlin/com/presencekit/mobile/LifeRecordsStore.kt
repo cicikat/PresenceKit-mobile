@@ -64,7 +64,15 @@ class LifeRecordsStore(context: Context) : AutoCloseable {
         db.rawQuery("SELECT state,COUNT(*) FROM operations WHERE realm=? GROUP BY state", arrayOf(realm)).use {
             while (it.moveToNext()) counts.put(it.getString(0), it.getInt(1))
         }
-        return JSONObject().put("records", records).put("queue", counts).put("sync", metadata(realm))
+        var imageCount = 0
+        var imageBytes = 0L
+        db.rawQuery("SELECT image FROM records WHERE realm=? AND image IS NOT NULL", arrayOf(realm)).use { rows ->
+            while (rows.moveToNext()) {
+                val file = File(directory, rows.getString(0))
+                if (file.exists()) { imageCount++; imageBytes += file.length() }
+            }
+        }
+        return JSONObject().put("local_images", JSONObject().put("count", imageCount).put("bytes", imageBytes).put("limit_bytes", 100L * 1024 * 1024)).put("records", records).put("queue", counts).put("sync", metadata(realm))
     }
 
     private fun record(realm: String, id: String): JSONObject? = db.rawQuery("SELECT body,revision,image FROM records WHERE realm=? AND id=?", arrayOf(realm, id)).use {
@@ -176,8 +184,8 @@ class LifeRecordsStore(context: Context) : AutoCloseable {
                 db.update("records", update, "realm=? AND id=?", arrayOf(realm, id))
             }
         }
-        // Keep the source until no operation can need it. Synced originals live on the backend.
-        if (!hasPending(realm, id)) {
+        // Preserve the existing local source for previews after upload; only deletion removes it.
+        if (deleting && !hasPending(realm, id)) {
             old.optString("local_image").takeIf { it.isNotEmpty() }?.let { File(directory, it).delete() }
             db.update("records", values("image" to null), "realm=? AND id=?", arrayOf(realm, id))
         }
@@ -196,8 +204,11 @@ class LifeRecordsStore(context: Context) : AutoCloseable {
             require(body.getLong("revision") > 0)
             val old = record(realm, id)
             if (!hasPending(realm, id) && body.getLong("revision") >= (old?.optLong("revision") ?: 0)) {
-                if (body.optBoolean("deleted")) db.delete("records", "realm=? AND id=?", arrayOf(realm, id))
-                else db.insertWithOnConflict("records", null, values("realm" to realm, "id" to id, "body" to body, "revision" to body.getLong("revision")), SQLiteDatabase.CONFLICT_REPLACE)
+                if (body.optBoolean("deleted")) {
+                    db.delete("records", "realm=? AND id=?", arrayOf(realm, id))
+                    old?.optString("local_image")?.takeIf { it.isNotEmpty() }?.let { File(directory, it).delete() }
+                }
+                else db.insertWithOnConflict("records", null, values("realm" to realm, "id" to id, "body" to body, "revision" to body.getLong("revision"), "image" to old?.optString("local_image")?.takeIf { it.isNotEmpty() }), SQLiteDatabase.CONFLICT_REPLACE)
             }
         }
     }
@@ -212,9 +223,9 @@ class LifeRecordsStore(context: Context) : AutoCloseable {
         transaction {
             db.delete("operations", "realm=? AND id=?", arrayOf(realm, id))
             if (remote.optBoolean("deleted")) db.delete("records", "realm=? AND id=?", arrayOf(realm, id))
-            else db.insertWithOnConflict("records", null, values("realm" to realm, "id" to id, "body" to remote, "revision" to remote.getLong("revision")), SQLiteDatabase.CONFLICT_REPLACE)
+            else db.insertWithOnConflict("records", null, values("realm" to realm, "id" to id, "body" to remote, "revision" to remote.getLong("revision"), "image" to old?.optString("local_image")?.takeIf { it.isNotEmpty() }), SQLiteDatabase.CONFLICT_REPLACE)
         }
-        old?.optString("local_image")?.takeIf { it.isNotEmpty() }?.let { File(directory, it).delete() }
+        if (remote.optBoolean("deleted")) old?.optString("local_image")?.takeIf { it.isNotEmpty() }?.let { File(directory, it).delete() }
     }
 
     fun retry(realm: String) { db.update("operations", values("state" to "queued"), "realm=? AND state IN ('retry','failed','rejected')", arrayOf(realm)) }

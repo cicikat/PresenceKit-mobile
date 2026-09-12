@@ -41,6 +41,41 @@ String lifeStatus(AppLocalizations l, String? value) => switch (value) {
   _ => l.lifeWaiting,
 };
 
+Color _readableDanger(YxPalette c) => c.surfaceSoft.computeLuminance() < 0.4
+    ? const Color(0xFFFF8A80)
+    : const Color(0xFFB3261E);
+
+ThemeData _lifeTheme(ThemeData theme, YxPalette c) => theme.copyWith(
+  colorScheme:
+      ColorScheme.fromSeed(
+        seedColor: c.character,
+        brightness: c.surface.computeLuminance() < 0.4
+            ? Brightness.dark
+            : Brightness.light,
+        surface: c.surface,
+        onSurface: c.ink1,
+        error: _readableDanger(c),
+      ).copyWith(
+        primary: c.ink1,
+        onPrimary: c.surface,
+        secondaryContainer: c.surfaceEdge,
+        onSecondaryContainer: c.ink1,
+        onSurfaceVariant: c.ink2,
+        outline: c.ink2,
+      ),
+  iconTheme: theme.iconTheme.copyWith(color: c.ink2),
+  primaryIconTheme: theme.primaryIconTheme.copyWith(color: c.ink1),
+  textTheme: theme.textTheme.apply(bodyColor: c.ink1, displayColor: c.ink1),
+);
+
+ButtonStyle _recordActionStyle(Color color) => TextButton.styleFrom(
+  foregroundColor: color,
+  minimumSize: Size.zero,
+  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  textStyle: const TextStyle(fontSize: 12, height: 1.4),
+);
+
 class LifeRecordsPage extends StatefulWidget {
   const LifeRecordsPage({
     super.key,
@@ -167,12 +202,15 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => LifeRecordEditor(
-        controller: controller,
-        record: record,
-        image: image,
-        mime: mime,
-        expectedRealm: realm,
+      builder: (_) => Theme(
+        data: _lifeTheme(Theme.of(context), widget.c),
+        child: LifeRecordEditor(
+          controller: controller,
+          record: record,
+          image: image,
+          mime: mime,
+          expectedRealm: realm,
+        ),
       ),
     );
   }
@@ -250,6 +288,12 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                     ).toLocal().toString(),
                   ),
                 ),
+              if (controller.syncState['local_images'] != null)
+                SelectableText(
+                  jsonEncode({
+                    'local_images': controller.syncState['local_images'],
+                  }),
+                ),
               if (controller.observation != null)
                 SelectableText(
                   const JsonEncoder.withIndent(
@@ -275,201 +319,199 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
     builder: (context, _) {
       final l = context.l10n;
       final records = controller.visible;
-      return Column(
-        children: [
-          PageHeader(
-            c: widget.c,
-            title: l.lifeTitle,
-            eyebrow: l.lifeSubtitle,
-            onBack: widget.onBack,
-            trailing: l.lifePendingCount(controller.pendingCount),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Row(
+      final themed = _lifeTheme(Theme.of(context), widget.c);
+      return Theme(
+        data: themed,
+        child: DefaultTextStyle(
+          style: serif(widget.c, 14).copyWith(height: 1.4),
+          child: Column(
+            children: [
+              PageHeader(
+                c: widget.c,
+                title: l.lifeTitle,
+                eyebrow: l.lifeSubtitle,
+                onBack: widget.onBack,
+                trailing: l.lifePendingCount(controller.pendingCount),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
                   children: [
-                    Expanded(
-                      child: Text(
-                        lifeStatus(
-                          l,
-                          controller.error ??
-                              controller.syncState['status'] as String?,
-                        ),
-                        style: serif(widget.c, 13),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: l.lifeSync,
-                      onPressed: controller.busy || !controller.available
-                          ? null
-                          : () async {
-                              await controller.synchronize(manual: true);
-                              await controller.search();
-                            },
-                      icon: const Icon(Icons.sync),
-                    ),
-                    IconButton(
-                      tooltip: l.lifeQueue,
-                      onPressed: !controller.available ? null : _observe,
-                      icon: const Icon(Icons.cloud_upload_outlined),
-                    ),
-                  ],
-                ),
-                if (!controller.available) Text(l.lifeAndroidOnly),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 72,
-                        child: FilledButton.icon(
-                          onPressed: !controller.available || _picking
-                              ? null
-                              : () => _pick(ImageSource.camera),
-                          icon: const Icon(Icons.add_a_photo_outlined),
-                          label: Text(l.lifeCamera),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 72,
-                        child: OutlinedButton.icon(
-                          onPressed: !controller.available || _picking
-                              ? null
-                              : () => _pick(ImageSource.gallery),
-                          icon: const Icon(Icons.photo_library_outlined),
-                          label: Text(l.lifeGallery),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: l.lifeSearch,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          prefixIcon: IconButton(
-                            tooltip: l.lifeSearch,
-                            onPressed: controller.querying
-                                ? null
-                                : () => controller.search(),
-                            icon: const Icon(Icons.search),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            lifeStatus(
+                              l,
+                              controller.error ??
+                                  controller.syncState['status'] as String?,
+                            ),
+                            style: serif(widget.c, 13),
                           ),
                         ),
-                        onChanged: (q) => controller.filters(query: q.trim()),
-                        onSubmitted: (_) => controller.search(),
-                      ),
+                        IconButton(
+                          tooltip: l.lifeSync,
+                          onPressed: controller.busy || !controller.available
+                              ? null
+                              : () async {
+                                  await controller.synchronize(manual: true);
+                                  await controller.search();
+                                },
+                          icon: const Icon(Icons.sync),
+                        ),
+                        IconButton(
+                          tooltip: l.lifeQueue,
+                          onPressed: !controller.available ? null : _observe,
+                          icon: const Icon(Icons.cloud_upload_outlined),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    IconButton.outlined(
-                      tooltip: l.lifeDateRange,
-                      onPressed: _dates,
-                      icon: const Icon(Icons.calendar_month_outlined),
+                    if (!controller.available) Text(l.lifeAndroidOnly),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 72,
+                            child: FilledButton.icon(
+                              onPressed: !controller.available || _picking
+                                  ? null
+                                  : () => _pick(ImageSource.camera),
+                              icon: const Icon(Icons.add_a_photo_outlined),
+                              label: Text(l.lifeCamera),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 72,
+                            child: OutlinedButton.icon(
+                              onPressed: !controller.available || _picking
+                                  ? null
+                                  : () => _pick(ImageSource.gallery),
+                              icon: const Icon(Icons.photo_library_outlined),
+                              label: Text(l.lifeGallery),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                if (controller.from.isNotEmpty)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text('${controller.from} ? ${controller.to}'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          controller.filters(from: '', to: '');
-                          unawaited(controller.search());
-                        },
-                        child: Text(l.lifeClearDates),
-                      ),
-                    ],
-                  ),
-                const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final category in ['', 'diet', 'bill', 'cart'])
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(lifeCategory(l, category)),
-                            selected: controller.category == category,
-                            onSelected: (_) {
-                              controller.filters(category: category);
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: l.lifeSearch,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              prefixIcon: IconButton(
+                                tooltip: l.lifeSearch,
+                                onPressed: controller.querying
+                                    ? null
+                                    : () => controller.search(),
+                                icon: const Icon(Icons.search),
+                              ),
+                            ),
+                            onChanged: (q) =>
+                                controller.filters(query: q.trim()),
+                            onSubmitted: (_) => controller.search(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.outlined(
+                          tooltip: l.lifeDateRange,
+                          onPressed: _dates,
+                          icon: const Icon(Icons.calendar_month_outlined),
+                        ),
+                      ],
+                    ),
+                    if (controller.from.isNotEmpty)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${controller.from} ? ${controller.to}',
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              controller.filters(from: '', to: '');
                               unawaited(controller.search());
                             },
+                            child: Text(l.lifeClearDates),
                           ),
-                        ),
-                    ],
-                  ),
-                ),
-                if (controller.busy || controller.querying)
-                  const LinearProgressIndicator(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    controller.cacheOnly
-                        ? l.lifeCacheOnly
-                        : l.lifeServerResults,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-                if (records.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Text(l.lifeEmpty),
-                  ),
-                ...records.map(
-                  (record) => Card(
-                    elevation: 0,
-                    color: widget.c.surfaceSoft,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: widget.c.surfaceEdge.withValues(alpha: 0.5),
+                        ],
+                      ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final category in ['', 'diet', 'bill', 'cart'])
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(lifeCategory(l, category)),
+                                backgroundColor: widget.c.surfaceSoft,
+                                selectedColor: widget.c.surfaceEdge,
+                                labelStyle: serif(widget.c, 12),
+                                checkmarkColor: widget.c.ink1,
+                                side: BorderSide(color: widget.c.surfaceEdge),
+                                selected: controller.category == category,
+                                onSelected: (_) {
+                                  controller.filters(category: category);
+                                  unawaited(controller.search());
+                                },
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(child: Text(record.date)),
-                              Chip(
-                                label: Text(lifeCategory(l, record.category)),
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
+                    if (controller.busy || controller.querying)
+                      const LinearProgressIndicator(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        controller.cacheOnly
+                            ? l.lifeCacheOnly
+                            : l.lifeServerResults,
+                        style: serif(widget.c, 12, color: widget.c.ink2),
+                      ),
+                    ),
+                    if (records.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: Text(l.lifeEmpty),
+                      ),
+                    ...records.map(
+                      (record) => Card(
+                        elevation: 0,
+                        color: widget.c.surfaceSoft,
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: widget.c.surfaceEdge),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _LifeRecordThumbnail(
-                                key: ValueKey(
-                                  '${controller.realm}/${record.id}/${record.revision}',
-                                ),
-                                controller: controller,
-                                record: record,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
+                              Row(
+                                children: [
+                                  Text(
+                                    record.date,
+                                    style: mono(
+                                      widget.c,
+                                      10,
+                                      color: widget.c.ink2,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
                                       record.deleted
                                           ? l.lifeDeleting
                                           : record.conflict
@@ -484,104 +526,174 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                                                 l.lifeRecognitionFailed,
                                               _ => l.lifeRecognizing,
                                             },
-                                    ),
-                                    Text(
-                                      record.title.isEmpty
-                                          ? l.lifeUntitled
-                                          : record.title,
+                                      textAlign: TextAlign.end,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                       style: serif(
                                         widget.c,
-                                        19,
-                                        weight: FontWeight.w600,
+                                        12,
+                                        color:
+                                            record.recognition == 'failed' ||
+                                                record.failed ||
+                                                record.conflict
+                                            ? _readableDanger(widget.c)
+                                            : widget.c.ink2,
                                       ),
                                     ),
-                                    if (record.note.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 8,
-                                        ),
-                                        child: Text(
-                                          record.note,
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _LifeRecordThumbnail(
+                                    key: ValueKey(
+                                      '${controller.realm}/${record.id}/${record.revision}',
+                                    ),
+                                    controller: controller,
+                                    record: record,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          lifeCategory(l, record.category),
                                           style: serif(
                                             widget.c,
-                                            14,
+                                            12,
                                             color: widget.c.ink2,
                                           ),
                                         ),
-                                      ),
-                                    ...record.items.map(
-                                      (item) => Text(
-                                        [
-                                              item['name'],
-                                              item['quantity'],
-                                              item['unit'],
-                                              item['amount'],
-                                              item['currency'],
-                                            ]
-                                            .where(
-                                              (v) =>
-                                                  v != null &&
-                                                  v.toString().isNotEmpty,
-                                            )
-                                            .join(' · '),
-                                      ),
-                                    ),
-                                    Wrap(
-                                      alignment: WrapAlignment.end,
-                                      spacing: 8,
-                                      children: [
-                                        if (!record.deleted && !record.conflict)
-                                          TextButton(
-                                            onPressed: () => _edit(record),
-                                            child: Text(l.lifeEdit),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          record.title.isEmpty
+                                              ? l.lifeUntitled
+                                              : record.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: serif(
+                                            widget.c,
+                                            16,
+                                            weight: FontWeight.w600,
                                           ),
-                                        if (!record.deleted && !record.conflict)
-                                          TextButton(
-                                            onPressed: () => _confirm(record),
-                                            child: Text(l.lifeDelete),
-                                          ),
-                                        if (record.conflict)
-                                          TextButton(
-                                            onPressed: () => _confirm(
-                                              record,
-                                              conflict: true,
+                                        ),
+                                        if (record.note.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 4,
                                             ),
-                                            child: Text(l.lifeAcceptServer),
+                                            child: Text(
+                                              record.note,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: serif(
+                                                widget.c,
+                                                13,
+                                                color: widget.c.ink2,
+                                              ).copyWith(height: 1.4),
+                                            ),
+                                          ),
+                                        if (record.items.isNotEmpty)
+                                          Text(
+                                            record.items
+                                                .map(
+                                                  (item) =>
+                                                      [
+                                                            item['name'],
+                                                            item['quantity'],
+                                                            item['unit'],
+                                                            item['amount'],
+                                                            item['currency'],
+                                                          ]
+                                                          .where(
+                                                            (v) =>
+                                                                v != null &&
+                                                                v
+                                                                    .toString()
+                                                                    .isNotEmpty,
+                                                          )
+                                                          .join(' '),
+                                                )
+                                                .join(' / '),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: serif(
+                                              widget.c,
+                                              12,
+                                              color: widget.c.ink2,
+                                            ).copyWith(height: 1.4),
                                           ),
                                       ],
                                     ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: Wrap(
+                                  alignment: WrapAlignment.end,
+                                  spacing: 8,
+                                  children: [
+                                    if (!record.deleted && !record.conflict)
+                                      TextButton(
+                                        style: _recordActionStyle(
+                                          widget.c.ink1,
+                                        ),
+                                        onPressed: () => _edit(record),
+                                        child: Text(l.lifeEdit),
+                                      ),
+                                    if (!record.deleted && !record.conflict)
+                                      TextButton(
+                                        style: _recordActionStyle(
+                                          _readableDanger(widget.c),
+                                        ),
+                                        onPressed: () => _confirm(record),
+                                        child: Text(l.lifeDelete),
+                                      ),
+                                    if (record.conflict)
+                                      TextButton(
+                                        style: _recordActionStyle(
+                                          widget.c.ink1,
+                                        ),
+                                        onPressed: () =>
+                                            _confirm(record, conflict: true),
+                                        child: Text(l.lifeAcceptServer),
+                                      ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                    if (controller.cursor != null)
+                      TextButton(
+                        onPressed: controller.querying
+                            ? null
+                            : () => controller.search(more: true),
+                        child: Text(l.lifeMore),
+                      ),
+                    const SizedBox(height: 12),
+                    Text(
+                      l.lifeCartHelp,
+                      style: serif(widget.c, 12, color: widget.c.ink2),
+                    ),
+                    Text(
+                      l.lifeBackgroundHelp,
+                      style: serif(widget.c, 12, color: widget.c.ink2),
+                    ),
+                  ],
                 ),
-                if (controller.cursor != null)
-                  TextButton(
-                    onPressed: controller.querying
-                        ? null
-                        : () => controller.search(more: true),
-                    child: Text(l.lifeMore),
-                  ),
-                const SizedBox(height: 12),
-                Text(
-                  l.lifeCartHelp,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Text(
-                  l.lifeBackgroundHelp,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       );
     },
   );
@@ -609,8 +721,8 @@ class _LifeRecordThumbnailState extends State<_LifeRecordThumbnail> {
   Widget build(BuildContext context) => ClipRRect(
     borderRadius: BorderRadius.circular(12),
     child: SizedBox(
-      width: 96,
-      height: 112,
+      width: 72,
+      height: 72,
       child: FutureBuilder<Uint8List?>(
         future: image,
         builder: (context, snapshot) => snapshot.data == null

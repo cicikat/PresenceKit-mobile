@@ -1,5 +1,11 @@
 # 后端集成
 
+## 工单 19：历史恢复与生活记录核查（2026-09-12）
+
+手机恢复/通知进入先重读 /chat-log/*，再执行原 mobile activation/catch-up，避免后台 ack 已推进后前台只读队列而漏显。历史读取既有 assistant_display_text 字段，经 canonical 文本一致性校验后按段呈现，不新增 HTTP 字段或修改后端；缺失/不匹配时保留普通正文。自回复仍发送原 reply_to，复制/选区只操作本机 UI，思考仍按 canonical turn_id 读取。
+
+三面闭环：管理面仍拥有 life_records 的 enabled/effective、识别路由、后台同步与失败任务观测；桌面独立展示无需新增本机外观开关。手机日夜背景、紧凑思考与卡片配色不影响后端配置。通知鉴权、msg_id/turn_id、seen 去重、ack、TTL、后台服务及 fallback 不变。生活记录现有队列和源图路径继续沿用，原图上传成功后保留本机预览；已删旧图无下载端点，3 个识别失败任务的只读证据见 known-issues，不修改后端。
+
 ## 回合思考显示（2026-09-11）
 
 手机使用同桌面的 `GET /chat/turns/{turn_id}/reasoning`，沿用 mobile Bearer，不调用 admin 全局归档。只接受响应同名 turn_id，按 entries/parts 顺序显示 text；动态角色名取当前资料。发送/附件回复前占位，HTTP canonical turn_id 到达后读取，不以 msg_id、时间或正文猜测 ID。历史仅在接口明确返回 turn_id 时显示入口。显示开关和默认展开为本机偏好，不控制模型生成。

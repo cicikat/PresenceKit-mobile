@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -272,6 +275,73 @@ void main() {
       expect(find.text('Life records'), findsOneWidget);
       expect(find.textContaining('not integrated'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'night record is compact, readable and places actions at lower right',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final value = row('one')..['recognition_status'] = 'failed';
+      service.rows = [value];
+      await controller.reload();
+      final key = GlobalKey();
+      await tester.pumpWidget(
+        app(
+          RepaintBoundary(
+            key: key,
+            child: Scaffold(
+              backgroundColor: YxPalette.dark.surface,
+              body: LifeRecordsPage(
+                c: YxPalette.dark,
+                controller: controller,
+                onBack: () {},
+              ),
+            ),
+          ),
+          locale: 'en',
+        ),
+      );
+      await tester.pumpAndSettle();
+      final card = find.byType(Card).last;
+      await tester.ensureVisible(card);
+      await tester.pumpAndSettle();
+      expect(tester.getSize(card).height, lessThan(190));
+      final edit = find
+          .descendant(of: card, matching: find.byType(TextButton))
+          .first;
+      final remove = find
+          .descendant(of: card, matching: find.byType(TextButton))
+          .last;
+      expect(
+        tester.getRect(remove).right,
+        closeTo(tester.getRect(card).right - 12, 1),
+      );
+      expect(tester.getRect(edit).bottom, tester.getRect(remove).bottom);
+      final label = tester.widget<Text>(
+        find.descendant(of: card, matching: find.byType(Text)).at(1),
+      );
+      final background = YxPalette.dark.surfaceSoft.computeLuminance();
+      expect(
+        (label.style!.color!.computeLuminance() + .05) / (background + .05),
+        greaterThan(4.5),
+      );
+      expect(tester.takeException(), isNull);
+      final boundary =
+          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      await tester.runAsync(() async {
+        final image = await boundary.toImage();
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        final directory = Directory('build/review')
+          ..createSync(recursive: true);
+        await File(
+          '${directory.path}/life-records-night.png',
+        ).writeAsBytes(bytes!.buffer.asUint8List());
+        image.dispose();
+      });
     },
   );
 

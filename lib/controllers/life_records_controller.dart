@@ -110,6 +110,9 @@ class LifeRecordsController extends ChangeNotifier {
         .toList();
     queue = Map<String, dynamic>.from(snapshot['queue'] as Map);
     syncState = Map<String, dynamic>.from(snapshot['sync'] as Map);
+    if (snapshot['local_images'] != null) {
+      syncState['local_images'] = snapshot['local_images'];
+    }
     _notify();
   }
 

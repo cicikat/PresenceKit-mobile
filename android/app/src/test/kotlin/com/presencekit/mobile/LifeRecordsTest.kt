@@ -64,7 +64,7 @@ class LifeRecordsTest {
             assertFalse(store.wire(realm, "owner", second).has("image_base64"))
             store.acknowledge(realm, second, ack(second, 2, "Corrected"))
             assertNull(store.next(realm))
-            assertNull(store.image(realm, id))
+            assertArrayEquals(image, store.image(realm, id))
         }
     }
 
@@ -124,7 +124,25 @@ class LifeRecordsTest {
             assertEquals(other, store.next(realm)!!.getString("record_id"))
             store.acceptServer(realm, id)
             assertFalse(store.hasPending(realm, id))
+            assertArrayEquals(image, store.image(realm, id))
+        }
+    }
+
+    @Test fun `synced image survives server merge and reopening but not remote deletion`() {
+        var id = ""
+        LifeRecordsStore(context).use { store ->
+            id = store.save(realm, body(), image)
+            val op = store.next(realm)!!
+            store.acknowledge(realm, op, ack(op, 1))
+            store.merge(realm, JSONArray().put(body().put("id", id).put("revision", 2)))
+            assertArrayEquals(image, store.image(realm, id))
+            assertEquals(1, store.snapshot(realm).getJSONObject("local_images").getInt("count"))
+        }
+        LifeRecordsStore(context).use { store ->
+            assertArrayEquals(image, store.image(realm, id))
+            store.merge(realm, JSONArray().put(JSONObject().put("id", id).put("revision", 3).put("deleted", true)))
             assertNull(store.image(realm, id))
+            assertEquals(0, store.snapshot(realm).getJSONObject("local_images").getInt("count"))
         }
     }
 

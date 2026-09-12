@@ -1,5 +1,13 @@
 # Android 原生能力
 
+## 工单 19：相册与图片保留（2026-09-12）
+
+角色头像、用户头像、日/夜聊天背景、Dream 背景、聊天多图和生活记录相册导入统一复用原生图片选择入口：Android 13+ 使用系统 Photo Picker，旧版本使用 ACTION_PICK + MediaStore 图片集合。文字/字体/主题 JSON/PDF 文件导入不改为图片选择器。生活记录拍照及相机丢失数据恢复保留 image_picker；无新增权限或后台服务。
+
+settings channel 的 get/saveChatAppearance 增加可选 nightBytes，bytes 继续表示日间背景。新版保存两个槽位，null 清除对应背景；旧调用不传 nightBytes 时不动夜间槽位。首次读取把旧背景复制到夜间一次，清除后不再次迁移。模糊与气泡透明度仍共用原设置，UI 分别展示两张背景预览。
+
+LifeRecordsStore 上传 ack 后保留现有本机图片，merge/接受服务器版本保留图片引用；删除记录时清理。沿用 realm 隔离、100 MiB 上限、operation_id/revision/ack 及前后台同步。snapshot 新增只读 local_images 数量/字节数/上限，显示于既有队列观测；旧版已删除图片及后端识别失败见 known-issues 工单 19。
+
 侧栏用户头像改用已有 image_picker 相册来源，读取用户选定图片，不使用通用文件选择器、不请求额外广泛存储权限。
 
 appearance prefs 增加 `reasoningOpacity`，Float，0–1，默认 0.85；Dart 模型/存储、共享通道说明及 MainActivity 同步。无新增权限或服务。
