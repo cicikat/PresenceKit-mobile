@@ -509,7 +509,13 @@ class ChatTopBar extends StatelessWidget {
                 children: [
                   YxTag(c: c, text: presence.mood, variant: 'solid'),
                   YxTag(c: c, text: presence.activity, variant: 'warm'),
-                  YxTag(c: c, text: presence.timeband),
+                  YxTag(
+                    c: c.copyWith(
+                      ink2: c.characterOn,
+                      ink4: c.characterOn.withValues(alpha: .35),
+                    ),
+                    text: presence.timeband,
+                  ),
                 ],
               ),
             ),

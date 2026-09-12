@@ -381,6 +381,16 @@ void main() {
         ).writeAsBytes(bytes!.buffer.asUint8List());
         image.dispose();
       });
+      await tester.tap(edit);
+      await tester.pumpAndSettle();
+      final editorContext = tester.element(find.byType(LifeRecordEditor));
+      final theme = Theme.of(editorContext);
+      expect(theme.dialogTheme.backgroundColor, YxPalette.dark.surface);
+      expect(theme.inputDecorationTheme.fillColor, YxPalette.dark.surfaceSoft);
+      final foreground = theme.textTheme.bodyMedium!.color!.computeLuminance();
+      final fill = theme.inputDecorationTheme.fillColor!.computeLuminance();
+      expect((foreground + .05) / (fill + .05), greaterThan(4.5));
+      expect(tester.takeException(), isNull);
     },
   );
 

@@ -63,6 +63,23 @@ ThemeData _lifeTheme(ThemeData theme, YxPalette c) => theme.copyWith(
         onSurfaceVariant: c.ink2,
         outline: c.ink2,
       ),
+  dialogTheme: DialogThemeData(
+    backgroundColor: c.surface,
+    surfaceTintColor: Colors.transparent,
+    titleTextStyle: TextStyle(color: c.ink1, fontSize: 20),
+    contentTextStyle: TextStyle(color: c.ink1, fontSize: 14),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: c.surfaceSoft,
+    labelStyle: TextStyle(color: c.ink2),
+    hintStyle: TextStyle(color: c.ink2),
+    border: const OutlineInputBorder(),
+  ),
+  textSelectionTheme: TextSelectionThemeData(
+    cursorColor: c.ink1,
+    selectionColor: c.ink3.withValues(alpha: .3),
+  ),
   iconTheme: theme.iconTheme.copyWith(color: c.ink2),
   primaryIconTheme: theme.primaryIconTheme.copyWith(color: c.ink1),
   textTheme: theme.textTheme.apply(bodyColor: c.ink1, displayColor: c.ink1),
