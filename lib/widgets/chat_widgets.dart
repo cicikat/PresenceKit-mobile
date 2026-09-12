@@ -216,6 +216,7 @@ class ChatScene extends StatelessWidget {
                               quotedText: m.quotedText,
                               failed: m.failed,
                               onRetry: () => controller.retryMessage(m),
+                              onReply: () => controller.setReplyTarget(m),
                               showDateDivider: showDateDivider,
                               dateKey: m.dateKey,
                             )
@@ -580,9 +581,11 @@ Future<ChatBubbleAction?> showChatBubbleMenu({
   required Offset position,
   required bool showReply,
 }) {
+  FocusManager.instance.primaryFocus?.unfocus();
   final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
   return showMenu<ChatBubbleAction>(
     context: context,
+    requestFocus: false,
     position: RelativeRect.fromRect(
       position & const Size(1, 1),
       Offset.zero & overlay.size,
@@ -603,6 +606,45 @@ Future<ChatBubbleAction?> showChatBubbleMenu({
         ),
     ],
   );
+}
+
+Future<void> showChatTextSelection(BuildContext context, String text) async {
+  final controller = TextEditingController(text: text)
+    ..selection = TextSelection(baseOffset: 0, extentOffset: text.length);
+  try {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: SizedBox(
+          width: double.maxFinite,
+          child: TextField(
+            controller: controller,
+            readOnly: true,
+            autofocus: true,
+            showCursor: false,
+            minLines: 1,
+            maxLines: 12,
+            decoration: const InputDecoration(border: InputBorder.none),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              final selection = controller.selection;
+              await Clipboard.setData(ClipboardData(
+                text: selection.isValid ? selection.textInside(text) : text,
+              ));
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: Text(context.l10n.copyAction),
+          ),
+        ],
+      ),
+    );
+  } finally {
+    // The dialog reverse transition still owns the editable for one frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+  }
 }
 
 class ReplyPreviewBar extends StatelessWidget {
@@ -771,7 +813,6 @@ class HimMessage extends StatefulWidget {
 }
 
 class _HimMessageState extends State<HimMessage> {
-  bool _selectable = false;
 
   Future<void> _handleLongPress(Offset globalPosition) async {
     final action = await showChatBubbleMenu(
@@ -785,7 +826,7 @@ class _HimMessageState extends State<HimMessage> {
         await Clipboard.setData(ClipboardData(text: widget.text));
         break;
       case ChatBubbleAction.selectAll:
-        setState(() => _selectable = true);
+        await showChatTextSelection(context, widget.text);
         break;
       case ChatBubbleAction.reply:
         widget.onReply?.call();
@@ -874,16 +915,6 @@ class _HimMessageState extends State<HimMessage> {
                       ),
                       child: widget.sticker != null
                           ? StickerImage(sticker: widget.sticker!)
-                          : _selectable
-                          ? SelectableText.rich(
-                              inlineDisplaySpan(
-                                text: widget.text,
-                                displayText: widget.displayText,
-                                style: contentSerif(c, widget.prefs.fontSize),
-                                accent: c.danger,
-                              ),
-                              style: contentSerif(c, widget.prefs.fontSize),
-                            )
                           : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1185,6 +1216,7 @@ class YouMessage extends StatefulWidget {
     this.quotedText,
     this.failed = false,
     this.onRetry,
+    this.onReply,
     this.showDateDivider = false,
     this.dateKey,
     this.attachments = const [],
@@ -1198,6 +1230,7 @@ class YouMessage extends StatefulWidget {
   final String? quotedText;
   final bool failed;
   final VoidCallback? onRetry;
+  final VoidCallback? onReply;
   final bool showDateDivider;
   final String? dateKey;
   final List<PickedUploadFile> attachments;
@@ -1208,13 +1241,12 @@ class YouMessage extends StatefulWidget {
 }
 
 class _YouMessageState extends State<YouMessage> {
-  bool _selectable = false;
 
   Future<void> _handleLongPress(Offset globalPosition) async {
     final action = await showChatBubbleMenu(
       context: context,
       position: globalPosition,
-      showReply: false,
+      showReply: widget.onReply != null,
     );
     if (!mounted || action == null) return;
     switch (action) {
@@ -1222,9 +1254,10 @@ class _YouMessageState extends State<YouMessage> {
         await Clipboard.setData(ClipboardData(text: widget.text));
         break;
       case ChatBubbleAction.selectAll:
-        setState(() => _selectable = true);
+        await showChatTextSelection(context, widget.text);
         break;
       case ChatBubbleAction.reply:
+        widget.onReply?.call();
         break;
     }
   }
@@ -1323,15 +1356,6 @@ class _YouMessageState extends State<YouMessage> {
                             attachment: attachment,
                             fontSize: prefs.fontSize,
                             bubbleOpacity: prefs.chatBubbleOpacity,
-                          )
-                        : _selectable
-                        ? SelectableText(
-                            text,
-                            style: contentSerif(
-                              c,
-                              prefs.fontSize,
-                              color: c.userBubbleText,
-                            ),
                           )
                         : Text(
                             text,

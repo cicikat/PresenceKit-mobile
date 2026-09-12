@@ -35,6 +35,34 @@ Future<Uint8List> picture() async {
 }
 
 void main() {
+  testWidgets('own reply and select all do not reopen composer keyboard', (tester) async {
+    var replied = false;
+    await tester.pumpWidget(app(Scaffold(body: Column(children: [
+      YouMessage(c: YxPalette.light, time: '12:00', text: 'my supplement',
+        prefs: const YxPrefs(), onReply: () => replied = true),
+      const TextField(),
+    ]))));
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    await tester.longPress(find.text('my supplement'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reply'));
+    await tester.pumpAndSettle();
+    expect(replied, isTrue);
+    expect(tester.testTextInput.isVisible, isFalse);
+    await tester.longPress(find.text('my supplement'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Select all'));
+    await tester.pumpAndSettle();
+    final field = tester.widget<TextField>(find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)));
+    expect(field.controller!.selection, const TextSelection(baseOffset: 0, extentOffset: 13));
+    expect(field.readOnly, isTrue);
+    expect(tester.testTextInput.isVisible, isFalse);
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Copy')));
+    await tester.pumpAndSettle();
+    expect(tester.testTextInput.isVisible, isFalse);
+  });
+
   test(
     'legacy data URI attachments are recognized without exposing encoded text',
     () {
