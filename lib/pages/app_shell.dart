@@ -147,7 +147,8 @@ class _CompanionAppState extends State<CompanionApp>
     if (!_localeController.loaded) unawaited(_localeController.load());
     final settingsStore = widget.settingsStore;
     _settings = SettingsStore(settingsStore);
-    _personalization = PersonalizationController(settingsStore)..addListener(_handleThemeChanged);
+    _personalization = PersonalizationController(settingsStore)
+      ..addListener(_handleThemeChanged);
     _themeController = ThemeController(
       loadPersisted: _settings.loadCustomThemePalette,
       savePersisted: _settings.saveCustomThemePalette,
@@ -244,6 +245,7 @@ class _CompanionAppState extends State<CompanionApp>
         _profileAvatarBytes = storedAvatar;
         _prefs = appearancePrefs.copyWith(
           chatBackground: chatAppearance.background,
+          nightChatBackground: chatAppearance.nightBackground,
           chatBackgroundBlur: chatAppearance.blur,
           chatBubbleOpacity: chatAppearance.opacity,
           dreamBackground: dreamBackground,
@@ -676,7 +678,7 @@ class _CompanionAppState extends State<CompanionApp>
     setState(() => _profileAvatarBytes = null);
   }
 
-  Future<void> _importChatBackground() async {
+  Future<void> _importChatBackground({bool night = false}) async {
     final sourceBytes = await _settings.pickChatBackgroundImage();
     if (!mounted || sourceBytes == null) return;
     final draft = await showDialog<ChatBackgroundDraft>(
@@ -692,7 +694,8 @@ class _CompanionAppState extends State<CompanionApp>
     if (!mounted || draft == null) return;
     final saved = await _settings.saveChatAppearance(
       ChatAppearanceSettings(
-        background: draft.bytes,
+        background: night ? _prefs.chatBackground : draft.bytes,
+        nightBackground: night ? draft.bytes : _prefs.nightChatBackground,
         blur: draft.blur,
         opacity: draft.opacity,
       ),
@@ -701,7 +704,8 @@ class _CompanionAppState extends State<CompanionApp>
     if (saved) {
       setState(() {
         _prefs = _prefs.copyWith(
-          chatBackground: draft.bytes,
+          chatBackground: night ? null : draft.bytes,
+          nightChatBackground: night ? draft.bytes : null,
           chatBackgroundBlur: draft.blur,
           chatBubbleOpacity: draft.opacity,
         );
@@ -739,28 +743,23 @@ class _CompanionAppState extends State<CompanionApp>
     }
   }
 
-  Future<void> _resetChatBackground() async {
-    await _settings.deleteChatAppearance();
-    if (!mounted) return;
-    setState(() {
-      _prefs = YxPrefs(
-        infoStrip: _prefs.infoStrip,
-        dreamNarrationSize: _prefs.dreamNarrationSize,
-        dreamChatSize: _prefs.dreamChatSize,
-        dreamActionSize: _prefs.dreamActionSize,
-        dreamNarrationColor: _prefs.dreamNarrationColor,
-        dreamChatColor: _prefs.dreamChatColor,
-        dreamActionColor: _prefs.dreamActionColor,
-        showReasoning: _prefs.showReasoning,
-        expandReasoning: _prefs.expandReasoning,
-        reasoningOpacity: _prefs.reasoningOpacity,
-        fontSize: _prefs.fontSize,
-        showYouAvatar: _prefs.showYouAvatar,
-        showChatTime: _prefs.showChatTime,
-        proactiveRate: _prefs.proactiveRate,
-        nightSilent: _prefs.nightSilent,
+  Future<void> _resetChatBackground({bool night = false}) async {
+    final saved = await _settings.saveChatAppearance(
+      ChatAppearanceSettings(
+        background: night ? _prefs.chatBackground : null,
+        nightBackground: night ? null : _prefs.nightChatBackground,
+        blur: _prefs.chatBackgroundBlur,
+        opacity: _prefs.chatBubbleOpacity,
+      ),
+    );
+    if (mounted && saved) {
+      setState(
+        () => _prefs = _prefs.copyWith(
+          clearChatBackground: !night,
+          clearNightChatBackground: night,
+        ),
       );
-    });
+    }
   }
 
   Future<CapabilityStatus> _loadCapabilityStatus() async {
@@ -1048,6 +1047,15 @@ class _CompanionAppState extends State<CompanionApp>
                 profileDisplayName: _profileDisplayName,
                 profileAvatarBytes: _profileAvatarBytes,
                 chatBackground: _prefs.chatBackground,
+                nightChatBackground: _prefs.nightChatBackground,
+                onImportNightChatBackground: () async {
+                  await _importChatBackground(night: true);
+                  if (context.mounted) sheetSetState(() {});
+                },
+                onResetNightChatBackground: () async {
+                  await _resetChatBackground(night: true);
+                  if (context.mounted) sheetSetState(() {});
+                },
 
                 dreamSettings: _dreamController.settings,
                 onDreamContext: (field, value) async {
@@ -1093,7 +1101,10 @@ class _CompanionAppState extends State<CompanionApp>
                   await _importChatBackground();
                   if (context.mounted) sheetSetState(() {});
                 },
-                onResetChatBackground: _resetChatBackground,
+                onResetChatBackground: () async {
+                  await _resetChatBackground();
+                  if (context.mounted) sheetSetState(() {});
+                },
                 onImportDreamBackground: () async {
                   await _importDreamBackground();
                   if (context.mounted) sheetSetState(() {});
@@ -1298,7 +1309,9 @@ class _CompanionAppState extends State<CompanionApp>
       ),
       child: SceneBackground(
         bytes: _route == AppRoute.chat
-            ? _prefs.chatBackground
+            ? (_themeController.isDark
+                  ? _prefs.nightChatBackground
+                  : _prefs.chatBackground)
             : _route == AppRoute.dream
             ? _prefs.dreamBackground
             : null,
@@ -1439,7 +1452,6 @@ class _CompanionAppState extends State<CompanionApp>
           requireToken: _requireAdminToken,
           onBack: () => setState(() => _route = AppRoute.chat),
         );
-
     }
   }
 }

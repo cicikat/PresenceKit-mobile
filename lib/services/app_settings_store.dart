@@ -386,6 +386,9 @@ class AppSettingsStore {
       final opacity = raw['opacity'];
       return ChatAppearanceSettings(
         background: bytes is Uint8List ? bytes : null,
+        nightBackground: raw['nightBytes'] is Uint8List
+            ? raw['nightBytes'] as Uint8List
+            : null,
         blur: blur is num ? blur.toDouble() : 0,
         opacity: opacity is num ? opacity.toDouble() : 0.94,
       );
@@ -397,14 +400,13 @@ class AppSettingsStore {
   Future<bool> saveChatAppearance(ChatAppearanceSettings value) async {
     if (!_channelAvailable) return false;
     try {
-      return await PlatformSettingsChannel.channel.invokeMethod<bool>(
-            'saveChatAppearance',
-            {
-              'bytes': value.background,
-              'blur': value.blur,
-              'opacity': value.opacity,
-            },
-          ) ??
+      return await PlatformSettingsChannel.channel
+              .invokeMethod<bool>('saveChatAppearance', {
+                'bytes': value.background,
+                'nightBytes': value.nightBackground,
+                'blur': value.blur,
+                'opacity': value.opacity,
+              }) ??
           false;
     } on PlatformException {
       return false;
@@ -459,14 +461,26 @@ class AppSettingsStore {
 
   Future<bool> exportThemeJson(String name, String json) async {
     if (!_channelAvailable) return false;
-    try { return await PlatformSettingsChannel.channel.invokeMethod<bool>('exportThemeJson', {'name': name, 'json': json}) ?? false; }
-    on PlatformException { return false; }
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<bool>(
+            'exportThemeJson',
+            {'name': name, 'json': json},
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    }
   }
 
   Future<String?> localPresentationDirectory() async {
     if (!_channelAvailable) return null;
-    try { return await PlatformSettingsChannel.channel.invokeMethod<String>('localPresentationDirectory'); }
-    on PlatformException { return null; }
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<String>(
+        'localPresentationDirectory',
+      );
+    } on PlatformException {
+      return null;
+    }
   }
 
   Future<YxPrefs> loadAppearancePrefs() async {
@@ -476,15 +490,19 @@ class AppSettingsStore {
           .invokeMethod<Map<dynamic, dynamic>>('getAppearancePrefs');
       if (raw == null) return const YxPrefs();
       return YxPrefs(
-        dreamNarrationSize: (raw['dreamNarrationSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
-        dreamChatSize: (raw['dreamChatSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
-        dreamActionSize: (raw['dreamActionSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
+        dreamNarrationSize:
+            (raw['dreamNarrationSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
+        dreamChatSize:
+            (raw['dreamChatSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
+        dreamActionSize:
+            (raw['dreamActionSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
         dreamNarrationColor: (raw['dreamNarrationColor'] as num?)?.toInt(),
         dreamChatColor: (raw['dreamChatColor'] as num?)?.toInt(),
         dreamActionColor: (raw['dreamActionColor'] as num?)?.toInt(),
         showReasoning: raw['showReasoning'] != false,
         expandReasoning: raw['expandReasoning'] == true,
-        reasoningOpacity: (raw['reasoningOpacity'] as num?)?.toDouble().clamp(0, 1) ?? 0.85,
+        reasoningOpacity:
+            (raw['reasoningOpacity'] as num?)?.toDouble().clamp(0, 1) ?? 0.85,
         infoStrip: raw['infoStrip'] != false,
         fontSize:
             ((raw['fontSize'] is num

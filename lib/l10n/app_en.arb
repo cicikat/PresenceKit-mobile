@@ -84,11 +84,11 @@
   "lifeQueued": "Saved locally · Pending sync",
   "lifeDeleting": "Deletion pending sync",
   "lifeRecognized": "Extracted · Review details",
-  "lifeRecognitionFailed": "Computer recognition failed. You can add items manually.",
+  "lifeRecognitionFailed": "Computer recognition failed",
   "lifeRecognizing": "Uploaded · Awaiting recognition",
   "lifeEdit": "View / correct",
   "lifeAdd": "Add life record",
-  "lifeDelete": "Delete record",
+  "lifeDelete": "Delete",
   "lifeDeleteHelp": "Delete this record? Unsent records are removed locally. Uploaded records are queued for deletion on the computer.",
   "lifeAcceptServer": "Use computer version",
   "lifeConflictHelp": "Discard pending local changes for this record and use the computer version. Copy any details you want to keep before continuing, then edit again.",
@@ -1351,5 +1351,7 @@
   "dreamActionColorLabel": "Action color",
   "dreamPreviewNarration": "Moonlight rests by the window.",
   "dreamPreviewChat": "Where shall we go tonight?",
-  "dreamPreviewAction": "Gently holds your hand."
+  "dreamPreviewAction": "Gently holds your hand.",
+  "settingsDayChatBackgroundTitle": "Day background",
+  "settingsNightChatBackgroundTitle": "Night background"
 }

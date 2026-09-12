@@ -233,9 +233,15 @@ class MainActivity : FlutterActivity() {
                     }
                     "getChatAppearance" -> {
                         val background = chatBackgroundFile()
+                        val nightBackground = File(filesDir, "chat_background_night.image")
+                        if (!prefs.getBoolean("splitChatBackgroundMigrated", false)) {
+                            if (background.exists() && !nightBackground.exists()) background.copyTo(nightBackground)
+                            prefs.edit().putBoolean("splitChatBackgroundMigrated", true).apply()
+                        }
                         result.success(
                             mapOf(
                                 "bytes" to if (background.exists()) background.readBytes() else null,
+                                "nightBytes" to if (nightBackground.exists()) nightBackground.readBytes() else null,
                                 "blur" to prefs.getFloat("chatBackgroundBlur", 0f).toDouble(),
                                 "opacity" to prefs.getFloat("chatBubbleOpacity", 0.94f).toDouble(),
                             ),
@@ -250,6 +256,13 @@ class MainActivity : FlutterActivity() {
                         val saved = runCatching {
                             if (bytes != null && bytes.isNotEmpty()) {
                                 chatBackgroundFile().writeBytes(bytes)
+                            } else chatBackgroundFile().delete()
+                            if (call.hasArgument("nightBytes")) {
+                                val nightBytes = call.argument<ByteArray>("nightBytes")
+                                val nightFile = File(filesDir, "chat_background_night.image")
+                                if (nightBytes != null && nightBytes.isNotEmpty()) nightFile.writeBytes(nightBytes)
+                                else nightFile.delete()
+                                prefs.edit().putBoolean("splitChatBackgroundMigrated", true).apply()
                             }
                             prefs.edit()
                                 .putFloat("chatBackgroundBlur", blur)
@@ -261,6 +274,8 @@ class MainActivity : FlutterActivity() {
                     }
                     "deleteChatAppearance" -> {
                         chatBackgroundFile().delete()
+                        File(filesDir, "chat_background_night.image").delete()
+                        prefs.edit().putBoolean("splitChatBackgroundMigrated", true).apply()
                         prefs.edit()
                             .remove("chatBackgroundBlur")
                             .remove("chatBubbleOpacity")
@@ -1009,9 +1024,14 @@ class MainActivity : FlutterActivity() {
             return
         }
         pendingImagePickResult = result
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "image/*"
+        val intent = Intent().apply {
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                action = android.provider.MediaStore.ACTION_PICK_IMAGES
+                type = "image/*"
+            } else {
+                action = Intent.ACTION_PICK
+                setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+            }
         }
         runCatching {
             startActivityForResult(intent, pickProfileImageRequest)
@@ -1072,10 +1092,16 @@ class MainActivity : FlutterActivity() {
             return
         }
         pendingImagesPickResult = result
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "image/*"
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        val intent = Intent().apply {
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                action = android.provider.MediaStore.ACTION_PICK_IMAGES
+                type = "image/*"
+            } else {
+                action = Intent.ACTION_PICK
+                setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+            }
+            if (android.os.Build.VERSION.SDK_INT >= 33) putExtra(android.provider.MediaStore.EXTRA_PICK_IMAGES_MAX, 10)
+            else putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         runCatching {
             startActivityForResult(intent, pickUploadImagesRequest)

@@ -256,8 +256,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lifeRecognized => 'Extracted · Review details';
 
   @override
-  String get lifeRecognitionFailed =>
-      'Computer recognition failed. You can add items manually.';
+  String get lifeRecognitionFailed => 'Computer recognition failed';
 
   @override
   String get lifeRecognizing => 'Uploaded · Awaiting recognition';
@@ -269,7 +268,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lifeAdd => 'Add life record';
 
   @override
-  String get lifeDelete => 'Delete record';
+  String get lifeDelete => 'Delete';
 
   @override
   String get lifeDeleteHelp =>
@@ -2520,4 +2519,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dreamPreviewAction => 'Gently holds your hand.';
+
+  @override
+  String get settingsDayChatBackgroundTitle => 'Day background';
+
+  @override
+  String get settingsNightChatBackgroundTitle => 'Night background';
 }

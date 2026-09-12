@@ -11,9 +11,8 @@ import '../models/app_models.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/settings_editor_widgets.dart';
 
-TextStyle _settingsSectionTitleStyle(YxPalette c) => TextStyle(
-  fontSize: 16, color: c.ink1, fontWeight: FontWeight.w600,
-);
+TextStyle _settingsSectionTitleStyle(YxPalette c) =>
+    TextStyle(fontSize: 16, color: c.ink1, fontWeight: FontWeight.w600);
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
@@ -30,6 +29,9 @@ class SettingsPage extends StatelessWidget {
     required this.profileDisplayName,
     required this.profileAvatarBytes,
     this.chatBackground,
+    this.nightChatBackground,
+    this.onImportNightChatBackground,
+    this.onResetNightChatBackground,
     required this.dreamSettings,
     required this.settingsBusy,
     required this.settingsError,
@@ -84,6 +86,9 @@ class SettingsPage extends StatelessWidget {
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
   final Uint8List? chatBackground;
+  final Uint8List? nightChatBackground;
+  final VoidCallback? onImportNightChatBackground;
+  final VoidCallback? onResetNightChatBackground;
   final DreamSettings? dreamSettings;
   final bool settingsBusy;
   final String? settingsError;
@@ -283,13 +288,19 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ),
                   ListTile(
-                    title: Text(l10n.settingsPermissionsTitle, style: _settingsSectionTitleStyle(c)),
+                    title: Text(
+                      l10n.settingsPermissionsTitle,
+                      style: _settingsSectionTitleStyle(c),
+                    ),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: onOpenSystemControls,
                   ),
                   ScreenObservationSettings(c: c),
                   ExpansionTile(
-                    title: Text(l10n.settingsNotificationTestTitle, style: _settingsSectionTitleStyle(c)),
+                    title: Text(
+                      l10n.settingsNotificationTestTitle,
+                      style: _settingsSectionTitleStyle(c),
+                    ),
                     children: [
                       SettingsRow(
                         c: c,
@@ -389,7 +400,7 @@ class SettingsPage extends StatelessWidget {
                     ),
                   SettingsRow(
                     c: c,
-                    title: l10n.settingsChatBackgroundTitle,
+                    title: l10n.settingsDayChatBackgroundTitle,
                     subtitle: l10n.settingsChatBackgroundSubtitle,
                     child: Wrap(
                       spacing: 8,
@@ -418,6 +429,43 @@ class SettingsPage extends StatelessWidget {
                             c: c,
                             icon: Icons.restore_rounded,
                             onPressed: onResetChatBackground ?? () {},
+                            tooltip: l10n.settingsResetChatBackgroundTooltip,
+                            size: 30,
+                          ),
+                      ],
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
+                    title: l10n.settingsNightChatBackgroundTitle,
+                    subtitle: l10n.settingsChatBackgroundSubtitle,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (nightChatBackground != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Image.memory(
+                              nightChatBackground!,
+                              width: 64,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        YxIconButton(
+                          c: c,
+                          icon: Icons.add_photo_alternate_outlined,
+                          onPressed: onImportNightChatBackground ?? () {},
+                          tooltip: l10n.settingsImportChatBackgroundTooltip,
+                          size: 30,
+                        ),
+                        if (nightChatBackground != null)
+                          YxIconButton(
+                            c: c,
+                            icon: Icons.restore_rounded,
+                            onPressed: onResetNightChatBackground ?? () {},
                             tooltip: l10n.settingsResetChatBackgroundTooltip,
                             size: 30,
                           ),
@@ -734,7 +782,10 @@ class SettingsPage extends StatelessWidget {
                     Icons.health_and_safety_outlined,
                     color: c.character,
                   ),
-                  title: Text(l10n.settingsCapabilitiesTitle, style: _settingsSectionTitleStyle(c)),
+                  title: Text(
+                    l10n.settingsCapabilitiesTitle,
+                    style: _settingsSectionTitleStyle(c),
+                  ),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: onOpenCapabilities,
                 ),
@@ -770,10 +821,7 @@ class _SettingsModule extends StatelessWidget {
         shape: const Border(),
         collapsedShape: const Border(),
         leading: Icon(icon, color: c.character),
-        title: Text(
-          title,
-          style: _settingsSectionTitleStyle(c),
-        ),
+        title: Text(title, style: _settingsSectionTitleStyle(c)),
         childrenPadding: const EdgeInsets.only(bottom: 12),
         children: children,
       ),

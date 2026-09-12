@@ -527,7 +527,7 @@ abstract class AppLocalizations {
   /// No description provided for @lifeRecognitionFailed.
   ///
   /// In zh, this message translates to:
-  /// **'电脑识别失败，可手动补充明细。'**
+  /// **'电脑识别失败'**
   String get lifeRecognitionFailed;
 
   /// No description provided for @lifeRecognizing.
@@ -4524,6 +4524,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'轻轻握住你的手。'**
   String get dreamPreviewAction;
+
+  /// No description provided for @settingsDayChatBackgroundTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'日间背景'**
+  String get settingsDayChatBackgroundTitle;
+
+  /// No description provided for @settingsNightChatBackgroundTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'夜间背景'**
+  String get settingsNightChatBackgroundTitle;
 }
 
 class _AppLocalizationsDelegate

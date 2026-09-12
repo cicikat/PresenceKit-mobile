@@ -97,14 +97,16 @@ class PersonalizationController extends ChangeNotifier {
   Future<void> pickAvatar({
     required Future<Uint8List?> Function(Uint8List) crop,
   }) async {
-    final image = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      requestFullMetadata: false,
-    );
-    if (image == null || _directory == null) return;
-    final bytes = await crop(await image.readAsBytes());
+    final source = Platform.isAndroid
+        ? await store.pickProfileImage()
+        : await (await ImagePicker().pickImage(
+            source: ImageSource.gallery,
+            maxWidth: 1024,
+            maxHeight: 1024,
+            requestFullMetadata: false,
+          ))?.readAsBytes();
+    if (source == null || _directory == null) return;
+    final bytes = await crop(source);
     if (bytes == null || _disposed) return;
     await File('${_directory!.path}/avatar').writeAsBytes(bytes, flush: true);
     avatar = bytes;

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../controllers/life_records_controller.dart';
+import '../services/app_settings_store.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 import '../models/life_record.dart';
@@ -87,6 +88,11 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
     final expected = controller.realm;
     setState(() => _picking = true);
     try {
+      if (source == ImageSource.gallery && controller.available) {
+        final bytes = await const AppSettingsStore().pickProfileImage();
+        if (bytes != null && mounted) await _openBytes(bytes, expected);
+        return;
+      }
       final image = await ImagePicker().pickImage(
         source: source,
         requestFullMetadata: false,
@@ -104,8 +110,15 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
       if (mounted) _message(context.l10n.lifeImageTooLarge);
       return;
     }
-    final bytes = await file.readAsBytes();
+    await _openBytes(await file.readAsBytes(), expected);
+  }
+
+  Future<void> _openBytes(Uint8List bytes, String expected) async {
     if (!mounted) return;
+    if (bytes.length > 10 * 1024 * 1024) {
+      _message(context.l10n.lifeImageTooLarge);
+      return;
+    }
     final mime = _imageMime(bytes);
     if (mime == null) {
       _message(context.l10n.lifeImageFormat);

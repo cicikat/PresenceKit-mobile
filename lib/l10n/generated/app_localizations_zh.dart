@@ -230,7 +230,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get lifeRecognized => '已识别 · 可校正';
 
   @override
-  String get lifeRecognitionFailed => '电脑识别失败，可手动补充明细。';
+  String get lifeRecognitionFailed => '电脑识别失败';
 
   @override
   String get lifeRecognizing => '已上传 · 等待电脑识别';
@@ -2408,4 +2408,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dreamPreviewAction => '轻轻握住你的手。';
+
+  @override
+  String get settingsDayChatBackgroundTitle => '日间背景';
+
+  @override
+  String get settingsNightChatBackgroundTitle => '夜间背景';
 }

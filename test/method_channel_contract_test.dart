@@ -45,6 +45,24 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
+  test(
+    'day and night backgrounds round trip and clear independently',
+    () async {
+      final day = Uint8List.fromList([1, 2]);
+      final night = Uint8List.fromList([3, 4]);
+      reply({'bytes': day, 'nightBytes': night, 'blur': 2.0, 'opacity': 0.8});
+      final value = await store.loadChatAppearance();
+      expect(value.background, day);
+      expect(value.nightBackground, night);
+      reply(true);
+      await store.saveChatAppearance(
+        ChatAppearanceSettings(nightBackground: night),
+      );
+      expect(calls.last.arguments['bytes'], isNull);
+      expect(calls.last.arguments['nightBytes'], night);
+    },
+  );
+
   group('应用语言', () {
     test('loads and saves the language through the stable channel', () async {
       reply('en-US');

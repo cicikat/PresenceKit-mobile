@@ -84,7 +84,7 @@
   "lifeQueued": "已存本机 · 等待同步",
   "lifeDeleting": "等待同步删除",
   "lifeRecognized": "已识别 · 可校正",
-  "lifeRecognitionFailed": "电脑识别失败，可手动补充明细。",
+  "lifeRecognitionFailed": "电脑识别失败",
   "lifeRecognizing": "已上传 · 等待电脑识别",
   "lifeEdit": "查看 / 校正",
   "lifeAdd": "新增生活记录",
@@ -1351,5 +1351,7 @@
   "dreamActionColorLabel": "动作颜色",
   "dreamPreviewNarration": "月光轻轻落在窗边。",
   "dreamPreviewChat": "今晚，想去哪里看看？",
-  "dreamPreviewAction": "轻轻握住你的手。"
+  "dreamPreviewAction": "轻轻握住你的手。",
+  "settingsDayChatBackgroundTitle": "日间背景",
+  "settingsNightChatBackgroundTitle": "夜间背景"
 }

@@ -122,15 +122,7 @@ class BehaviorDecisionStatus {
   }
 }
 
-enum AppRoute {
-  chat,
-  dream,
-  profile,
-  diary,
-  garden,
-  activity,
-  lifeRecords,
-}
+enum AppRoute { chat, dream, profile, diary, garden, activity, lifeRecords }
 
 extension AppRouteLabel on AppRoute {
   String get label {
@@ -171,6 +163,7 @@ class YxPrefs {
     this.proactiveRate = 'mid',
     this.nightSilent = true,
     this.chatBackground,
+    this.nightChatBackground,
     this.dreamBackground,
     this.chatBackgroundBlur = 0,
     this.chatBubbleOpacity = 0.94,
@@ -192,6 +185,7 @@ class YxPrefs {
   final String proactiveRate;
   final bool nightSilent;
   final Uint8List? chatBackground;
+  final Uint8List? nightChatBackground;
 
   /// Local-only Dream scene backdrop; never sent to the backend.
   final Uint8List? dreamBackground;
@@ -215,6 +209,9 @@ class YxPrefs {
     String? proactiveRate,
     bool? nightSilent,
     Uint8List? chatBackground,
+    Uint8List? nightChatBackground,
+    bool clearChatBackground = false,
+    bool clearNightChatBackground = false,
     Uint8List? dreamBackground,
     bool clearDreamBackground = false,
     double? chatBackgroundBlur,
@@ -236,7 +233,12 @@ class YxPrefs {
       showChatTime: showChatTime ?? this.showChatTime,
       proactiveRate: proactiveRate ?? this.proactiveRate,
       nightSilent: nightSilent ?? this.nightSilent,
-      chatBackground: chatBackground ?? this.chatBackground,
+      chatBackground: clearChatBackground
+          ? null
+          : chatBackground ?? this.chatBackground,
+      nightChatBackground: clearNightChatBackground
+          ? null
+          : nightChatBackground ?? this.nightChatBackground,
       dreamBackground: clearDreamBackground
           ? null
           : (dreamBackground ?? this.dreamBackground),
@@ -249,11 +251,13 @@ class YxPrefs {
 class ChatAppearanceSettings {
   const ChatAppearanceSettings({
     this.background,
+    this.nightBackground,
     this.blur = 0,
     this.opacity = 0.94,
   });
 
   final Uint8List? background;
+  final Uint8List? nightBackground;
   final double blur;
   final double opacity;
 }
@@ -522,7 +526,8 @@ class YxPalette {
     userBubble: Color(0xFFE8DCC0),
     userBubbleText: Color(0xFF101418),
     scrim: Color(0xB3000000),
-  );}
+  );
+}
 
 class ChatMessage {
   ChatMessage({
