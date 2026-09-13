@@ -1,5 +1,9 @@
 # Flutter 结构
 
+## 梦境醒来与显示（2026-09-13）
+
+DreamController 负责关闭确认、防重入、迟到响应失效和串行段落展示；DreamPage 采用稳定消息 key，复用主聊天逐字组件，全部梦境正文左对齐。调用链、三面核对与验收边界见 [dream-wake-and-reveal.md](dream-wake-and-reveal.md)。
+
 ## Chat history reconciliation and tool receipts (2026-09-13)
 
 Canonical reasoning anchors bound local turn reconciliation; legacy clocks normalize to HH:mm. ToolActivityRow renders existing history receipts with a local showToolActivity preference. Implementation, three-surface audit and acceptance limits: [chat-history-and-tools.md](chat-history-and-tools.md).

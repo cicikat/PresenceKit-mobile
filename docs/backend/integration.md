@@ -195,7 +195,9 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 | `GET /dream/state` | Flutter Dream 页面 | 读取 Dream 独立状态 |
 | `POST /dream/enter` | Flutter Dream 页面 | 进入 Dream |
 | `POST /dream/chat` | Flutter Dream 页面 | 发送 Dream 独立对话 |
-| `POST /dream/exit` | Flutter Dream 页面 | 醒来并退出 Dream |
+| `POST /dream/exit` | Flutter Dream 页面 | 强退；消费 closed_now/already_closed/archive_ok 确认后才切页 |
+| `POST /dream/wake` | Flutter Dream 页面 | 软挽留；retained 显示留下/离开，否则须确认关闭结果 |
+| `POST /dream/resume` | Flutter Dream 页面 | 挽留后留下；检查 ok=true 且 resumed!=false |
 | `GET /settings/prompt-assets` | 资料页 / 偏好页 | 读取 Reality 角色卡、世界书、破限可用项与当前启用项；Mobile 只提供当前项选择与启停，不是完整编辑器 |
 | `PATCH /settings/prompt-assets` | 资料页 / 偏好页 | 切换 Reality 角色卡、世界书或破限；仅提交发生变化的字段，Mobile 不提供条目 CRUD |
 | `GET /dream/settings` | 偏好页 / 能力检查诊断 | 读取 Dream 独立世界书开关、世界层和破限预设 |

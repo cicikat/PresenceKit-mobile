@@ -1,5 +1,12 @@
 # 测试与开发
 
+## 梦境醒来与逐字显示（2026-09-13）
+
+- `flutter gen-l10n`、`flutter analyze --no-pub` 通过，零问题；全量 `flutter test --no-pub` 186 项通过。
+- 新增梦境控制器/组件 6 项回归和请求层 1 项回归，覆盖关闭/归档确认、失败保留与重试、迟到响应、段落串行与点击推进、五种叙述样式逐字显示及重建不重播。
+- 使用本机 Android Studio JBR 构建 `flutter build apk --debug --flavor dev --no-pub` 成功，产物 `build/app/outputs/flutter-apk/app-dev-debug.apk`；日志见本机 `build/dream-all-tests.log`、`build/dream-analyze.log`、`build/dream-build.log`。未安装真机或发布正式包。
+- 三面与调用链核对见 [dream-wake-and-reveal.md](../mobile/dream-wake-and-reveal.md)，真实后端/手机体验验收仍为 observe。
+
 ## 聊天情况与资料设置（2026-09-12）
 
 - `flutter gen-l10n`、`flutter analyze --no-pub` 通过；全量 Flutter 173 项通过，最后清理独立资料路由与处理未来日期后，日历/设置/请求/通道/结构 68 项定向回归通过。

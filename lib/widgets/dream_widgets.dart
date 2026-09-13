@@ -138,7 +138,7 @@ class DreamPage extends StatelessWidget {
                 ),
               ),
               OutlinedButton.icon(
-                onPressed: onWake,
+                onPressed: controller.transitioning || entering ? null : onWake,
                 icon: const Icon(Icons.wb_sunny_outlined, size: 15),
                 label: Text(context.l10n.dreamWakeAction),
                 style: OutlinedButton.styleFrom(
@@ -151,6 +151,8 @@ class DreamPage extends StatelessWidget {
             ],
           ),
         ),
+        if (controller.transitionFailed)
+          MetaLine(c: c, text: context.l10n.dreamTransitionFailed),
         Expanded(
           child: active
               ? ListView(
@@ -166,9 +168,14 @@ class DreamPage extends StatelessWidget {
                     const SizedBox(height: 14),
                     for (final message in messages)
                       if (message.role == 'system')
-                        DreamSceneLine(c: c, text: message.text)
+                        DreamSceneLine(
+                          key: ValueKey(message.id),
+                          c: c,
+                          text: message.text,
+                        )
                       else if (message.role == 'you')
                         YouMessage(
+                          key: ValueKey(message.id),
                           c: c,
                           time: message.time,
                           prefs: prefs.copyWith(fontSize: prefs.dreamChatSize),
@@ -177,6 +184,11 @@ class DreamPage extends StatelessWidget {
                       else if (message.segments != null &&
                           message.segments!.isNotEmpty)
                         DreamSegmentedMessage(
+                          key: ValueKey(message.id),
+                          onRevealStarted: () =>
+                              controller.markRevealStarted(message),
+                          onRevealSkipped: () =>
+                              controller.finishReveal(message.id),
                           c: c,
                           time: message.time,
                           prefs: prefs,
@@ -187,10 +199,19 @@ class DreamPage extends StatelessWidget {
                         )
                       else
                         DreamSegmentedMessage(
-                          c: c, time: message.time, prefs: prefs,
+                          key: ValueKey(message.id),
+                          onRevealStarted: () =>
+                              controller.markRevealStarted(message),
+                          onRevealSkipped: () =>
+                              controller.finishReveal(message.id),
+                          c: c,
+                          time: message.time,
+                          prefs: prefs,
                           profileDisplayName: profileDisplayName,
                           profileAvatarBytes: profileAvatarBytes,
-                          segments: [NarrativeSegment(type: 'say', text: message.text)],
+                          segments: [
+                            NarrativeSegment(type: 'say', text: message.text),
+                          ],
                           animate: message.animate,
                         ),
                     if (sending)
@@ -215,7 +236,7 @@ class DreamPage extends StatelessWidget {
         DreamComposer(
           c: c,
           sending: sending,
-          enabled: active,
+          enabled: active && !controller.transitioning,
           onSend: controller.send,
         ),
       ],
@@ -357,7 +378,12 @@ class DreamSceneLine extends StatelessWidget {
           Expanded(child: Divider(color: c.surfaceEdge)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(text, style: mono(c, 10, color: c.ink3), maxLines: 3, overflow: TextOverflow.ellipsis),
+            child: Text(
+              text,
+              style: mono(c, 10, color: c.ink3),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           Expanded(child: Divider(color: c.surfaceEdge)),
         ],
@@ -378,6 +404,8 @@ class DreamSegmentedMessage extends StatelessWidget {
     this.profileDisplayName = kFallbackCharacterDisplayName,
     this.profileAvatarBytes,
     this.animate = false,
+    this.onRevealStarted,
+    this.onRevealSkipped,
   });
 
   final YxPalette c;
@@ -387,6 +415,8 @@ class DreamSegmentedMessage extends StatelessWidget {
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
   final bool animate;
+  final VoidCallback? onRevealStarted;
+  final VoidCallback? onRevealSkipped;
 
   @override
   Widget build(BuildContext context) {
@@ -436,7 +466,15 @@ class DreamSegmentedMessage extends StatelessWidget {
                     child: AnimatedRevealText(
                       text: segment.text,
                       animate: animate,
-                      style: contentSerif(c, prefs.dreamChatSize, color: prefs.dreamChatColor == null ? c.ink1 : Color(prefs.dreamChatColor!)),
+                      onRevealStarted: onRevealStarted,
+                      onRevealSkipped: onRevealSkipped,
+                      style: contentSerif(
+                        c,
+                        prefs.dreamChatSize,
+                        color: prefs.dreamChatColor == null
+                            ? c.ink1
+                            : Color(prefs.dreamChatColor!),
+                      ),
                     ),
                   ),
                 ),
@@ -449,13 +487,18 @@ class DreamSegmentedMessage extends StatelessWidget {
         final weak = segment.type == 'feel';
         return Padding(
           padding: const EdgeInsets.fromLTRB(36, 2, 12, 2),
-          child: Text(
-            segment.text,
+          child: AnimatedRevealText(
+            text: segment.text,
+            animate: animate,
+            onRevealStarted: onRevealStarted,
+            onRevealSkipped: onRevealSkipped,
             style:
                 contentSerif(
                   c,
                   prefs.dreamActionSize,
-                  color: prefs.dreamActionColor == null ? c.ink2 : Color(prefs.dreamActionColor!),
+                  color: prefs.dreamActionColor == null
+                      ? c.ink2
+                      : Color(prefs.dreamActionColor!),
                 ).copyWith(
                   fontStyle: FontStyle.normal,
                   letterSpacing: weak ? 0.4 : null,
@@ -465,7 +508,22 @@ class DreamSegmentedMessage extends StatelessWidget {
       case 'env':
       case 'narration':
       default:
-        return Padding(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18), child: Text(segment.text, textAlign: TextAlign.center, style: contentSerif(c, prefs.dreamNarrationSize, color: prefs.dreamNarrationColor == null ? c.ink3 : Color(prefs.dreamNarrationColor!))));
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+          child: AnimatedRevealText(
+            text: segment.text,
+            animate: animate,
+            onRevealStarted: onRevealStarted,
+            onRevealSkipped: onRevealSkipped,
+            style: contentSerif(
+              c,
+              prefs.dreamNarrationSize,
+              color: prefs.dreamNarrationColor == null
+                  ? c.ink3
+                  : Color(prefs.dreamNarrationColor!),
+            ),
+          ),
+        );
     }
   }
 }

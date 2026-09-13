@@ -1409,5 +1409,6 @@
   "toolActivityError": "调用失败",
   "toolActivityUnknown": "结果未知",
   "toolActivityPending": "等待确认",
-  "toolActivityRunning": "调用中"
+  "toolActivityRunning": "调用中",
+  "dreamTransitionFailed": "梦境退出或恢复尚未确认成功，请重试。"
 }

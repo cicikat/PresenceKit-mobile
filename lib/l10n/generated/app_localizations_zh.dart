@@ -2537,4 +2537,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get toolActivityRunning => '调用中';
+
+  @override
+  String get dreamTransitionFailed => '梦境退出或恢复尚未确认成功，请重试。';
 }

@@ -2651,4 +2651,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toolActivityRunning => 'Running';
+
+  @override
+  String get dreamTransitionFailed =>
+      'Dream exit or resume was not confirmed. Your dream is preserved; please retry.';
 }

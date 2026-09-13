@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../models/app_models.dart';
+import 'chat_controller.dart';
 import '../services/backend_client.dart';
 
 class DreamController extends ChangeNotifier {
@@ -30,7 +31,27 @@ class DreamController extends ChangeNotifier {
   bool sending = false;
   bool loadingSettings = false;
   bool savingSettings = false;
-  final List<String> _pending = [];
+  bool transitioning = false;
+  bool transitionFailed = false;
+  bool _disposed = false;
+  int _generation = 0;
+  Completer<void>? _revealDone;
+  int? _revealingId;
+
+  void markRevealStarted(ChatMessage message) {
+    final index = messages.indexWhere((m) => m.id == message.id);
+    if (index >= 0) messages[index] = messages[index].settled();
+  }
+
+  void finishReveal([int? messageId]) {
+    if (messageId != null && messageId != _revealingId) return;
+    if (_revealDone?.isCompleted == false) _revealDone!.complete();
+  }
+
+  @override
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
 
   String? get _accessToken {
     final value = _token()?.trim();
@@ -53,10 +74,15 @@ class DreamController extends ChangeNotifier {
     final token = _accessToken;
     if (loadingState || token == null) return;
     loadingState = true;
-    if (!silent) error = null;
-    notifyListeners();
+    if (!silent) {
+      error = null;
+      notifyListeners();
+    }
     try {
-      state = await _backend().loadDreamState(token: token);
+      final generation = _generation;
+      final loaded = await _backend().loadDreamState(token: token);
+      if (_disposed || generation != _generation) return;
+      state = loaded;
       error = null;
     } on BackendException catch (e) {
       error = e.message;
@@ -81,7 +107,7 @@ class DreamController extends ChangeNotifier {
 
   Future<void> enter() async {
     final token = _accessToken;
-    if (entering || token == null) return;
+    if (entering || transitioning || token == null) return;
     entering = true;
     error = null;
     notifyListeners();
@@ -106,12 +132,7 @@ class DreamController extends ChangeNotifier {
   void send(String text) {
     final message = text.trim();
     if (message.isEmpty || state?.isActive != true) return;
-    if (sending) {
-      _pending.add(message);
-      messages.add(ChatMessage(role: 'you', text: message, time: _nowLabel()));
-      notifyListeners();
-      return;
-    }
+    if (sending || transitioning || _accessToken == null) return;
     sending = true;
     error = null;
     messages.add(ChatMessage(role: 'you', text: message, time: _nowLabel()));
@@ -122,9 +143,11 @@ class DreamController extends ChangeNotifier {
 
   Future<void> _send(String message) async {
     final token = _accessToken;
+    final generation = _generation;
     if (token == null) return;
     try {
       final response = await _backend().sendDreamChat(message, token: token);
+      if (_disposed || generation != _generation) return;
       if (response.error != null && response.error!.trim().isNotEmpty) {
         messages.add(
           ChatMessage(
@@ -133,81 +156,135 @@ class DreamController extends ChangeNotifier {
             time: _nowLabel(),
           ),
         );
-      } else if (response.segments.isNotEmpty) {
-        messages.add(
-          ChatMessage(
-            role: 'him',
-            text: response.segmentedContent ?? response.reply,
-            time: _nowLabel(),
-            animate: true,
-            segments: response.segments,
-          ),
-        );
       } else {
-        for (final part in _splitReply(response.reply)) {
-          messages.add(
-            ChatMessage(
+        final segments = response.segments.isNotEmpty
+            ? response.segments
+            : [NarrativeSegment(type: 'say', text: response.reply)];
+        for (final segment in segments) {
+          for (final part in _splitReply(segment.text)) {
+            if (_disposed || generation != _generation) return;
+            final done = Completer<void>();
+            _revealDone = done;
+            final revealed = ChatMessage(
               role: 'him',
               text: part,
               time: _nowLabel(),
               animate: true,
-            ),
-          );
+              segments: [NarrativeSegment(type: segment.type, text: part)],
+            );
+            messages.add(revealed);
+            _revealingId = revealed.id;
+            notifyListeners();
+            _scrollToBottom();
+            // Same grapheme cadence as the main chat; tap completes this paragraph.
+            final duration = Duration(
+              milliseconds:
+                  (part.characters.length / ChatController.revealCps * 1000)
+                      .round()
+                      .clamp(1, 60000) +
+                  120,
+            );
+            final timer = Timer(duration, () {
+              if (!done.isCompleted) done.complete();
+            });
+            final follow = Timer.periodic(const Duration(milliseconds: 100), (
+              _,
+            ) {
+              if (_disposed || !scrollController.hasClients) return;
+              final position = scrollController.position;
+              if (position.maxScrollExtent - position.pixels < 100) {
+                scrollController.jumpTo(position.maxScrollExtent);
+              }
+            });
+            await done.future;
+            timer.cancel();
+            follow.cancel();
+            markRevealStarted(revealed);
+            if (identical(_revealDone, done)) _revealDone = null;
+          }
         }
       }
+      if (_disposed || generation != _generation) return;
       if (response.exitAccepted || response.forceExited) {
         await loadState(silent: true);
       }
       _scrollToBottom();
-    } on BackendException catch (e) {
-      error = e.message;
-    } finally {
-      sending = false;
-      notifyListeners();
-      if (_pending.isNotEmpty && state?.isActive == true) {
-        final next = _pending.removeAt(0);
-        sending = false;
-        send(next);
+    } catch (e) {
+      if (!_disposed && generation == _generation) {
+        error = e is BackendException ? e.message : e.toString();
       }
+    } finally {
+      if (!_disposed && generation == _generation) sending = false;
+      notifyListeners();
     }
   }
 
   Future<DreamWakeResult?> wake() async {
     final token = _accessToken;
-    if (token == null) return null;
+    if (transitioning || entering || token == null) return null;
+    transitioning = true;
+    transitionFailed = false;
+    notifyListeners();
     try {
-      return await _backend().dreamWake(token: token);
-    } on BackendException {
+      final result = await _backend().dreamWake(token: token);
+      transitionFailed = !result.retained && !result.confirmedClosed;
+      return result;
+    } catch (_) {
+      transitionFailed = true;
       return null;
+    } finally {
+      transitioning = false;
+      notifyListeners();
     }
   }
 
   Future<void> resume() async {
     final token = _accessToken;
-    if (token == null) return;
+    if (token == null || transitioning) return;
+    transitioning = true;
+    transitionFailed = false;
+    notifyListeners();
     try {
       await _backend().dreamResume(token: token);
     } catch (_) {
-      // 下轮状态同步会恢复真实状态。
+      transitionFailed = true;
+    } finally {
+      transitioning = false;
+      notifyListeners();
     }
     await loadState(silent: true);
   }
 
-  Future<void> exit({bool callBackendExit = true}) async {
+  Future<bool> exit({bool callBackendExit = true}) async {
     final token = _accessToken;
-    if (callBackendExit && token != null) {
-      try {
-        await _backend().exitDream(token: token);
-      } catch (_) {
-        // 后端离线时仍允许回到现实页。
-      }
-    }
-    stopPolling();
-    state = null;
-    stats = null;
-    error = null;
-    messages.clear();
+    if (transitioning || entering) return false;
+    transitioning = true;
+    transitionFailed = false;
     notifyListeners();
+    try {
+      if (callBackendExit) {
+        if (token == null ||
+            !(await _backend().exitDream(token: token)).confirmedClosed) {
+          transitionFailed = true;
+          return false;
+        }
+      }
+      _generation++;
+      sending = false;
+      finishReveal();
+      stopPolling();
+      state = null;
+      stats = null;
+      error = null;
+      messages.clear();
+      return true;
+    } catch (_) {
+      transitionFailed = true;
+      return false;
+    } finally {
+      transitioning = false;
+      notifyListeners();
+    }
   }
 
   Future<void> loadSettings() async {
@@ -296,7 +373,12 @@ class DreamController extends ChangeNotifier {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!scrollController.hasClients) return;
+      if (_disposed || !scrollController.hasClients) return;
+      if (scrollController.position.maxScrollExtent -
+              scrollController.position.pixels >
+          260) {
+        return;
+      }
       scrollController.animateTo(
         scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 260),
@@ -318,6 +400,9 @@ class DreamController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _generation++;
+    finishReveal();
     _stateTimer?.cancel();
     scrollController.dispose();
     super.dispose();

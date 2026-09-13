@@ -160,6 +160,40 @@ void main() {
   });
 
   test(
+    'dream transitions parse confirmation and preserve activity auth',
+    () async {
+      fakeClient.responseBody = jsonEncode({
+        'closed_now': true,
+        'archive_ok': true,
+      });
+      expect(
+        (await backend.exitDream(token: 'mobile-token')).confirmedClosed,
+        isTrue,
+      );
+      expect(fakeClient.method, 'POST');
+      expect(fakeClient.requestedUri!.path, '/dream/exit');
+      expect(
+        fakeClient.lastRequestHeaders[HttpHeaders.authorizationHeader],
+        'Bearer mobile-token',
+      );
+      fakeClient.responseBody = jsonEncode({
+        'exited': false,
+        'archive_ok': false,
+      });
+      expect(
+        (await backend.dreamWake(token: 'mobile-token')).confirmedClosed,
+        isFalse,
+      );
+      expect(fakeClient.requestedUri!.path, '/dream/wake');
+      fakeClient.responseBody = jsonEncode({'ok': true, 'resumed': false});
+      await expectLater(
+        backend.dreamResume(token: 'mobile-token'),
+        throwsA(isA<BackendException>()),
+      );
+    },
+  );
+
+  test(
     'calendar reads use scoped Bearer query and preserve unknown values',
     () async {
       fakeClient.responseBody = jsonEncode({

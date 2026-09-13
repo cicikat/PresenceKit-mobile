@@ -314,13 +314,14 @@ class BackendClient {
     );
   }
 
-  Future<void> exitDream({required String token}) async {
-    await _request(
-      '/dream/exit',
-      token: token,
-      method: 'POST',
-      body: const {},
-      expectJson: false,
+  Future<DreamWakeResult> exitDream({required String token}) async {
+    return DreamWakeResult.fromJson(
+      await _request(
+        '/dream/exit',
+        token: token,
+        method: 'POST',
+        body: const {},
+      ),
     );
   }
 
@@ -343,13 +344,17 @@ class BackendClient {
 
   /// 挽留后选择"留下"：status 回到 DREAM_ACTIVE，梦境继续。
   Future<void> dreamResume({required String token}) async {
-    await _request(
+    final result = await _request(
       '/dream/resume',
       token: token,
       method: 'POST',
       body: const {},
-      expectJson: false,
     );
+    if (result['ok'] != true || result['resumed'] == false) {
+      throw BackendException(
+        result['error']?.toString() ?? 'Dream resume failed',
+      );
+    }
   }
 
   // ── W6：状态感知 ──────────────────────────────────────────────────────────

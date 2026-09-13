@@ -909,10 +909,12 @@ class _CompanionAppState extends State<CompanionApp>
 
   Future<void> _wakeFromDream() async {
     final result = await _dreamController.wake();
-    if (!mounted || result == null || result.exited || !result.retained) {
-      await _exitDreamAndRoute(AppRoute.chat, callBackendExit: result == null);
+    if (!mounted || result == null) return;
+    if (result.confirmedClosed) {
+      await _exitDreamAndRoute(AppRoute.chat, callBackendExit: false);
       return;
     }
+    if (!result.retained) return;
     final stay = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -931,8 +933,10 @@ class _CompanionAppState extends State<CompanionApp>
     AppRoute route, {
     bool callBackendExit = true,
   }) async {
-    await _dreamController.exit(callBackendExit: callBackendExit);
-    if (mounted) setState(() => _route = route);
+    final closed = await _dreamController.exit(
+      callBackendExit: callBackendExit,
+    );
+    if (mounted && closed) setState(() => _route = route);
   }
 
   Future<void> _loadPromptAssets() async {

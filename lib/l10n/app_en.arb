@@ -1409,5 +1409,6 @@
   "toolActivityError": "Call failed",
   "toolActivityUnknown": "Result unknown",
   "toolActivityPending": "Awaiting confirmation",
-  "toolActivityRunning": "Running"
+  "toolActivityRunning": "Running",
+  "dreamTransitionFailed": "Dream exit or resume was not confirmed. Your dream is preserved; please retry."
 }

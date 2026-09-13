@@ -1804,6 +1804,9 @@ class DreamWakeResult {
     required this.retained,
     required this.exited,
     this.retentionText,
+    this.closedNow = false,
+    this.alreadyClosed = false,
+    this.archiveOk,
   });
 
   factory DreamWakeResult.fromJson(Map<String, dynamic> json) {
@@ -1811,12 +1814,20 @@ class DreamWakeResult {
       retained: json['retained'] == true,
       exited: json['exited'] == true,
       retentionText: json['retention_text']?.toString(),
+      closedNow: json['closed_now'] == true,
+      alreadyClosed: json['already_closed'] == true,
+      archiveOk: json['archive_ok'] as bool?,
     );
   }
 
   final bool retained;
   final bool exited;
   final String? retentionText;
+  final bool closedNow;
+  final bool alreadyClosed;
+  final bool? archiveOk;
+  bool get confirmedClosed =>
+      !retained && (closedNow || (alreadyClosed && archiveOk != false));
 }
 
 String _formatDateTime(DateTime date) {

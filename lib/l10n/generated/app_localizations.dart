@@ -4770,6 +4770,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'调用中'**
   String get toolActivityRunning;
+
+  /// No description provided for @dreamTransitionFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境退出或恢复尚未确认成功，请重试。'**
+  String get dreamTransitionFailed;
 }
 
 class _AppLocalizationsDelegate
