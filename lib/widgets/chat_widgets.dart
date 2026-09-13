@@ -788,9 +788,12 @@ class _QuoteBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: 7),
-    padding: const EdgeInsets.only(left: 7),
+    constraints: const BoxConstraints(maxWidth: 272),
+    margin: const EdgeInsets.fromLTRB(6, 9, 6, 10),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     decoration: BoxDecoration(
+      color: Colors.grey.withValues(alpha: .18),
+      borderRadius: BorderRadius.circular(4),
       border: Border(
         left: BorderSide(color: dark ? c.characterOn : c.character, width: 2),
       ),
@@ -799,11 +802,7 @@ class _QuoteBar extends StatelessWidget {
       text,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
-      style: mono(
-        c,
-        10,
-        color: dark ? c.userBubbleText.withValues(alpha: .7) : c.ink3,
-      ),
+      style: mono(c, 10, color: c.ink2),
     ),
   );
 }
@@ -1157,10 +1156,12 @@ class TypingHimMessage extends StatelessWidget {
     required this.prefs,
     this.profileDisplayName = kFallbackCharacterDisplayName,
     this.profileAvatarBytes,
+    this.showHeader = true,
   });
 
   final YxPalette c;
   final String time;
+  final bool showHeader;
   final YxPrefs prefs;
   final String profileDisplayName;
   final Uint8List? profileAvatarBytes;
@@ -1173,7 +1174,7 @@ class TypingHimMessage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 18),
+            padding: EdgeInsets.only(top: showHeader ? 18 : 0),
             child: YxAvatar(
               c: c,
               size: 28,
@@ -1186,10 +1187,11 @@ class TypingHimMessage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${context.l10n.chatRoleHim}  $time',
-                  style: mono(c, 9.5, color: c.ink3),
-                ),
+                if (showHeader)
+                  Text(
+                    '${context.l10n.chatRoleHim}  $time',
+                    style: mono(c, 9.5, color: c.ink3),
+                  ),
                 const SizedBox(height: 4),
                 Container(
                   constraints: const BoxConstraints(maxWidth: 300),
@@ -1303,6 +1305,7 @@ class YouMessage extends StatefulWidget {
     this.dateKey,
     this.attachments = const [],
     this.uploadNote = '',
+    this.showHeader = true,
   });
 
   final YxPalette c;
@@ -1317,6 +1320,7 @@ class YouMessage extends StatefulWidget {
   final String? dateKey;
   final List<PickedUploadFile> attachments;
   final String uploadNote;
+  final bool showHeader;
 
   @override
   State<YouMessage> createState() => _YouMessageState();
@@ -1368,13 +1372,14 @@ class _YouMessageState extends State<YouMessage> {
                     dateKey: widget.dateKey!,
                     role: context.l10n.chatRoleYou,
                   ),
-                Text(
-                  widget.prefs.showChatTime
-                      ? '${context.l10n.chatRoleYou}  ${widget.time}'
-                      : context.l10n.chatRoleYou,
-                  style: mono(c, 9.5, color: c.ink3),
-                ),
-                const SizedBox(height: 4),
+                if (widget.showHeader)
+                  Text(
+                    widget.prefs.showChatTime
+                        ? '${context.l10n.chatRoleYou}  ${widget.time}'
+                        : context.l10n.chatRoleYou,
+                    style: mono(c, 9.5, color: c.ink3),
+                  ),
+                if (widget.showHeader) const SizedBox(height: 4),
                 GestureDetector(
                   onLongPressStart: attachment == null
                       ? (details) =>
@@ -1462,7 +1467,7 @@ class _YouMessageState extends State<YouMessage> {
           if (prefs.showYouAvatar) ...[
             const SizedBox(width: 8),
             Padding(
-              padding: const EdgeInsets.only(top: 18),
+              padding: EdgeInsets.only(top: widget.showHeader ? 18 : 0),
               child: YxAvatar(
                 c: c,
                 text: context.l10n.chatRoleYou.characters.first,

@@ -1,4 +1,5 @@
 // Appearance calendarPalette: local heatmap palette (jade/blue/rose/amber).
+// Dream description opacity: local appearance float 0-1, default .65.
 import 'dart:io';
 
 import 'package:flutter/services.dart';

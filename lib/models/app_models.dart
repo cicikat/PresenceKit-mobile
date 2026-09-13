@@ -161,6 +161,7 @@ class YxPrefs {
     this.dreamNarrationSize = 16,
     this.dreamChatSize = 16,
     this.dreamActionSize = 16,
+    this.dreamDescriptionOpacity = 0.65,
     this.dreamNarrationColor,
     this.dreamChatColor,
     this.dreamActionColor,
@@ -185,6 +186,7 @@ class YxPrefs {
   final double dreamNarrationSize;
   final double dreamChatSize;
   final double dreamActionSize;
+  final double dreamDescriptionOpacity;
   final int? dreamNarrationColor;
   final int? dreamChatColor;
   final int? dreamActionColor;
@@ -211,6 +213,7 @@ class YxPrefs {
     double? dreamNarrationSize,
     double? dreamChatSize,
     double? dreamActionSize,
+    double? dreamDescriptionOpacity,
     int? dreamNarrationColor,
     int? dreamChatColor,
     int? dreamActionColor,
@@ -238,6 +241,8 @@ class YxPrefs {
       dreamNarrationSize: dreamNarrationSize ?? this.dreamNarrationSize,
       dreamChatSize: dreamChatSize ?? this.dreamChatSize,
       dreamActionSize: dreamActionSize ?? this.dreamActionSize,
+      dreamDescriptionOpacity:
+          dreamDescriptionOpacity ?? this.dreamDescriptionOpacity,
       dreamNarrationColor: dreamNarrationColor ?? this.dreamNarrationColor,
       dreamChatColor: dreamChatColor ?? this.dreamChatColor,
       dreamActionColor: dreamActionColor ?? this.dreamActionColor,

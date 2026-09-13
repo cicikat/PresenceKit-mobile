@@ -1,3 +1,78 @@
+import 'dart:convert';
+
+/// Explicit user import into the existing editable fields, never server evidence.
+class LifeRecognitionImport {
+  const LifeRecognitionImport({this.title, required this.note, this.items});
+  final String? title;
+  final String note;
+  final List<Map<String, dynamic>>? items;
+
+  factory LifeRecognitionImport.parse(String source) {
+    final text = source.trim();
+    final unfenced = text
+        .replaceFirst(RegExp(r'^```(?:json)?\s*'), '')
+        .replaceFirst(RegExp(r'\s*```$'), '');
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(unfenced);
+    } catch (_) {
+      /* Plain description. */
+    }
+    if (decoded is Map<String, dynamic>) {
+      final rest = Map<String, dynamic>.from(decoded);
+      final title = rest['title'] is String
+          ? rest.remove('title') as String
+          : null;
+      final note = rest['note'] is String ? rest.remove('note') as String : '';
+      final rawItems = rest['items'];
+      List<Map<String, dynamic>>? items;
+      if (rawItems is List &&
+          rawItems.length <= 100 &&
+          rawItems.every(
+            (v) =>
+                v is Map<String, dynamic> &&
+                v['name'] is String &&
+                (v['name'] as String).trim().isNotEmpty &&
+                v.values.every(
+                  (value) => value == null || value is String || value is num,
+                ),
+          )) {
+        items = rawItems
+            .map((v) => Map<String, dynamic>.from(v as Map))
+            .toList();
+        rest.remove('items');
+      }
+      return LifeRecognitionImport(
+        title: title,
+        note: [
+          if (note.isNotEmpty) note,
+          if (rest.isNotEmpty) const JsonEncoder.withIndent('  ').convert(rest),
+        ].join('\n'),
+        items: items,
+      );
+    }
+    String? title;
+    final notes = <String>[];
+    for (final line in text.split('\n')) {
+      final match = RegExp(
+        r'^\s*(标题|title|备注|note)\s*[:：]\s*(.*)$',
+        caseSensitive: false,
+      ).firstMatch(line);
+      if (match == null) {
+        notes.add(line);
+        continue;
+      }
+      if (match[1] == '标题' || match[1]!.toLowerCase() == 'title') {
+        if (title != null) notes.add(title);
+        title = match[2];
+      } else {
+        notes.add(match[2]!);
+      }
+    }
+    return LifeRecognitionImport(title: title, note: notes.join('\n').trim());
+  }
+}
+
 class LifeRecord {
   LifeRecord(this.data);
   final Map<String, dynamic> data;

@@ -71,6 +71,17 @@ class DreamAppearanceSettings extends StatelessWidget {
             ],
           ),
         ),
+        SettingsRow(
+          c: c,
+          title: l.dreamDescriptionOpacity,
+          subtitle: '${(prefs.dreamDescriptionOpacity * 100).round()}%',
+          child: Slider(
+            value: prefs.dreamDescriptionOpacity,
+            divisions: 20,
+            onChanged: (v) =>
+                onPrefs(prefs.copyWith(dreamDescriptionOpacity: v)),
+          ),
+        ),
         for (final e in entries) ...[
           SettingsRow(
             c: c,

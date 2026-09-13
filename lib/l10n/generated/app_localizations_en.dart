@@ -2527,7 +2527,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNightChatBackgroundTitle => 'Night background';
 
   @override
-  String get lifeRecognitionDescription => 'Image description (unconfirmed)';
+  String get dreamDescriptionOpacity => 'Description background opacity';
+
+  @override
+  String get lifeImportRecognition => 'Confirm import';
+
+  @override
+  String get lifeRecognitionDescription => 'Recognition result';
 
   @override
   String get lifeRecognitionHelp =>

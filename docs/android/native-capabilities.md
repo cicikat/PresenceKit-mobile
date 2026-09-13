@@ -1,5 +1,7 @@
 # Android 原生能力
 
+梦境描写底色（2026-09-13）：getAppearancePrefs/setAppearancePrefs 新增本机 `dreamDescriptionOpacity`，Float，0–1，默认 0.65。YxPrefs、AppSettingsStore、PlatformSettingsChannel 与 MainActivity 同步；无权限、服务或通知变更。
+
 ## Local tool receipt preference (2026-09-13)
 
 getAppearancePrefs/setAppearancePrefs include Boolean showToolActivity, default true. YxPrefs, AppSettingsStore, PlatformSettingsChannel and MainActivity agree; the settings page reads/writes the existing yexuan_memery preference. No permission, service, execution or notification change. See [chat history and tools](../mobile/chat-history-and-tools.md).

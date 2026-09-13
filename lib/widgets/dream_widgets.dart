@@ -177,8 +177,12 @@ class DreamPage extends StatelessWidget {
                         YouMessage(
                           key: ValueKey(message.id),
                           c: c,
-                          time: message.time,
-                          prefs: prefs.copyWith(fontSize: prefs.dreamChatSize),
+                          time: '',
+                          showHeader: false,
+                          prefs: prefs.copyWith(
+                            fontSize: prefs.dreamChatSize,
+                            showChatTime: false,
+                          ),
                           text: message.text,
                         )
                       else if (message.segments != null &&
@@ -217,7 +221,8 @@ class DreamPage extends StatelessWidget {
                     if (sending)
                       TypingHimMessage(
                         c: c,
-                        time: context.l10n.dreamResponding,
+                        time: '',
+                        showHeader: false,
                         prefs: prefs,
                         profileDisplayName: profileDisplayName,
                         profileAvatarBytes: profileAvatarBytes,
@@ -236,6 +241,7 @@ class DreamPage extends StatelessWidget {
         DreamComposer(
           c: c,
           sending: sending,
+          prefs: prefs,
           enabled: active && !controller.transitioning,
           onSend: controller.send,
         ),
@@ -429,6 +435,18 @@ class DreamSegmentedMessage extends StatelessWidget {
     );
   }
 
+  Widget _description({required Widget child}) => Container(
+    width: double.infinity,
+    margin: const EdgeInsets.symmetric(horizontal: 22, vertical: 7),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+    decoration: BoxDecoration(
+      color: c.surfaceSoft.withValues(alpha: prefs.dreamDescriptionOpacity),
+      border: Border.all(color: c.ink3.withValues(alpha: .3), width: .7),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: child,
+  );
+
   Widget _buildSegment(NarrativeSegment segment) {
     switch (segment.type) {
       case 'say':
@@ -485,8 +503,7 @@ class DreamSegmentedMessage extends StatelessWidget {
       case 'do':
       case 'feel':
         final weak = segment.type == 'feel';
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(36, 2, 12, 2),
+        return _description(
           child: AnimatedRevealText(
             text: segment.text,
             animate: animate,
@@ -508,8 +525,7 @@ class DreamSegmentedMessage extends StatelessWidget {
       case 'env':
       case 'narration':
       default:
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+        return _description(
           child: AnimatedRevealText(
             text: segment.text,
             animate: animate,
@@ -535,12 +551,14 @@ class DreamComposer extends StatefulWidget {
     required this.sending,
     required this.enabled,
     required this.onSend,
+    this.prefs = const YxPrefs(),
   });
 
   final YxPalette c;
   final bool sending;
   final bool enabled;
   final ValueChanged<String> onSend;
+  final YxPrefs prefs;
 
   @override
   State<DreamComposer> createState() => _DreamComposerState();
@@ -565,52 +583,68 @@ class _DreamComposerState extends State<DreamComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final c = widget.c;
     return Container(
-      color: widget.c.surfaceSoft,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      color: c.surfaceSoft.withValues(alpha: widget.prefs.chatBubbleOpacity),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: TextField(
-              controller: _controller,
-              enabled: widget.enabled,
-              minLines: 1,
-              maxLines: 3,
-              onChanged: (_) => setState(() {}),
-              onSubmitted: (_) => _send(),
-              style: serif(widget.c, 15),
-              decoration: InputDecoration(
-                hintText: widget.enabled
-                    ? context.l10n.dreamComposerHint
-                    : context.l10n.dreamWaitingBehindDoor,
-                filled: true,
-                fillColor: widget.c.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(4),
-                  borderSide: BorderSide(color: widget.c.surfaceEdge),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 38, maxHeight: 92),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: c.surface.withValues(
+                  alpha: widget.prefs.chatBubbleOpacity,
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(4),
-                  borderSide: BorderSide(color: widget.c.surfaceEdge),
+                border: Border.all(color: c.surfaceEdge),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: TextField(
+                controller: _controller,
+                enabled: widget.enabled,
+                minLines: 1,
+                maxLines: 3,
+                onChanged: (_) => setState(() {}),
+                style: contentSerif(c, widget.prefs.dreamChatSize),
+                decoration: InputDecoration.collapsed(
+                  hintText: widget.enabled
+                      ? context.l10n.dreamComposerHint
+                      : context.l10n.dreamWaitingBehindDoor,
+                  hintStyle: serif(
+                    c,
+                    widget.prefs.dreamChatSize,
+                    color: c.ink3,
+                  ),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 8),
-          if (_controller.text.trim().isEmpty)
-            IconButton(
-              onPressed: widget.enabled ? () {} : null,
-              icon: const Icon(Icons.mic_none_rounded),
-            ),
-          FilledButton(
-            onPressed: widget.enabled && _controller.text.trim().isNotEmpty
-                ? _send
-                : null,
-            child: Text(
-              widget.sending
-                  ? context.l10n.waitAction
-                  : context.l10n.sendAction,
+          SizedBox(
+            height: 38,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: c.send,
+                foregroundColor: c.surface,
+                disabledBackgroundColor: c.send.withValues(alpha: .45),
+                disabledForegroundColor: c.surface.withValues(alpha: .8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              onPressed:
+                  widget.enabled &&
+                      !widget.sending &&
+                      _controller.text.trim().isNotEmpty
+                  ? _send
+                  : null,
+              icon: const Icon(Icons.send_rounded, size: 15),
+              label: Text(
+                context.l10n.sendAction,
+                style: mono(c, 11, color: c.surface),
+              ),
             ),
           ),
         ],

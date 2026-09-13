@@ -88,6 +88,7 @@ void main() {
         'calendarPalette': 'rose',
         'infoStrip': false,
         'fontSize': 18.0,
+        'dreamDescriptionOpacity': 0.35,
         'showYouAvatar': true,
         'showChatTime': false,
         'showToolActivity': false,
@@ -99,6 +100,7 @@ void main() {
       expect(prefs.copyWith(fontSize: 20).calendarPalette, 'rose');
       expect(prefs.infoStrip, isFalse);
       expect(prefs.fontSize, 18);
+      expect(prefs.copyWith(fontSize: 20).dreamDescriptionOpacity, 0.35);
       expect(prefs.showYouAvatar, isTrue);
       expect(prefs.showChatTime, isFalse);
       expect(prefs.copyWith(fontSize: 20).showToolActivity, isFalse);
@@ -127,6 +129,7 @@ void main() {
         'dreamNarrationSize': 16.0,
         'dreamChatSize': 16.0,
         'dreamActionSize': 16.0,
+        'dreamDescriptionOpacity': 0.65,
         'dreamNarrationColor': null,
         'dreamChatColor': null,
         'dreamActionColor': null,

@@ -494,6 +494,9 @@ class AppSettingsStore {
             (raw['dreamNarrationSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
         dreamChatSize:
             (raw['dreamChatSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
+        dreamDescriptionOpacity:
+            (raw['dreamDescriptionOpacity'] as num?)?.toDouble().clamp(0, 1) ??
+            .65,
         dreamActionSize:
             (raw['dreamActionSize'] as num?)?.toDouble().clamp(12, 28) ?? 16,
         dreamNarrationColor: (raw['dreamNarrationColor'] as num?)?.toInt(),
@@ -531,6 +534,7 @@ class AppSettingsStore {
             'dreamNarrationSize': value.dreamNarrationSize,
             'dreamChatSize': value.dreamChatSize,
             'dreamActionSize': value.dreamActionSize,
+            'dreamDescriptionOpacity': value.dreamDescriptionOpacity,
             'dreamNarrationColor': value.dreamNarrationColor,
             'dreamChatColor': value.dreamChatColor,
             'dreamActionColor': value.dreamActionColor,

@@ -284,7 +284,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('图片识别描述（未经确认）'), findsOneWidget);
+    expect(find.text('识别结果'), findsOneWidget);
     expect(find.text('Visible food description'), findsOneWidget);
     expect(find.text('My correction'), findsOneWidget);
     await tester.tap(find.text('保存并排队同步'));
@@ -294,6 +294,54 @@ void main() {
     final saved = jsonDecode(service.arguments[index]['record'] as String);
     expect(saved['note'], 'My correction');
     expect(saved['recognition_description'], 'Visible food description');
+  });
+
+  test('recognition import preserves unmatched evidence and replaces fields', () {
+    final plain = LifeRecognitionImport.parse('A bowl of rice');
+    expect(plain.note, 'A bowl of rice');
+    expect(plain.title, isNull);
+    final fields = LifeRecognitionImport.parse(
+      '{"title":"Lunch","note":"Warm","items":[{"name":"Rice","quantity":1}],"unknown":"keep"}',
+    );
+    expect(fields.title, 'Lunch');
+    expect(fields.items!.single['name'], 'Rice');
+    expect(fields.note, contains('Warm'));
+    expect(fields.note, contains('keep'));
+    final invalid = LifeRecognitionImport.parse('{"items":[42]}');
+    expect(invalid.items, isNull);
+    expect(invalid.note, contains('42'));
+    expect(LifeRecognitionImport.parse('标题：午餐\n备注：米饭').title, '午餐');
+  });
+
+  testWidgets('confirmed import replaces note through existing save', (
+    tester,
+  ) async {
+    final data = row('image')
+      ..['note'] = 'Old note'
+      ..['recognition_description'] = 'New description';
+    await tester.pumpWidget(
+      app(
+        LifeRecordEditor(
+          controller: controller,
+          record: LifeRecord(data),
+          image: null,
+          mime: null,
+          expectedRealm: controller.realm,
+        ),
+      ),
+    );
+    await tester.ensureVisible(find.text('确认导入'));
+    await tester.tap(find.text('确认导入'));
+    await tester.pump();
+    expect(find.text('Old note'), findsNothing);
+    await tester.tap(find.text('保存并排队同步'));
+    await tester.pumpAndSettle();
+    final saved = jsonDecode(
+      service.arguments[service.calls.indexOf('save')]['record'] as String,
+    );
+    expect(saved['note'], 'New description');
+    expect(saved['user_edited_fields'], contains('note'));
+    expect(saved['recognition_description'], 'New description');
   });
 
   testWidgets(

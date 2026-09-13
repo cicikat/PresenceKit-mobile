@@ -7,6 +7,7 @@ import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/widgets/dream_widgets.dart';
 import 'package:presencekit_mobile/widgets/chat_widgets.dart';
+import 'package:presencekit_mobile/l10n/l10n.dart';
 
 class DreamBackend extends BackendClient {
   DreamBackend()
@@ -53,6 +54,82 @@ const reply = DreamChatResponse(
 DreamController make(DreamBackend b) =>
     DreamController(backend: () => b, token: () => 'test')..state = active;
 void main() {
+  testWidgets(
+    'dream descriptions share an independent inset and user has no header',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Column(
+              children: [
+                const DreamSegmentedMessage(
+                  c: YxPalette.light,
+                  prefs: YxPrefs(dreamDescriptionOpacity: .35),
+                  time: '12:34',
+                  segments: [
+                    NarrativeSegment(type: 'env', text: 'Environment'),
+                    NarrativeSegment(type: 'do', text: 'Action'),
+                  ],
+                ),
+                const YouMessage(
+                  c: YxPalette.light,
+                  time: '12:34',
+                  text: 'Hello',
+                  prefs: YxPrefs(showYouAvatar: true),
+                  showHeader: false,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(
+        tester.getTopLeft(find.text('Environment')).dx,
+        tester.getTopLeft(find.text('Action')).dx,
+      );
+      expect(find.textContaining('12:34'), findsNothing);
+      final cards = tester
+          .widgetList<Container>(find.byType(Container))
+          .where(
+            (w) =>
+                w.decoration is BoxDecoration &&
+                ((w.decoration as BoxDecoration).color?.a ?? 0) > .34 &&
+                ((w.decoration as BoxDecoration).color?.a ?? 0) < .36,
+          );
+      expect(cards, hasLength(2));
+    },
+  );
+  testWidgets('dream send stays visible and preserves draft during reply', (
+    tester,
+  ) async {
+    final sent = <String>[];
+    Widget build(bool sending) => MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: DreamComposer(
+          c: YxPalette.light,
+          sending: sending,
+          enabled: true,
+          onSend: sent.add,
+        ),
+      ),
+    );
+    await tester.pumpWidget(build(true));
+    await tester.enterText(find.byType(TextField), 'Next turn');
+    final button = find.byWidgetPredicate((w) => w is FilledButton);
+    expect(button, findsOneWidget);
+    expect(tester.widget<FilledButton>(button).onPressed, isNull);
+    await tester.pumpWidget(build(false));
+    expect(find.text('Next turn'), findsOneWidget);
+    await tester.tap(button);
+    await tester.pump();
+    expect(sent, ['Next turn']);
+  });
   test('close confirmation matches desktop archive contract', () {
     expect(DreamWakeResult.fromJson({'exited': true}).confirmedClosed, isFalse);
     expect(

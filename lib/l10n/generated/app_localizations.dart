@@ -4537,10 +4537,22 @@ abstract class AppLocalizations {
   /// **'夜间背景'**
   String get settingsNightChatBackgroundTitle;
 
+  /// No description provided for @dreamDescriptionOpacity.
+  ///
+  /// In zh, this message translates to:
+  /// **'描写底色不透明度'**
+  String get dreamDescriptionOpacity;
+
+  /// No description provided for @lifeImportRecognition.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认导入'**
+  String get lifeImportRecognition;
+
   /// No description provided for @lifeRecognitionDescription.
   ///
   /// In zh, this message translates to:
-  /// **'图片识别描述（未经确认）'**
+  /// **'识别结果'**
   String get lifeRecognitionDescription;
 
   /// No description provided for @lifeRecognitionHelp.

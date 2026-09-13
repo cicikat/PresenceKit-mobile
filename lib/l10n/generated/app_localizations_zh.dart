@@ -2416,7 +2416,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsNightChatBackgroundTitle => '夜间背景';
 
   @override
-  String get lifeRecognitionDescription => '图片识别描述（未经确认）';
+  String get dreamDescriptionOpacity => '描写底色不透明度';
+
+  @override
+  String get lifeImportRecognition => '确认导入';
+
+  @override
+  String get lifeRecognitionDescription => '识别结果';
 
   @override
   String get lifeRecognitionHelp =>

@@ -488,15 +488,6 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                     ),
                     if (controller.busy || controller.querying)
                       const LinearProgressIndicator(),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        controller.cacheOnly
-                            ? l.lifeCacheOnly
-                            : l.lifeServerResults,
-                        style: serif(widget.c, 12, color: widget.c.ink2),
-                      ),
-                    ),
                     if (records.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 32),
@@ -714,15 +705,6 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                             : () => controller.search(more: true),
                         child: Text(l.lifeMore),
                       ),
-                    const SizedBox(height: 12),
-                    Text(
-                      l.lifeCartHelp,
-                      style: serif(widget.c, 12, color: widget.c.ink2),
-                    ),
-                    Text(
-                      l.lifeBackgroundHelp,
-                      style: serif(widget.c, 12, color: widget.c.ink2),
-                    ),
                   ],
                 ),
               ),
@@ -822,6 +804,24 @@ class _LifeRecordEditorState extends State<LifeRecordEditor> {
     super.dispose();
   }
 
+  void _importRecognition() {
+    final imported = LifeRecognitionImport.parse(
+      widget.record!.recognitionDescription,
+    );
+    setState(() {
+      if (imported.title != null) _title.text = imported.title!;
+      _note.text = imported.note;
+      if (imported.items != null) {
+        for (final row in _items) {
+          row.dispose();
+        }
+        _items
+          ..clear()
+          ..addAll(imported.items!.map(_LifeItemFields.new));
+      }
+    });
+  }
+
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
     setState(() {
@@ -893,14 +893,6 @@ class _LifeRecordEditorState extends State<LifeRecordEditor> {
                         errorBuilder: (_, _, _) => Text(l.lifeImageFormat),
                       ),
                     ),
-                  Text(l.lifeConsent),
-                  const SizedBox(height: 8),
-                  Text(l.lifeRecognitionHelp),
-                  const SizedBox(height: 12),
-                  Text(
-                    widget.expectedRealm.replaceAll('\n', ' · '),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
                   DropdownButtonFormField<String>(
                     value: _category,
                     decoration: InputDecoration(labelText: l.lifeCategory),
@@ -954,6 +946,11 @@ class _LifeRecordEditorState extends State<LifeRecordEditor> {
                     ),
                     const SizedBox(height: 8),
                     SelectableText(widget.record!.recognitionDescription),
+                    TextButton.icon(
+                      onPressed: _saving ? null : _importRecognition,
+                      icon: const Icon(Icons.playlist_add_check_rounded),
+                      label: Text(l.lifeImportRecognition),
+                    ),
                     const SizedBox(height: 12),
                   ],
                   Text(l.lifeItems),

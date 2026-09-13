@@ -629,6 +629,7 @@ class MainActivity : FlutterActivity() {
                                 "infoStrip" to prefs.getBoolean("infoStrip", true),
                                 "dreamNarrationSize" to prefs.getFloat("dreamNarrationSize", 16f).toDouble(),
                                 "dreamChatSize" to prefs.getFloat("dreamChatSize", 16f).toDouble(),
+                                "dreamDescriptionOpacity" to prefs.getFloat("dreamDescriptionOpacity", .65f).toDouble(),
                                 "dreamActionSize" to prefs.getFloat("dreamActionSize", 16f).toDouble(),
                                 "dreamNarrationColor" to if (prefs.contains("dreamNarrationColor")) prefs.getLong("dreamNarrationColor", 0L) else null,
                                 "dreamChatColor" to if (prefs.contains("dreamChatColor")) prefs.getLong("dreamChatColor", 0L) else null,
@@ -654,6 +655,7 @@ class MainActivity : FlutterActivity() {
                             .putBoolean("infoStrip", call.argument<Boolean>("infoStrip") ?: true)
                             .putFloat("dreamNarrationSize", call.argument<Number>("dreamNarrationSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
                             .putFloat("dreamChatSize", call.argument<Number>("dreamChatSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
+                            .putFloat("dreamDescriptionOpacity", call.argument<Number>("dreamDescriptionOpacity")?.toFloat()?.coerceIn(0f, 1f) ?: .65f)
                             .putFloat("dreamActionSize", call.argument<Number>("dreamActionSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
                             .putBoolean("showToolActivity", call.argument<Boolean>("showToolActivity") ?: true)
                             .putBoolean("showReasoning", call.argument<Boolean>("showReasoning") ?: true)
