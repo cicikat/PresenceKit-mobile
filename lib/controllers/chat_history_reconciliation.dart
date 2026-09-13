@@ -1,6 +1,6 @@
 import '../models/app_models.dart';
 
-/// Keep the server's transcript order, while retaining local identity/attachments.
+/// Merge ordered transcripts, retaining local identity and attachments.
 /// Reasoning identity is canonical; clock labels are only a legacy fallback.
 List<ChatMessage> reconcileChatHistory(
   List<ChatMessage> remote,
@@ -9,74 +9,40 @@ List<ChatMessage> reconcileChatHistory(
   List<ChatMessage> sent,
 ) {
   final result = List<ChatMessage>.of(remote);
-  final used = <int>{};
+  final insertions = <int, List<ChatMessage>>{};
   for (final source in [previous, local]) {
-    var cursor = 0;
+    final matches = _matches(remote, source);
+    final live = identical(source, local);
+    final lastMatch = matches.keys.fold<int>(-1, (a, b) => a > b ? a : b);
     for (var i = 0; i < source.length; i++) {
       final item = source[i];
-      if (item.failed) continue;
-      var start = cursor;
-      var end = remote.length;
-      // A local send is bounded by its canonical reasoning anchor. This lets
-      // replies completed minutes later reconcile without guessing a turn ID.
-      final anchorIndex = item.role == 'you'
-          ? i + 1
-          : source.lastIndexWhere((m) => m.role == 'reasoning', i);
-      var anchored = false;
-      if (anchorIndex >= 0 && anchorIndex < source.length) {
-        final anchor = source[anchorIndex];
-        final at = remote.indexWhere(
-          (m) =>
-              m.role == 'reasoning' &&
-              anchor.role == 'reasoning' &&
-              anchor.text.isNotEmpty &&
-              m.text == anchor.text,
-        );
-        if (at >= 0) {
-          anchored = true;
-          if (item.role == 'you') {
-            start = at;
-            while (start > 0 && remote[start - 1].role == 'you') {
-              start--;
-            }
-            end = at;
-          } else if (item.role == 'him') {
-            start = at + 1;
-            end = start;
-            while (end < remote.length && remote[end].role == 'him') {
-              end++;
-            }
-          }
+      final found = matches[i];
+      if (found == null) {
+        if (!(live ? i < lastMatch : item.retainOnRefresh)) continue;
+        int? next;
+        int? preceding;
+        for (var j = i + 1; j < source.length; j++) {
+          if (matches.containsKey(j)) { next = matches[j]; break; }
         }
+        for (var j = i - 1; j >= 0; j--) {
+          if (matches.containsKey(j)) { preceding = matches[j]; break; }
+        }
+        final slot = next ?? (preceding == null ? remote.length : preceding + 1);
+        insertions.putIfAbsent(slot, () => []).add(item.settled().copyWith(retainOnRefresh: true));
+        if (live) sent.removeWhere((m) => m.id == item.id);
+        continue;
       }
-      var found = -1;
-      for (var j = start; j < end; j++) {
-        final candidate = remote[j];
-        if (used.contains(j) ||
-            candidate.role != item.role ||
-            candidate.text != item.text) {
-          continue;
-        }
-        if (item.role == 'reasoning'
-            ? item.text.isNotEmpty
-            : anchored || _sameClock(candidate, item)) {
-          found = j;
-          break;
-        }
-      }
-      if (found < 0) continue;
-      used.add(found);
-      cursor = found + 1;
       // Keep server dates and display projection, local key and rich payload.
       result[found] = ChatMessage(
         id: item.id,
         role: item.role,
-        text: item.text,
+        text: item.attachments.isNotEmpty ? item.text : remote[found].text,
         time: remote[found].time,
         dateKey: remote[found].dateKey,
         displayText: remote[found].displayText ?? item.displayText,
         toolActivity: remote[found].toolActivity,
-        timestamp: item.timestamp,
+        timestamp: remote[found].timestamp,
+        turnId: remote[found].turnId ?? _turn(source, i),
         sticker: item.sticker,
         attachments: item.attachments,
         uploadNote: item.uploadNote,
@@ -87,10 +53,59 @@ List<ChatMessage> reconcileChatHistory(
         sent.removeWhere((m) => m.id == item.id);
       }
     }
-    // Prior history only lends stable widget keys; local delivery can also match.
-    if (identical(source, previous)) used.clear();
   }
-  return result;
+  return [for (var i = 0; i <= result.length; i++) ...[
+    ...?insertions[i],
+    if (i < result.length) result[i],
+  ]];
+}
+
+Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
+  final matches = <int, int>{};
+  final used = <int>{};
+  var cursor = 0;
+  for (var i = 0; i < source.length; i++) {
+    final item = source[i];
+    if (item.failed || item.sticker != null) continue;
+    final turn = _turn(source, i);
+    final candidates = <int>[];
+    for (var j = 0; j < remote.length; j++) {
+      final candidate = remote[j];
+      if (used.contains(j) || candidate.role != item.role) continue;
+      final remoteTurn = _turn(remote, j);
+      if (turn != null && remoteTurn != null && turn != remoteTurn) continue;
+      if (item.role == 'tool') {
+        if (item.toolActivity?.eventId == candidate.toolActivity?.eventId) { candidates.add(j); }
+      } else if (item.role == 'reasoning') {
+        if (item.text.isNotEmpty && item.text == candidate.text) { candidates.add(j); }
+      } else if (turn != null && turn == remoteTurn) {
+        if (item.text == candidate.text || (item.role == 'you' && item.attachments.isNotEmpty)) { candidates.add(j); }
+      } else if (j >= cursor && item.text == candidate.text && _sameClock(candidate, item)) {
+        candidates.add(j);
+      }
+    }
+    // A preview may replace only an unambiguous user slot in its canonical turn.
+    if (item.attachments.isNotEmpty && candidates.length != 1) continue;
+    if (candidates.isEmpty) continue;
+    final found = candidates.first;
+    matches[i] = found;
+    used.add(found);
+    cursor = found + 1;
+  }
+  return matches;
+}
+
+String? _turn(List<ChatMessage> messages, int index) {
+  final item = messages[index];
+  if (item.turnId?.isNotEmpty == true) return item.turnId;
+  if (item.role == 'reasoning') return item.text.isEmpty ? null : item.text;
+  final direction = item.role == 'you' ? 1 : -1;
+  for (var j = index + direction; j >= 0 && j < messages.length; j += direction) {
+    final neighbour = messages[j];
+    if (neighbour.role == 'reasoning') return neighbour.text.isEmpty ? null : neighbour.text;
+    if (neighbour.role != item.role) break;
+  }
+  return null;
 }
 
 bool _sameClock(ChatMessage remote, ChatMessage local) {

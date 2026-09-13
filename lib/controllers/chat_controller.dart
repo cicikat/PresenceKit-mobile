@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/app_models.dart';
 import '../models/inline_display.dart';
@@ -64,6 +65,9 @@ class ChatController extends ChangeNotifier {
   Future<void>? _refresh;
   bool _playingSegments = false;
   bool _disposed = false;
+  int _generation = 0;
+  bool _historyRefreshPending = false;
+  Future<void>? _historyRead;
   bool _initialSyncComplete = false;
   double? _lastScrollPixels;
   bool sending = false;
@@ -167,6 +171,14 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> resetForConnectionChange() async {
+    _generation++;
+    _historyRefreshPending = false;
+    _messageQueue.clear();
+    _pendingSends.clear();
+    if (_revealWake?.isCompleted == false) _revealWake!.complete();
+    if (_historyRead != null) await _historyRead;
+    sending = false;
+    himTyping = false;
     pausePolling();
     history.clear();
     sent.clear();
@@ -207,7 +219,7 @@ class ChatController extends ChangeNotifier {
     }
     notifyListeners();
     scrollToBottom();
-    unawaited(_send(value, replyTo: replyTo));
+    unawaited(_send(value, userId: sent.last.id, replyTo: replyTo));
   }
 
   void setReplyTarget(ChatMessage message) {
@@ -217,6 +229,8 @@ class ChatController extends ChangeNotifier {
 
   void retryMessage(ChatMessage message) {
     if (sending || message.role != 'you' || !message.failed) return;
+    final historical = history.indexWhere((item) => item.id == message.id);
+    if (historical >= 0) sent.add(history.removeAt(historical));
     final index = sent.indexWhere((item) => item.id == message.id);
     if (index < 0) return;
     if (message.attachments.isNotEmpty) {
@@ -236,7 +250,7 @@ class ChatController extends ChangeNotifier {
     himTyping = true;
     backendError = null;
     notifyListeners();
-    unawaited(_send(message.text));
+    unawaited(_send(message.text, userId: message.id));
   }
 
   void clearReplyTarget() {
@@ -254,7 +268,13 @@ class ChatController extends ChangeNotifier {
   Future<String> loadReasoning(String turnId) =>
       _backend().loadTurnReasoning(turnId, token: _accessToken!);
 
-  Future<void> _send(String text, {ReplyTarget? replyTo}) async {
+  void _bindUserTurn(int id, String? turnId) {
+    final index = sent.indexWhere((m) => m.id == id);
+    if (index >= 0) sent[index] = sent[index].copyWith(turnId: turnId);
+  }
+
+  Future<void> _send(String text, {required int userId, ReplyTarget? replyTo}) async {
+    final generation = _generation;
     final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
     sent.add(anchor);
     notifyListeners();
@@ -264,6 +284,8 @@ class ChatController extends ChangeNotifier {
         token: _accessToken!,
         replyTo: replyTo,
       );
+      if (_disposed || generation != _generation) return;
+      _bindUserTurn(userId, response.turnId);
       final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
       if (anchorIndex >= 0) {
         sent[anchorIndex] = ChatMessage(
@@ -272,14 +294,16 @@ class ChatController extends ChangeNotifier {
           text: response.turnId ?? '',
           time: anchor.time,
           failed: response.turnId == null,
+          turnId: response.turnId,
         );
       }
       notifyListeners();
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
-        await _appendReply(response.reply, displayText: response.displayText);
+        await _appendReply(response.reply, displayText: response.displayText, turnId: response.turnId);
       }
     } on BackendException catch (e) {
+      if (_disposed || generation != _generation) return;
       backendError = e.message;
       _markLastSendFailed();
       /*
@@ -291,6 +315,7 @@ class ChatController extends ChangeNotifier {
       ); */
       scrollToBottom();
     } catch (e) {
+      if (_disposed || generation != _generation) return;
       backendError = e.toString();
       _markLastSendFailed();
       /* sent.add(
@@ -298,6 +323,7 @@ class ChatController extends ChangeNotifier {
       ); */
       scrollToBottom();
     } finally {
+      if (!_disposed && generation == _generation) {
       if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
       sending = false;
       himTyping = false;
@@ -308,6 +334,8 @@ class ChatController extends ChangeNotifier {
       if (_pendingSends.isNotEmpty) {
         final next = _pendingSends.removeAt(0);
         send(next.text, replyToOverride: next.replyTo);
+      }
+      _flushHistoryRefresh();
       }
     }
   }
@@ -334,7 +362,24 @@ class ChatController extends ChangeNotifier {
   Future<void> loadHistory({
     bool reconcileLocal = false,
     bool backgroundRefresh = false,
-  }) async {
+  }) => _historyRead ??= _readHistory(reconcileLocal: reconcileLocal,
+      backgroundRefresh: backgroundRefresh).whenComplete(() {
+        _historyRead = null;
+        _flushHistoryRefresh();
+      });
+
+  void _flushHistoryRefresh() {
+    if (!_historyRefreshPending || _disposed || sending || _playingSegments ||
+        loadingMoreHistory || _historyRead != null) return;
+    _historyRefreshPending = false;
+    unawaited(loadHistory(reconcileLocal: true));
+  }
+
+  Future<void> _readHistory({required bool reconcileLocal, required bool backgroundRefresh}) async {
+    if (sending || _playingSegments || loadingMoreHistory) {
+      _historyRefreshPending = true;
+      return;
+    }
     if (_disposed ||
         (backgroundRefresh && (sending || _playingSegments || !_isAtBottom))) {
       return;
@@ -342,22 +387,21 @@ class ChatController extends ChangeNotifier {
     final token = _accessToken;
     if (loadingHistory || token == null) return;
     final backend = _backend();
+    final generation = _generation;
+    final previousSnapshot = List<ChatMessage>.of(history);
     final localSnapshot = List<ChatMessage>.of(sent);
-    final protectedFrom = sending
-        ? localSnapshot.lastIndexWhere((m) => m.role == 'you')
-        : localSnapshot.length;
     loadingHistory = true;
     historyError = null;
     notifyListeners();
     try {
-      final dates = (await _backend().loadChatLogDates(token: token)).dates;
+      final dates = (await backend.loadChatLogDates(token: token)).dates;
       final loaded = <String>[];
       var messages = <ChatMessage>[];
       var exhausted = dates.isEmpty;
       if (dates.isNotEmpty) {
         final today = _dateKey(DateTime.now());
         var firstDate = dates.contains(today) ? today : dates.first;
-        var day = await _backend().loadChatLogDay(firstDate, token: token);
+        var day = await backend.loadChatLogDay(firstDate, token: token);
         messages = _messagesFromDay(day);
         loaded.add(firstDate);
         final index = dates.indexOf(firstDate);
@@ -365,7 +409,7 @@ class ChatController extends ChangeNotifier {
             ? dates[index + 1]
             : null;
         if (_conversationCount(messages) < 10 && previous != null) {
-          day = await _backend().loadChatLogDay(previous, token: token);
+          day = await backend.loadChatLogDay(previous, token: token);
           messages = [..._messagesFromDay(day), ...messages];
           loaded.insert(0, previous);
           firstDate = previous;
@@ -373,7 +417,12 @@ class ChatController extends ChangeNotifier {
         final earliest = dates.indexOf(firstDate);
         exhausted = earliest < 0 || earliest >= dates.length - 1;
       }
-      if (_disposed || _accessToken != token || !identical(_backend(), backend)) {
+      if (_disposed || generation != _generation || _accessToken != token || !identical(_backend(), backend)) {
+        return;
+      }
+      if (sending || _playingSegments || !listEquals(localSnapshot, sent) ||
+          !listEquals(previousSnapshot, history)) {
+        _historyRefreshPending = true;
         return;
       }
       if (backgroundRefresh && (sending || _playingSegments || !_isAtBottom)) {
@@ -382,29 +431,32 @@ class ChatController extends ChangeNotifier {
       if (reconcileLocal) {
         messages = reconcileChatHistory(
           messages,
-          history,
-          localSnapshot.take(protectedFrom < 0 ? 0 : protectedFrom).toList(),
+          history.where((m) => loaded.contains(m.dateKey)).toList(),
+          localSnapshot,
           sent,
         );
       }
+      final older = history.where((m) => m.dateKey != null &&
+          !loaded.contains(m.dateKey) && dates.contains(m.dateKey)).toList();
+      loaded.insertAll(0, _loadedDates.where((d) => !loaded.contains(d) && dates.contains(d)));
       history
         ..clear()
-        ..addAll(messages);
+        ..addAll([...older, ...messages]);
       _availableDates
         ..clear()
         ..addAll(dates);
       _loadedDates
         ..clear()
         ..addAll(loaded);
-      noMoreHistory = exhausted;
+      noMoreHistory = loaded.isEmpty ? exhausted : dates.indexOf(loaded.first) == dates.length - 1;
       historyLoaded = true;
-      visibleMessageLimit = initialVisibleMessageCount;
+      if (!reconcileLocal) visibleMessageLimit = initialVisibleMessageCount;
       notifyListeners();
       scrollToBottom();
     } on BackendException catch (e) {
-      historyError = e.message;
+      if (generation == _generation && !_disposed) historyError = e.message;
     } catch (e) {
-      historyError = e.toString();
+      if (generation == _generation && !_disposed) historyError = e.toString();
     } finally {
       loadingHistory = false;
       if (!_disposed) notifyListeners();
@@ -421,6 +473,8 @@ class ChatController extends ChangeNotifier {
         _availableDates.isEmpty) {
       return;
     }
+    final generation = _generation;
+    final backend = _backend();
     final earliestIndex = _availableDates.indexOf(_loadedDates.first);
     final targetIndex = earliestIndex + 1;
     if (earliestIndex < 0 || targetIndex >= _availableDates.length) {
@@ -437,10 +491,11 @@ class ChatController extends ChangeNotifier {
     historyError = null;
     notifyListeners();
     try {
-      final day = await _backend().loadChatLogDay(
+      final day = await backend.loadChatLogDay(
         _availableDates[targetIndex],
         token: token,
       );
+      if (_disposed || generation != _generation || _accessToken != token || !identical(_backend(), backend)) return;
       history.insertAll(0, _messagesFromDay(day));
       _loadedDates.insert(0, _availableDates[targetIndex]);
       noMoreHistory = targetIndex >= _availableDates.length - 1;
@@ -462,7 +517,10 @@ class ChatController extends ChangeNotifier {
       historyError = e.toString();
     } finally {
       loadingMoreHistory = false;
-      notifyListeners();
+      if (!_disposed) {
+        notifyListeners();
+        _flushHistoryRefresh();
+      }
     }
   }
 
@@ -718,6 +776,7 @@ class ChatController extends ChangeNotifier {
   }) async {
     final token = _accessToken;
     if (sending || token == null || files.isEmpty) return;
+    final generation = _generation;
     sending = true;
     himTyping = true;
     backendError = null;
@@ -752,6 +811,8 @@ class ChatController extends ChangeNotifier {
         channel: 'mobile',
         message: message,
       );
+      if (_disposed || generation != _generation) return;
+      _bindUserTurn(outgoing.id, response.turnId);
       final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
       if (anchorIndex >= 0) {
         sent[anchorIndex] = ChatMessage(
@@ -760,24 +821,28 @@ class ChatController extends ChangeNotifier {
           text: response.turnId ?? '',
           time: anchor.time,
           failed: response.turnId == null,
+          turnId: response.turnId,
         );
       }
       notifyListeners();
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
-        await _appendReply(response.reply, displayText: response.displayText);
+        await _appendReply(response.reply, displayText: response.displayText, turnId: response.turnId);
       }
     } on BackendException catch (e) {
+      if (_disposed || generation != _generation) return;
       backendError = e.message;
       final index = sent.indexWhere((item) => item.id == outgoing.id);
       if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
       scrollToBottom();
     } catch (e) {
+      if (_disposed || generation != _generation) return;
       backendError = e.toString();
       final index = sent.indexWhere((item) => item.id == outgoing.id);
       if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
       scrollToBottom();
     } finally {
+      if (!_disposed && generation == _generation) {
       if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
       sending = false;
       himTyping = false;
@@ -785,14 +850,17 @@ class ChatController extends ChangeNotifier {
       if (backendError == null) {
         unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
       }
+      _flushHistoryRefresh();
+      }
     }
   }
 
-  Future<void> _appendReply(String reply, {String? displayText}) async {
+  Future<void> _appendReply(String reply, {String? displayText, String? turnId}) async {
     final parts = _splitSegments(reply);
     await _appendSegments(
       parts,
       displayParts: inlineDisplayParts(reply, displayText, parts),
+      turnId: turnId,
     );
   }
 
@@ -805,6 +873,8 @@ class ChatController extends ChangeNotifier {
     List<String> parts, {
     String? time,
     List<String?>? displayParts,
+    String? turnId,
+    DateTime? timestamp,
   }) async {
     if (parts.isEmpty) return;
     await _appendMessages([
@@ -812,6 +882,9 @@ class ChatController extends ChangeNotifier {
         ChatMessage(
           role: 'him',
           text: entry.value,
+          turnId: turnId,
+          timestamp: timestamp,
+          dateKey: timestamp == null ? null : _dateKey(timestamp),
           displayText: displayParts?[entry.key],
           time: time ?? _nowLabel(),
           animate: true,
@@ -831,13 +904,14 @@ class ChatController extends ChangeNotifier {
 
   Future<void> _appendMessages(List<ChatMessage> messages) async {
     if (messages.isEmpty) return;
+    final generation = _generation;
     final wasAtBottom = _isAtBottom;
     _messageQueue.add(List.of(messages));
     if (_playingSegments) return;
     _playingSegments = true;
     final random = math.Random();
     try {
-      while (_messageQueue.isNotEmpty) {
+      while (_messageQueue.isNotEmpty && !_disposed && generation == _generation) {
         final batch = _messageQueue.first;
         final message = batch.removeAt(0);
         if (batch.isEmpty) _messageQueue.removeAt(0);
@@ -869,7 +943,10 @@ class ChatController extends ChangeNotifier {
     } finally {
       himTyping = false;
       _playingSegments = false;
-      notifyListeners();
+      if (!_disposed) {
+        notifyListeners();
+        _flushHistoryRefresh();
+      }
     }
   }
 
@@ -973,6 +1050,7 @@ class ChatController extends ChangeNotifier {
             text: part,
             time: entry.time,
             dateKey: day.date,
+            turnId: entry.turnId,
           ),
         if (entry.turnId?.isNotEmpty == true &&
             entry.assistant.trim().isNotEmpty &&
@@ -988,6 +1066,7 @@ class ChatController extends ChangeNotifier {
           ChatMessage(
             role: entry.entryKind == 'narration' ? 'narration' : 'him',
             text: part.value,
+            turnId: entry.turnId,
             displayText: inlineDisplayParts(
               entry.assistant,
               entry.assistantDisplayText,

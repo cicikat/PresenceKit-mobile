@@ -569,6 +569,8 @@ class ChatMessage {
     this.attachments = const [],
     this.uploadNote = '',
     this.toolActivity,
+    this.turnId,
+    this.retainOnRefresh = false,
   }) : id = id ?? _nextId++,
        timestamp = timestamp ?? DateTime.now(),
        time = time == '现在'
@@ -593,6 +595,11 @@ class ChatMessage {
   final String uploadNote;
   final ToolActivity? toolActivity;
 
+  /// Server identity, independent of the text rendered for an upload preview.
+  final String? turnId;
+  /// In-memory local content not yet represented by a server history row.
+  final bool retainOnRefresh;
+
   /// 用于「回复」引用(reply_to.ts);历史消息没有真实 epoch,退化为加载时刻——
   /// 只影响后端相对时间前缀的措辞("今天"而非准确日期),不影响功能正确性。
   final DateTime timestamp;
@@ -614,9 +621,13 @@ class ChatMessage {
     attachments: attachments,
     uploadNote: uploadNote,
     toolActivity: toolActivity,
+    turnId: turnId,
+    retainOnRefresh: retainOnRefresh,
   );
 
   ChatMessage copyWith({
+    String? turnId,
+    bool? retainOnRefresh,
     bool? failed,
     String? time,
     String? quotedText,
@@ -638,6 +649,8 @@ class ChatMessage {
     attachments: attachments,
     uploadNote: uploadNote,
     toolActivity: toolActivity,
+    turnId: turnId ?? this.turnId,
+    retainOnRefresh: retainOnRefresh ?? this.retainOnRefresh,
   );
 }
 

@@ -177,3 +177,9 @@ flutter build apk --debug --flavor dev
 ## UI consistency
 
 每次新增或修改 UI，必须与周围 UI 的布局、控件、字体、颜色和间距保持统一，优先复用既有组件，不要自造风格。系统设置放开关和设置；能力权限页仅用于观测权限是否打开，不放可编辑设置或灰色禁用开关。
+
+## Git / parallel tool permissions and index locks
+
+The `.git` directory may be mounted read-only by the workspace security policy. In that case `git add` or `git commit` reports `Unable to create .git/index.lock: Permission denied`; this is an ACL restriction, not a merge conflict or proof of a stale lock. Check `icacls .git` and `Get-Item .git/index.lock -ErrorAction SilentlyContinue` before retrying. Do not repeatedly run Git or delete an unknown lock.
+
+Do not run Flutter/Dart format, analysis, tests, and Git mutations in parallel in this repository. Stop any existing `git`, `dart`, or `flutter` processes, then run formatting, checks, `git add`, and `git commit` sequentially. If the ACL is confirmed to be the current sandbox restriction, use controlled privilege escalation only for Git metadata writes. Delete `.git/index.lock` only when it is confirmed to belong to the current session and no corresponding process exists.
