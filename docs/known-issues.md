@@ -1,5 +1,12 @@
 # 已知问题与技术债
 
+## 资料接续联合验收（2026-09-13，observe）
+
+后端已支持生活记录就绪后随对话/主动机会提供、图片多模式回读和静默工具结果接续。
+手机现有上传、life_records outbox、revision/ack、通知及后台服务无需修改，不需新包。
+管理面隔离后端实测和定向回归通过；运行中后端需重启，真实手机/模型联合验收未完成。
+边界见 docs/backend/integration.md 与后端 docs/media-continuity-2026-09-13.md。
+
 ## Chat history and tool receipts (2026-09-13)
 
 Current: canonical turn reconciliation, clock normalization and one reasoning anchor per turn. Open: legacy records without canonical IDs and mismatched clock/segmentation remain conservative. Partial: phone reads the existing 30-receipt history ring, without desktop real-time WS; storage disabled means no receipt recovery. Observe: native visual/restart and live-backend acceptance. The adjacent backend catalog still lists mobile roadmap; update it in a backend-authorized follow-up. Evidence and detail: [chat history and tools](mobile/chat-history-and-tools.md).

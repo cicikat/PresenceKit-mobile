@@ -1,5 +1,15 @@
 # 后端集成
 
+## 资料回读与主动接续（2026-09-13）
+
+后端角色可读开启后，已就绪生活记录和上传资料随下一次 owner 对话/主动机会提供；
+静默工具结果保留 24 小时供接续。记录仍用现有 revision/operation_id/owner 绑定，
+新版修正与删除由后端当前记录决定。read_life_records 支持记录 ID 和正文分页。
+GET /settings/life-records 新增 admin-only continuity；state.read 观测为 /observability/context-continuity。
+管理面拥有开关、有效状态和待评估数量；手机 /upload/ingest、life_records outbox、权限、后台同步、
+poll/ack/TTL、通知与中继不变，无需更新手机包。图片 cached/vision/ocr 为角色工具选择，无新手机配置。
+后端定向回归和隔离管理面浏览器实测通过；真实手机/模型联合验收 observe。
+
 ## Mobile tool receipt consumption (2026-09-13)
 
 Existing memory.read /chat-log/{date} entries[].tool_activity supplies event_id, chain_id, char_id, source, tool_name and status. Phone displays recent receipts and trusted entry_kind=narration without changing mobile/poll/ack/TTL or execution. Admin action_trace controls and /observability/tool-traces remain authoritative. Bounded retention and absence of mobile real-time WS are partial; see [chat history and tools](../mobile/chat-history-and-tools.md).
