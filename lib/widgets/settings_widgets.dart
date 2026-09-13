@@ -511,6 +511,16 @@ class SettingsPage extends StatelessWidget {
                     FontSettings(c: c, controller: personalization!),
                   SettingsRow(
                     c: c,
+                    title: l10n.showToolActivity,
+                    subtitle: l10n.toolActivityLocal,
+                    child: Switch(
+                      value: prefs.showToolActivity,
+                      onChanged: (value) =>
+                          onPrefs(prefs.copyWith(showToolActivity: value)),
+                    ),
+                  ),
+                  SettingsRow(
+                    c: c,
                     title: l10n.showReasoning,
                     subtitle: l10n.reasoningLocal,
                     child: Switch(

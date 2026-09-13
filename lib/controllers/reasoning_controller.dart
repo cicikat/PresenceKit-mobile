@@ -7,9 +7,13 @@ class ReasoningController extends ChangeNotifier {
   bool loading = false;
   bool failed = false;
   int _generation = 0;
+  String? _turnId;
 
   Future<void> fetch(String id) async {
-    if (id.isEmpty || loading || text.isNotEmpty) return;
+    if (id.isEmpty) return;
+    if (_turnId == id && (loading || text.isNotEmpty)) return;
+    _turnId = id;
+    text = '';
     final generation = ++_generation;
     loading = true;
     failed = false;

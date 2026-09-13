@@ -1,5 +1,10 @@
 # 已知问题与技术债
 
+## Chat history and tool receipts (2026-09-13)
+
+Current: canonical turn reconciliation, clock normalization and one reasoning anchor per turn. Open: legacy records without canonical IDs and mismatched clock/segmentation remain conservative. Partial: phone reads the existing 30-receipt history ring, without desktop real-time WS; storage disabled means no receipt recovery. Observe: native visual/restart and live-backend acceptance. The adjacent backend catalog still lists mobile roadmap; update it in a backend-authorized follow-up. Evidence and detail: [chat history and tools](mobile/chat-history-and-tools.md).
+
+
 ## 聊天情况验收边界（2026-09-12）
 
 - `observe`：手机热力图和角色资料设置已接入，自动化使用合成统计验证；尚未用真实 mobile token 与运行中的后端做日历联调，也未完成真机触摸、日夜配色和重启恢复验收。后端管理面的只读统计接口、桌面独立接入和完整调用口径见 `docs/mobile/conversation-calendar.md`，相邻仓库本轮保持只读。

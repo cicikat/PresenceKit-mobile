@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'reasoning_widgets.dart';
+import 'tool_activity_widgets.dart';
 import 'package:flutter/services.dart';
 import '../controllers/chat_controller.dart';
 import '../controllers/voice_input_controller.dart';
@@ -199,6 +200,43 @@ class ChatScene extends StatelessWidget {
                         : null;
                     final showDateDivider =
                         m.dateKey != null && m.dateKey != previous?.dateKey;
+                    if (m.role == 'tool') {
+                      if (!prefs.showToolActivity || m.toolActivity == null) {
+                        return const SizedBox.shrink();
+                      }
+                      final nextIndex = globalMessageIndex + 1;
+                      final next = nextIndex < historyMessages.length
+                          ? historyMessages[nextIndex]
+                          : nextIndex < totalMessageCount
+                          ? sentMessages[nextIndex - historyMessages.length]
+                          : null;
+                      return ToolActivityRow(
+                        key: ValueKey('tool-${m.toolActivity!.eventId}'),
+                        c: c,
+                        activity: m.toolActivity!,
+                        connectBefore: m.toolActivity!.sameChain(
+                          previous?.toolActivity,
+                        ),
+                        connectAfter: m.toolActivity!.sameChain(
+                          next?.toolActivity,
+                        ),
+                      );
+                    }
+                    if (m.role == 'narration') {
+                      return prefs.showToolActivity
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 30,
+                                vertical: 3,
+                              ),
+                              child: Text(
+                                m.text,
+                                textAlign: TextAlign.center,
+                                style: mono(c, 9.5, color: c.ink2),
+                              ),
+                            )
+                          : const SizedBox.shrink();
+                    }
                     if (m.role == 'reasoning') {
                       if (!prefs.showReasoning) return const SizedBox.shrink();
                       return ReasoningPanel(

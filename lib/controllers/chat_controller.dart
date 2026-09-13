@@ -9,6 +9,7 @@ import '../models/screen_context.dart';
 import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/device_services.dart';
+import 'chat_history_reconciliation.dart';
 
 enum ChatDeliverySource { initialSync, catchUp, live }
 
@@ -62,6 +63,7 @@ class ChatController extends ChangeNotifier {
   Future<void>? _initialSync;
   Future<void>? _refresh;
   bool _playingSegments = false;
+  bool _disposed = false;
   bool _initialSyncComplete = false;
   double? _lastScrollPixels;
   bool sending = false;
@@ -300,6 +302,9 @@ class ChatController extends ChangeNotifier {
       sending = false;
       himTyping = false;
       notifyListeners();
+      if (backendError == null) {
+        unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
+      }
       if (_pendingSends.isNotEmpty) {
         final next = _pendingSends.removeAt(0);
         send(next.text, replyToOverride: next.replyTo);
@@ -326,7 +331,14 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  Future<void> loadHistory({bool reconcileLocal = false}) async {
+  Future<void> loadHistory({
+    bool reconcileLocal = false,
+    bool backgroundRefresh = false,
+  }) async {
+    if (_disposed ||
+        (backgroundRefresh && (sending || _playingSegments || !_isAtBottom))) {
+      return;
+    }
     final token = _accessToken;
     if (loadingHistory || token == null) return;
     final backend = _backend();
@@ -361,33 +373,19 @@ class ChatController extends ChangeNotifier {
         final earliest = dates.indexOf(firstDate);
         exhausted = earliest < 0 || earliest >= dates.length - 1;
       }
-      if (_accessToken != token || !identical(_backend(), backend)) return;
+      if (_disposed || _accessToken != token || !identical(_backend(), backend)) {
+        return;
+      }
+      if (backgroundRefresh && (sending || _playingSegments || !_isAtBottom)) {
+        return;
+      }
       if (reconcileLocal) {
-        final consumed = <int>{};
-        // Count occurrences, not a set of text: repeated messages remain distinct.
-        for (final local in localSnapshot.take(
-          protectedFrom < 0 ? 0 : protectedFrom,
-        )) {
-          if (local.failed ||
-              local.attachments.isNotEmpty ||
-              local.sticker != null) {
-            continue;
-          }
-          final date = local.dateKey ?? _dateKey(local.timestamp);
-          final index = messages.lastIndexWhere(
-            (remote) =>
-                !consumed.contains(remote.id) &&
-                remote.role == local.role &&
-                remote.text == local.text &&
-                remote.time == local.time &&
-                (local.role == 'reasoning' || remote.dateKey == date),
-          );
-          if (index < 0) continue;
-          consumed.add(messages[index].id);
-          consumed.add(local.id);
-          messages[index] = local.settled();
-          sent.removeWhere((item) => item.id == local.id);
-        }
+        messages = reconcileChatHistory(
+          messages,
+          history,
+          localSnapshot.take(protectedFrom < 0 ? 0 : protectedFrom).toList(),
+          sent,
+        );
       }
       history
         ..clear()
@@ -409,7 +407,7 @@ class ChatController extends ChangeNotifier {
       historyError = e.toString();
     } finally {
       loadingHistory = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -784,6 +782,9 @@ class ChatController extends ChangeNotifier {
       sending = false;
       himTyping = false;
       notifyListeners();
+      if (backendError == null) {
+        unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
+      }
     }
   }
 
@@ -952,36 +953,53 @@ class ChatController extends ChangeNotifier {
     return true;
   }
 
-  List<ChatMessage> _messagesFromDay(ChatLogDay day) => [
-    for (final entry in day.entries) ...[
-      for (final part in _splitHistory(entry.user))
-        ChatMessage(
-          role: 'you',
-          text: part,
-          time: entry.time,
-          dateKey: day.date,
-        ),
-      if (entry.turnId?.isNotEmpty == true)
-        ChatMessage(
-          role: 'reasoning',
-          text: entry.turnId!,
-          time: '',
-          dateKey: day.date,
-        ),
-      for (final part in _splitHistory(entry.assistant).asMap().entries)
-        ChatMessage(
-          role: 'him',
-          text: part.value,
-          displayText: inlineDisplayParts(
-            entry.assistant,
-            entry.assistantDisplayText,
-            _splitHistory(entry.assistant),
-          )[part.key],
-          time: entry.time,
-          dateKey: day.date,
-        ),
-    ],
-  ];
+  List<ChatMessage> _messagesFromDay(ChatLogDay day) {
+    final seenTurns = <String>{};
+    final seenEvents = <String>{};
+    return [
+      for (final entry in day.entries) ...[
+        if (entry.toolActivity != null &&
+            seenEvents.add(entry.toolActivity!.eventId))
+          ChatMessage(
+            role: 'tool',
+            text: entry.toolActivity!.name,
+            time: entry.time,
+            dateKey: day.date,
+            toolActivity: entry.toolActivity,
+          ),
+        for (final part in _splitHistory(entry.user))
+          ChatMessage(
+            role: 'you',
+            text: part,
+            time: entry.time,
+            dateKey: day.date,
+          ),
+        if (entry.turnId?.isNotEmpty == true &&
+            entry.assistant.trim().isNotEmpty &&
+            entry.entryKind != 'narration' &&
+            seenTurns.add(entry.turnId!))
+          ChatMessage(
+            role: 'reasoning',
+            text: entry.turnId!,
+            time: '',
+            dateKey: day.date,
+          ),
+        for (final part in _splitHistory(entry.assistant).asMap().entries)
+          ChatMessage(
+            role: entry.entryKind == 'narration' ? 'narration' : 'him',
+            text: part.value,
+            displayText: inlineDisplayParts(
+              entry.assistant,
+              entry.assistantDisplayText,
+              _splitHistory(entry.assistant),
+            )[part.key],
+            time: entry.time,
+            dateKey: day.date,
+          ),
+      ],
+    ];
+  }
+
   List<String> _splitHistory(String text) {
     final value = text.trim();
     if (value.isEmpty) return const [];
@@ -1082,6 +1100,7 @@ class ChatController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     pausePolling();
     scrollController.removeListener(_handleScroll);
     scrollController.dispose();

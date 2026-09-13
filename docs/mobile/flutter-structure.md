@@ -1,5 +1,10 @@
 # Flutter 结构
 
+## Chat history reconciliation and tool receipts (2026-09-13)
+
+Canonical reasoning anchors bound local turn reconciliation; legacy clocks normalize to HH:mm. ToolActivityRow renders existing history receipts with a local showToolActivity preference. Implementation, three-surface audit and acceptance limits: [chat-history-and-tools.md](chat-history-and-tools.md).
+
+
 ## 聊天情况与角色资料设置（2026-09-12）
 
 新增 `ConversationCalendarController` / `ConversationCalendarPage` 和类型化日统计模型；页面拥有控制器生命周期，组合根只注入 HTTP 连接、凭据、角色显示名和本机配色。日周月年热力图、日期详情和连续天数的口径见 [conversation-calendar.md](conversation-calendar.md)。角色资料由侧栏移入设置同级折叠卡片，合并头像/名称编辑，去除重复行及开发说明。生活记录编辑器显式覆盖 dialog/input 主题，主聊天“现在”标签使用顶栏前景色。

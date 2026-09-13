@@ -1,5 +1,10 @@
 # 后端集成
 
+## Mobile tool receipt consumption (2026-09-13)
+
+Existing memory.read /chat-log/{date} entries[].tool_activity supplies event_id, chain_id, char_id, source, tool_name and status. Phone displays recent receipts and trusted entry_kind=narration without changing mobile/poll/ack/TTL or execution. Admin action_trace controls and /observability/tool-traces remain authoritative. Bounded retention and absence of mobile real-time WS are partial; see [chat history and tools](../mobile/chat-history-and-tools.md).
+
+
 ## 聊天情况（2026-09-12）
 
 手机只读 `GET /chat-log/stats/calendar`（memory.read + state.read），使用 period/date 和最多 366 天的 start/end，后续请求固定首次返回的 char_id。默认日期由服务器选择；null、coverage、totals_partial 不转换为虚假零活动。连续天数只计算已知有聊天的日期，缺失边界显示下界。管理面无需新增开关；既有聊天、生活记录、通知、poll/ack/TTL 不变。具体展示、鉴权与三面检查见 [聊天情况](../mobile/conversation-calendar.md)。

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../l10n/l10n.dart';
 import 'screen_context.dart';
+import 'tool_activity.dart';
 
 class BehaviorTestSpec {
   const BehaviorTestSpec({
@@ -163,6 +164,7 @@ class YxPrefs {
     this.dreamNarrationColor,
     this.dreamChatColor,
     this.dreamActionColor,
+    this.showToolActivity = true,
     this.showReasoning = true,
     this.expandReasoning = false,
     this.reasoningOpacity = 0.85,
@@ -186,6 +188,7 @@ class YxPrefs {
   final int? dreamNarrationColor;
   final int? dreamChatColor;
   final int? dreamActionColor;
+  final bool showToolActivity;
   final bool showReasoning;
   final bool expandReasoning;
   final double reasoningOpacity;
@@ -211,6 +214,7 @@ class YxPrefs {
     int? dreamNarrationColor,
     int? dreamChatColor,
     int? dreamActionColor,
+    bool? showToolActivity,
     bool? showReasoning,
     bool? expandReasoning,
     double? reasoningOpacity,
@@ -237,6 +241,7 @@ class YxPrefs {
       dreamNarrationColor: dreamNarrationColor ?? this.dreamNarrationColor,
       dreamChatColor: dreamChatColor ?? this.dreamChatColor,
       dreamActionColor: dreamActionColor ?? this.dreamActionColor,
+      showToolActivity: showToolActivity ?? this.showToolActivity,
       showReasoning: showReasoning ?? this.showReasoning,
       expandReasoning: expandReasoning ?? this.expandReasoning,
       reasoningOpacity: reasoningOpacity ?? this.reasoningOpacity,
@@ -558,6 +563,7 @@ class ChatMessage {
     this.failed = false,
     this.attachments = const [],
     this.uploadNote = '',
+    this.toolActivity,
   }) : id = id ?? _nextId++,
        timestamp = timestamp ?? DateTime.now(),
        time = time == '现在'
@@ -580,6 +586,7 @@ class ChatMessage {
   final bool failed;
   final List<PickedUploadFile> attachments;
   final String uploadNote;
+  final ToolActivity? toolActivity;
 
   /// 用于「回复」引用(reply_to.ts);历史消息没有真实 epoch,退化为加载时刻——
   /// 只影响后端相对时间前缀的措辞("今天"而非准确日期),不影响功能正确性。
@@ -601,6 +608,7 @@ class ChatMessage {
     failed: failed,
     attachments: attachments,
     uploadNote: uploadNote,
+    toolActivity: toolActivity,
   );
 
   ChatMessage copyWith({
@@ -624,6 +632,7 @@ class ChatMessage {
     failed: failed ?? this.failed,
     attachments: attachments,
     uploadNote: uploadNote,
+    toolActivity: toolActivity,
   );
 }
 
@@ -972,6 +981,8 @@ class AttachmentPlaceholder {
 
 class ChatLogEntry {
   const ChatLogEntry({
+    this.entryKind = '',
+    this.toolActivity,
     this.turnId,
     this.assistantDisplayText,
     required this.time,
@@ -981,6 +992,8 @@ class ChatLogEntry {
 
   factory ChatLogEntry.fromJson(Map<String, dynamic> json) {
     return ChatLogEntry(
+      entryKind: (json['entry_kind'] ?? '').toString(),
+      toolActivity: ToolActivity.tryParse(json['tool_activity']),
       turnId: json['turn_id'] is String ? json['turn_id'] as String : null,
       assistantDisplayText: json['assistant_display_text'] is String
           ? json['assistant_display_text'] as String
@@ -993,6 +1006,8 @@ class ChatLogEntry {
 
   final String? turnId;
   final String? assistantDisplayText;
+  final String entryKind;
+  final ToolActivity? toolActivity;
   final String time;
   final String user;
   final String assistant;

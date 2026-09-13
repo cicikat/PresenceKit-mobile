@@ -2629,4 +2629,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get calendarMetricHelp =>
       'Dates follow the server\'s timezone. Chat rounds count reality question–answer pairs, excluding proactive messages and dreams. Tool calls include failed attempts. Images count submissions to vision/OCR, including repeats. Tokens cover tracked model calls for this character, including background and dream usage, rather than a complete bill.';
+
+  @override
+  String get showToolActivity => 'Show tool calls';
+
+  @override
+  String get toolActivityLocal =>
+      'Local display only; receipts update with chat history';
+
+  @override
+  String get toolActivitySuccess => 'Call succeeded';
+
+  @override
+  String get toolActivityError => 'Call failed';
+
+  @override
+  String get toolActivityUnknown => 'Result unknown';
+
+  @override
+  String get toolActivityPending => 'Awaiting confirmation';
+
+  @override
+  String get toolActivityRunning => 'Running';
 }

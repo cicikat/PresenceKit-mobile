@@ -1402,5 +1402,12 @@
         "type": "String"
       }
     }
-  }
+  },
+  "showToolActivity": "Show tool calls",
+  "toolActivityLocal": "Local display only; receipts update with chat history",
+  "toolActivitySuccess": "Call succeeded",
+  "toolActivityError": "Call failed",
+  "toolActivityUnknown": "Result unknown",
+  "toolActivityPending": "Awaiting confirmation",
+  "toolActivityRunning": "Running"
 }

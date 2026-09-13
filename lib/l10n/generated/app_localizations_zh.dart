@@ -2516,4 +2516,25 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get calendarMetricHelp =>
       '日期按服务器时区统计。聊天轮数为现实对话的一问一答，不含主动消息和梦境。工具调用含执行失败；图片按提交给视觉／OCR 的张次计，重复识别重复计。Token 为当前角色已覆盖模型出口的用量，可含后台与梦境，不等同于完整账单。';
+
+  @override
+  String get showToolActivity => '显示工具调用';
+
+  @override
+  String get toolActivityLocal => '只影响本机显示，回执随聊天历史刷新';
+
+  @override
+  String get toolActivitySuccess => '调用成功';
+
+  @override
+  String get toolActivityError => '调用失败';
+
+  @override
+  String get toolActivityUnknown => '结果未知';
+
+  @override
+  String get toolActivityPending => '等待确认';
+
+  @override
+  String get toolActivityRunning => '调用中';
 }

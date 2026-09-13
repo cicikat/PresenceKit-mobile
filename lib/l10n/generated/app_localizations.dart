@@ -4728,6 +4728,48 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'日期按服务器时区统计。聊天轮数为现实对话的一问一答，不含主动消息和梦境。工具调用含执行失败；图片按提交给视觉／OCR 的张次计，重复识别重复计。Token 为当前角色已覆盖模型出口的用量，可含后台与梦境，不等同于完整账单。'**
   String get calendarMetricHelp;
+
+  /// No description provided for @showToolActivity.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示工具调用'**
+  String get showToolActivity;
+
+  /// No description provided for @toolActivityLocal.
+  ///
+  /// In zh, this message translates to:
+  /// **'只影响本机显示，回执随聊天历史刷新'**
+  String get toolActivityLocal;
+
+  /// No description provided for @toolActivitySuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'调用成功'**
+  String get toolActivitySuccess;
+
+  /// No description provided for @toolActivityError.
+  ///
+  /// In zh, this message translates to:
+  /// **'调用失败'**
+  String get toolActivityError;
+
+  /// No description provided for @toolActivityUnknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'结果未知'**
+  String get toolActivityUnknown;
+
+  /// No description provided for @toolActivityPending.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待确认'**
+  String get toolActivityPending;
+
+  /// No description provided for @toolActivityRunning.
+  ///
+  /// In zh, this message translates to:
+  /// **'调用中'**
+  String get toolActivityRunning;
 }
 
 class _AppLocalizationsDelegate

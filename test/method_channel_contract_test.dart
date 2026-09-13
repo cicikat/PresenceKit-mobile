@@ -90,6 +90,7 @@ void main() {
         'fontSize': 18.0,
         'showYouAvatar': true,
         'showChatTime': false,
+        'showToolActivity': false,
         'nightSilent': false,
       });
       final prefs = await store.loadAppearancePrefs();
@@ -100,6 +101,7 @@ void main() {
       expect(prefs.fontSize, 18);
       expect(prefs.showYouAvatar, isTrue);
       expect(prefs.showChatTime, isFalse);
+      expect(prefs.copyWith(fontSize: 20).showToolActivity, isFalse);
       expect(prefs.nightSilent, isFalse);
     });
 
@@ -110,6 +112,7 @@ void main() {
           fontSize: 19,
           showYouAvatar: true,
           showChatTime: false,
+          showToolActivity: false,
           nightSilent: false,
         ),
       );
@@ -129,6 +132,7 @@ void main() {
         'dreamActionColor': null,
         'showYouAvatar': true,
         'showChatTime': false,
+        'showToolActivity': false,
         'nightSilent': false,
       });
     });

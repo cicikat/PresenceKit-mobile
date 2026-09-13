@@ -633,6 +633,7 @@ class MainActivity : FlutterActivity() {
                                 "dreamNarrationColor" to if (prefs.contains("dreamNarrationColor")) prefs.getLong("dreamNarrationColor", 0L) else null,
                                 "dreamChatColor" to if (prefs.contains("dreamChatColor")) prefs.getLong("dreamChatColor", 0L) else null,
                                 "dreamActionColor" to if (prefs.contains("dreamActionColor")) prefs.getLong("dreamActionColor", 0L) else null,
+                                "showToolActivity" to prefs.getBoolean("showToolActivity", true),
                                 "showReasoning" to prefs.getBoolean("showReasoning", true),
                                 "expandReasoning" to prefs.getBoolean("expandReasoning", false),
                                 "calendarPalette" to prefs.getString("calendarPalette", "jade"),
@@ -654,6 +655,7 @@ class MainActivity : FlutterActivity() {
                             .putFloat("dreamNarrationSize", call.argument<Number>("dreamNarrationSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
                             .putFloat("dreamChatSize", call.argument<Number>("dreamChatSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
                             .putFloat("dreamActionSize", call.argument<Number>("dreamActionSize")?.toFloat()?.coerceIn(12f, 28f) ?: 16f)
+                            .putBoolean("showToolActivity", call.argument<Boolean>("showToolActivity") ?: true)
                             .putBoolean("showReasoning", call.argument<Boolean>("showReasoning") ?: true)
                             .putBoolean("expandReasoning", call.argument<Boolean>("expandReasoning") ?: false)
                             .putString("calendarPalette", call.argument<String>("calendarPalette") ?: "jade")

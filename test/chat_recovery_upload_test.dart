@@ -97,6 +97,55 @@ void main() {
   tearDown(() => controller.dispose());
 
   test(
+    'history keeps tool receipts out of bubbles and gives each turn one reasoning anchor',
+    () async {
+      backend.offline = false;
+      final receipt = {
+        'source': 'reality',
+        'event_id': 'event-1',
+        'chain_id': 'chain-1',
+        'char_id': 'char',
+        'tool_name': 'read_document',
+        'status': 'success',
+      };
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-09-13',
+        'entries': [
+          {
+            'time': '12:00',
+            'user': 'question',
+            'assistant': 'first',
+            'turn_id': 't1',
+          },
+          {'time': '12:00', 'assistant': 'second', 'turn_id': 't1'},
+          {
+            'time': '12:01',
+            'assistant': 'legacy action',
+            'turn_id': 'old-action',
+            'entry_kind': 'narration',
+          },
+          {'time': '12:02', 'tool_activity': receipt},
+          {'time': '12:02', 'tool_activity': receipt},
+        ],
+      });
+      await controller.loadHistory();
+      expect(controller.history.map((m) => m.role), [
+        'you',
+        'reasoning',
+        'him',
+        'him',
+        'narration',
+        'tool',
+      ]);
+      expect(controller.history.last.toolActivity!.status, 'success');
+      final anchor = controller.history[1].id;
+      await controller.loadHistory(reconcileLocal: true);
+      expect(controller.history[1].id, anchor);
+      expect(controller.history.where((m) => m.role == 'tool'), hasLength(1));
+    },
+  );
+
+  test(
     'notification opens reread history after native ack and preserve inline display',
     () async {
       backend.offline = false;

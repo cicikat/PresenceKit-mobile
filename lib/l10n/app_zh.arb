@@ -1402,5 +1402,12 @@
         "type": "String"
       }
     }
-  }
+  },
+  "showToolActivity": "显示工具调用",
+  "toolActivityLocal": "只影响本机显示，回执随聊天历史刷新",
+  "toolActivitySuccess": "调用成功",
+  "toolActivityError": "调用失败",
+  "toolActivityUnknown": "结果未知",
+  "toolActivityPending": "等待确认",
+  "toolActivityRunning": "调用中"
 }
