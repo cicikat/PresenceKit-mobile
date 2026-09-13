@@ -264,3 +264,20 @@ Backend /settings/thinking adds character_voice and a read-only voice_preview un
 Backend recognition_routes exposes per-category configuration/effective state: diet/cart use vision, bill uses independent OCR. Optional record fields recognition_description/recognition_format/recognition_route are server-owned, persist in the existing Android JSON cache, and survive old-client saves. User category/date/note and edited title/items take priority. Flutter list/editor display the separate description; offline search includes it. Failed recognition rows are queried on subsequent ready syncs to discover admin retries. Existing owner, life_records scope, operation_id/revision, ack and background service paths remain unchanged.
 
 Validation: 16 life-record/localization tests passed. Physical-device installation, actual OCR and Doze remain observe; conflict UI still lacks keep-local merge (open). Desktop continues to use the backend admin control surface.
+
+
+## Chat tool category discovery (2026-09-13)
+
+The shared backend Path C now starts with authorized nonempty category gateways.
+Selecting a category loads its concrete schemas for the next model request;
+discovery never executes business actions or emits tool activity/confirmation.
+Existing backend tool permissions, character overrides, model tool presets, MCP
+authorization and confirmation gates remain authoritative. No native setting,
+permission, REST/WS/IPC field, poll/ack/TTL, notification or relay change is needed.
+Tool Loop configuration stays in the admin panel. Its max_steps budget receives
+at most nine additional category-discovery rounds under the same total_timeout_s.
+The existing state.read /observability/runtime-signals endpoint exposes aggregate
+tool_loop_discovery counters and schema counts. No new persistent state.
+Native devices and real model gateway verification remain observe; backend
+mocked regressions do not claim device acceptance. Design and validation:
+backend docs/tool-discovery.md and docs/three-repo-interface-catalog.md.
