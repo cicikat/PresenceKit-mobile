@@ -389,7 +389,11 @@ class ChatController extends ChangeNotifier {
     required bool reconcileLocal,
     required bool backgroundRefresh,
   }) async {
-    if (sending || _playingSegments || loadingMoreHistory) {
+    // Silent refresh waits for an in-flight send; a user refresh still
+    // applies so missed remote turns are not stuck behind the pending bubble.
+    if (_playingSegments ||
+        loadingMoreHistory ||
+        (backgroundRefresh && sending)) {
       _historyRefreshPending = true;
       return;
     }
@@ -436,8 +440,8 @@ class ChatController extends ChangeNotifier {
           !identical(_backend(), backend)) {
         return;
       }
-      if (sending ||
-          _playingSegments ||
+      if (_playingSegments ||
+          (backgroundRefresh && sending) ||
           !listEquals(localSnapshot, sent) ||
           !listEquals(previousSnapshot, history)) {
         _historyRefreshPending = true;
