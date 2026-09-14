@@ -176,15 +176,11 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "getProfileDisplayName" -> {
-                        result.success(prefs.getString("profileDisplayName", null))
+                        result.success(loadProfileDisplayName(prefs, characterSlot(call)))
                     }
                     "setProfileDisplayName" -> {
                         val value = call.argument<String>("value").orEmpty().trim()
-                        if (value.isBlank()) {
-                            prefs.edit().remove("profileDisplayName").apply()
-                        } else {
-                            prefs.edit().putString("profileDisplayName", value).apply()
-                        }
+                        saveProfileDisplayName(prefs, characterSlot(call), value)
                         result.success(null)
                     }
                     "cacheCharacterDisplayName" -> {
@@ -217,18 +213,18 @@ class MainActivity : FlutterActivity() {
                         pickUploadImages(result)
                     }
                     "loadProfileAvatar" -> {
-                        result.success(loadProfileAvatar())
+                        result.success(loadProfileAvatar(prefs, characterSlot(call)))
                     }
                     "saveProfileAvatar" -> {
                         val bytes = call.argument<ByteArray>("bytes")
                         if (bytes == null) {
                             result.success(false)
                         } else {
-                            result.success(saveProfileAvatar(bytes))
+                            result.success(saveProfileAvatar(bytes, characterSlot(call)))
                         }
                     }
                     "deleteProfileAvatar" -> {
-                        avatarFile().delete()
+                        deleteProfileAvatar(characterSlot(call))
                         result.success(null)
                     }
                     "getChatAppearance" -> {
@@ -1128,8 +1124,84 @@ class MainActivity : FlutterActivity() {
         return uri.lastPathSegment?.substringAfterLast('/')?.ifBlank { null } ?: "file"
     }
 
-    private fun avatarFile(): File {
-        return File(filesDir, "profile_avatar.png")
+    private fun characterSlot(call: MethodCall): String {
+        return call.argument<String>("characterId")?.trim().orEmpty()
+    }
+
+    private fun profileDisplayNameKey(slot: String): String {
+        return if (slot.isEmpty()) "profileDisplayName" else "profileDisplayName.$slot"
+    }
+
+    private fun loadProfileDisplayName(
+        prefs: android.content.SharedPreferences,
+        slot: String,
+    ): String? {
+        val key = profileDisplayNameKey(slot)
+        if (prefs.contains(key)) return prefs.getString(key, null)
+        if (slot.isEmpty()) return null
+        if (prefs.getBoolean("profileNameMigrated", false)) return null
+        val legacy = prefs.getString("profileDisplayName", null)
+        val editor = prefs.edit().putBoolean("profileNameMigrated", true)
+        if (!legacy.isNullOrBlank()) editor.putString(key, legacy)
+        editor.apply()
+        return legacy
+    }
+
+    private fun saveProfileDisplayName(
+        prefs: android.content.SharedPreferences,
+        slot: String,
+        value: String,
+    ) {
+        val editor = prefs.edit()
+        val key = profileDisplayNameKey(slot)
+        if (value.isBlank()) editor.remove(key) else editor.putString(key, value)
+        if (slot.isNotEmpty()) editor.putBoolean("profileNameMigrated", true)
+        editor.apply()
+    }
+
+    private fun avatarFile(slot: String = ""): File {
+        val safe = slot.filter { ch ->
+            ch.isLetterOrDigit() || ch == '_' || ch == '-' || ch == '.'
+        }.take(64)
+        return if (safe.isEmpty()) File(filesDir, "profile_avatar.png")
+        else File(filesDir, "profile_avatar_$safe.png")
+    }
+
+    private fun loadProfileAvatar(
+        prefs: android.content.SharedPreferences,
+        slot: String,
+    ): ByteArray? {
+        val file = avatarFile(slot)
+        if (file.exists()) {
+            val bytes = file.readBytes()
+            if (slot.isNotEmpty()) avatarFile("").writeBytes(bytes)
+            return bytes
+        }
+        if (slot.isEmpty()) return null
+        if (!prefs.getBoolean("profileAvatarMigrated", false)) {
+            val legacy = avatarFile("")
+            if (legacy.exists()) {
+                legacy.copyTo(file, overwrite = false)
+                prefs.edit().putBoolean("profileAvatarMigrated", true).apply()
+                return file.readBytes()
+            }
+            prefs.edit().putBoolean("profileAvatarMigrated", true).apply()
+        }
+        avatarFile("").delete()
+        return null
+    }
+
+    private fun saveProfileAvatar(bytes: ByteArray, slot: String): Boolean {
+        return runCatching {
+            avatarFile(slot).writeBytes(bytes)
+            if (slot.isNotEmpty()) avatarFile("").writeBytes(bytes)
+            true
+        }.getOrDefault(false)
+    }
+
+    private fun deleteProfileAvatar(slot: String) {
+        avatarFile(slot).delete()
+        if (slot.isNotEmpty()) avatarFile("").delete()
     }
 
     private fun chatBackgroundFile(): File {
@@ -1137,17 +1209,7 @@ class MainActivity : FlutterActivity() {
     }
     private fun dreamBackgroundFile(): File = File(filesDir, "dream_background.png")
 
-    private fun loadProfileAvatar(): ByteArray? {
-        val file = avatarFile()
-        return if (file.exists()) file.readBytes() else null
-    }
 
-    private fun saveProfileAvatar(bytes: ByteArray): Boolean {
-        return runCatching {
-            avatarFile().writeBytes(bytes)
-            true
-        }.getOrDefault(false)
-    }
 
     private fun canDrawOverlays(): Boolean {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)

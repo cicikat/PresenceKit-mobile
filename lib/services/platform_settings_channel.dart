@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+/// Profile display name/avatar accept optional characterId; missing id keeps the
+/// legacy global slot, present id uses per-character prefs and avatar files.
 /// Chat appearance bytes/nightBytes hold independent day/night images; null clears that slot.
 /// Shared transport for the stable Android settings channel.
 /// Appearance get/set includes local showToolActivity (default true).

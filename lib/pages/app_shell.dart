@@ -74,6 +74,7 @@ class _CompanionAppState extends State<CompanionApp>
   PromptAssets? _promptAssets;
   String? _profileNameOverride;
   Uint8List? _profileAvatarBytes;
+  String? _activeCharacterId;
   late final SettingsStore _settings;
   late final DeviceControlService _deviceService;
   late final ScreenSensorService _screenService;
@@ -113,6 +114,11 @@ class _CompanionAppState extends State<CompanionApp>
       if (character.id == assets.activeCharacter) return character.label;
     }
     return null;
+  }
+
+  String? get _currentCharacterId {
+    final id = _promptAssets?.activeCharacter.trim();
+    return (id == null || id.isEmpty) ? null : id;
   }
 
   String get _profileDisplayName => resolveCharacterDisplayName(
@@ -225,8 +231,6 @@ class _CompanionAppState extends State<CompanionApp>
       _connectionController.restore(),
       _deviceController.restore(),
     ]);
-    final storedName = await _settings.loadProfileName();
-    final storedAvatar = await _settings.loadAvatar();
     final chatAppearance = await _settings.loadChatAppearance();
     final dreamBackground = await _settings.loadDreamBackground();
     final appearancePrefs = await _settings.loadAppearancePrefs();
@@ -239,8 +243,6 @@ class _CompanionAppState extends State<CompanionApp>
         _backgroundNotifications = backgroundNotifications;
         _stickerEnabled = stickerEnabled;
         _autoPlayVoice = autoPlayVoice;
-        _profileNameOverride = storedName;
-        _profileAvatarBytes = storedAvatar;
         _prefs = appearancePrefs.copyWith(
           chatBackground: chatAppearance.background,
           nightChatBackground: chatAppearance.nightBackground,
@@ -249,14 +251,15 @@ class _CompanionAppState extends State<CompanionApp>
           dreamBackground: dreamBackground,
         );
       });
-      _syncCachedCharacterDisplayName();
     }
     if (!mounted) return;
     if (_hasAdminToken) {
       _lifeRecordsController.start();
       _startBackendSync();
+      await _loadPromptAssets();
       await _consumeNotificationOpen();
     } else {
+      await _applyActiveCharacterPresentation(reloadConversation: false);
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => unawaited(_openAdminTokenSettings(required: true)),
       );
@@ -644,7 +647,7 @@ class _CompanionAppState extends State<CompanionApp>
     );
     if (value == null) return;
     final cleaned = cleanCharacterDisplayName(value);
-    await _settings.saveProfileName(cleaned ?? '');
+    await _settings.saveProfileName(cleaned ?? '', characterId: _currentCharacterId);
     if (!mounted) return;
     setState(() => _profileNameOverride = cleaned);
     _syncCachedCharacterDisplayName();
@@ -659,7 +662,7 @@ class _CompanionAppState extends State<CompanionApp>
       builder: (context) => AvatarCropDialog(c: c, bytes: sourceBytes),
     );
     if (!mounted || cropped == null) return;
-    final saved = await _settings.saveAvatar(cropped);
+    final saved = await _settings.saveAvatar(cropped, characterId: _currentCharacterId);
     if (!mounted) return;
     if (saved) {
       setState(() => _profileAvatarBytes = cropped);
@@ -671,7 +674,7 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   Future<void> _resetProfileAvatar() async {
-    await _settings.deleteAvatar();
+    await _settings.deleteAvatar(characterId: _currentCharacterId);
     if (!mounted) return;
     setState(() => _profileAvatarBytes = null);
   }
@@ -951,7 +954,7 @@ class _CompanionAppState extends State<CompanionApp>
       );
       if (!mounted) return;
       setState(() => _promptAssets = assets);
-      _syncCachedCharacterDisplayName();
+      await _applyActiveCharacterPresentation(reloadConversation: false);
     } on BackendException catch (e) {
       if (mounted) setState(() => _promptAssetsError = e.message);
     } finally {
@@ -972,12 +975,35 @@ class _CompanionAppState extends State<CompanionApp>
       );
       if (!mounted) return;
       setState(() => _promptAssets = assets);
-      _syncCachedCharacterDisplayName();
+      await _applyActiveCharacterPresentation();
     } on BackendException catch (e) {
       if (mounted) setState(() => _promptAssetsError = e.message);
     } finally {
       if (mounted) setState(() => _savingPromptAssets = false);
     }
+  }
+
+  Future<void> _applyActiveCharacterPresentation({
+    bool reloadConversation = true,
+  }) async {
+    final id = _currentCharacterId;
+    final switched = id != _activeCharacterId;
+    final name = await _settings.loadProfileName(characterId: id);
+    final avatar = await _settings.loadAvatar(characterId: id);
+    if (!mounted) return;
+    setState(() {
+      _activeCharacterId = id;
+      _profileNameOverride = name;
+      _profileAvatarBytes = avatar;
+    });
+    _syncCachedCharacterDisplayName();
+    if (!switched || !reloadConversation || !_hasAdminToken) return;
+    _diaryController.clear();
+    _gardenController.clear();
+    unawaited(_diaryController.load());
+    unawaited(_gardenController.load());
+    unawaited(_profileStatusController.load());
+    await _chatController.resetForConnectionChange();
   }
 
   void _openSettings() {
@@ -1393,6 +1419,7 @@ class _CompanionAppState extends State<CompanionApp>
           c: c,
           palette: _prefs.calendarPalette,
           name: _profileDisplayName,
+          characterId: _currentCharacterId,
           backend: _backend,
           token: _adminToken,
           onBack: () => setState(() => _route = AppRoute.chat),

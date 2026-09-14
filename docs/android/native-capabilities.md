@@ -7,6 +7,8 @@
 getAppearancePrefs/setAppearancePrefs include Boolean showToolActivity, default true. YxPrefs, AppSettingsStore, PlatformSettingsChannel and MainActivity agree; the settings page reads/writes the existing yexuan_memery preference. No permission, service, execution or notification change. See [chat history and tools](../mobile/chat-history-and-tools.md).
 
 
+角色备注名与头像按 `characterId` 分槽：`get/setProfileDisplayName`、`load/save/deleteProfileAvatar` 接受可选 characterId。缺省仍读写旧的全局键和 `profile_avatar.png`；有 id 时用 `profileDisplayName.{id}` 与 `profile_avatar_{id}.png`。首次读取把旧全局值迁到当时角色，之后互不影响。保存当前角色时同步一份到全局文件，供通知栏使用。
+
 ## 工单 19：相册与图片保留（2026-09-12）
 
 角色头像、用户头像、日/夜聊天背景、Dream 背景、聊天多图和生活记录相册导入统一复用原生图片选择入口：Android 13+ 使用系统 Photo Picker，旧版本使用 ACTION_PICK + MediaStore 图片集合。文字/字体/主题 JSON/PDF 文件导入不改为图片选择器。生活记录拍照及相机丢失数据恢复保留 image_picker；无新增权限或后台服务。

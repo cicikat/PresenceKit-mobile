@@ -217,23 +217,27 @@ class AppSettingsStore {
     }
   }
 
-  Future<String?> loadProfileDisplayName() async {
+  Future<String?> loadProfileDisplayName({String? characterId}) async {
     if (!_channelAvailable) return null;
     try {
       return await PlatformSettingsChannel.channel.invokeMethod<String>(
         'getProfileDisplayName',
+        {'characterId': characterId},
       );
     } on PlatformException {
       return null;
     }
   }
 
-  Future<void> saveProfileDisplayName(String value) async {
+  Future<void> saveProfileDisplayName(
+    String value, {
+    String? characterId,
+  }) async {
     if (!_channelAvailable) return;
     try {
       await PlatformSettingsChannel.channel.invokeMethod<void>(
         'setProfileDisplayName',
-        {'value': value},
+        {'value': value, 'characterId': characterId},
       );
     } on PlatformException {
       // Local display names are cosmetic; failing to persist is non-fatal.
@@ -340,23 +344,27 @@ class AppSettingsStore {
     }
   }
 
-  Future<Uint8List?> loadProfileAvatar() async {
+  Future<Uint8List?> loadProfileAvatar({String? characterId}) async {
     if (!_channelAvailable) return null;
     try {
       return await PlatformSettingsChannel.channel.invokeMethod<Uint8List>(
         'loadProfileAvatar',
+        {'characterId': characterId},
       );
     } on PlatformException {
       return null;
     }
   }
 
-  Future<bool> saveProfileAvatar(Uint8List bytes) async {
+  Future<bool> saveProfileAvatar(
+    Uint8List bytes, {
+    String? characterId,
+  }) async {
     if (!_channelAvailable) return false;
     try {
       return await PlatformSettingsChannel.channel.invokeMethod<bool>(
             'saveProfileAvatar',
-            {'bytes': bytes},
+            {'bytes': bytes, 'characterId': characterId},
           ) ??
           false;
     } on PlatformException {
@@ -364,11 +372,12 @@ class AppSettingsStore {
     }
   }
 
-  Future<void> deleteProfileAvatar() async {
+  Future<void> deleteProfileAvatar({String? characterId}) async {
     if (!_channelAvailable) return;
     try {
       await PlatformSettingsChannel.channel.invokeMethod<void>(
         'deleteProfileAvatar',
+        {'characterId': characterId},
       );
     } on PlatformException {
       // Optional local avatar; ignore failed delete attempts.

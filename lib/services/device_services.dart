@@ -20,14 +20,18 @@ class SettingsStore {
   Future<void> saveToken(String value) => _store.saveAdminToken(value);
   Future<String?> loadOwnerUserId() => _store.loadOwnerUserId();
   Future<void> saveOwnerUserId(String value) => _store.saveOwnerUserId(value);
-  Future<String?> loadProfileName() => _store.loadProfileDisplayName();
-  Future<void> saveProfileName(String value) =>
-      _store.saveProfileDisplayName(value);
+  Future<String?> loadProfileName({String? characterId}) =>
+      _store.loadProfileDisplayName(characterId: characterId);
+  Future<void> saveProfileName(String value, {String? characterId}) =>
+      _store.saveProfileDisplayName(value, characterId: characterId);
   Future<void> cacheCharacterDisplayName(String value) =>
       _store.cacheCharacterDisplayName(value);
-  Future<Uint8List?> loadAvatar() => _store.loadProfileAvatar();
-  Future<bool> saveAvatar(Uint8List value) => _store.saveProfileAvatar(value);
-  Future<void> deleteAvatar() => _store.deleteProfileAvatar();
+  Future<Uint8List?> loadAvatar({String? characterId}) =>
+      _store.loadProfileAvatar(characterId: characterId);
+  Future<bool> saveAvatar(Uint8List value, {String? characterId}) =>
+      _store.saveProfileAvatar(value, characterId: characterId);
+  Future<void> deleteAvatar({String? characterId}) =>
+      _store.deleteProfileAvatar(characterId: characterId);
   Future<ChatAppearanceSettings> loadChatAppearance() =>
       _store.loadChatAppearance();
   Future<bool> saveChatAppearance(ChatAppearanceSettings value) =>

@@ -141,6 +141,35 @@ void main() {
     });
   });
 
+  group('角色资料分槽', () {
+    test('name and avatar pass characterId to the native slot', () async {
+      reply('Nova');
+      expect(await store.loadProfileDisplayName(characterId: 'nova'), 'Nova');
+      expect(calls.single.method, 'getProfileDisplayName');
+      expect(calls.single.arguments, {'characterId': 'nova'});
+      calls.clear();
+      await store.saveProfileDisplayName('叶瑄', characterId: 'yexuan');
+      expect(calls.single.method, 'setProfileDisplayName');
+      expect(calls.single.arguments, {
+        'value': '叶瑄',
+        'characterId': 'yexuan',
+      });
+      calls.clear();
+      final bytes = Uint8List.fromList([1, 2, 3]);
+      reply(bytes);
+      expect(await store.loadProfileAvatar(characterId: 'yexuan'), bytes);
+      expect(calls.single.arguments, {'characterId': 'yexuan'});
+      calls.clear();
+      reply(true);
+      expect(await store.saveProfileAvatar(bytes, characterId: 'yexuan'), isTrue);
+      expect(calls.single.arguments['characterId'], 'yexuan');
+      calls.clear();
+      await store.deleteProfileAvatar(characterId: 'yexuan');
+      expect(calls.single.method, 'deleteProfileAvatar');
+      expect(calls.single.arguments, {'characterId': 'yexuan'});
+    });
+  });
+
   group('后台服务启停', () {
     test(
       'startBackgroundNotifications calls the channel with no args and swallows platform errors',
