@@ -304,28 +304,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lifeDate => 'Record date';
 
   @override
-  String get lifeRecordTitle => 'Title (optional before extraction)';
+  String get lifeRecordTitle => 'Title';
 
   @override
-  String get lifeNote => 'Notes / extraction hints';
+  String get lifeNote => 'Notes';
 
   @override
-  String get lifeItems => 'Structured items (leave uncertain values blank)';
+  String get lifeItems => 'Items';
 
   @override
-  String get lifeItemName => 'Food / product / entry name';
+  String get lifeItemName => 'Name';
 
   @override
-  String get lifeQuantity => 'Quantity / portion';
+  String get lifeQuantity => 'Quantity';
 
   @override
-  String get lifeUnit => 'Unit (serving, gram, item, etc.)';
+  String get lifeUnit => 'Unit';
 
   @override
-  String get lifeAmount => 'Amount (negative for refunds)';
+  String get lifeAmount => 'Amount';
 
   @override
-  String get lifeCurrency => 'Currency (e.g. CNY, USD)';
+  String get lifeCurrency => 'Currency';
 
   @override
   String get lifeRequired => 'Enter a name';
@@ -348,7 +348,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lifeSaving => 'Saving…';
 
   @override
-  String get lifeSave => 'Save and queue sync';
+  String get lifeSave => 'Save';
 
   @override
   String get appTitle => 'Companion';
@@ -2530,7 +2530,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dreamDescriptionOpacity => 'Description background opacity';
 
   @override
-  String get lifeImportRecognition => 'Confirm import';
+  String get lifeImportRecognition => 'Import result';
 
   @override
   String get lifeRecognitionDescription => 'Recognition result';

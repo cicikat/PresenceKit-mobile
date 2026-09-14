@@ -276,28 +276,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get lifeDate => '记录日期';
 
   @override
-  String get lifeRecordTitle => '标题（可留空待识别）';
+  String get lifeRecordTitle => '标题';
 
   @override
-  String get lifeNote => '备注 / 识别补充';
+  String get lifeNote => '备注';
 
   @override
-  String get lifeItems => '结构化明细（不确定的内容可留空）';
+  String get lifeItems => '明细';
 
   @override
-  String get lifeItemName => '食物 / 商品 / 账目名称';
+  String get lifeItemName => '名称';
 
   @override
-  String get lifeQuantity => '数量 / 份量';
+  String get lifeQuantity => '数量';
 
   @override
-  String get lifeUnit => '单位（份、克、件等）';
+  String get lifeUnit => '单位';
 
   @override
-  String get lifeAmount => '金额（退款可填负数）';
+  String get lifeAmount => '金额';
 
   @override
-  String get lifeCurrency => '币种（如 CNY、USD）';
+  String get lifeCurrency => '币种';
 
   @override
   String get lifeRequired => '请填写名称';
@@ -318,7 +318,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get lifeSaving => '保存中…';
 
   @override
-  String get lifeSave => '保存并排队同步';
+  String get lifeSave => '保存';
 
   @override
   String get appTitle => '陪伴';
@@ -2419,7 +2419,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dreamDescriptionOpacity => '描写底色不透明度';
 
   @override
-  String get lifeImportRecognition => '确认导入';
+  String get lifeImportRecognition => '导入识别';
 
   @override
   String get lifeRecognitionDescription => '识别结果';

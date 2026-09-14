@@ -296,7 +296,6 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                   controller.error ?? controller.syncState['status'] as String?,
                 ),
               ),
-              Text(l.lifeBackgroundHelp),
               if (controller.syncState['last_ack'] is num)
                 Text(
                   l.lifeLastAck(
@@ -304,18 +303,6 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                       (controller.syncState['last_ack'] as num).toInt(),
                     ).toLocal().toString(),
                   ),
-                ),
-              if (controller.syncState['local_images'] != null)
-                SelectableText(
-                  jsonEncode({
-                    'local_images': controller.syncState['local_images'],
-                  }),
-                ),
-              if (controller.observation != null)
-                SelectableText(
-                  const JsonEncoder.withIndent(
-                    '  ',
-                  ).convert(controller.observation),
                 ),
             ],
           ),
@@ -603,24 +590,6 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                                                 13,
                                                 color: widget.c.ink2,
                                               ).copyWith(height: 1.4),
-                                            ),
-                                          ),
-                                        if (record
-                                            .recognitionDescription
-                                            .isNotEmpty)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 8,
-                                            ),
-                                            child: Text(
-                                              '${l.lifeRecognitionDescription}：${record.recognitionDescription}',
-                                              maxLines: 3,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: serif(
-                                                widget.c,
-                                                13,
-                                                color: widget.c.ink2,
-                                              ).copyWith(height: 1.6),
                                             ),
                                           ),
                                         if (record.items.isNotEmpty)
@@ -939,19 +908,11 @@ class _LifeRecordEditorState extends State<LifeRecordEditor> {
                   ),
                   if (widget.record?.recognitionDescription.isNotEmpty ==
                       true) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      l.lifeRecognitionDescription,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    SelectableText(widget.record!.recognitionDescription),
                     TextButton.icon(
                       onPressed: _saving ? null : _importRecognition,
                       icon: const Icon(Icons.playlist_add_check_rounded),
                       label: Text(l.lifeImportRecognition),
                     ),
-                    const SizedBox(height: 12),
                   ],
                   Text(l.lifeItems),
                   ..._items.map(

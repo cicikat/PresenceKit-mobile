@@ -617,49 +617,49 @@ abstract class AppLocalizations {
   /// No description provided for @lifeRecordTitle.
   ///
   /// In zh, this message translates to:
-  /// **'标题（可留空待识别）'**
+  /// **'标题'**
   String get lifeRecordTitle;
 
   /// No description provided for @lifeNote.
   ///
   /// In zh, this message translates to:
-  /// **'备注 / 识别补充'**
+  /// **'备注'**
   String get lifeNote;
 
   /// No description provided for @lifeItems.
   ///
   /// In zh, this message translates to:
-  /// **'结构化明细（不确定的内容可留空）'**
+  /// **'明细'**
   String get lifeItems;
 
   /// No description provided for @lifeItemName.
   ///
   /// In zh, this message translates to:
-  /// **'食物 / 商品 / 账目名称'**
+  /// **'名称'**
   String get lifeItemName;
 
   /// No description provided for @lifeQuantity.
   ///
   /// In zh, this message translates to:
-  /// **'数量 / 份量'**
+  /// **'数量'**
   String get lifeQuantity;
 
   /// No description provided for @lifeUnit.
   ///
   /// In zh, this message translates to:
-  /// **'单位（份、克、件等）'**
+  /// **'单位'**
   String get lifeUnit;
 
   /// No description provided for @lifeAmount.
   ///
   /// In zh, this message translates to:
-  /// **'金额（退款可填负数）'**
+  /// **'金额'**
   String get lifeAmount;
 
   /// No description provided for @lifeCurrency.
   ///
   /// In zh, this message translates to:
-  /// **'币种（如 CNY、USD）'**
+  /// **'币种'**
   String get lifeCurrency;
 
   /// No description provided for @lifeRequired.
@@ -701,7 +701,7 @@ abstract class AppLocalizations {
   /// No description provided for @lifeSave.
   ///
   /// In zh, this message translates to:
-  /// **'保存并排队同步'**
+  /// **'保存'**
   String get lifeSave;
 
   /// No description provided for @appTitle.
@@ -4546,7 +4546,7 @@ abstract class AppLocalizations {
   /// No description provided for @lifeImportRecognition.
   ///
   /// In zh, this message translates to:
-  /// **'确认导入'**
+  /// **'导入识别'**
   String get lifeImportRecognition;
 
   /// No description provided for @lifeRecognitionDescription.

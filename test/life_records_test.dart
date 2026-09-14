@@ -284,10 +284,11 @@ void main() {
         ),
       ),
     );
-    expect(find.text('识别结果'), findsOneWidget);
-    expect(find.text('Visible food description'), findsOneWidget);
+    expect(find.text('识别结果'), findsNothing);
+    expect(find.text('Visible food description'), findsNothing);
+    expect(find.text('导入识别'), findsOneWidget);
     expect(find.text('My correction'), findsOneWidget);
-    await tester.tap(find.text('保存并排队同步'));
+    await tester.tap(find.text('保存'));
     await tester.pumpAndSettle();
     final index = service.calls.indexOf('save');
     expect(index, greaterThanOrEqualTo(0));
@@ -330,11 +331,11 @@ void main() {
         ),
       ),
     );
-    await tester.ensureVisible(find.text('确认导入'));
-    await tester.tap(find.text('确认导入'));
+    await tester.ensureVisible(find.text('导入识别'));
+    await tester.tap(find.text('导入识别'));
     await tester.pump();
     expect(find.text('Old note'), findsNothing);
-    await tester.tap(find.text('保存并排队同步'));
+    await tester.tap(find.text('保存'));
     await tester.pumpAndSettle();
     final saved = jsonDecode(
       service.arguments[service.calls.indexOf('save')]['record'] as String,
@@ -458,7 +459,7 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('保存并排队同步'));
+    await tester.tap(find.text('保存'));
     await tester.pump();
     expect(find.text('填写金额时必须提供三字母币种'), findsOneWidget);
     expect(service.calls.where((m) => m == 'save'), isEmpty);
