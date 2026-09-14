@@ -33,13 +33,16 @@ List<ChatMessage> reconcileChatHistory(
         continue;
       }
       // Keep server dates and display projection, local key and rich payload.
+      final keepImage = item.attachments.isNotEmpty;
       result[found] = ChatMessage(
         id: item.id,
         role: item.role,
-        text: item.attachments.isNotEmpty ? item.text : remote[found].text,
+        text: keepImage ? item.text : remote[found].text,
         time: remote[found].time,
         dateKey: remote[found].dateKey,
-        displayText: remote[found].displayText ?? item.displayText,
+        displayText: keepImage
+            ? item.displayText
+            : remote[found].displayText ?? item.displayText,
         toolActivity: remote[found].toolActivity,
         timestamp: remote[found].timestamp,
         turnId: remote[found].turnId ?? _turn(source, i),
@@ -48,6 +51,7 @@ List<ChatMessage> reconcileChatHistory(
         uploadNote: item.uploadNote,
         quotedText: item.quotedText,
         quotedLabel: item.quotedLabel,
+        retainOnRefresh: keepImage || item.retainOnRefresh,
       );
       if (identical(source, local)) {
         sent.removeWhere((m) => m.id == item.id);
@@ -79,8 +83,17 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
       } else if (item.role == 'reasoning') {
         if (item.text.isNotEmpty && item.text == candidate.text) { candidates.add(j); }
       } else if (turn != null && turn == remoteTurn) {
-        if (item.text == candidate.text || (item.role == 'you' && item.attachments.isNotEmpty)) { candidates.add(j); }
-      } else if (j >= cursor && item.text == candidate.text && _sameClock(candidate, item)) {
+        if (item.text == candidate.text ||
+            (item.role == 'you' && item.attachments.isNotEmpty) ||
+            (item.role == 'you' && _imagePlaceholder(candidate))) {
+          candidates.add(j);
+        }
+      } else if (j >= cursor &&
+          (item.text == candidate.text ||
+              (item.role == 'you' &&
+                  item.attachments.isNotEmpty &&
+                  _imagePlaceholder(candidate))) &&
+          _sameClock(candidate, item)) {
         candidates.add(j);
       }
     }
@@ -107,6 +120,9 @@ String? _turn(List<ChatMessage> messages, int index) {
   }
   return null;
 }
+
+bool _imagePlaceholder(ChatMessage message) =>
+    AttachmentPlaceholder.parse(message.text)?.isImage == true;
 
 bool _sameClock(ChatMessage remote, ChatMessage local) {
   final date =

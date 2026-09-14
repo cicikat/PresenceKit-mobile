@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/controllers/chat_history_reconciliation.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
+import 'package:presencekit_mobile/models/screen_context.dart';
 
 ChatMessage message(
   String role,
@@ -90,9 +93,119 @@ void main() {
         local,
         sent,
       );
-      expect(result.map((m) => m.text), ['sent', 't1', 'reply']);
-      expect(sent.map((m) => m.id), [failed.id, pending.id]);
-      expect(sent.first.failed, isTrue);
+      expect(result.map((m) => m.text), ['failed', 'sent', 't1', 'reply']);
+      expect(result.first.failed, isTrue);
+      expect(result.first.id, failed.id);
+      expect(sent.map((m) => m.id), [pending.id]);
     },
   );
+
+  test('image bubbles keep local attachments instead of recognition text', () {
+    final localImage = ChatMessage(
+      role: 'you',
+      text: 'photo.jpg',
+      displayText: 'photo.jpg',
+      time: '12:00:10',
+      dateKey: '2026-09-13',
+      turnId: 'turn-img',
+      attachments: [
+        PickedUploadFile(name: 'photo.jpg', bytes: Uint8List.fromList([1, 2, 3])),
+      ],
+    );
+    final sent = [localImage];
+    final result = reconcileChatHistory(
+      [
+        ChatMessage(
+          role: 'you',
+          text: '📎 photo.jpg\nA bowl of rice',
+          time: '12:00',
+          dateKey: '2026-09-13',
+          turnId: 'turn-img',
+        ),
+        message('reasoning', 't1', ''),
+        message('him', 'looks tasty', '12:01'),
+      ],
+      [],
+      [localImage],
+      sent,
+    );
+    expect(sent, isEmpty);
+    expect(result.first.id, localImage.id);
+    expect(result.first.attachments, isNotEmpty);
+    expect(result.first.text, 'photo.jpg');
+    expect(result.first.displayText, 'photo.jpg');
+  });
+
+  test('ocr text in the same turn still keeps the local image bubble', () {
+    final localImage = ChatMessage(
+      role: 'you',
+      text: 'photo.jpg',
+      time: '12:00:10',
+      dateKey: '2026-09-13',
+      turnId: 'turn-img',
+      attachments: [
+        PickedUploadFile(name: 'photo.jpg', bytes: Uint8List.fromList([1, 2, 3])),
+      ],
+    );
+    final sent = [localImage];
+    final result = reconcileChatHistory(
+      [
+        ChatMessage(
+          role: 'you',
+          text: 'A bowl of rice on the table',
+          time: '12:00',
+          dateKey: '2026-09-13',
+          turnId: 'turn-img',
+        ),
+        message('reasoning', 't1', ''),
+        message('him', 'looks tasty', '12:01'),
+      ],
+      [],
+      [localImage],
+      sent,
+    );
+    expect(result.first.attachments, isNotEmpty);
+    expect(result.first.text, 'photo.jpg');
+    expect(result.first.id, localImage.id);
+  });
+
+  test('unmatched local image stays in place among remote turns', () {
+    final image = ChatMessage(
+      role: 'you',
+      text: 'shot.jpg',
+      time: '12:01',
+      dateKey: '2026-09-13',
+      attachments: [
+        PickedUploadFile(name: 'shot.jpg', bytes: Uint8List.fromList([9])),
+      ],
+    );
+    final local = [
+      message('you', 'hello', '12:00'),
+      message('him', 'hi', '12:00'),
+      image,
+      message('you', 'later', '12:02'),
+      message('him', 'ok', '12:02'),
+    ];
+    final sent = [...local];
+    final result = reconcileChatHistory(
+      [
+        message('you', 'hello', '12:00'),
+        message('him', 'hi', '12:00'),
+        message('you', 'later', '12:02'),
+        message('him', 'ok', '12:02'),
+      ],
+      [],
+      local,
+      sent,
+    );
+    expect(result.map((m) => m.text), [
+      'hello',
+      'hi',
+      'shot.jpg',
+      'later',
+      'ok',
+    ]);
+    expect(result[2].attachments, isNotEmpty);
+    expect(result[2].id, image.id);
+  });
 }

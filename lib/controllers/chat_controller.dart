@@ -362,37 +362,50 @@ class ChatController extends ChangeNotifier {
   Future<void> loadHistory({
     bool reconcileLocal = false,
     bool backgroundRefresh = false,
-  }) => _historyRead ??= _readHistory(reconcileLocal: reconcileLocal,
-      backgroundRefresh: backgroundRefresh).whenComplete(() {
+  }) => _historyRead ??= _readHistory(
+        reconcileLocal: reconcileLocal,
+        backgroundRefresh: backgroundRefresh,
+      ).whenComplete(() {
         _historyRead = null;
         _flushHistoryRefresh();
       });
 
   void _flushHistoryRefresh() {
-    if (!_historyRefreshPending || _disposed || sending || _playingSegments ||
-        loadingMoreHistory || _historyRead != null) return;
+    if (!_historyRefreshPending ||
+        _disposed ||
+        sending ||
+        _playingSegments ||
+        loadingMoreHistory ||
+        _historyRead != null) {
+      return;
+    }
     _historyRefreshPending = false;
-    unawaited(loadHistory(reconcileLocal: true));
+    unawaited(
+      loadHistory(reconcileLocal: true, backgroundRefresh: true),
+    );
   }
 
-  Future<void> _readHistory({required bool reconcileLocal, required bool backgroundRefresh}) async {
+  Future<void> _readHistory({
+    required bool reconcileLocal,
+    required bool backgroundRefresh,
+  }) async {
     if (sending || _playingSegments || loadingMoreHistory) {
       _historyRefreshPending = true;
       return;
     }
-    if (_disposed ||
-        (backgroundRefresh && (sending || _playingSegments || !_isAtBottom))) {
-      return;
-    }
+    if (_disposed) return;
     final token = _accessToken;
     if (loadingHistory || token == null) return;
     final backend = _backend();
     final generation = _generation;
     final previousSnapshot = List<ChatMessage>.of(history);
     final localSnapshot = List<ChatMessage>.of(sent);
-    loadingHistory = true;
-    historyError = null;
-    notifyListeners();
+    final silent = backgroundRefresh && historyLoaded;
+    if (!silent) {
+      loadingHistory = true;
+      historyError = null;
+      notifyListeners();
+    }
     try {
       final dates = (await backend.loadChatLogDates(token: token)).dates;
       final loaded = <String>[];
@@ -417,15 +430,17 @@ class ChatController extends ChangeNotifier {
         final earliest = dates.indexOf(firstDate);
         exhausted = earliest < 0 || earliest >= dates.length - 1;
       }
-      if (_disposed || generation != _generation || _accessToken != token || !identical(_backend(), backend)) {
+      if (_disposed ||
+          generation != _generation ||
+          _accessToken != token ||
+          !identical(_backend(), backend)) {
         return;
       }
-      if (sending || _playingSegments || !listEquals(localSnapshot, sent) ||
+      if (sending ||
+          _playingSegments ||
+          !listEquals(localSnapshot, sent) ||
           !listEquals(previousSnapshot, history)) {
         _historyRefreshPending = true;
-        return;
-      }
-      if (backgroundRefresh && (sending || _playingSegments || !_isAtBottom)) {
         return;
       }
       if (reconcileLocal) {
@@ -436,31 +451,70 @@ class ChatController extends ChangeNotifier {
           sent,
         );
       }
-      final older = history.where((m) => m.dateKey != null &&
-          !loaded.contains(m.dateKey) && dates.contains(m.dateKey)).toList();
-      loaded.insertAll(0, _loadedDates.where((d) => !loaded.contains(d) && dates.contains(d)));
+      final older = history
+          .where(
+            (m) =>
+                m.dateKey != null &&
+                !loaded.contains(m.dateKey) &&
+                dates.contains(m.dateKey),
+          )
+          .toList();
+      loaded.insertAll(
+        0,
+        _loadedDates.where((d) => !loaded.contains(d) && dates.contains(d)),
+      );
+      final merged = [...older, ...messages];
+      final nextNoMore = loaded.isEmpty
+          ? exhausted
+          : dates.indexOf(loaded.first) == dates.length - 1;
+      final unchanged =
+          silent &&
+          _sameVisibleHistory(history, merged) &&
+          listEquals(_availableDates, dates) &&
+          listEquals(_loadedDates, loaded) &&
+          noMoreHistory == nextNoMore;
       history
         ..clear()
-        ..addAll([...older, ...messages]);
+        ..addAll(merged);
       _availableDates
         ..clear()
         ..addAll(dates);
       _loadedDates
         ..clear()
         ..addAll(loaded);
-      noMoreHistory = loaded.isEmpty ? exhausted : dates.indexOf(loaded.first) == dates.length - 1;
+      noMoreHistory = nextNoMore;
       historyLoaded = true;
       if (!reconcileLocal) visibleMessageLimit = initialVisibleMessageCount;
+      if (unchanged) return;
       notifyListeners();
-      scrollToBottom();
+      if (!silent || _isAtBottom) scrollToBottom(animate: !silent);
     } on BackendException catch (e) {
       if (generation == _generation && !_disposed) historyError = e.message;
     } catch (e) {
       if (generation == _generation && !_disposed) historyError = e.toString();
     } finally {
       loadingHistory = false;
-      if (!_disposed) notifyListeners();
+      if (!_disposed && !silent) notifyListeners();
     }
+  }
+
+  bool _sameVisibleHistory(List<ChatMessage> a, List<ChatMessage> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final left = a[i];
+      final right = b[i];
+      if (left.id != right.id ||
+          left.role != right.role ||
+          left.text != right.text ||
+          left.displayText != right.displayText ||
+          left.time != right.time ||
+          left.dateKey != right.dateKey ||
+          left.failed != right.failed ||
+          left.attachments.length != right.attachments.length) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<void> loadOlderHistory() async {
@@ -1150,13 +1204,13 @@ class ChatController extends ChangeNotifier {
     return true;
   }
 
-  void scrollToBottom() {
+  void scrollToBottom({bool animate = true}) {
     if (showJumpToLatest) {
       showJumpToLatest = false;
       unreadHimCount = 0;
       notifyListeners();
     }
-    void scroll({bool animate = true}) {
+    void scroll({required bool animate}) {
       if (!scrollController.hasClients) return;
       final target = scrollController.position.maxScrollExtent;
       if (animate) {
@@ -1170,11 +1224,15 @@ class ChatController extends ChangeNotifier {
       }
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => scroll());
-    Future<void>.delayed(
-      const Duration(milliseconds: 360),
-      () => scroll(animate: false),
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => scroll(animate: animate),
     );
+    if (animate) {
+      Future<void>.delayed(
+        const Duration(milliseconds: 360),
+        () => scroll(animate: false),
+      );
+    }
   }
 
   @override
