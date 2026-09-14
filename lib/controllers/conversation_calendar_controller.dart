@@ -3,9 +3,14 @@ import '../models/conversation_calendar.dart';
 import '../services/backend_client.dart';
 
 class ConversationCalendarController extends ChangeNotifier {
-  ConversationCalendarController({required this.backend, required this.token});
+  ConversationCalendarController({
+    required this.backend,
+    required this.token,
+    this.character,
+  });
   final BackendClient Function() backend;
   final String Function() token;
+  final String? Function()? character;
   String period = 'month';
   DateTime? anchor;
   ConversationCalendar? calendar;
@@ -26,59 +31,69 @@ class ConversationCalendarController extends ChangeNotifier {
     final generation = ++_generation;
     loading = true;
     error = null;
-    calendar = null;
-    selected = null;
-    streak = null;
     notifyListeners();
     try {
       final client = backend();
       final credential = token();
+      final scoped = character?.call();
       final result = await client.fetchConversationCalendar(
         token: credential,
         period: this.period,
         date: anchor == null ? null : dateKey(anchor!),
+        character: scoped,
       );
       if (_disposed || generation != _generation) return;
       calendar = result;
-      selected = result.days.firstOrNull;
-      // Ask the server for its current day; do not re-bucket server dates locally.
-      final today = await client.fetchConversationCalendar(
-        token: credential,
-        period: 'day',
-        character: result.character,
-      );
-      if (_disposed || generation != _generation) return;
-      final parsed = DateTime.parse(today.end);
-      final end = DateTime.utc(parsed.year, parsed.month, parsed.day);
-      final history = await client.fetchConversationCalendar(
-        token: credential,
-        character: result.character,
-        start: dateKey(end.subtract(const Duration(days: 365))),
-        end: today.end,
-      );
-      if (_disposed || generation != _generation) return;
-      var index = history.days.length - 1;
-      if (index >= 0 && history.days[index].rounds == 0) index--;
-      var count = 0;
-      while (index >= 0 && (history.days[index].rounds ?? 0) > 0) {
-        count++;
-        index--;
+      selected ??= result.days.firstOrNull;
+      ConversationCalendar today;
+      try {
+        today = await client.fetchConversationCalendar(
+          token: credential,
+          period: 'day',
+          character: scoped ?? result.character,
+        );
+      } catch (_) {
+        today = result;
       }
-      streak = count == 0 && index >= 0 && history.days[index].rounds == null
-          ? null
-          : count;
-      streakLowerBound =
-          index < 0 ||
-          (index >= 0 &&
-              (history.days[index].rounds == null ||
-                  history.days[index].coverage != 'complete'));
-      calendar = result;
+      if (_disposed || generation != _generation) return;
       selected =
           result.days.where((d) => d.date == today.end).firstOrNull ??
           result.days.firstOrNull;
+      try {
+        final parsed = DateTime.parse(today.end);
+        final end = DateTime.utc(parsed.year, parsed.month, parsed.day);
+        final history = await client.fetchConversationCalendar(
+          token: credential,
+          character: scoped ?? result.character,
+          start: dateKey(end.subtract(const Duration(days: 365))),
+          end: today.end,
+        );
+        if (_disposed || generation != _generation) return;
+        var index = history.days.length - 1;
+        if (index >= 0 && history.days[index].rounds == 0) index--;
+        var count = 0;
+        while (index >= 0 && (history.days[index].rounds ?? 0) > 0) {
+          count++;
+          index--;
+        }
+        streak = count == 0 && index >= 0 && history.days[index].rounds == null
+            ? null
+            : count;
+        streakLowerBound =
+            index < 0 ||
+            (index >= 0 &&
+                (history.days[index].rounds == null ||
+                    history.days[index].coverage != 'complete'));
+      } catch (_) {
+        if (_disposed || generation != _generation) return;
+      }
     } catch (e) {
       if (_disposed || generation != _generation) return;
       error = e is BackendException ? e.message : e.toString();
+      if (calendar == null) {
+        selected = null;
+        streak = null;
+      }
     } finally {
       if (!_disposed && generation == _generation) {
         loading = false;

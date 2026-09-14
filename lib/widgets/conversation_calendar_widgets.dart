@@ -68,12 +68,14 @@ class ConversationCalendarPage extends StatefulWidget {
     required this.c,
     required this.palette,
     required this.name,
+    this.characterId,
     required this.backend,
     required this.token,
     required this.onBack,
   });
   final YxPalette c;
   final String palette, name, token;
+  final String? characterId;
   final BackendClient backend;
   final VoidCallback onBack;
   @override
@@ -85,6 +87,7 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
   late final controller = ConversationCalendarController(
     backend: () => widget.backend,
     token: () => widget.token,
+    character: () => widget.characterId,
   );
   @override
   void initState() {
@@ -97,7 +100,8 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.backend != widget.backend ||
         oldWidget.token != widget.token ||
-        oldWidget.name != widget.name) {
+        oldWidget.name != widget.name ||
+        oldWidget.characterId != widget.characterId) {
       controller.load();
     }
   }
@@ -245,10 +249,15 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
                           ),
                         ],
                       ),
-                      if (controller.loading)
+                      if (controller.loading && data == null)
                         const Padding(
                           padding: EdgeInsets.all(36),
                           child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (controller.loading)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 12),
+                          child: LinearProgressIndicator(),
                         ),
                       if (controller.error != null) ...[
                         Text(
@@ -498,6 +507,7 @@ class _Heatmap extends StatelessWidget {
     Widget cell(ConversationDay day, {bool compact = false}) {
       final count = day.rounds;
       final future = day.coverage == 'future';
+      final unknown = count == null && !future;
       final strength = count == null || count == 0
           ? 0.0
           : .25 + .75 * math.sqrt(count / peak);
@@ -520,13 +530,21 @@ class _Heatmap extends StatelessWidget {
                 color: future ? c.surface : fill,
                 borderRadius: BorderRadius.circular(compact ? 3 : 9),
                 border: Border.all(
-                  color: selected == day.date ? c.ink1 : c.surfaceEdge,
+                  color: selected == day.date
+                      ? c.ink1
+                      : unknown
+                      ? c.ink3
+                      : c.surfaceEdge,
                   width: selected == day.date ? 2 : 1,
                 ),
               ),
               child: compact
-                  ? (count == null && !future
-                        ? Text('·', style: TextStyle(color: c.ink2))
+                  ? (unknown
+                        ? Text(
+                            '·',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: c.ink2, fontSize: 10),
+                          )
                         : null)
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -543,7 +561,7 @@ class _Heatmap extends StatelessWidget {
                             count?.toString() ?? '—',
                             style: TextStyle(color: ink, fontSize: 11),
                           ),
-                        if (count == null && !future)
+                        if (unknown)
                           Text('—', style: TextStyle(color: ink, fontSize: 9)),
                       ],
                     ),
@@ -556,19 +574,35 @@ class _Heatmap extends StatelessWidget {
     Widget month(List<ConversationDay> days, {bool compact = false}) {
       if (days.isEmpty) return const SizedBox.shrink();
       final offset = DateTime.parse(days.first.date).weekday - 1;
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 7,
-          crossAxisSpacing: compact ? 3 : 5,
-          mainAxisSpacing: compact ? 3 : 5,
-        ),
-        itemCount: days.length + offset,
-        itemBuilder: (context, i) => i < offset
-            ? const SizedBox.shrink()
-            : cell(days[i - offset], compact: compact),
-      );
+      final gap = compact ? 3.0 : 5.0;
+      final cells = <Widget>[
+        for (var i = 0; i < offset; i++) const SizedBox.shrink(),
+        for (final day in days) cell(day, compact: compact),
+      ];
+      final rows = <Widget>[];
+      for (var i = 0; i < cells.length; i += 7) {
+        rows.add(
+          Padding(
+            padding: EdgeInsets.only(bottom: i + 7 < cells.length ? gap : 0),
+            child: Row(
+              children: [
+                for (var j = 0; j < 7; j++) ...[
+                  if (j > 0) SizedBox(width: gap),
+                  Expanded(
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: i + j < cells.length
+                          ? cells[i + j]
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      }
+      return Column(children: rows);
     }
 
     if (period == 'year') {

@@ -133,8 +133,10 @@ void main() {
       final controller = ConversationCalendarController(
         backend: () => backend,
         token: () => 'test',
+        character: () => 'nova',
       );
       await controller.load();
+      expect(backend.requests.first['char_id'], 'nova');
       expect(controller.streak, 2);
       expect(controller.streakLowerBound, isFalse);
       expect(backend.requests.last['char_id'], 'nova');
@@ -166,7 +168,7 @@ void main() {
       expect(controller.calendar, same(latest));
       backend.fail = true;
       await controller.load();
-      expect(controller.calendar, isNull);
+      expect(controller.calendar, same(latest));
       expect(controller.error, 'unavailable');
       controller.dispose();
     },
@@ -204,6 +206,18 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.textContaining('Nova'), findsWidgets);
+        expect(
+          find.byWidgetPredicate(
+            (w) => w is Tooltip && w.message == '2026-09-03 · —',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byWidgetPredicate(
+            (w) => w is Tooltip && w.message == '2026-09-12 · 0',
+          ),
+          findsOneWidget,
+        );
         final cell = find.byWidgetPredicate(
           (w) => w is Tooltip && w.message == '2026-09-10 · 30',
         );
