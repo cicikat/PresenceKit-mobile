@@ -298,3 +298,7 @@ tool_loop_discovery counters and schema counts. No new persistent state.
 Native devices and real model gateway verification remain observe; backend
 mocked regressions do not claim device acceptance. Design and validation:
 backend docs/tool-discovery.md and docs/three-repo-interface-catalog.md.
+
+## 聊天产物（253.3）
+
+后端 mobile/chat 与 mobile/poll 可附带 artifacts[]（id、filename、mime、size、download_url、previewable、可选 preview_url），不含正文与绝对路径；既有 ack/TTL 不变。下载与预览为 chat scope，路径 /chat/artifacts/{id} 与 /chat/artifacts/{id}/preview。手机目前忽略此附加字段，文件卡片、下载和预览 UI 为 roadmap。

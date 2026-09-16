@@ -176,3 +176,7 @@ The Flutter parser mirrors desktop paired-tag rules (up to 200 characters, no ne
 # 手机只读历史与思考补充（2026-09-11）
 
 手机下拉刷新重读 `/chat-log/dates` 与日期详情，随后沿既有 mobile catch-up/ack 路径执行。历史补回不伪造 mobile seq 或 ack。思考仅使用明确的 `turn_id` 读取 `/chat/turns/{turn_id}/reasoning`；不会将 `msg_id` 当作 canonical turn_id。未增加 mobile 请求/投递字段。
+
+## 聊天产物（253.3）
+
+后端 mobile/chat 与 mobile/poll 可附带 artifacts[]（id、filename、mime、size、download_url、previewable、可选 preview_url），不含正文与绝对路径；既有 ack/TTL 不变。下载与预览为 chat scope，路径 /chat/artifacts/{id} 与 /chat/artifacts/{id}/preview。手机目前忽略此附加字段，文件卡片、下载和预览 UI 为 roadmap。

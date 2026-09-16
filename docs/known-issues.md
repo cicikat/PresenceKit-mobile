@@ -385,3 +385,7 @@ observe: physical phone/network/Doze and live image-model end-to-end validation 
 ## Life-record recognition follow-up (2026-09-12)
 
 current: backend accepts prose/partial fields, routes food/cart to vision and bills to OCR, preserves user notes and stores separate recognition_description. Flutter list/editor display it and offline search includes it. 16 focused tests passed. observe: new build on physical phone and real OCR; open: keep-local conflict merge; roadmap: restoring historical images without a backend image-download endpoint.
+
+## 聊天产物（253.3）
+
+后端 mobile/chat 与 mobile/poll 可附带 artifacts[]（id、filename、mime、size、download_url、previewable、可选 preview_url），不含正文与绝对路径；既有 ack/TTL 不变。下载与预览为 chat scope，路径 /chat/artifacts/{id} 与 /chat/artifacts/{id}/preview。手机目前忽略此附加字段，文件卡片、下载和预览 UI 为 roadmap。
