@@ -52,6 +52,11 @@ class BackendClient {
     @visibleForTesting HttpClient Function()? httpClientFactory,
   }) : _httpClientFactory = httpClientFactory ?? HttpClient.new;
 
+  String? _voiceText;
+  String? _voiceReceipt;
+  String? _voiceToken;
+  DateTime? _voiceExpires;
+
   final String baseUrl;
   final AppSettingsStore settingsStore;
   final HttpClient Function() _httpClientFactory;
@@ -271,6 +276,12 @@ class BackendClient {
     required String token,
     ReplyTarget? replyTo,
   }) async {
+    final receipt = _voiceToken == token && _voiceText?.trim() == message.trim()
+        && (_voiceExpires?.isAfter(DateTime.now()) ?? false) ? _voiceReceipt : null;
+    _voiceReceipt = null;
+    _voiceText = null;
+    _voiceToken = null;
+    _voiceExpires = null;
     return BackendChatResponse.fromJson(
       await _request(
         '/mobile/chat',
@@ -279,6 +290,7 @@ class BackendClient {
         body: {
           'message': message,
           if (replyTo != null) 'reply_to': replyTo.toJson(),
+          if (receipt != null) 'audio_perception_id': receipt,
         },
         timeout: const Duration(seconds: 120),
       ),
@@ -610,6 +622,10 @@ class BackendClient {
     required String token,
     String channel = 'mobile',
   }) async {
+    _voiceReceipt = null;
+    _voiceText = null;
+    _voiceToken = null;
+    _voiceExpires = null;
     final file = File(filePath);
     if (!await file.exists()) {
       throw const BackendException('录音文件不存在');
@@ -669,6 +685,13 @@ class BackendClient {
         throw const BackendException('语音转写返回格式不是 JSON object');
       }
       final text = decoded['text'];
+      final receipt = decoded['audio_perception_id'];
+      if (text is String && receipt is String && receipt.length <= 128) {
+        _voiceText = text;
+        _voiceReceipt = receipt;
+        _voiceToken = token;
+        _voiceExpires = DateTime.now().add(const Duration(minutes: 5));
+      }
       return text is String ? text : '';
     } on TimeoutException {
       throw const BackendException('语音转写响应超时');

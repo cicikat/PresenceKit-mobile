@@ -1,5 +1,12 @@
 # Mobile Channel 协议现状
 
+## Brief 253.6：转写语调关联
+
+POST /transcribe（chat）保留 text，新路径可返回 tone/audio_perception_id；POST /mobile/chat
+增加可选 audio_perception_id。客户端按未编辑文本、相同 token 和 5 分钟有效期一次使用；
+后端再绑定 owner、角色、mobile 通道和文本摘要。编辑/跨作用域/过期/重复时仅丢语调，文字照常发送。
+缺字段兼容旧后端；不改变 mobile poll/ack、relay、通知与录音权限。
+
 聊天情况（2026-09-12）只读独立 `/chat-log/stats/calendar`，不扩展 mobile 消息字段、msg_id/turn_id、去重、ack、TTL 或通知。`calendarPalette` 仅通过本机 appearance prefs 通道保存，默认 jade，不上传后端；Dart 与 Android 读写键同步。
 
 工单 19（2026-09-12）：通知点击/恢复先重读正式聊天历史，再 catch-up；后台已 ack 的内容可从历史展示。消费历史现有 assistant_display_text，不改 mobile HTTP 字段、scope、msg_id/turn_id、seen、ack 或 TTL。自己消息可作为原 reply_to 引用目标；复制/全选和思考外观不改协议。旧历史无字效字段则保留纯文本。

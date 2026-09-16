@@ -1,5 +1,12 @@
 # 后端集成
 
+## Brief 253.6：语音感知
+
+继续使用原录音与 POST /transcribe；BackendClient 暂存可选语调凭据，并仅随下一条原样转写文字发送。
+协议字段、作用域和 TTL 见 [mobile-channel.md](../protocols/mobile-channel.md)。
+STT 命名连接、用途、默认关闭开关和 effective state 由后端管理面维护，无新手机设置、权限或后台任务。
+请求层 16 项回归通过；真实麦克风和远端 STT 联调 observe。
+
 ## 资料回读与主动接续（2026-09-13）
 
 后端角色可读开启后，已就绪生活记录和上传资料随下一次 owner 对话/主动机会提供；

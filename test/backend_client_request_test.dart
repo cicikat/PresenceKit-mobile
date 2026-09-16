@@ -292,6 +292,29 @@ void main() {
     },
   );
 
+
+  test('voice receipt is scoped to unchanged text and consumed once', () async {
+    final temp = await Directory.systemTemp.createTemp('voice-receipt-');
+    final file = File('${temp.path}/voice.m4a');
+    await file.writeAsBytes([1, 2, 3]);
+    try {
+      fakeClient.responseBody = jsonEncode({'text': 'hello', 'audio_perception_id': 'receipt'});
+      expect(await backend.transcribeAudio(filePath: file.path, token: 'tok-1'), 'hello');
+      fakeClient.responseBody = jsonEncode({'reply': 'ok'});
+      await backend.sendChat('hello', token: 'tok-1');
+      expect(jsonDecode(fakeClient.lastRequestBody)['audio_perception_id'], 'receipt');
+      await backend.sendChat('hello', token: 'tok-1');
+      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('audio_perception_id'), isFalse);
+      fakeClient.responseBody = jsonEncode({'text': 'hello', 'audio_perception_id': 'receipt'});
+      await backend.transcribeAudio(filePath: file.path, token: 'tok-1');
+      fakeClient.responseBody = jsonEncode({'reply': 'ok'});
+      await backend.sendChat('edited', token: 'tok-1');
+      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('audio_perception_id'), isFalse);
+    } finally {
+      await temp.delete(recursive: true);
+    }
+  });
+
   group('base url 拼接与鉴权前置检查', () {
     test('GET requests hit baseUrl + path with a Bearer token header', () async {
       fakeClient.responseBody = jsonEncode({'entries': []});
