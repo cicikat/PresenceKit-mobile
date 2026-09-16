@@ -1,8 +1,9 @@
 # docs/README.md - 文档索引
 
-生活记录施工接力：[`cc-tasks/17-life-records.md`](../cc-tasks/17-life-records.md)（逐项勾选与验证），
-[`cc-tasks/18-life-records-backend.md`](../cc-tasks/18-life-records-backend.md)（后端 proposed 契约快照）；
-后端执行单已放置为 `Emerald-presence/cc-tasks/245-life-records-backend-handoff.md`。
+三仓文档总入口：[`Emerald-presence/docs/three-repo-doc-index.md`](../../Emerald-presence/docs/three-repo-doc-index.md)。
+生活记录的后端契约见 [`Emerald-presence/docs/life-records.md`](../../Emerald-presence/docs/life-records.md)，
+手机接入与当前状态见本仓 [`backend/integration.md`](backend/integration.md)。旧的 17/18 施工单已从当前工作树移除，
+不再作为链接目标。
 
 本目录按主题归档 `Emerald-mobile` 的项目文档。根目录 `AGENTS.md` 是协作者入口，`ARCHITECTURE.md` 是架构总览。
 

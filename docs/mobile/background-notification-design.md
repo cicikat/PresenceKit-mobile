@@ -10,7 +10,7 @@
 
 - Flutter 前台：页面内 5 秒轮询 `GET /mobile/poll`，收到后直接进会话流。
 - Flutter 退后台：停止页面轮询，启动 `MobileNotificationService`。
-- Android 服务：以 ntfy SSE 中继接收 wake-only signal；收到 signal 后回源 `GET /mobile/poll?limit=20&after=<lastAckedSeq>` 拉取正文。中继未配置、订阅失败或连续断开 15 分钟时由 `AlarmManager` 做一次非阻塞补偿，最多每 6 小时续约一次；不再使用 `wait=55` 常驻长轮询。
+- Android 服务：以 ntfy SSE 中继接收 wake-only signal；收到 signal 后回源 `GET /mobile/poll?limit=20&after=<lastAckedSeq>` 拉取正文。中继未配置、订阅失败或连续断开 1 分钟时由 `AlarmManager` 做一次非阻塞补偿，之后每 15 分钟续约一次；SSE 保持连接时也每 15 分钟执行安全 poll，不再使用 `wait=55` 常驻长轮询。
 - Flutter 回前台：停止 Android 服务，恢复页面轮询。
 
 这样后端仍然只维护平台无关的 `mobile channel`。未来 iOS 不应照搬后台常驻轮询，而是让后端或一个中继层接 APNs，把同一类主动消息投递到 iOS 推送。

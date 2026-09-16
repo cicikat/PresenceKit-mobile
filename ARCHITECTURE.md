@@ -68,8 +68,8 @@ Android 原生入口是 `MainActivity.kt`：
 - 应用后台以 ntfy SSE 为主动消息实时主路径。
 - 中继只推送 signal；收到 signal 后立即通过 `/mobile/poll?limit=20&after=<lastAckedSeq>` 拉取正文，
   即使收到旧式含 `content` payload 也忽略正文并强制回源。
-- 中继订阅失败或连续断开 15 分钟后，通过 `AlarmManager` 执行一次非阻塞 `/mobile/poll?limit=20&after=<lastAckedSeq>`
-  补偿；之后最多每 6 小时一次，中继恢复即取消。
+- 中继订阅失败或连续断开 1 分钟后，通过 `AlarmManager` 执行一次非阻塞 `/mobile/poll?limit=20&after=<lastAckedSeq>`
+  补偿；之后每 15 分钟一次，中继恢复即取消。SSE 保持连接时也按 15 分钟执行安全 poll。
 - 收到 mobile channel 消息后优先根据 behavior metadata 映射悬浮窗；否则走普通通知。
 - 普通通知受 23:30-06:30 静音和 30 分钟冷却控制。
 - `seenMobileMessageIds` 是有意的前后台时序互斥双写：后台服务在 `consumeMobileMessage()` 写，
@@ -128,7 +128,7 @@ MainActivity.onStop()
   -> MobileNotificationService
   -> ntfy SSE 实时订阅
   -> 收到 signal 后 GET /mobile/poll?limit=20&after=<lastAckedSeq>
-  -> 连续断开 15 分钟后 AlarmManager 周期补偿
+  -> 连续断开 1 分钟后 AlarmManager 周期补偿（每 15 分钟）
   -> POST /sensor/realtime（仅补偿前且独立开关开启、快照非敏感）
   -> GET /mobile/poll?limit=20&after=<lastAckedSeq>（非阻塞）
   -> behavior overlay 或普通系统通知

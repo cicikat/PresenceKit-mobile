@@ -42,7 +42,7 @@ Current: canonical turn reconciliation, clock normalization and one reasoning an
 
 ## 生活记录前端先行（2026-09-11，open / observe / roadmap）
 
-- `current`：`/life-records/*` 已有后端实现；总开关、识别与角色读取仍由后端管理面决定。本机不得把待上传素材显示为已识别。详见 `cc-tasks/17-life-records.md`、`cc-tasks/18-life-records-backend.md`。
+- `current`：`/life-records/*` 已有后端实现；总开关、识别与角色读取仍由后端管理面决定。本机不得把待上传素材显示为已识别。详见 [`Emerald-presence/docs/life-records.md`](../../Emerald-presence/docs/life-records.md) 和 [`Emerald-presence/docs/three-repo-interface-catalog.md`](../../Emerald-presence/docs/three-repo-interface-catalog.md)。
 - `observe`：Android JobScheduler 的联网恢复、Doze、强停后重新打开、开机恢复和相机进程回收需真机验收；系统可延迟后台执行。没有连接的真机/模拟器时不能将单元测试当作设备验收。相机回收通过 image_picker retrieveLostData 在打开生活记录页时重新请求用户保存；未确认的选择属于临时草稿，尚未入持久队列。
 - `roadmap`：淘宝官方授权直接导入未实现；一期是用户主动提供截图。手机上传确认后清理本机源图，电脑原图跨端重取接口未实现；正式记录的日期、条目和备注可校正。营养估算/统计不属于一期，不能凭图片捏造摄入量。
 - 缓存是已查询页面的本机副本，不是全部历史；联网查询由后端分页返回，离线页面明确显示缓存。正式删除和跨设备墓碑需后端按工单返回；schema 确认和真实 mobile token 联调完成前保持 open。
@@ -77,7 +77,7 @@ Current: canonical turn reconciliation, clock normalization and one reasoning an
 - **设备重启后后台通道不自恢复** — `observe`。自用阶段接受，能力页能看见失活；要根治时另开 boot receiver 工单。
 - **`app_shell.dart` 剩余结构债** — `open`。下一步按 profile、theme、capability/settings、附件与弹窗协调继续拆分，保持领域状态不回流。
 
-本轮已关闭：维护者已确认 Mobile ntfy 后台推送恢复；debug 与正式包已分离，正式包的版本号限制与签名升级验收已完成。历史记录曾写有“`flutter test` 全量 105 项已通过”，但当前测试说明记录 tester 在断言前断开，因此该数字不能作为现行通过证据；以 [`docs/quality/testing-and-dev.md`](quality/testing-and-dev.md) 的带日期验证记录和当前重跑结果为准。外卖/购物悬浮窗硬编码示例订单已改为中性确认且不展示虚构商品/金额；通知权限不再在 `onCreate()` 弹出，改由能力检查页或首次开启后台通知触发。
+本轮已关闭：维护者已确认 Mobile ntfy 后台推送恢复；debug 与正式构建路径已分离。正式包签名升级仍以 [`docs/v1-release-readiness.md`](v1-release-readiness.md) 和 [`docs/android/release-signing-and-upgrade.md`](android/release-signing-and-upgrade.md) 为准，当前不把正式候选包、keystore 和真机升级验收写成已完成。历史记录曾写有“`flutter test` 全量 105 项已通过”，但当前测试说明记录 tester 在断言前断开，因此该数字不能作为现行通过证据；以 [`docs/quality/testing-and-dev.md`](quality/testing-and-dev.md) 的带日期验证记录和当前重跑结果为准。外卖/购物悬浮窗硬编码示例订单已改为中性确认且不展示虚构商品/金额；通知权限不再在 `onCreate()` 弹出，改由能力检查页或首次开启后台通知触发。
 
 ## 历史快照（已由上方权威清单覆盖）
 
@@ -100,7 +100,7 @@ Current: canonical turn reconciliation, clock normalization and one reasoning an
    **后端从不向 ntfy 发唤醒信号** → 手机后台服务永远等不到 SSE 信号 → 无弹窗。
 3. 次级问题（已修）：`_relay_config()` 要求 token 必填，而手机端订阅侧 token 是可选的——
    无鉴权自建 ntfy 会导致后端永远判定"未配置"。已改为 token 可选。
-4. 兜底路径也弱：中继未配置时手机端只剩 6 小时一次补偿轮询，且默认节点 `127.0.0.1:8080`
+4. 兜底路径也弱：这是旧实现记录；当时中继未配置时手机端只剩 6 小时一次补偿轮询，且默认节点 `127.0.0.1:8080`
    在脱线后台时不可达（adb reverse 只在插线时有效）；命中后还有 23:30–06:30 静音 +
    30 分钟冷却两道闸（`notificationTestMode` 可绕过，用于测试）。
 
@@ -139,13 +139,13 @@ MethodChannel、prefs 结构不变，只是填入的凭证值收敛为最小权�
 
 **状态**：已修复（手机端侧）。现行 token、scope 和错误码说明见 `docs/backend/integration.md`；后端完整契约在同级 `Emerald-presence/docs/security.md`。
 
-## 已修复：Android 后台常驻长轮询
+## 历史记录：Android 后台常驻长轮询（旧时间策略）
 
 **位置**：`android/app/src/main/kotlin/com/presencekit/mobile/MobileNotificationService.kt`
 
-Android 后台已改为 ntfy SSE 实时主路径；不再维持 `wait=55` 常驻长轮询。中继明确订阅失败
-或连续断开 15 分钟后，通过 `AlarmManager` 执行非阻塞补偿拉取，之后最多每 6 小时一次，
-中继恢复即取消。
+历史实现曾改为 ntfy SSE 实时主路径，并在中继连续断开 15 分钟后补偿、最多每 6 小时一次。
+这段时间策略已经过时；现行实现是断开 1 分钟后开始补偿、之后每 15 分钟一次，详见
+[`docs/protocols/mobile-channel.md`](protocols/mobile-channel.md)。
 
 **状态**：已修复。中继重连仍使用 1-60 秒指数退避；能力检查页展示中继状态、最近信号时间、
 最近中继心跳和最近周期补偿。
@@ -333,7 +333,7 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
   `MobilePollMessage.timestamp` 是否早于当前轮询。后台服务停止与 Flutter 恢复之间的竞态会让恢复轮次
   被 `isBackgroundServiceRunning()` 跳过，随后 5 秒 timer 的 live poll 接到旧队列，进入 `_messageQueue`。
   `_appendMessages()` 对每个气泡按 `text.length / 40 CPS + 100-1000ms` 串行等待。
-- Android 在中继不可用满 15 分钟后才安排补偿，成功补偿后的下一轮是 6 小时；`/mobile/poll` 非销毁式
+- Android 在中继不可用满 15 分钟后才安排补偿、成功补偿后的下一轮是 6 小时（历史旧实现）；`/mobile/poll` 非销毁式
   队列会返回所有未 ack 消息，因此延迟表现为旧消息集中弹出，而不是中继传输正文变慢。
 - 通知 `PendingIntent` 只以 `SINGLE_TOP | CLEAR_TOP` 打开 `MainActivity`，无 action/extra；
   `MainActivity` 也未实现 `onNewIntent()` 向 Flutter 发出刷新和滚动到底部的事件。

@@ -53,8 +53,9 @@ Roadmap: native desktop/mobile heatmap and day detail UI. Observe: real provider
 
 ## 生活记录（2026-09-11，current / observe）
 
-手机新增独立生活记录 UI 和 Android durable outbox。API 草案、schema、幂等和后端验收清单见
-`cc-tasks/18-life-records-backend.md`；后端已放置 `cc-tasks/245-life-records-backend-handoff.md`。
+手机新增独立生活记录 UI 和 Android durable outbox。后端 API、schema、幂等和验收清单见
+[`Emerald-presence/docs/life-records.md`](../../../Emerald-presence/docs/life-records.md)；跨仓状态见
+[`Emerald-presence/docs/three-repo-interface-catalog.md`](../../../Emerald-presence/docs/three-repo-interface-catalog.md)。
 `GET /life-records/capabilities`、`POST /life-records/sync`、列表/详情和
 `GET /life-records/observability` 现已实现，后端管理面负责 enabled / background_sync / 识别 effective state；真实设备与模型链路需另行验证。
 
@@ -299,6 +300,8 @@ Native devices and real model gateway verification remain observe; backend
 mocked regressions do not claim device acceptance. Design and validation:
 backend docs/tool-discovery.md and docs/three-repo-interface-catalog.md.
 
-## 聊天产物（253.3）
+## 聊天产物（253.3，见协议权威）
 
-后端 mobile/chat 与 mobile/poll 可附带 artifacts[]（id、filename、mime、size、download_url、previewable、可选 preview_url），不含正文与绝对路径；既有 ack/TTL 不变。下载与预览为 chat scope，路径 /chat/artifacts/{id} 与 /chat/artifacts/{id}/preview。手机目前忽略此附加字段，文件卡片、下载和预览 UI 为 roadmap。
+完整 payload、下载/预览路径和 scope 见 [`protocols/mobile-channel.md`](../protocols/mobile-channel.md)。
+本文件只记录调用方状态：手机当前忽略 `artifacts[]`，文件卡片、下载和预览 UI 仍是 roadmap；
+不在此重复协议正文。
