@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/controllers/chat_controller.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
 import 'package:presencekit_mobile/models/screen_context.dart';
+import 'package:presencekit_mobile/models/session_scope.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
@@ -43,11 +44,18 @@ class _Backend extends BackendClient {
   List<PickedUploadFile>? uploaded;
   Completer<void>? gate;
   Completer<void>? sendGate;
+  int sessionMisses = 0;
+  final sentSessionIds = <String?>[];
+  final sentRequestIds = <String?>[];
   Uint8List? mediaBytes;
   int mediaDownloads = 0;
   Completer<void>? mediaGate;
   @override
-  Future<ChatLogDates> loadChatLogDates({required String token}) async {
+  Future<ChatLogDates> loadChatLogDates({
+    required String token,
+    String? sessionId,
+    String? characterId,
+  }) async {
     historyReads++;
     if (offline) throw const BackendException('offline');
     return ChatLogDates.fromJson({
@@ -59,6 +67,8 @@ class _Backend extends BackendClient {
   Future<ChatLogDay> loadChatLogDay(
     String date, {
     required String token,
+    String? sessionId,
+    String? characterId,
   }) async => day!;
 
   @override
@@ -89,9 +99,17 @@ class _Backend extends BackendClient {
     String message, {
     required String token,
     ReplyTarget? replyTo,
+    String? sessionId,
+    String? requestId,
   }) async {
     chats++;
+    sentSessionIds.add(sessionId);
+    sentRequestIds.add(requestId);
     await sendGate?.future;
+    if (sessionMisses > 0) {
+      sessionMisses -= 1;
+      throw const BackendException('session_not_found', statusCode: 404);
+    }
     if (offline) throw const BackendException('offline');
     return BackendChatResponse(
       reply: 'echo:$message',
@@ -107,6 +125,8 @@ class _Backend extends BackendClient {
     required String token,
     String message = '',
     String channel = 'mobile',
+    String? sessionId,
+    String? requestId,
   }) async {
     uploads++;
     uploaded = files;
@@ -120,6 +140,7 @@ class _Backend extends BackendClient {
     String sha256, {
     required String token,
     Duration timeout = const Duration(seconds: 30),
+    String? sessionId,
   }) async {
     mediaDownloads += 1;
     await mediaGate?.future;
@@ -147,6 +168,13 @@ void main() {
       deliveryOrigin: () => 'http://127.0.0.1:8080',
       deliveryOwner: () => 'owner',
       deliveryCharId: () => 'char-a',
+      resolvePresenceSession: ({required String charId, bool force = false}) async =>
+          PresenceSessionGrant(
+            sessionId: 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          ),
     );
   });
   tearDown(() => controller.dispose());
@@ -494,6 +522,49 @@ void main() {
       expect(controller.sent.where((m) => m.text == 'first'), isEmpty);
       expect(controller.sent.where((m) => m.text == 'second'), hasLength(1));
       expect(controller.sending, isFalse);
+    },
+  );
+
+  test(
+    'session_not_found rebinds and retries the same request_id',
+    () async {
+      backend.offline = false;
+      backend.sessionMisses = 1;
+      var binds = 0;
+      var invalidated = 0;
+      final scoped = ChatController(
+        backend: () => backend,
+        token: () => 'test-token',
+        settings: SettingsStore(settings),
+        relay: RelayStatusService(settings),
+        deliveryOrigin: () => 'http://127.0.0.1:8080',
+        deliveryOwner: () => 'owner',
+        deliveryCharId: () => 'char-a',
+        resolvePresenceSession: ({required String charId, bool force = false}) async {
+          binds += 1;
+          return PresenceSessionGrant(
+            sessionId: force ? 'sess-rebound' : 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          );
+        },
+        onPresenceSessionInvalid: () => invalidated += 1,
+      );
+      addTearDown(scoped.dispose);
+      scoped.send('ping');
+      for (var i = 0; i < 20 && (scoped.sending || backend.chats < 2); i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(backend.chats, 2);
+      expect(backend.sentSessionIds, ['sess-char-a', 'sess-rebound']);
+      expect(backend.sentRequestIds, hasLength(2));
+      expect(backend.sentRequestIds[0], backend.sentRequestIds[1]);
+      expect(backend.sentRequestIds.first, startsWith('req_'));
+      expect(binds, greaterThanOrEqualTo(2));
+      expect(invalidated, 1);
+      expect(scoped.backendError, isNull);
+      expect(scoped.sent.where((m) => m.role == 'him').single.text, 'echo:ping');
     },
   );
 }

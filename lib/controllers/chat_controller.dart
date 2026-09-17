@@ -29,6 +29,13 @@ class ChatController extends ChangeNotifier {
     String? Function()? deliveryOrigin,
     String? Function()? deliveryOwner,
     String? Function()? deliveryCharId,
+    Future<PresenceSessionGrant?> Function({
+      required String charId,
+      bool force,
+    })?
+    resolvePresenceSession,
+    void Function()? onPresenceSessionInvalid,
+    String? Function()? presenceBindError,
   }) : _backend = backend,
        _token = token,
        _settings = settings,
@@ -38,7 +45,10 @@ class ChatController extends ChangeNotifier {
        _autoPlayVoice = autoPlayVoice ?? _alwaysDisabled,
        _deliveryOrigin = deliveryOrigin ?? _alwaysNull,
        _deliveryOwner = deliveryOwner ?? _alwaysNull,
-       _deliveryCharId = deliveryCharId ?? _alwaysNull {
+       _deliveryCharId = deliveryCharId ?? _alwaysNull,
+       _resolvePresenceSession = resolvePresenceSession,
+       _onPresenceSessionInvalid = onPresenceSessionInvalid,
+       _presenceBindError = presenceBindError {
     scrollController.addListener(_handleScroll);
   }
 
@@ -61,6 +71,13 @@ class ChatController extends ChangeNotifier {
   final String? Function() _deliveryOrigin;
   final String? Function() _deliveryOwner;
   final String? Function() _deliveryCharId;
+  final Future<PresenceSessionGrant?> Function({
+    required String charId,
+    bool force,
+  })?
+  _resolvePresenceSession;
+  final void Function()? _onPresenceSessionInvalid;
+  final String? Function()? _presenceBindError;
   String? pendingHandoffError;
   String? _boundDeliveryOrigin;
   String? _boundDeliveryOwner;
@@ -306,8 +323,14 @@ class ChatController extends ChangeNotifier {
     sent[index] = sent[index].settled();
   }
 
-  Future<String> loadReasoning(String turnId) =>
-      _backend().loadTurnReasoning(turnId, token: _accessToken!);
+  Future<String> loadReasoning(String turnId) async {
+    final grant = await _requirePresenceGrant();
+    return _backend().loadTurnReasoning(
+      turnId,
+      token: _accessToken!,
+      sessionId: grant.sessionId,
+    );
+  }
 
   String _mediaCacheKey(String digest) {
     final scope = _captureScope(_session.generation);
@@ -348,7 +371,20 @@ class ChatController extends ChangeNotifier {
     SessionScope scope,
   ) async {
     try {
-      final bytes = await _backend().downloadChatMedia(digest, token: token);
+      final grant = await _requirePresenceGrant();
+      if (!scope.matchesLive(
+        generation: _session.generation,
+        origin: _deliveryOrigin(),
+        owner: _deliveryOwner(),
+        charId: _deliveryCharId(),
+      )) {
+        return null;
+      }
+      final bytes = await _backend().downloadChatMedia(
+        digest,
+        token: token,
+        sessionId: grant.sessionId,
+      );
       if (bytes.isEmpty) return null;
       if (!scope.matchesLive(
         generation: _session.generation,
@@ -375,6 +411,101 @@ class ChatController extends ChangeNotifier {
     if (index >= 0) sent[index] = sent[index].copyWith(turnId: turnId);
   }
 
+  bool _scopeStillLive(int generation, SessionScope scope) {
+    return !_session.isStale(generation) &&
+        scope.matchesLive(
+          generation: _session.generation,
+          origin: _deliveryOrigin(),
+          owner: _deliveryOwner(),
+          charId: _deliveryCharId(),
+        );
+  }
+
+  Future<PresenceSessionGrant> _requirePresenceGrant({bool force = false}) async {
+    final charId = SessionScope.normalize(_deliveryCharId());
+    if (charId == null) {
+      throw const SessionScopeUnsupportedException();
+    }
+    final resolver = _resolvePresenceSession;
+    if (resolver == null) {
+      throw const SessionScopeUnsupportedException();
+    }
+    final grant = await resolver(charId: charId, force: force);
+    if (grant != null) return grant;
+    final bindError = SessionScope.normalize(_presenceBindError?.call());
+    throw BackendException(bindError ?? 'session_scope_unsupported');
+  }
+
+  Future<BackendChatResponse> _sendChatAttempt({
+    required String text,
+    required String token,
+    required PresenceSessionGrant grant,
+    required String requestId,
+    ReplyTarget? replyTo,
+  }) {
+    return _backend().sendChat(
+      text,
+      token: token,
+      replyTo: replyTo,
+      sessionId: grant.sessionId,
+      requestId: requestId,
+    );
+  }
+
+  Future<BackendChatResponse> _scopedChatCall({
+    required SessionScope scope,
+    required int generation,
+    required String requestId,
+    required Future<BackendChatResponse> Function(PresenceSessionGrant grant)
+    call,
+  }) async {
+    var grant = await _requirePresenceGrant();
+    if (!_scopeStillLive(generation, scope)) {
+      throw const BackendException('session_scope_stale');
+    }
+    try {
+      return await call(grant);
+    } on BackendException catch (e) {
+      if (!e.isSessionNotFound || !_scopeStillLive(generation, scope)) {
+        rethrow;
+      }
+      _onPresenceSessionInvalid?.call();
+      grant = await _requirePresenceGrant(force: true);
+      if (!_scopeStillLive(generation, scope)) {
+        throw const BackendException('session_scope_stale');
+      }
+      return call(grant);
+    }
+  }
+
+  Future<void> _applyChatResponse({
+    required BackendChatResponse response,
+    required int userId,
+    required ChatMessage anchor,
+  }) async {
+    _bindUserTurn(userId, response.turnId);
+    final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
+    if (anchorIndex >= 0) {
+      sent[anchorIndex] = ChatMessage(
+        id: anchor.id,
+        role: 'reasoning',
+        text: response.turnId ?? '',
+        time: anchor.time,
+        failed: response.turnId == null,
+        turnId: response.turnId,
+      );
+    }
+    notifyListeners();
+    lastBackendReply = response;
+    if (_shouldAppendSynchronousReply(response)) {
+      await _appendReply(
+        response.reply,
+        displayText: response.displayText,
+        turnId: response.turnId,
+      );
+    }
+  }
+
   Future<void> _send(
     String text, {
     required int userId,
@@ -386,53 +517,29 @@ class ChatController extends ChangeNotifier {
     sent.add(anchor);
     notifyListeners();
     try {
-      // char_id wire freeze awaits backend B/C; local scope still gates apply.
-      final response = await _backend().sendChat(
-        text,
-        token: _accessToken!,
-        replyTo: replyTo,
+      final requestId = mintRequestId();
+      final response = await _scopedChatCall(
+        scope: scope,
+        generation: generation,
+        requestId: requestId,
+        call: (grant) => _sendChatAttempt(
+          text: text,
+          token: _accessToken!,
+          replyTo: replyTo,
+          grant: grant,
+          requestId: requestId,
+        ),
       );
-      if (_session.isStale(generation) ||
-          !scope.matchesLive(
-            generation: _session.generation,
-            origin: _deliveryOrigin(),
-            owner: _deliveryOwner(),
-            charId: _deliveryCharId(),
-          )) {
-        return;
-      }
-      _bindUserTurn(userId, response.turnId);
-      final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
-      if (anchorIndex >= 0) {
-        sent[anchorIndex] = ChatMessage(
-          id: anchor.id,
-          role: 'reasoning',
-          text: response.turnId ?? '',
-          time: anchor.time,
-          failed: response.turnId == null,
-          turnId: response.turnId,
-        );
-      }
-      notifyListeners();
-      lastBackendReply = response;
-      if (_shouldAppendSynchronousReply(response)) {
-        await _appendReply(
-          response.reply,
-          displayText: response.displayText,
-          turnId: response.turnId,
-        );
-      }
+      if (!_scopeStillLive(generation, scope)) return;
+      await _applyChatResponse(
+        response: response,
+        userId: userId,
+        anchor: anchor,
+      );
     } on BackendException catch (e) {
-      if (_session.isStale(generation) ||
-          !scope.matchesLive(
-            generation: _session.generation,
-            origin: _deliveryOrigin(),
-            owner: _deliveryOwner(),
-            charId: _deliveryCharId(),
-          )) {
-        return;
-      }
+      if (!_scopeStillLive(generation, scope)) return;
       backendError = e.message;
+      if (e.isSessionNotFound) _onPresenceSessionInvalid?.call();
       _markLastSendFailed();
       /*
         ChatMessage(
@@ -551,14 +658,25 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     }
     try {
-      final dates = (await backend.loadChatLogDates(token: token)).dates;
+      final grant = await _requirePresenceGrant();
+      if (_session.isStale(generation)) return;
+      final dates = (await backend.loadChatLogDates(
+        token: token,
+        sessionId: grant.sessionId,
+        characterId: _deliveryCharId(),
+      )).dates;
       final loaded = <String>[];
       var messages = <ChatMessage>[];
       var exhausted = dates.isEmpty;
       if (dates.isNotEmpty) {
         final today = _dateKey(DateTime.now());
         var firstDate = dates.contains(today) ? today : dates.first;
-        var day = await backend.loadChatLogDay(firstDate, token: token);
+        var day = await backend.loadChatLogDay(
+          firstDate,
+          token: token,
+          sessionId: grant.sessionId,
+          characterId: _deliveryCharId(),
+        );
         messages = _messagesFromDay(day);
         loaded.add(firstDate);
         final index = dates.indexOf(firstDate);
@@ -566,7 +684,12 @@ class ChatController extends ChangeNotifier {
             ? dates[index + 1]
             : null;
         if (_conversationCount(messages) < 10 && previous != null) {
-          day = await backend.loadChatLogDay(previous, token: token);
+          day = await backend.loadChatLogDay(
+            previous,
+            token: token,
+            sessionId: grant.sessionId,
+            characterId: _deliveryCharId(),
+          );
           messages = [..._messagesFromDay(day), ...messages];
           loaded.insert(0, previous);
           firstDate = previous;
@@ -690,9 +813,13 @@ class ChatController extends ChangeNotifier {
     historyError = null;
     notifyListeners();
     try {
+      final grant = await _requirePresenceGrant();
+      if (_session.isStale(generation)) return;
       final day = await backend.loadChatLogDay(
         _availableDates[targetIndex],
         token: token,
+        sessionId: grant.sessionId,
+        characterId: _deliveryCharId(),
       );
       if (_session.isStale(generation) ||
           _accessToken != token ||
@@ -1053,37 +1180,30 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
     scrollToBottom();
     try {
-      final response = await _backend().uploadFiles(
-        files: files,
-        token: token,
-        channel: 'mobile',
-        message: message,
+      final requestId = mintRequestId();
+      final response = await _scopedChatCall(
+        scope: _captureScope(generation),
+        generation: generation,
+        requestId: requestId,
+        call: (grant) => _backend().uploadFiles(
+          files: files,
+          token: token,
+          channel: 'mobile',
+          message: message,
+          sessionId: grant.sessionId,
+          requestId: requestId,
+        ),
       );
       if (_session.isStale(generation)) return;
-      _bindUserTurn(outgoing.id, response.turnId);
-      final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
-      if (anchorIndex >= 0) {
-        sent[anchorIndex] = ChatMessage(
-          id: anchor.id,
-          role: 'reasoning',
-          text: response.turnId ?? '',
-          time: anchor.time,
-          failed: response.turnId == null,
-          turnId: response.turnId,
-        );
-      }
-      notifyListeners();
-      lastBackendReply = response;
-      if (_shouldAppendSynchronousReply(response)) {
-        await _appendReply(
-          response.reply,
-          displayText: response.displayText,
-          turnId: response.turnId,
-        );
-      }
+      await _applyChatResponse(
+        response: response,
+        userId: outgoing.id,
+        anchor: anchor,
+      );
     } on BackendException catch (e) {
       if (_session.isStale(generation)) return;
       backendError = e.message;
+      if (e.isSessionNotFound) _onPresenceSessionInvalid?.call();
       final index = sent.indexWhere((item) => item.id == outgoing.id);
       if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
       scrollToBottom();

@@ -4,7 +4,7 @@
 
 `ConversationCalendarController` 独立持有查询、选中日期、连续天数与请求 generation；页面负责创建和销毁，组合根仅传入连接、显示名和本机配色。不添加 Timer、业务台账或统计缓存。
 
-HTTP：`GET /chat-log/stats/calendar`，复用 `BackendClient` 的 origin 校验、Bearer、超时和错误处理，要求 `memory.read` + `state.read`。周期请求使用 period/date；后续当日和连续天数查询固定首次响应的 char_id，避免后台切换角色导致混算。迟到响应不会覆盖新查询，离开页面后不更新已销毁控制器。
+HTTP：`GET /chat-log/stats/calendar`，复用 `BackendClient` 的 origin 校验、Bearer、超时和错误处理，要求 `memory.read` + `state.read`。有 Reality session 时带 `X-Presence-Session`，角色以 grant 为准；无 session 的旧路径仍可带 query `char_id`。周期请求使用 period/date；后续当日和连续天数查询固定首次响应的 char_id，避免后台切换角色导致混算。迟到响应不会覆盖新查询，离开页面后不更新已销毁控制器。
 
 日期以服务器为准，默认查询不发送客户端今天。连续天数从服务器今天开始（今天为零时从昨天开始），回看最多 366 天；只累计实际已知且大于零的聊天轮数。到未知历史边界或查询上限时显示 `≥`，没有证据时不虚构连续天数。tracking_since 不参与陪伴时长推算。
 

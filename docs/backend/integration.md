@@ -1,16 +1,27 @@
 # 后端集成
 
-## 本机会话 scope（2026-09-17，partial / blocked）
+## 本机会话 scope（2026-09-18，consumer current）
 
 手机本机 Reality 会话角色按后端节点 origin + owner 持久化，与管理面/其他端
-`active_character` 分离；资料页切换不再写全局 active。发送/回包应用、媒体进程内缓存与
-poll 展示使用本地 `SessionScope`（含 generation）。共享 mobile queue cursor 仍为
-origin+owner；前台对其它角色条目 stash pending 后再 ack。
+`active_character` 分离；资料页切换不再写全局 active。发现入口是
+`GET /auth/whoami` 的 `capabilities.session_scope="v1"`；缺失或非 v1 时本地
+`session_scope_unsupported`，禁止发送、禁止静默走 live active。
 
-**blocked**：后端综合工单 B/C 尚未交付 capability/version、冻结 char_id 授权、错误码与
-fixtures；当前 `POST /mobile/chat` 仍走 active 角色，手机不猜字段、不改 cursor 作用域。
-Dream 独立。详见 [mobile-channel.md](../protocols/mobile-channel.md) 与
-[22 号工单](../../cc-tasks/22-session-scope-backend-coordination.md)。
+绑定：`POST /v1/sessions` body `{char_id, domain: reality}`，权威是返回的不透明
+`session_id`。后续 `POST /mobile/chat`、`POST /upload/ingest`、
+`GET /chat/media/{sha256}`、`GET /chat-log/dates|{date}`、
+`GET /chat-log/stats/calendar`、`GET /chat/turns/{turn_id}/reasoning` 带
+`X-Presence-Session`。chat/upload 仅在有 session 时 mint `request_id`
+（`req_` + hex 微秒）；202 `in_flight` 当错误，不当地成功回复。404
+`session_not_found` 清 grant 后用同一 `request_id` 重绑一次；403/404 角色错误
+fail-loud。无 session 的旧 chat-log 仍可带 `?char_id=`；有 header 时不再附 query。
+
+本地 `SessionScope` 仍冻结 origin/owner/char/generation，用于回包归档与媒体缓存。
+poll/ack cursor 仍是 origin+owner；前台对其它角色条目 stash pending 后再 ack。
+后台通知标题优先信封 `char_id` 的分槽备注名/头像，点击只打开 App 做 catch-up，
+不切换本机会话、不改其他设备 active。Dream 独立域，不复用 Reality session。
+真机与真实后端联调仍 observe。详见 [mobile-channel.md](../protocols/mobile-channel.md)
+与 [22 号工单](../../cc-tasks/22-session-scope-backend-coordination.md)。
 
 ## 跨来源消息身份（2026-09-17）
 

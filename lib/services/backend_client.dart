@@ -44,7 +44,15 @@ import '../models/app_models.dart'
         ReadingPageResult,
         ReadingState;
 import '../models/screen_context.dart';
+import '../models/session_scope.dart';
 import 'app_settings_store.dart';
+
+const _presenceSessionHeader = 'X-Presence-Session';
+
+String mintRequestId() {
+  final stamp = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
+  return 'req_$stamp';
+}
 
 class BackendClient {
   BackendClient({
@@ -69,6 +77,7 @@ class BackendClient {
     String? character,
     String? start,
     String? end,
+    String? sessionId,
   }) async {
     final query = Uri(
       queryParameters: {
@@ -80,7 +89,11 @@ class BackendClient {
       },
     ).query;
     return ConversationCalendar.fromJson(
-      await _request('/chat-log/stats/calendar?$query', token: token),
+      await _request(
+        '/chat-log/stats/calendar?$query',
+        token: token,
+        sessionId: sessionId,
+      ),
     );
   }
 
@@ -98,6 +111,7 @@ class BackendClient {
     String sha256, {
     required String token,
     Duration timeout = const Duration(seconds: 30),
+    String? sessionId,
   }) async {
     final digest = sha256.trim().toLowerCase();
     if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(digest)) {
@@ -110,6 +124,10 @@ class BackendClient {
       final request = await client.getUrl(endpoint);
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      final scoped = sessionId?.trim();
+      if (scoped != null && scoped.isNotEmpty) {
+        request.headers.set(_presenceSessionHeader, scoped);
+      }
       final response = await request.close().timeout(timeout);
       final builder = BytesBuilder(copy: false);
       await for (final chunk in response) {
@@ -140,6 +158,7 @@ class BackendClient {
     Map<String, dynamic>? body,
     Duration timeout = const Duration(seconds: 20),
     bool expectJson = true,
+    String? sessionId,
   }) async {
     final client = _httpClientFactory()
       ..connectionTimeout = const Duration(seconds: 8);
@@ -153,6 +172,10 @@ class BackendClient {
       };
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      final scoped = sessionId?.trim();
+      if (scoped != null && scoped.isNotEmpty) {
+        request.headers.set(_presenceSessionHeader, scoped);
+      }
       if (body != null) {
         request.headers.contentType = ContentType.json;
         request.write(jsonEncode(body));
@@ -162,7 +185,9 @@ class BackendClient {
           .transform(utf8.decoder)
           .join()
           .timeout(timeout);
-      if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (response.statusCode == 202 ||
+          response.statusCode < 200 ||
+          response.statusCode >= 300) {
         throw BackendException(
           _extractError(responseBody, response.statusCode),
           statusCode: response.statusCode,
@@ -185,17 +210,76 @@ class BackendClient {
     }
   }
 
-  Future<ChatLogDates> loadChatLogDates({required String token}) async {
+  Future<ChatLogDates> loadChatLogDates({
+    required String token,
+    String? sessionId,
+    String? characterId,
+  }) async {
     return ChatLogDates.fromJson(
-      await _request('/chat-log/dates', token: token),
+      await _request(
+        '/chat-log/dates${_legacyCharQuery(sessionId, characterId)}',
+        token: token,
+        sessionId: sessionId,
+      ),
     );
   }
 
   Future<ChatLogDay> loadChatLogDay(
     String date, {
     required String token,
+    String? sessionId,
+    String? characterId,
   }) async {
-    return ChatLogDay.fromJson(await _request('/chat-log/$date', token: token));
+    return ChatLogDay.fromJson(
+      await _request(
+        '/chat-log/$date${_legacyCharQuery(sessionId, characterId)}',
+        token: token,
+        sessionId: sessionId,
+      ),
+    );
+  }
+
+  static String _legacyCharQuery(String? sessionId, String? characterId) {
+    if (sessionId != null && sessionId.trim().isNotEmpty) return '';
+    final charId = SessionScope.normalize(characterId);
+    if (charId == null) return '';
+    return '?${Uri(queryParameters: {'char_id': charId}).query}';
+  }
+
+  Future<SessionScopeCapability> loadSessionScopeCapability({
+    required String token,
+  }) async {
+    try {
+      final decoded = await _request('/auth/whoami', token: token);
+      return SessionScopeCapability.fromWhoami(decoded);
+    } on BackendException catch (e) {
+      if (e.statusCode == 404 || e.statusCode == 405) {
+        return SessionScopeCapability.unsupported;
+      }
+      rethrow;
+    }
+  }
+
+  Future<PresenceSessionGrant> createPresenceSession({
+    required String token,
+    required String charId,
+  }) async {
+    final cleaned = SessionScope.normalize(charId);
+    if (cleaned == null) {
+      throw const BackendException('character_unavailable', statusCode: 422);
+    }
+    try {
+      return PresenceSessionGrant.fromJson(
+        await _request(
+          '/v1/sessions',
+          token: token,
+          method: 'POST',
+          body: {'char_id': cleaned, 'domain': 'reality'},
+        ),
+      );
+    } on FormatException {
+      throw const BackendException('invalid session grant');
+    }
   }
 
   Future<GardenState> loadGardenState({required String token}) async {
@@ -289,10 +373,12 @@ class BackendClient {
   Future<String> loadTurnReasoning(
     String turnId, {
     required String token,
+    String? sessionId,
   }) async {
     final result = await _request(
       '/chat/turns/${Uri.encodeComponent(turnId)}/reasoning',
       token: token,
+      sessionId: sessionId,
     );
     if (result['turn_id'] != turnId) {
       throw const BackendException('Invalid reasoning response');
@@ -315,6 +401,8 @@ class BackendClient {
     String message, {
     required String token,
     ReplyTarget? replyTo,
+    String? sessionId,
+    String? requestId,
   }) async {
     final receipt = _voiceToken == token && _voiceText?.trim() == message.trim()
         && (_voiceExpires?.isAfter(DateTime.now()) ?? false) ? _voiceReceipt : null;
@@ -322,15 +410,23 @@ class BackendClient {
     _voiceText = null;
     _voiceToken = null;
     _voiceExpires = null;
+    final scoped = sessionId?.trim();
+    final scopedRequestId = (scoped == null || scoped.isEmpty)
+        ? null
+        : (requestId != null && requestId.trim().isNotEmpty
+            ? requestId.trim()
+            : mintRequestId());
     return BackendChatResponse.fromJson(
       await _request(
         '/mobile/chat',
         token: token,
         method: 'POST',
+        sessionId: scoped,
         body: {
           'message': message,
           if (replyTo != null) 'reply_to': replyTo.toJson(),
           if (receipt != null) 'audio_perception_id': receipt,
+          if (scopedRequestId != null) 'request_id': scopedRequestId,
         },
         timeout: const Duration(seconds: 120),
       ),
@@ -572,12 +668,16 @@ class BackendClient {
     required String token,
     String message = '',
     String channel = 'mobile',
+    String? sessionId,
+    String? requestId,
   }) async {
     return uploadFiles(
       files: [file],
       token: token,
       message: message,
       channel: channel,
+      sessionId: sessionId,
+      requestId: requestId,
     );
   }
 
@@ -586,6 +686,8 @@ class BackendClient {
     required String token,
     String message = '',
     String channel = 'mobile',
+    String? sessionId,
+    String? requestId,
   }) async {
     if (files.isEmpty) {
       throw const BackendException('没有选择文件');
@@ -597,6 +699,10 @@ class BackendClient {
       final request = await client.postUrl(endpoint);
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      final scoped = sessionId?.trim();
+      if (scoped != null && scoped.isNotEmpty) {
+        request.headers.set(_presenceSessionHeader, scoped);
+      }
       final boundary =
           '----presence-mobile-${DateTime.now().millisecondsSinceEpoch}';
       request.headers.set(
@@ -616,6 +722,14 @@ class BackendClient {
 
       writeTextField('message', message);
       writeTextField('channel', channel);
+      final scopedRequestId = (scoped == null || scoped.isEmpty)
+          ? null
+          : (requestId != null && requestId.trim().isNotEmpty
+              ? requestId.trim()
+              : mintRequestId());
+      if (scopedRequestId != null) {
+        writeTextField('request_id', scopedRequestId);
+      }
       for (final file in files) {
         request.add(
           utf8.encode(
@@ -633,7 +747,9 @@ class BackendClient {
         const Duration(seconds: 180),
       );
       final body = await response.transform(utf8.decoder).join();
-      if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (response.statusCode == 202 ||
+          response.statusCode < 200 ||
+          response.statusCode >= 300) {
         throw BackendException(
           _extractError(body, response.statusCode),
           statusCode: response.statusCode,
@@ -1424,6 +1540,7 @@ class BackendClient {
     } catch (_) {
       // Fall through to the status-based messages below.
     }
+    if (_isSessionScopeCode(detail)) return detail!;
     switch (statusCode) {
       case 401:
         return 'token 无效，请检查系统设置里的 token';
@@ -1433,6 +1550,26 @@ class BackendClient {
         return '认证失败过多，来源已被临时限制，稍后再试';
       default:
         return detail ?? 'HTTP $statusCode';
+    }
+  }
+
+  static bool _isSessionScopeCode(String? detail) {
+    switch (detail) {
+      case 'session_not_found':
+      case 'character_not_authorized':
+      case 'character_revoked':
+      case 'character_unavailable':
+      case 'request_payload_conflict':
+      case 'in_flight':
+      case 'execution_outcome_unknown':
+      case 'session_scope_required':
+      case 'session_domain_unsupported':
+      case 'invalid_session_request':
+      case 'invalid_request_id':
+      case 'owner_scope_unavailable':
+        return true;
+      default:
+        return false;
     }
   }
 
@@ -1465,6 +1602,19 @@ class BackendException implements Exception {
   final String message;
   final int? statusCode;
 
+  bool get isSessionNotFound =>
+      statusCode == 404 && message == 'session_not_found';
+
+  bool get isInFlight => statusCode == 202 && message == 'in_flight';
+
+  bool get isOutcomeUnknown =>
+      statusCode == 503 && message == 'execution_outcome_unknown';
+
   @override
   String toString() => message;
+}
+
+class SessionScopeUnsupportedException extends BackendException {
+  const SessionScopeUnsupportedException()
+    : super('session_scope_unsupported');
 }

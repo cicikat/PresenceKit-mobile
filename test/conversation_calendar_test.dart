@@ -31,6 +31,7 @@ class CalendarBackend extends BackendClient {
     String? character,
     String? start,
     String? end,
+    String? sessionId,
   }) async {
     requests.add({
       'period': period,
@@ -38,6 +39,7 @@ class CalendarBackend extends BackendClient {
       'char_id': character,
       'start': start,
       'end': end,
+      'session_id': sessionId,
     });
     if (fail) throw const BackendException('unavailable', statusCode: 503);
     if (pending case final wait?) {

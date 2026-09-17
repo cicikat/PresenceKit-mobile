@@ -1,8 +1,8 @@
 /// Frozen request identity for Reality chat / delivery.
 ///
-/// [generation] is the local ChatSessionCoordinator epoch. Backend wire
-/// fields for authorized frozen char_id / request_id still come from backend
-/// work order B/C; this type only freezes what the phone already knows.
+/// [generation] is the local ChatSessionCoordinator epoch. Wire freeze uses
+/// a server-issued [PresenceSessionGrant] (`X-Presence-Session`) discovered
+/// via `GET /auth/whoami` `capabilities.session_scope=v1`.
 class SessionScope {
   const SessionScope({
     this.origin,
@@ -49,5 +49,68 @@ class SessionScope {
     final actual = normalize(messageCharId);
     if (expected == null || actual == null) return true;
     return expected == actual;
+  }
+}
+
+/// Server-advertised session-scope capability from `GET /auth/whoami`.
+class SessionScopeCapability {
+  const SessionScopeCapability({required this.supported, this.version});
+
+  final bool supported;
+  final String? version;
+
+  static const unsupported = SessionScopeCapability(supported: false);
+
+  factory SessionScopeCapability.fromWhoami(Map<String, dynamic> json) {
+    final capabilities = json['capabilities'];
+    if (capabilities is! Map) return unsupported;
+    final raw = capabilities['session_scope']?.toString().trim();
+    if (raw == null || raw.isEmpty) return unsupported;
+    return SessionScopeCapability(supported: raw == 'v1', version: raw);
+  }
+}
+
+/// Opaque Reality session issued by `POST /v1/sessions`.
+class PresenceSessionGrant {
+  const PresenceSessionGrant({
+    required this.sessionId,
+    required this.charId,
+    required this.ownerId,
+    required this.domain,
+    this.expiresAt,
+  });
+
+  final String sessionId;
+  final String charId;
+  final String ownerId;
+  final String domain;
+  final DateTime? expiresAt;
+
+  factory PresenceSessionGrant.fromJson(Map<String, dynamic> json) {
+    final sessionId = SessionScope.normalize(json['session_id']?.toString());
+    final charId = SessionScope.normalize(json['char_id']?.toString());
+    if (sessionId == null || charId == null) {
+      throw const FormatException('invalid session grant');
+    }
+    DateTime? expiresAt;
+    final rawExpires = json['expires_at'];
+    if (rawExpires is num) {
+      final seconds = rawExpires.toDouble();
+      if (seconds.isFinite && seconds > 0) {
+        expiresAt = DateTime.fromMillisecondsSinceEpoch(
+          (seconds * 1000).round(),
+          isUtc: true,
+        );
+      }
+    } else if (rawExpires is String && rawExpires.trim().isNotEmpty) {
+      expiresAt = DateTime.tryParse(rawExpires.trim());
+    }
+    return PresenceSessionGrant(
+      sessionId: sessionId,
+      charId: charId,
+      ownerId: SessionScope.normalize(json['owner_id']?.toString()) ?? '',
+      domain: SessionScope.normalize(json['domain']?.toString()) ?? 'reality',
+      expiresAt: expiresAt,
+    );
   }
 }

@@ -13,7 +13,8 @@ import '../services/device_services.dart';
 ///
 /// Reality session character is a local preference keyed by origin+owner and is
 /// independent of server `active_character`. Display names/avatars are not
-/// execution authorization; chat wire freeze still awaits backend B/C.
+/// execution authorization; chat/upload/history freeze uses a server-issued
+/// [PresenceSessionGrant] after whoami discovery.
 class ProfileAppearanceController extends ChangeNotifier {
   ProfileAppearanceController({
     required SettingsStore settings,
@@ -46,6 +47,12 @@ class ProfileAppearanceController extends ChangeNotifier {
   bool loadingPromptAssets = false;
   bool savingPromptAssets = false;
   String? promptAssetsError;
+  SessionScopeCapability sessionScopeCapability =
+      SessionScopeCapability.unsupported;
+  PresenceSessionGrant? presenceGrant;
+  String? sessionBindError;
+  bool bindingPresenceSession = false;
+  int _sessionBindGeneration = 0;
 
   @override
   void notifyListeners() {
@@ -94,6 +101,26 @@ class ProfileAppearanceController extends ChangeNotifier {
     localOverride: profileNameOverride,
     backendName: backendCharacterDisplayName,
   );
+
+  bool get sessionScopeSupported => sessionScopeCapability.supported;
+
+  String? displayNameForCharacter(String? charId) {
+    final id = SessionScope.normalize(charId);
+    final assets = promptAssets;
+    if (id == null || assets == null) return null;
+    for (final character in assets.characters) {
+      if (character.id == id) return character.label;
+    }
+    return null;
+  }
+
+  PresenceSessionGrant? grantFor(String? charId) {
+    final expected = SessionScope.normalize(charId);
+    final grant = presenceGrant;
+    if (expected == null || grant == null) return null;
+    if (SessionScope.normalize(grant.charId) != expected) return null;
+    return grant;
+  }
 
   Future<void> restore() async {
     final chatAppearance = await _settings.loadChatAppearance();
@@ -225,6 +252,8 @@ class ProfileAppearanceController extends ChangeNotifier {
       promptAssets = assets;
       await _reconcileSessionCharacter(assets);
       if (_disposed || generation != _assetsGeneration) return;
+      await _refreshSessionScope(token);
+      if (_disposed || generation != _assetsGeneration) return;
     } on BackendException catch (e) {
       if (_disposed || generation != _assetsGeneration) return;
       promptAssetsError = e.message;
@@ -245,17 +274,22 @@ class ProfileAppearanceController extends ChangeNotifier {
     if (assets != null &&
         assets.characters.isNotEmpty &&
         !assets.characters.any((item) => item.id == cleaned)) {
-      promptAssetsError = 'character unavailable';
+      promptAssetsError = 'character_unavailable';
       notifyListeners();
       return;
     }
     sessionCharacterId = cleaned;
+    presenceGrant = null;
+    sessionBindError = null;
     await _settings.saveSessionCharacterId(
       cleaned,
       origin: _currentOrigin,
       owner: _currentOwner,
     );
     notifyListeners();
+    await _cacheDisplayName();
+    final token = _accessToken;
+    if (token != null) await ensurePresenceSession(charId: cleaned);
   }
 
   /// Admin/server active character write. Not used for this-device session
@@ -331,6 +365,91 @@ class ProfileAppearanceController extends ChangeNotifier {
         owner: _currentOwner,
       );
     }
+  }
+
+  Future<void> _refreshSessionScope(String token) async {
+    try {
+      sessionScopeCapability = await _backend().loadSessionScopeCapability(
+        token: token,
+      );
+      sessionBindError = sessionScopeSupported ? null : 'session_scope_unsupported';
+      if (!sessionScopeSupported) {
+        presenceGrant = null;
+        return;
+      }
+    } on BackendException catch (e) {
+      sessionScopeCapability = SessionScopeCapability.unsupported;
+      sessionBindError = e.message;
+      presenceGrant = null;
+      return;
+    }
+    final charId = currentCharacterId;
+    if (charId == null) return;
+    await ensurePresenceSession(charId: charId);
+  }
+
+  /// Discovers session_scope=v1 and binds a Reality grant for [charId].
+  /// Missing capability is fail-loud: no silent fallback to live active.
+  Future<PresenceSessionGrant?> ensurePresenceSession({
+    String? charId,
+    bool force = false,
+  }) async {
+    final token = _accessToken;
+    final requested = SessionScope.normalize(charId) ?? currentCharacterId;
+    if (token == null || requested == null) return null;
+    if (!force) {
+      final existing = grantFor(requested);
+      if (existing != null) return existing;
+    }
+    final generation = ++_sessionBindGeneration;
+    bindingPresenceSession = true;
+    sessionBindError = null;
+    notifyListeners();
+    try {
+      if (!sessionScopeSupported) {
+        sessionScopeCapability = await _backend().loadSessionScopeCapability(
+          token: token,
+        );
+      }
+      if (_disposed || generation != _sessionBindGeneration) return null;
+      if (!sessionScopeSupported) {
+        sessionBindError = 'session_scope_unsupported';
+        presenceGrant = null;
+        return null;
+      }
+      final grant = await _backend().createPresenceSession(
+        token: token,
+        charId: requested,
+      );
+      if (_disposed || generation != _sessionBindGeneration) return null;
+      if (SessionScope.normalize(grant.charId) != requested) {
+        sessionBindError = 'character_unavailable';
+        presenceGrant = null;
+        return null;
+      }
+      presenceGrant = grant;
+      sessionBindError = null;
+      return grant;
+    } on BackendException catch (e) {
+      if (_disposed || generation != _sessionBindGeneration) return null;
+      sessionBindError = e.message;
+      presenceGrant = null;
+      return null;
+    } catch (e) {
+      if (_disposed || generation != _sessionBindGeneration) return null;
+      sessionBindError = e.toString();
+      presenceGrant = null;
+      return null;
+    } finally {
+      if (!_disposed && generation == _sessionBindGeneration) {
+        bindingPresenceSession = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  void invalidatePresenceGrant() {
+    presenceGrant = null;
   }
 
   Future<void> _cacheDisplayName() =>

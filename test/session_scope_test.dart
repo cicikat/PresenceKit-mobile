@@ -1,5 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:presencekit_mobile/l10n/l10n.dart';
 import 'package:presencekit_mobile/models/session_scope.dart';
+import 'package:presencekit_mobile/services/backend_client.dart';
 
 void main() {
   test('normalize trims empty values to null', () {
@@ -63,5 +66,78 @@ void main() {
       generation: 1,
     );
     expect(scope.mediaCachePrefix, 'http://x|o|c');
+  });
+
+  test('whoami without v1 is unsupported', () {
+    expect(
+      SessionScopeCapability.fromWhoami(const {
+        'label': 'mobile',
+        'scopes': ['chat'],
+      }).supported,
+      isFalse,
+    );
+    expect(
+      SessionScopeCapability.fromWhoami(const {
+        'capabilities': {'session_scope': 'v1'},
+      }).supported,
+      isTrue,
+    );
+    expect(
+      SessionScopeCapability.fromWhoami(const {
+        'capabilities': {'session_scope': 'v0'},
+      }).supported,
+      isFalse,
+    );
+  });
+
+  test('session grant requires opaque session_id and frozen char_id', () {
+    final grant = PresenceSessionGrant.fromJson(const {
+      'session_id': 'pss_fixture',
+      'char_id': 'char-b',
+      'owner_id': 'owner',
+      'domain': 'reality',
+      'expires_at': 1770000000,
+    });
+    expect(grant.sessionId, 'pss_fixture');
+    expect(grant.charId, 'char-b');
+    expect(grant.expiresAt!.isUtc, isTrue);
+    expect(
+      () => PresenceSessionGrant.fromJson(const {'char_id': 'char-b'}),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
+  test('session error codes survive 403 mapping', () {
+    expect(
+      BackendClient.debugExtractError(
+        '{"detail": "character_revoked"}',
+        403,
+      ),
+      'character_revoked',
+    );
+    expect(
+      BackendClient.debugExtractError(
+        '{"detail": "session_not_found"}',
+        404,
+      ),
+      'session_not_found',
+    );
+    expect(
+      BackendClient.debugExtractError('{"detail": "in_flight"}', 202),
+      'in_flight',
+    );
+  });
+
+  test('session error codes localize without leaking protocol ids', () {
+    final l10n = lookupAppLocalizations(const Locale('zh'));
+    expect(
+      localizeSessionScopeError(l10n, 'session_scope_unsupported'),
+      l10n.sessionScopeUnsupported,
+    );
+    expect(
+      localizeSessionScopeError(l10n, 'character_revoked'),
+      l10n.sessionCharacterRevoked,
+    );
+    expect(localizeSessionScopeError(l10n, 'offline'), 'offline');
   });
 }

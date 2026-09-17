@@ -147,10 +147,10 @@ class MobileNotificationService : Service() {
         }.getOrNull()
         Log.d(tag, "debug background delivery behavior=${behavior != null}")
         if (behavior == null) {
-            showMessageNotification(content)
+            showMessageNotification(content, null)
             return
         }
-        deliverBackgroundMessage(content, behavior)
+        deliverBackgroundMessage(content, behavior, null)
     }
 
     private fun startConsumerCoordinator(startId: Int) {
@@ -785,7 +785,11 @@ class MobileNotificationService : Service() {
             }
             return false
         }
-        deliverBackgroundMessage(content, item.optJSONObject("behavior"))
+        deliverBackgroundMessage(
+            content,
+            item.optJSONObject("behavior"),
+            item.optString("char_id").trim().ifEmpty { null },
+        )
         return true
     }
 
@@ -907,22 +911,26 @@ class MobileNotificationService : Service() {
             .setContentIntent(openAppIntent())
             .build()
 
-    private fun deliverBackgroundMessage(content: String, behavior: JSONObject?) {
+    private fun deliverBackgroundMessage(
+        content: String,
+        behavior: JSONObject?,
+        charId: String?,
+    ) {
         val overlay = overlayRequestFor(behavior)
         if (overlay != null && showBehaviorOverlay(content, overlay)) {
             return
         }
-        handleIncomingMessage(content)
+        handleIncomingMessage(content, charId)
     }
 
-    private fun handleIncomingMessage(content: String) {
+    private fun handleIncomingMessage(content: String, charId: String?) {
         val now = System.currentTimeMillis()
         val blockReason = notificationBlockReason(now)
         if (blockReason != null) {
             recordSuppressedMessage(blockReason)
             return
         }
-        showMessageNotification(content)
+        showMessageNotification(content, charId)
         servicePrefs()
             .edit()
             .putLong("lastMessageNotificationAt", now)
@@ -1073,24 +1081,39 @@ class MobileNotificationService : Service() {
         manager.notify(foregroundId, buildForegroundNotification(text))
     }
 
-    // Fully-resolved character display name cached by Flutter's
-    // _syncCachedCharacterDisplayName() (local nickname override, else backend
-    // character name, else neutral fallback). Falls back to the neutral label
-    // here too in case the cache was never written (fresh install, or the
-    // MethodChannel write raced with the very first background message).
-    private fun characterDisplayName(): String {
-        val cached = servicePrefs().getString("cachedCharacterDisplayName", null)?.trim().orEmpty()
+    // Title for a background message. Prefer the envelope speaker (`char_id`)
+    // so a non-current role is still named correctly; never switch the local
+    // Reality session. Cached current-session name remains the fallback for
+    // unscoped/legacy envelopes.
+    private fun characterDisplayName(charId: String?): String {
+        val prefs = servicePrefs()
+        val scoped = charId?.trim().orEmpty()
+        if (scoped.isNotEmpty()) {
+            val local = prefs.getString("profileDisplayName.$scoped", null)?.trim().orEmpty()
+            if (local.isNotBlank()) return local
+        }
+        val cached = prefs.getString("cachedCharacterDisplayName", null)?.trim().orEmpty()
         return cached.ifBlank { "TA" }
     }
 
-    // Same file MainActivity.avatarFile() writes to (app-private filesDir, not
-    // scoped by servicePrefs). Any Context \u2014 Service included \u2014 sees the same
-    // filesDir for this app, so no extra plumbing needed to share it.
-    private fun avatarBitmap(): Bitmap? {
-        val file = File(filesDir, "profile_avatar.png")
-        if (!file.exists()) return null
-        return runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+    private fun avatarBitmap(charId: String?): Bitmap? {
+        val scoped = charId?.trim().orEmpty()
+            .filter { ch -> ch.isLetterOrDigit() || ch == '_' || ch == '-' || ch == '.' }
+            .take(64)
+        val file = if (scoped.isEmpty()) {
+            File(filesDir, "profile_avatar.png")
+        } else {
+            File(filesDir, "profile_avatar_$scoped.png")
+        }
+        if (file.exists()) {
+            return runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+        }
+        val fallback = File(filesDir, "profile_avatar.png")
+        if (!fallback.exists()) return null
+        return runCatching { BitmapFactory.decodeFile(fallback.absolutePath) }.getOrNull()
     }
+
+
 
     // Banner preview budget: ~15 CJK chars/line, 2 lines max before it looks
     // cramped on a heads-up notification \u2014 measured empirically on-device, not
@@ -1119,11 +1142,11 @@ class MobileNotificationService : Service() {
 
     // 已静默收取的条数不再拼进弹窗正文（会顶掉两行预算）；能力检查页和常驻前台
     // 状态栏（recordSuppressedMessage → updateForegroundNotification）已经展示这个计数。
-    private fun showMessageNotification(content: String) {
+    private fun showMessageNotification(content: String, charId: String?) {
         val id = 20000 + (notificationIndex.getAndIncrement() % 1000)
         val preview = notificationPreviewText(content)
-        val displayName = characterDisplayName()
-        val avatar = avatarBitmap()
+        val displayName = characterDisplayName(charId)
+        val avatar = avatarBitmap(charId)
         val builder = notificationBuilder(messageChannelId)
             .setSmallIcon(android.R.drawable.ic_dialog_email)
             .setContentTitle(displayName)

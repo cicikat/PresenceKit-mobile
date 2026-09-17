@@ -36,7 +36,7 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 | `AttachmentCoordinator` | 选文件、类型/大小校验、预览名 | 实际上传与气泡发送 |
 | `app_shell.dart` | DI、路由、生命周期、可信 HTTP origin 确认、跨域连接切换 | 领域 Timer、角色资料槽、能力标志 |
 
-组合根仍弹出 Token/节点/中继/裁剪/附言对话框，不把安全授权迁到无 UI 的隐式执行路径。本机会话角色切换（非服务器 active）后由组合根清空日记/花园并 `resetForConnectionChange`。`SessionScope` 冻结 origin/owner/char/generation 供发送回包与媒体缓存校验；chat 请求侧 char_id 仍等后端 B/C。
+组合根仍弹出 Token/节点/中继/裁剪/附言对话框，不把安全授权迁到无 UI 的隐式执行路径。本机会话角色切换（非服务器 active）后由组合根清空日记/花园并 `resetForConnectionChange`。`ProfileAppearanceController` 发现 `session_scope=v1` 并 bind `POST /v1/sessions`；`ChatController` / 日历 / 上传 / 历史 / 媒体 / 思考带 `X-Presence-Session`。本地 `SessionScope` 仍冻结 origin/owner/char/generation 供回包与媒体缓存校验。Dream 独立。
 
 
 ## 聊天情况与角色资料设置（2026-09-12）

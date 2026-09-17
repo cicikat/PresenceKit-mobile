@@ -7,10 +7,12 @@ class ConversationCalendarController extends ChangeNotifier {
     required this.backend,
     required this.token,
     this.character,
+    this.sessionId,
   });
   final BackendClient Function() backend;
   final String Function() token;
   final String? Function()? character;
+  final String? Function()? sessionId;
   String period = 'month';
   DateTime? anchor;
   ConversationCalendar? calendar;
@@ -36,11 +38,13 @@ class ConversationCalendarController extends ChangeNotifier {
       final client = backend();
       final credential = token();
       final scoped = character?.call();
+      final grantId = sessionId?.call();
       final result = await client.fetchConversationCalendar(
         token: credential,
         period: this.period,
         date: anchor == null ? null : dateKey(anchor!),
         character: scoped,
+        sessionId: grantId,
       );
       if (_disposed || generation != _generation) return;
       calendar = result;
@@ -51,6 +55,7 @@ class ConversationCalendarController extends ChangeNotifier {
           token: credential,
           period: 'day',
           character: scoped ?? result.character,
+          sessionId: grantId,
         );
       } catch (_) {
         today = result;
@@ -67,6 +72,7 @@ class ConversationCalendarController extends ChangeNotifier {
           character: scoped ?? result.character,
           start: dateKey(end.subtract(const Duration(days: 365))),
           end: today.end,
+          sessionId: grantId,
         );
         if (_disposed || generation != _generation) return;
         var index = history.days.length - 1;

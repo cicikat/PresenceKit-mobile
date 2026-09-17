@@ -935,7 +935,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileRealityCardBody =>
-      'This device\'s session character is isolated by backend node and owner. Switching only affects this phone; it does not change other devices or the admin active character. Wire-side frozen authorization still comes from the backend contract.';
+      'This device\'s session character is isolated by backend node and owner. Switching only affects this phone; it does not change other devices or the admin active character. Chat, uploads, history and media use a server-issued frozen session.';
+
+  @override
+  String get sessionScopeUnsupported =>
+      'This backend does not support a frozen session character, so this phone cannot send as the locally selected role.';
+
+  @override
+  String get sessionCharacterUnavailable =>
+      'The selected character is currently unavailable.';
+
+  @override
+  String get sessionCharacterRevoked =>
+      'Authorization for the selected character has been revoked.';
+
+  @override
+  String get sessionExpired =>
+      'The frozen session expired. Choose the character again before sending.';
+
+  @override
+  String get sessionRequestInFlight =>
+      'The same request is still in flight. Wait instead of sending a new turn.';
+
+  @override
+  String get sessionRequestUnknown =>
+      'The previous request outcome is unknown. Check history before retrying with a new ID.';
 
   @override
   String get profileCurrentCardLabel => 'This-device session character';

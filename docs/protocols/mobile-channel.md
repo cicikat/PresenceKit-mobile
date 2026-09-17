@@ -58,18 +58,27 @@ cross-reference it. P2-3 旧 6 小时补偿阈值已失效：中继断线 1 分�
 Pipeline with `/desktop/chat`, while retaining mobile provenance, mobile-safe probe tools, and an independent
 durable mobile mirror for the assistant reply.
 
-### 本机会话角色与共享 cursor（2026-09-17，partial / blocked）
+### 本机会话角色与共享 cursor（2026-09-18，consumer current）
 
 - 本机 Reality 会话角色按 `origin|owner` 持久化（`getSessionCharacterId` /
   `setSessionCharacterId`），与服务器 `active_character` 分离；资料页切换不再 PATCH
   全局 active。角色名/头像仍不是执行授权。
+- 发现：`GET /auth/whoami` `capabilities.session_scope="v1"`。缺失则本地
+  `session_scope_unsupported`，禁止发送，禁止静默发给 live active。
+- 绑定：`POST /v1/sessions` `{char_id, domain: reality}`。后续 Reality 写/读用
+  `X-Presence-Session`；不要把 `char_id`/`session_id`/`request_id` 塞进无 session
+  的 legacy `/mobile/chat`（旧服务端会忽略并发给当时 active）。
+- chat/upload 仅在有 session 时带 `request_id`（30 分钟 receipt correlator，不是
+  `msg_id`/`turn_id`）。202 `in_flight`、503 `execution_outcome_unknown`、
+  409 `request_payload_conflict` 不当成功。`session_not_found` 可重绑后复用同一
+  `request_id`；角色撤权/不可用 fail-loud。
 - Delivery cursor 仍是 **origin+owner 节点级共享**（见 `MobileDeliveryStateStore`），
   不按角色分 cursor。前台 poll 解析可选 `char_id`：匹配本机会话的消息进入当前聊天；
   其他角色消息经 `stashPendingMobileEnvelopes` 写入 pending，再统一 ack，避免共享
   cursor 推进时丢弃其他角色条目。consume 仍按 char 过滤。
-- **blocked on 后端 B/C**：`/mobile/chat` 请求侧冻结 `char_id`/request_id、授权错误码、
-  capability/version、媒体按角色读取权限、多角色通知展示/点击目标。未收到 B fixtures
-  前手机不猜字段、不改 cursor 作用域。Dream 仍是独立域，不复用 Reality pending。
+- 后台通知标题优先信封 `char_id` 的分槽备注名/头像；点击只设
+  `pendingOpenLatestMessage`，不切换本机会话。Dream 仍是独立域，不复用 Reality
+  pending 或 Reality session grant。
 
 ## 基础消息
 

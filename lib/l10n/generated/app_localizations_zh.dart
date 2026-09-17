@@ -886,7 +886,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileRealityCardBody =>
-      '本机会话角色按节点与用户隔离；切换只影响本机，不会改其他设备或管理面的 active 角色。请求侧冻结授权仍由后端契约提供。';
+      '本机会话角色按节点与用户隔离；切换只影响本机，不会改其他设备或管理面的 active 角色。对话、上传、历史和媒体走服务端签发的固定会话。';
+
+  @override
+  String get sessionScopeUnsupported => '当前服务端不支持固定会话角色，无法按本机选择发送。';
+
+  @override
+  String get sessionCharacterUnavailable => '所选角色当前不可用。';
+
+  @override
+  String get sessionCharacterRevoked => '所选角色授权已撤销。';
+
+  @override
+  String get sessionExpired => '固定会话已过期，请重新选择角色后再发送。';
+
+  @override
+  String get sessionRequestInFlight => '同一请求仍在处理中，请稍候，不要当作新回合重发。';
+
+  @override
+  String get sessionRequestUnknown => '上次请求结果未知，请先核对历史，不要换 ID 重发。';
 
   @override
   String get profileCurrentCardLabel => '本机会话角色';

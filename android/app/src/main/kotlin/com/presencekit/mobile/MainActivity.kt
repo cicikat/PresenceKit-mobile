@@ -214,11 +214,11 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "cacheCharacterDisplayName" -> {
-                        // Fully-resolved display name (local override, else backend character
-                        // name, else neutral fallback — resolved in Dart's
-                        // resolveCharacterDisplayName()). Distinct from the raw
-                        // "profileDisplayName" override above; this is what
-                        // MobileNotificationService titles background push notifications with.
+                        // Fully-resolved display name for the *current* Reality session.
+                        // Background notifications prefer envelope char_id + per-character
+                        // profileDisplayName.{id}; this cache is the unscoped/legacy fallback.
+                        // Clicking a notification still only sets pendingOpenLatestMessage and
+                        // does not switch this-device session character.
                         val value = call.argument<String>("value").orEmpty().trim()
                         if (value.isBlank()) {
                             prefs.edit().remove("cachedCharacterDisplayName").apply()

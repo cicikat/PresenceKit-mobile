@@ -445,6 +445,114 @@ void main() {
         expect(fakeClient.requestedUri, isNull);
       },
     );
+
+    test('whoami without session_scope is unsupported', () async {
+      fakeClient.responseBody = jsonEncode({
+        'label': 'mobile',
+        'scopes': ['chat'],
+      });
+      final capability = await backend.loadSessionScopeCapability(
+        token: 'tok-1',
+      );
+      expect(fakeClient.requestedUri!.path, '/auth/whoami');
+      expect(capability.supported, isFalse);
+    });
+
+    test('createPresenceSession posts Reality bind and parses grant', () async {
+      fakeClient.statusCode = 201;
+      fakeClient.responseBody = jsonEncode({
+        'session_id': 'pss_fixture',
+        'char_id': 'char-b',
+        'owner_id': 'owner',
+        'domain': 'reality',
+        'expires_at': 1770000000,
+      });
+      final grant = await backend.createPresenceSession(
+        token: 'tok-1',
+        charId: 'char-b',
+      );
+      expect(fakeClient.method, 'POST');
+      expect(fakeClient.requestedUri!.path, '/v1/sessions');
+      expect(jsonDecode(fakeClient.lastRequestBody), {
+        'char_id': 'char-b',
+        'domain': 'reality',
+      });
+      expect(grant.sessionId, 'pss_fixture');
+      expect(grant.charId, 'char-b');
+    });
+
+    test('scoped chat attaches session header and request_id', () async {
+      fakeClient.responseBody = jsonEncode({
+        'reply': 'ok',
+        'emotion': 'neutral',
+        'msg_id': 'msg-1',
+        'turn_id': 'turn-1',
+      });
+      await backend.sendChat(
+        'hello',
+        token: 'tok-1',
+        sessionId: 'pss_fixture',
+        requestId: 'req_fixture',
+      );
+      expect(fakeClient.requestedUri!.path, '/mobile/chat');
+      expect(
+        fakeClient.lastRequestHeaders['x-presence-session'] ??
+            fakeClient.lastRequestHeaders['X-Presence-Session'],
+        'pss_fixture',
+      );
+      expect(jsonDecode(fakeClient.lastRequestBody)['request_id'], 'req_fixture');
+      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('char_id'), isFalse);
+    });
+
+    test('chat without a session does not mint request_id', () async {
+      fakeClient.responseBody = jsonEncode({
+        'reply': 'ok',
+        'emotion': 'neutral',
+      });
+      await backend.sendChat('hello', token: 'tok-1');
+      expect(
+        fakeClient.lastRequestHeaders.keys
+            .map((key) => key.toLowerCase())
+            .contains('x-presence-session'),
+        isFalse,
+      );
+      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('request_id'), isFalse);
+    });
+
+    test('in-flight chat is an error, not a success reply', () async {
+      fakeClient.statusCode = 202;
+      fakeClient.responseBody = jsonEncode({'detail': 'in_flight'});
+      await expectLater(
+        backend.sendChat(
+          'hello',
+          token: 'tok-1',
+          sessionId: 'pss_fixture',
+          requestId: 'req_fixture',
+        ),
+        throwsA(
+          isA<BackendException>()
+              .having((e) => e.statusCode, 'statusCode', 202)
+              .having((e) => e.message, 'message', 'in_flight')
+              .having((e) => e.isInFlight, 'isInFlight', isTrue),
+        ),
+      );
+    });
+
+    test('legacy chat-log query is omitted when a session header is present', () async {
+      fakeClient.responseBody = jsonEncode({'dates': []});
+      await backend.loadChatLogDates(
+        token: 'tok-1',
+        sessionId: 'pss_fixture',
+        characterId: 'char-b',
+      );
+      expect(fakeClient.requestedUri!.path, '/chat-log/dates');
+      expect(fakeClient.requestedUri!.query, isEmpty);
+      expect(
+        fakeClient.lastRequestHeaders['x-presence-session'] ??
+            fakeClient.lastRequestHeaders['X-Presence-Session'],
+        'pss_fixture',
+      );
+    });
   });
 
   group('正常 JSON 解析', () {

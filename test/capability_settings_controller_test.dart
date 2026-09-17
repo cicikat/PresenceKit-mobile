@@ -4,6 +4,7 @@ import 'package:presencekit_mobile/controllers/chat_controller.dart';
 import 'package:presencekit_mobile/controllers/device_controller.dart';
 import 'package:presencekit_mobile/controllers/garden_controller.dart';
 import 'package:presencekit_mobile/models/background_status.dart';
+import 'package:presencekit_mobile/models/session_scope.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
@@ -148,6 +149,14 @@ void main() {
       token: () => 'token',
       settings: settings,
       relay: RelayStatusService(store),
+      deliveryCharId: () => 'char-a',
+      resolvePresenceSession: ({required String charId, bool force = false}) async =>
+          PresenceSessionGrant(
+            sessionId: 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          ),
     );
     garden = GardenController(
       backend: () =>

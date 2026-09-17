@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/main.dart';
+import 'package:presencekit_mobile/models/session_scope.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 
@@ -93,7 +94,11 @@ class _ForegroundBackendClient extends BackendClient {
   }) async => const MobileActivationResult(ok: true, active: false);
 
   @override
-  Future<ChatLogDates> loadChatLogDates({required String token}) async {
+  Future<ChatLogDates> loadChatLogDates({
+    required String token,
+    String? sessionId,
+    String? characterId,
+  }) async {
     return ChatLogDates.fromJson(const {});
   }
 
@@ -164,10 +169,41 @@ class _ForegroundBackendClient extends BackendClient {
     String message, {
     required String token,
     ReplyTarget? replyTo,
+    String? sessionId,
+    String? requestId,
   }) async {
     return chatResponse ??
-        super.sendChat(message, token: token, replyTo: replyTo);
+        super.sendChat(
+          message,
+          token: token,
+          replyTo: replyTo,
+          sessionId: sessionId,
+          requestId: requestId,
+        );
   }
+
+  @override
+  Future<SessionScopeCapability> loadSessionScopeCapability({
+    required String token,
+  }) async => const SessionScopeCapability(supported: true, version: 'v1');
+
+  @override
+  Future<PresenceSessionGrant> createPresenceSession({
+    required String token,
+    required String charId,
+  }) async => PresenceSessionGrant(
+    sessionId: 'sess-$charId',
+    charId: charId,
+    ownerId: 'owner',
+    domain: 'reality',
+  );
+
+  @override
+  Future<PromptAssets> loadPromptAssets({required String token}) async =>
+      const PromptAssets(
+        characters: [PromptAssetOption(id: 'char-a', label: 'Ava')],
+        activeCharacter: 'char-a',
+      );
 }
 
 void main() {

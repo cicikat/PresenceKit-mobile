@@ -9,10 +9,13 @@ getAppearancePrefs/setAppearancePrefs include Boolean showToolActivity, default 
 
 角色备注名与头像按 `characterId` 分槽：`get/setProfileDisplayName`、`load/save/deleteProfileAvatar` 接受可选 characterId。缺省仍读写旧的全局键和 `profile_avatar.png`；有 id 时用 `profileDisplayName.{id}` 与 `profile_avatar_{id}.png`。首次读取把旧全局值迁到当时角色，之后互不影响。保存当前角色时同步一份到全局文件，供通知栏使用。
 
-本机会话角色（2026-09-17）：`getSessionCharacterId` / `setSessionCharacterId` 按
+本机会话角色（2026-09-18）：`getSessionCharacterId` / `setSessionCharacterId` 按
 `sessionCharacterId.{origin}|{owner}` 持久化本机 Reality 会话角色，与服务器 active 分离。
 Delivery：`stashPendingMobileEnvelopes` 在共享 origin+owner cursor 下暂存其他角色 poll
-条目；cursor 作用域不按角色拆分。多角色通知展示策略仍等后端 B。
+条目；cursor 作用域不按角色拆分。后台通知标题优先信封 `char_id` 的
+`profileDisplayName.{id}` / `profile_avatar_{id}.png`，无作用域时回落到
+`cachedCharacterDisplayName` / `profile_avatar.png`。点击仍只写
+`pendingOpenLatestMessage`，不切换本机会话、不改其他设备 active。
 
 ## 工单 19：相册与图片保留（2026-09-12）
 

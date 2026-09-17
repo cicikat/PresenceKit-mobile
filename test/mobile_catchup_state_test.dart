@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/controllers/chat_controller.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
+import 'package:presencekit_mobile/models/session_scope.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
@@ -88,6 +89,8 @@ class _Backend extends BackendClient {
     String message, {
     required String token,
     ReplyTarget? replyTo,
+    String? sessionId,
+    String? requestId,
   }) async => const BackendChatResponse(
     reply: 'styled',
     displayText: '<hl>styled</hl>',
@@ -106,7 +109,11 @@ class _Backend extends BackendClient {
   }) async => const MobileActivationResult(ok: true, active: false);
 
   @override
-  Future<ChatLogDates> loadChatLogDates({required String token}) async {
+  Future<ChatLogDates> loadChatLogDates({
+    required String token,
+    String? sessionId,
+    String? characterId,
+  }) async {
     await historyGate?.future;
     return ChatLogDates.fromJson(const {});
   }
@@ -142,6 +149,14 @@ ChatController _controller(
   relay: RelayStatusService(settings),
   deliveryOrigin: deliveryOrigin,
   deliveryOwner: deliveryOwner,
+  deliveryCharId: () => 'char-a',
+  resolvePresenceSession: ({required String charId, bool force = false}) async =>
+      PresenceSessionGrant(
+        sessionId: 'sess-$charId',
+        charId: charId,
+        ownerId: 'owner',
+        domain: 'reality',
+      ),
 );
 
 MobilePollMessage _message(int index) => MobilePollMessage(

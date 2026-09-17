@@ -69,6 +69,7 @@ class ConversationCalendarPage extends StatefulWidget {
     required this.palette,
     required this.name,
     this.characterId,
+    this.sessionId,
     required this.backend,
     required this.token,
     required this.onBack,
@@ -76,6 +77,7 @@ class ConversationCalendarPage extends StatefulWidget {
   final YxPalette c;
   final String palette, name, token;
   final String? characterId;
+  final String? sessionId;
   final BackendClient backend;
   final VoidCallback onBack;
   @override
@@ -88,6 +90,7 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
     backend: () => widget.backend,
     token: () => widget.token,
     character: () => widget.characterId,
+    sessionId: () => widget.sessionId,
   );
   @override
   void initState() {
@@ -101,7 +104,8 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
     if (oldWidget.backend != widget.backend ||
         oldWidget.token != widget.token ||
         oldWidget.name != widget.name ||
-        oldWidget.characterId != widget.characterId) {
+        oldWidget.characterId != widget.characterId ||
+        oldWidget.sessionId != widget.sessionId) {
       controller.load();
     }
   }
@@ -261,7 +265,7 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
                         ),
                       if (controller.error != null) ...[
                         Text(
-                          controller.error!,
+                          localizeSessionScopeError(l, controller.error!),
                           style: TextStyle(color: scheme.error),
                         ),
                         TextButton(

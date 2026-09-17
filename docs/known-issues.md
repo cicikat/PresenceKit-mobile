@@ -2,7 +2,7 @@
 
 ## 9.18 补扫复核（2026-09-17，open/observe）
 
-- partial：22 已落地本机会话角色（origin+owner）、PromptAssets 代际守卫、发送/媒体 SessionScope 校验、前台 poll 异角色 stash+共享 cursor ack。仍 **blocked** 于后端 B/C：chat/上传/媒体读取冻结 char_id、授权错误码、capability、多角色通知策略。真机与真实后端 not-run。提交 `67c812c`。
+- current：22 已接入后端 `session_scope=v1`：whoami 发现、`POST /v1/sessions` bind、`X-Presence-Session` 覆盖 chat/upload/media/history/calendar/reasoning；缺失 capability fail-loud；后台通知按信封 `char_id` 展示但不切会话。真机与真实后端联调仍 **not-run**。Dream 独立，不在本单。
 - open：当前 token 保存未统一失效各领域会话。PromptAssets 迟到保护已由 22 补上；其余领域由 [23 号工单](../cc-tasks/23-session-lifecycle-audit-followup.md) 在接收 22 成果后补漏（23/A）。
 - open：角色呈现切换未重置 Dream；已有部分 generation/token/backend 保护，尚非完整生命周期闭环。节点/凭据失效需补齐，Dream settings 角色归属等待后端 F，不臆定契约（23/B）。
 - open：DeviceController Timer 未随 hidden/paused 停止；原生后台已有屏幕上传路径，交接边界未闭合，尚未复现双采（23/C）。

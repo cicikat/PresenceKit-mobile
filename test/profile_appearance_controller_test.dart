@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/controllers/profile_appearance_controller.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
+import 'package:presencekit_mobile/models/session_scope.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
@@ -132,7 +133,11 @@ class _Backend extends BackendClient {
   );
   int loads = 0;
   int updates = 0;
+  int sessionBinds = 0;
+  bool sessionScopeSupported = true;
+  String? lastBoundCharId;
   Future<void> Function()? loadHook;
+  BackendException? sessionBindError;
 
   @override
   Future<PromptAssets> loadPromptAssets({required String token}) async {
@@ -153,6 +158,30 @@ class _Backend extends BackendClient {
       activeCharacter: activeCharacter ?? assets.activeCharacter,
     );
     return assets;
+  }
+
+  @override
+  Future<SessionScopeCapability> loadSessionScopeCapability({
+    required String token,
+  }) async => sessionScopeSupported
+      ? const SessionScopeCapability(supported: true, version: 'v1')
+      : SessionScopeCapability.unsupported;
+
+  @override
+  Future<PresenceSessionGrant> createPresenceSession({
+    required String token,
+    required String charId,
+  }) async {
+    sessionBinds += 1;
+    lastBoundCharId = charId;
+    final error = sessionBindError;
+    if (error != null) throw error;
+    return PresenceSessionGrant(
+      sessionId: 'sess-$charId',
+      charId: charId,
+      ownerId: 'owner',
+      domain: 'reality',
+    );
   }
 }
 
@@ -318,5 +347,43 @@ void main() {
     store.failAppearanceSave = true;
     expect(await controller.resetChatBackground(night: true), isFalse);
     expect(controller.prefs.nightChatBackground, night);
+  });
+
+  test('loadPromptAssets binds a Reality session for the local character', () async {
+    await controller.loadPromptAssets();
+    expect(controller.sessionScopeSupported, isTrue);
+    expect(controller.presenceGrant?.sessionId, 'sess-char-a');
+    expect(controller.presenceGrant?.charId, 'char-a');
+    expect(controller.sessionBindError, isNull);
+    expect(backend.sessionBinds, 1);
+  });
+
+  test('missing session_scope capability is fail-loud and does not bind', () async {
+    backend.sessionScopeSupported = false;
+    await controller.loadPromptAssets();
+    expect(controller.sessionScopeSupported, isFalse);
+    expect(controller.presenceGrant, isNull);
+    expect(controller.sessionBindError, 'session_scope_unsupported');
+    expect(backend.sessionBinds, 0);
+  });
+
+  test('selectSessionCharacter rebinds and keeps server active unchanged', () async {
+    await controller.loadPromptAssets();
+    await controller.selectSessionCharacter('char-b');
+    expect(controller.currentCharacterId, 'char-b');
+    expect(controller.serverActiveCharacterId, 'char-a');
+    expect(controller.presenceGrant?.charId, 'char-b');
+    expect(backend.lastBoundCharId, 'char-b');
+    expect(backend.updates, 0);
+  });
+
+  test('character bind errors stay fail-loud', () async {
+    backend.sessionBindError = const BackendException(
+      'character_revoked',
+      statusCode: 403,
+    );
+    await controller.loadPromptAssets();
+    expect(controller.presenceGrant, isNull);
+    expect(controller.sessionBindError, 'character_revoked');
   });
 }

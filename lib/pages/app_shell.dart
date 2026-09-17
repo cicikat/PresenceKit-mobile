@@ -180,6 +180,14 @@ class _CompanionAppState extends State<CompanionApp>
       deliveryOrigin: () => _backendBaseUrl,
       deliveryOwner: () => _ownerUserId,
       deliveryCharId: () => _currentCharacterId,
+      resolvePresenceSession: ({required String charId, bool force = false}) {
+        return _profileAppearance.ensurePresenceSession(
+          charId: charId,
+          force: force,
+        );
+      },
+      onPresenceSessionInvalid: _profileAppearance.invalidatePresenceGrant,
+      presenceBindError: () => _profileAppearance.sessionBindError,
     );
     _voiceInputController = VoiceInputController(
       voice: _voiceService,
@@ -1226,6 +1234,8 @@ class _CompanionAppState extends State<CompanionApp>
       loadingPromptAssets: _profileAppearance.loadingPromptAssets,
       savingPromptAssets: _profileAppearance.savingPromptAssets,
       promptAssetsError: _profileAppearance.promptAssetsError,
+      sessionBindError: _profileAppearance.sessionBindError,
+      bindingPresenceSession: _profileAppearance.bindingPresenceSession,
       onSelectCharacter: (value) async {
         final pending = _selectSessionCharacter(value);
         onChanged?.call();
@@ -1254,6 +1264,7 @@ class _CompanionAppState extends State<CompanionApp>
           palette: _prefs.calendarPalette,
           name: _profileDisplayName,
           characterId: _currentCharacterId,
+          sessionId: _profileAppearance.grantFor(_currentCharacterId)?.sessionId,
           backend: _backend,
           token: _adminToken,
           onBack: () => setState(() => _route = AppRoute.chat),

@@ -106,10 +106,18 @@ class ChatScene extends StatelessWidget {
       if (historyLoaded && historyMessages.isEmpty)
         MetaLine(c: c, text: l10n.chatEmptyHistory),
       if (historyError != null)
-        MetaLine(c: c, text: l10n.chatHistoryError(historyError)),
+        MetaLine(
+          c: c,
+          text: l10n.chatHistoryError(
+            localizeSessionScopeError(l10n, historyError),
+          ),
+        ),
       if (backendBusy) MetaLine(c: c, text: l10n.chatWaitingReply),
       if (backendError != null)
-        MetaLine(c: c, text: l10n.chatBackendError(backendError)),
+        MetaLine(
+          c: c,
+          text: l10n.chatBackendError(localizeSessionScopeError(l10n, backendError)),
+        ),
       if (controller.mobileError != null)
         MetaLine(c: c, text: l10n.chatBackendError(controller.mobileError!)),
       if (lastBackendReply != null && backendError == null)

@@ -72,6 +72,8 @@ class ProfileSettingsContent extends StatelessWidget {
     required this.loadingPromptAssets,
     required this.savingPromptAssets,
     required this.promptAssetsError,
+    this.sessionBindError,
+    this.bindingPresenceSession = false,
     required this.onSelectCharacter,
     required this.onReloadPromptAssets,
     required this.activityCurrent,
@@ -88,6 +90,8 @@ class ProfileSettingsContent extends StatelessWidget {
   final bool loadingPromptAssets;
   final bool savingPromptAssets;
   final String? promptAssetsError;
+  final String? sessionBindError;
+  final bool bindingPresenceSession;
   final ValueChanged<String> onSelectCharacter;
   final VoidCallback onReloadPromptAssets;
   final ActivityCurrentState? activityCurrent;
@@ -205,7 +209,10 @@ class ProfileSettingsContent extends StatelessWidget {
                     for (final item in promptAssets!.characters)
                       DropdownMenuItem(value: item.id, child: Text(item.label)),
                   ],
-                  onChanged: savingPromptAssets
+                  onChanged:
+                      savingPromptAssets ||
+                          loadingPromptAssets ||
+                          bindingPresenceSession
                       ? null
                       : (value) {
                           if (value != null) onSelectCharacter(value);
@@ -226,7 +233,17 @@ class ProfileSettingsContent extends StatelessWidget {
                 ),
               if (promptAssetsError != null) ...[
                 const SizedBox(height: 8),
-                Text(promptAssetsError!, style: mono(c, 10, color: c.danger)),
+                Text(
+                  localizeSessionScopeError(l10n, promptAssetsError!),
+                  style: mono(c, 10, color: c.danger),
+                ),
+              ],
+              if (sessionBindError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  localizeSessionScopeError(l10n, sessionBindError!),
+                  style: mono(c, 10, color: c.danger),
+                ),
               ],
             ],
           ),

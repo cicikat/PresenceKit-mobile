@@ -31,6 +31,21 @@ String themeRoleLabel(AppLocalizations l10n, String key) => switch (key) {
   _ => key,
 };
 
+String localizeSessionScopeError(AppLocalizations l10n, String error) {
+  return switch (error.trim()) {
+    'session_scope_unsupported' || 'session_scope_required' =>
+      l10n.sessionScopeUnsupported,
+    'character_unavailable' || 'character_not_authorized' =>
+      l10n.sessionCharacterUnavailable,
+    'character_revoked' => l10n.sessionCharacterRevoked,
+    'session_not_found' => l10n.sessionExpired,
+    'in_flight' => l10n.sessionRequestInFlight,
+    'execution_outcome_unknown' || 'request_payload_conflict' =>
+      l10n.sessionRequestUnknown,
+    _ => error,
+  };
+}
+
 String moodLabel(AppLocalizations l10n, String key) => switch (key) {
   'neutral' => l10n.moodNeutral,
   'gentle' => l10n.moodGentle,

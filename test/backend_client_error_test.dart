@@ -42,5 +42,22 @@ void main() {
     test('other status codes fall back to the HTTP line without a body', () {
       expect(BackendClient.debugExtractError('not json', 500), 'HTTP 500');
     });
+
+    test('session-scope codes stay intact on 403 and 404', () {
+      expect(
+        BackendClient.debugExtractError(
+          '{"detail": "character_not_authorized"}',
+          403,
+        ),
+        'character_not_authorized',
+      );
+      expect(
+        BackendClient.debugExtractError(
+          '{"detail": "session_not_found"}',
+          404,
+        ),
+        'session_not_found',
+      );
+    });
   });
 }

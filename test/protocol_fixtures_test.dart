@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
+import 'package:presencekit_mobile/models/session_scope.dart';
 
 String _fixtureRoot() {
   final configured = Platform.environment['PRESENCEKIT_PROTOCOL_FIXTURES'];
@@ -59,5 +60,41 @@ void main() {
     final forbidden = (security['forbidden_client_fields'] as List).cast<String>().toSet();
     final body = (fixture['request']['body'] as Map).keys.cast<String>();
     expect(body.any(forbidden.contains), isFalse);
+  });
+
+  test('session_scope fixture matches whoami bind and covered endpoints', () {
+    final fixture = _load('session_scope.json');
+    expect(fixture['case_id'], 'session-scope-v1');
+    expect(
+      (fixture['discovery'] as Map)['response_extension'],
+      {
+        'capabilities': {'session_scope': 'v1'},
+      },
+    );
+    final bind = Map<String, dynamic>.from(fixture['bind'] as Map);
+    expect(bind['endpoint'], 'POST /v1/sessions');
+    expect(
+      SessionScopeCapability.fromWhoami({
+        'capabilities': {'session_scope': 'v1'},
+      }).supported,
+      isTrue,
+    );
+    final covered = (fixture['covered_endpoints'] as List).cast<String>();
+    expect(
+      covered,
+      containsAll(<String>[
+        'POST /mobile/chat',
+        'POST /upload/ingest',
+        'GET /chat/media/{sha256}',
+        'GET /chat-log/dates',
+        'GET /chat-log/{date}',
+        'GET /chat-log/stats/calendar',
+        'GET /chat/turns/{turn_id}/reasoning',
+      ]),
+    );
+    final errors = Map<String, dynamic>.from(fixture['errors'] as Map);
+    expect(errors['session_not_found'], 404);
+    expect(errors['in_flight'], 202);
+    expect(errors['character_revoked'], 403);
   });
 }

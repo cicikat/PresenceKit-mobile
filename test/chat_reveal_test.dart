@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/controllers/chat_controller.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
+import 'package:presencekit_mobile/models/session_scope.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
@@ -11,8 +12,20 @@ void main() {
   testWidgets('skip exposes every remaining segment and releases sending', (tester) async {
     const store = AppSettingsStore();
     final backend = _LongReplyBackend();
-    final controller = ChatController(backend: () => backend, token: () => 'test',
-      settings: const SettingsStore(store), relay: const RelayStatusService(store));
+    final controller = ChatController(
+      backend: () => backend,
+      token: () => 'test',
+      settings: const SettingsStore(store),
+      relay: const RelayStatusService(store),
+      deliveryCharId: () => 'char-a',
+      resolvePresenceSession: ({required String charId, bool force = false}) async =>
+          PresenceSessionGrant(
+            sessionId: 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          ),
+    );
     controller.send('hello');
     await tester.pump();
     expect(controller.sent.where((m) => m.role == 'him').length, 1);
@@ -39,6 +52,14 @@ void main() {
       token: () => 'test-token',
       settings: const SettingsStore(store),
       relay: const RelayStatusService(store),
+      deliveryCharId: () => 'char-a',
+      resolvePresenceSession: ({required String charId, bool force = false}) async =>
+          PresenceSessionGrant(
+            sessionId: 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          ),
     );
     final message = ChatMessage(
       role: 'him',
@@ -108,8 +129,17 @@ void main() {
 class _LongReplyBackend extends BackendClient {
   _LongReplyBackend() : super(baseUrl: 'http://127.0.0.1:8080', settingsStore: const AppSettingsStore());
   @override
-  Future<BackendChatResponse> sendChat(String message, {required String token, ReplyTarget? replyTo}) async =>
-    BackendChatResponse.fromJson({'reply': '${'A' * 5000}\n\nSecond\n\nThird', 'turn_id': 'canonical'});
+  Future<BackendChatResponse> sendChat(
+    String message, {
+    required String token,
+    ReplyTarget? replyTo,
+    String? sessionId,
+    String? requestId,
+  }) async =>
+      BackendChatResponse.fromJson({
+        'reply': '${'A' * 5000}\n\nSecond\n\nThird',
+        'turn_id': 'canonical',
+      });
   @override
   Future<MobileActivationResult> deactivateMobile({required String token}) async => MobileActivationResult.fromJson({'ok': true, 'active': false});
 }

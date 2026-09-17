@@ -1751,8 +1751,44 @@ abstract class AppLocalizations {
   /// No description provided for @profileRealityCardBody.
   ///
   /// In zh, this message translates to:
-  /// **'本机会话角色按节点与用户隔离；切换只影响本机，不会改其他设备或管理面的 active 角色。请求侧冻结授权仍由后端契约提供。'**
+  /// **'本机会话角色按节点与用户隔离；切换只影响本机，不会改其他设备或管理面的 active 角色。对话、上传、历史和媒体走服务端签发的固定会话。'**
   String get profileRealityCardBody;
+
+  /// No description provided for @sessionScopeUnsupported.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前服务端不支持固定会话角色，无法按本机选择发送。'**
+  String get sessionScopeUnsupported;
+
+  /// No description provided for @sessionCharacterUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'所选角色当前不可用。'**
+  String get sessionCharacterUnavailable;
+
+  /// No description provided for @sessionCharacterRevoked.
+  ///
+  /// In zh, this message translates to:
+  /// **'所选角色授权已撤销。'**
+  String get sessionCharacterRevoked;
+
+  /// No description provided for @sessionExpired.
+  ///
+  /// In zh, this message translates to:
+  /// **'固定会话已过期，请重新选择角色后再发送。'**
+  String get sessionExpired;
+
+  /// No description provided for @sessionRequestInFlight.
+  ///
+  /// In zh, this message translates to:
+  /// **'同一请求仍在处理中，请稍候，不要当作新回合重发。'**
+  String get sessionRequestInFlight;
+
+  /// No description provided for @sessionRequestUnknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'上次请求结果未知，请先核对历史，不要换 ID 重发。'**
+  String get sessionRequestUnknown;
 
   /// No description provided for @profileCurrentCardLabel.
   ///
