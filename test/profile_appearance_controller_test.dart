@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,7 @@ import 'package:presencekit_mobile/services/device_services.dart';
 class _Store extends AppSettingsStore {
   final Map<String?, String> names = {};
   final Map<String?, Uint8List> avatars = {};
+  final Map<String, String> sessionCharacters = {};
   ChatAppearanceSettings appearance = const ChatAppearanceSettings();
   YxPrefs prefs = const YxPrefs();
   Uint8List? dreamBackground;
@@ -18,6 +20,29 @@ class _Store extends AppSettingsStore {
   Uint8List? pickedBackground;
   bool failAvatarSave = false;
   bool failAppearanceSave = false;
+
+  String _sessionKey({String? origin, String? owner}) =>
+      '${origin ?? ''}|${owner ?? ''}';
+
+  @override
+  Future<String?> loadSessionCharacterId({
+    String? origin,
+    String? owner,
+  }) async => sessionCharacters[_sessionKey(origin: origin, owner: owner)];
+
+  @override
+  Future<void> saveSessionCharacterId(
+    String? characterId, {
+    String? origin,
+    String? owner,
+  }) async {
+    final key = _sessionKey(origin: origin, owner: owner);
+    if (characterId == null || characterId.trim().isEmpty) {
+      sessionCharacters.remove(key);
+    } else {
+      sessionCharacters[key] = characterId.trim();
+    }
+  }
 
   @override
   Future<String?> loadProfileDisplayName({String? characterId}) async =>
@@ -107,10 +132,13 @@ class _Backend extends BackendClient {
   );
   int loads = 0;
   int updates = 0;
+  Future<void> Function()? loadHook;
 
   @override
   Future<PromptAssets> loadPromptAssets({required String token}) async {
     loads += 1;
+    final hook = loadHook;
+    if (hook != null) await hook();
     return assets;
   }
 
@@ -187,14 +215,54 @@ void main() {
       expect(store.names['char-b'], 'LocalB');
       expect(store.cachedName, 'NewA');
 
-      await controller.updateActiveCharacter('char-b');
+      await controller.selectSessionCharacter('char-b');
       expect(await controller.applyActiveCharacterPresentation(), isTrue);
+      expect(controller.currentCharacterId, 'char-b');
+      expect(controller.serverActiveCharacterId, 'char-a');
       expect(controller.profileNameOverride, 'LocalB');
       expect(controller.profileDisplayName, 'LocalB');
       expect(controller.profileAvatarBytes, isNull);
       expect(store.names['char-a'], 'NewA');
+      expect(store.sessionCharacters['|'], 'char-b');
     },
   );
+
+  test(
+    'loadPromptAssets keeps local session when server active changes',
+    () async {
+      store.sessionCharacters['|'] = 'char-b';
+      await controller.loadPromptAssets();
+      expect(controller.currentCharacterId, 'char-b');
+      expect(controller.serverActiveCharacterId, 'char-a');
+      expect(backend.updates, 0);
+
+      backend.assets = PromptAssets(
+        characters: backend.assets.characters,
+        activeCharacter: 'char-a',
+      );
+      await controller.loadPromptAssets();
+      expect(controller.currentCharacterId, 'char-b');
+      expect(controller.serverActiveCharacterId, 'char-a');
+    },
+  );
+
+  test('late prompt asset results do not overwrite newer generation', () async {
+    final gate = Completer<void>();
+    backend.loadHook = () => gate.future;
+    final first = controller.loadPromptAssets();
+    await Future<void>.delayed(Duration.zero);
+    backend.loadHook = null;
+    backend.assets = PromptAssets(
+      characters: backend.assets.characters,
+      activeCharacter: 'char-b',
+    );
+    await controller.loadPromptAssets();
+    expect(controller.serverActiveCharacterId, 'char-b');
+    gate.complete();
+    await first;
+    expect(controller.serverActiveCharacterId, 'char-b');
+    expect(controller.loadingPromptAssets, isFalse);
+  });
 
   test('avatar cancel leaves the previous bytes', () async {
     store.avatars['char-a'] = Uint8List.fromList([1, 2]);

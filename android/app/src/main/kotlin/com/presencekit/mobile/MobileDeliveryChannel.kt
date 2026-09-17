@@ -3,6 +3,7 @@ package com.presencekit.mobile
 import android.content.SharedPreferences
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import org.json.JSONObject
 
 /**
  * Production settings-channel adapter for delivery state.
@@ -65,6 +66,34 @@ object MobileDeliveryChannel {
             }
             "consumePendingMobileContents" -> consume(call, prefs, result, contentsOnly = true)
             "consumePendingMobileEnvelopes" -> consume(call, prefs, result, contentsOnly = false)
+            "stashPendingMobileEnvelopes" -> {
+                val rawOrigin = call.argument<String>("origin")
+                val origin = BackendSecurityPolicy.originFor(rawOrigin.orEmpty())
+                    ?: rawOrigin?.trim()?.ifEmpty { null }
+                    ?: BackendSecurityPolicy.originFor(prefs.getString("backendBaseUrl", null).orEmpty())
+                val owner = call.argument<String>("owner")?.trim()?.ifEmpty { null }
+                    ?: BackendSecurityPolicy.ownerUserId(prefs).ifBlank { null }
+                val items = call.argument<List<*>>("items").orEmpty()
+                runCatching {
+                    for (raw in items) {
+                        val map = raw as? Map<*, *> ?: continue
+                        val item = JSONObject()
+                        for ((key, value) in map) {
+                            if (key == null) continue
+                            item.put(key.toString(), value ?: JSONObject.NULL)
+                        }
+                        store.appendPending(item, origin, owner)
+                    }
+                }
+                    .onSuccess { result.success(null) }
+                    .onFailure { error ->
+                        result.error(
+                            "prefs_write_failed",
+                            error.message ?: "Could not stash pending mobile envelopes",
+                            null,
+                        )
+                    }
+            }
             else -> return false
         }
         return true

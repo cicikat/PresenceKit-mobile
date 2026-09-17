@@ -20,6 +20,17 @@ class SettingsStore {
   Future<void> saveToken(String value) => _store.saveAdminToken(value);
   Future<String?> loadOwnerUserId() => _store.loadOwnerUserId();
   Future<void> saveOwnerUserId(String value) => _store.saveOwnerUserId(value);
+  Future<String?> loadSessionCharacterId({String? origin, String? owner}) =>
+      _store.loadSessionCharacterId(origin: origin, owner: owner);
+  Future<void> saveSessionCharacterId(
+    String? characterId, {
+    String? origin,
+    String? owner,
+  }) => _store.saveSessionCharacterId(
+    characterId,
+    origin: origin,
+    owner: owner,
+  );
   Future<String?> loadProfileName({String? characterId}) =>
       _store.loadProfileDisplayName(characterId: characterId);
   Future<void> saveProfileName(String value, {String? characterId}) =>
@@ -67,6 +78,15 @@ class SettingsStore {
   );
   Future<void> bindMobileDeliveryScope({String? origin, String? owner}) =>
       _store.bindMobileDeliveryScope(origin: origin, owner: owner);
+  Future<void> stashPendingMobileEnvelopes(
+    List<Map<String, dynamic>> items, {
+    String? origin,
+    String? owner,
+  }) => _store.stashPendingMobileEnvelopes(
+    items,
+    origin: origin,
+    owner: owner,
+  );
   Future<void> saveSeenMobileMessageIds(
     List<String> ids, {
     String? origin,

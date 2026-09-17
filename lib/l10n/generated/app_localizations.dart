@@ -1751,13 +1751,13 @@ abstract class AppLocalizations {
   /// No description provided for @profileRealityCardBody.
   ///
   /// In zh, this message translates to:
-  /// **'切换后会影响主对话使用的人格卡；由后端保存并同步到其他客户端。'**
+  /// **'本机会话角色按节点与用户隔离；切换只影响本机，不会改其他设备或管理面的 active 角色。请求侧冻结授权仍由后端契约提供。'**
   String get profileRealityCardBody;
 
   /// No description provided for @profileCurrentCardLabel.
   ///
   /// In zh, this message translates to:
-  /// **'当前角色卡'**
+  /// **'本机会话角色'**
   String get profileCurrentCardLabel;
 
   /// No description provided for @profileLoadCards.

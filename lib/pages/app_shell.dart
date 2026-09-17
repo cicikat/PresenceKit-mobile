@@ -148,6 +148,8 @@ class _CompanionAppState extends State<CompanionApp>
       settings: _settings,
       backend: () => _backend,
       token: () => _adminToken,
+      origin: () => _backendBaseUrl,
+      owner: () => _ownerUserId,
     )..addListener(_handleShellChanged);
     _voiceService = VoiceService(settingsStore);
     _deviceController = DeviceController(
@@ -826,9 +828,9 @@ class _CompanionAppState extends State<CompanionApp>
     await _applyActiveCharacterPresentation(reloadConversation: false);
   }
 
-  Future<void> _updatePromptAssets({String? activeCharacter}) async {
-    if (!_hasAdminToken || activeCharacter == null) return;
-    await _profileAppearance.updateActiveCharacter(activeCharacter);
+  Future<void> _selectSessionCharacter(String characterId) async {
+    if (!_hasAdminToken) return;
+    await _profileAppearance.selectSessionCharacter(characterId);
     if (!mounted || _profileAppearance.promptAssetsError != null) return;
     await _applyActiveCharacterPresentation();
   }
@@ -1218,11 +1220,12 @@ class _CompanionAppState extends State<CompanionApp>
     return ProfileSettingsContent(
       c: c,
       promptAssets: _profileAppearance.promptAssets,
+      sessionCharacterId: _profileAppearance.currentCharacterId,
       loadingPromptAssets: _profileAppearance.loadingPromptAssets,
       savingPromptAssets: _profileAppearance.savingPromptAssets,
       promptAssetsError: _profileAppearance.promptAssetsError,
       onSelectCharacter: (value) async {
-        final pending = _updatePromptAssets(activeCharacter: value);
+        final pending = _selectSessionCharacter(value);
         onChanged?.call();
         await pending;
         onChanged?.call();

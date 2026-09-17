@@ -935,10 +935,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileRealityCardBody =>
-      'Switching changes the personality card used by the main chat. The backend saves it and syncs it to other clients.';
+      'This device\'s session character is isolated by backend node and owner. Switching only affects this phone; it does not change other devices or the admin active character. Wire-side frozen authorization still comes from the backend contract.';
 
   @override
-  String get profileCurrentCardLabel => 'Current character card';
+  String get profileCurrentCardLabel => 'This-device session character';
 
   @override
   String get profileLoadCards => 'Load character cards';

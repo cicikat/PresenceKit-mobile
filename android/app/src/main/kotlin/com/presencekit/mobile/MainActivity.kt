@@ -158,6 +158,24 @@ class MainActivity : FlutterActivity() {
                         }
                         result.success(null)
                     }
+                    "getSessionCharacterId" -> {
+                        result.success(
+                            sessionCharacterId(
+                                prefs,
+                                call.argument<String>("origin"),
+                                call.argument<String>("owner"),
+                            ),
+                        )
+                    }
+                    "setSessionCharacterId" -> {
+                        setSessionCharacterId(
+                            prefs,
+                            call.argument<String>("origin"),
+                            call.argument<String>("owner"),
+                            call.argument<String>("characterId"),
+                        )
+                        result.success(null)
+                    }
                     "getTrustedCleartextOrigins" -> {
                         result.success(BackendSecurityPolicy.trustedCleartextOrigins(prefs).toList())
                     }
@@ -1116,6 +1134,37 @@ class MainActivity : FlutterActivity() {
         val key = profileDisplayNameKey(slot)
         if (value.isBlank()) editor.remove(key) else editor.putString(key, value)
         if (slot.isNotEmpty()) editor.putBoolean("profileNameMigrated", true)
+        editor.apply()
+    }
+
+    // Local Reality session character keyed by backend origin + owner.
+    // Independent of server active_character; empty clears the slot.
+    private fun sessionCharacterScopeKey(origin: String?, owner: String?): String {
+        val scopedOrigin = BackendSecurityPolicy.originFor(origin.orEmpty())
+            ?: origin?.trim().orEmpty()
+        val scopedOwner = owner?.trim().orEmpty()
+        return "sessionCharacterId.$scopedOrigin|$scopedOwner"
+    }
+
+    private fun sessionCharacterId(
+        prefs: android.content.SharedPreferences,
+        origin: String?,
+        owner: String?,
+    ): String? {
+        val key = sessionCharacterScopeKey(origin, owner)
+        return prefs.getString(key, null)?.trim()?.ifEmpty { null }
+    }
+
+    private fun setSessionCharacterId(
+        prefs: android.content.SharedPreferences,
+        origin: String?,
+        owner: String?,
+        characterId: String?,
+    ) {
+        val key = sessionCharacterScopeKey(origin, owner)
+        val value = characterId?.trim().orEmpty()
+        val editor = prefs.edit()
+        if (value.isEmpty()) editor.remove(key) else editor.putString(key, value)
         editor.apply()
     }
 

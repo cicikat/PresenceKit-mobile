@@ -2,7 +2,8 @@
 
 ## 9.18 补扫复核（2026-09-17，open/observe）
 
-- open：当前 token 保存未统一失效各领域会话；PromptAssets 已迁入 ProfileAppearanceController，但 load/save 仍缺迟到结果保护。先执行 22 的 scope/凭据隔离，再由 [23 号工单](../cc-tasks/23-session-lifecycle-audit-followup.md) 补剩余领域，避免重复机制。
+- partial：22 已落地本机会话角色（origin+owner）、PromptAssets 代际守卫、发送/媒体 SessionScope 校验、前台 poll 异角色 stash+共享 cursor ack。仍 **blocked** 于后端 B/C：chat/上传/媒体读取冻结 char_id、授权错误码、capability、多角色通知策略。真机与真实后端 not-run。
+- open：当前 token 保存未统一失效各领域会话。PromptAssets 迟到保护已由 22 补上；其余领域由 [23 号工单](../cc-tasks/23-session-lifecycle-audit-followup.md) 在接收 22 成果后补漏。
 - open：角色呈现切换未重置 Dream；已有部分 generation/token/backend 保护，尚非完整生命周期闭环。节点/凭据失效需补齐，Dream settings 角色归属等待后端 F，不臆定契约。
 - open：DeviceController Timer 未随 hidden/paused 停止；原生后台已有屏幕上传路径，交接边界未闭合，尚未复现双采。pushSensorData 在无运动权限时可主动索权，拟改为周期跳过步数、设置页显式申请。
 - observe：设备生命周期矩阵当前 14 项均 not-run，复用 22/M4 与 21/A5/G5 的真实证据补验。全局 cleartext 为已记录兼容策略，列防御纵深评估，不标成已证实漏洞。补扫末尾 pending handler、delivery 单写、Chat/AppShell 重构及 ABI 改名建议不重复立项；详见 23 的证据表。

@@ -885,10 +885,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileRealityCardTitle => 'Reality 角色卡';
 
   @override
-  String get profileRealityCardBody => '切换后会影响主对话使用的人格卡；由后端保存并同步到其他客户端。';
+  String get profileRealityCardBody =>
+      '本机会话角色按节点与用户隔离；切换只影响本机，不会改其他设备或管理面的 active 角色。请求侧冻结授权仍由后端契约提供。';
 
   @override
-  String get profileCurrentCardLabel => '当前角色卡';
+  String get profileCurrentCardLabel => '本机会话角色';
 
   @override
   String get profileLoadCards => '读取角色卡';

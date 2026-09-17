@@ -31,12 +31,12 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 | `ProfileStatusController` | 活动/心情快照及过期标记 | 角色切换、本机资料 |
 | `ConnectionController` | 节点、token、owner、可信 origin、中继、BackendClient | 安全确认对话框 |
 | `DeviceController` | 锁屏/购物/悬浮窗/无障碍、屏幕与传感器 Timer | 后台通知开关、能力页快照 |
-| `ProfileAppearanceController` | 角色备注名/头像、prompt assets、聊天与梦境背景、外观 prefs | 主题预设、用户字体 |
+| `ProfileAppearanceController` | 本机会话角色（origin+owner）、角色备注名/头像、prompt assets（代际守卫）、聊天与梦境背景、外观 prefs | 主题预设、用户字体；不写服务器 active 作为本机切换 |
 | `CapabilitySettingsController` | 后台通知/表情/语音开关、能力页只读快照 | 设备 Timer、权限请求执行 |
 | `AttachmentCoordinator` | 选文件、类型/大小校验、预览名 | 实际上传与气泡发送 |
 | `app_shell.dart` | DI、路由、生命周期、可信 HTTP origin 确认、跨域连接切换 | 领域 Timer、角色资料槽、能力标志 |
 
-组合根仍弹出 Token/节点/中继/裁剪/附言对话框，不把安全授权迁到无 UI 的隐式执行路径。角色切换后由组合根清空日记/花园并 `resetForConnectionChange`。
+组合根仍弹出 Token/节点/中继/裁剪/附言对话框，不把安全授权迁到无 UI 的隐式执行路径。本机会话角色切换（非服务器 active）后由组合根清空日记/花园并 `resetForConnectionChange`。`SessionScope` 冻结 origin/owner/char/generation 供发送回包与媒体缓存校验；chat 请求侧 char_id 仍等后端 B/C。
 
 
 ## 聊天情况与角色资料设置（2026-09-12）

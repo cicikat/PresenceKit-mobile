@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/app_models.dart';
+import '../models/session_scope.dart';
 import '../services/backend_client.dart';
 import '../services/character_naming.dart';
 import '../services/device_services.dart';
@@ -9,24 +10,38 @@ import '../services/device_services.dart';
 ///
 /// Does not own theme presets ([ThemeController]), user identity/fonts
 /// ([PersonalizationController]), or activity/mood ([ProfileStatusController]).
+///
+/// Reality session character is a local preference keyed by origin+owner and is
+/// independent of server `active_character`. Display names/avatars are not
+/// execution authorization; chat wire freeze still awaits backend B/C.
 class ProfileAppearanceController extends ChangeNotifier {
   ProfileAppearanceController({
     required SettingsStore settings,
     required BackendClient Function() backend,
     required String? Function() token,
+    String? Function()? origin,
+    String? Function()? owner,
   }) : _settings = settings,
        _backend = backend,
-       _token = token;
+       _token = token,
+       _origin = origin ?? _alwaysNull,
+       _owner = owner ?? _alwaysNull;
+
+  static String? _alwaysNull() => null;
 
   final SettingsStore _settings;
   final BackendClient Function() _backend;
   final String? Function() _token;
+  final String? Function() _origin;
+  final String? Function() _owner;
 
   bool _disposed = false;
+  int _assetsGeneration = 0;
   YxPrefs prefs = const YxPrefs();
   String? profileNameOverride;
   Uint8List? profileAvatarBytes;
   String? activeCharacterId;
+  String? sessionCharacterId;
   PromptAssets? promptAssets;
   bool loadingPromptAssets = false;
   bool savingPromptAssets = false;
@@ -48,16 +63,29 @@ class ProfileAppearanceController extends ChangeNotifier {
     return value == null || value.isEmpty ? null : value;
   }
 
+  String? get _currentOrigin => SessionScope.normalize(_origin());
+  String? get _currentOwner => SessionScope.normalize(_owner());
+
+  /// Local session character when set; otherwise falls back to server active
+  /// for bootstrap until the user picks a fixed role on this device.
   String? get currentCharacterId {
+    final session = SessionScope.normalize(sessionCharacterId);
+    if (session != null) return session;
+    final id = promptAssets?.activeCharacter.trim();
+    return (id == null || id.isEmpty) ? null : id;
+  }
+
+  String? get serverActiveCharacterId {
     final id = promptAssets?.activeCharacter.trim();
     return (id == null || id.isEmpty) ? null : id;
   }
 
   String? get backendCharacterDisplayName {
     final assets = promptAssets;
-    if (assets == null) return null;
+    final id = currentCharacterId;
+    if (assets == null || id == null) return null;
     for (final character in assets.characters) {
-      if (character.id == assets.activeCharacter) return character.label;
+      if (character.id == id) return character.label;
     }
     return null;
   }
@@ -77,6 +105,10 @@ class ProfileAppearanceController extends ChangeNotifier {
       chatBackgroundBlur: chatAppearance.blur,
       chatBubbleOpacity: chatAppearance.opacity,
       dreamBackground: dreamBackground,
+    );
+    sessionCharacterId = await _settings.loadSessionCharacterId(
+      origin: _currentOrigin,
+      owner: _currentOwner,
     );
     notifyListeners();
   }
@@ -182,36 +214,74 @@ class ProfileAppearanceController extends ChangeNotifier {
 
   Future<void> loadPromptAssets() async {
     final token = _accessToken;
-    if (loadingPromptAssets || token == null) return;
+    if (token == null) return;
+    final generation = ++_assetsGeneration;
     loadingPromptAssets = true;
     promptAssetsError = null;
     notifyListeners();
     try {
-      promptAssets = await _backend().loadPromptAssets(token: token);
+      final assets = await _backend().loadPromptAssets(token: token);
+      if (_disposed || generation != _assetsGeneration) return;
+      promptAssets = assets;
+      await _reconcileSessionCharacter(assets);
+      if (_disposed || generation != _assetsGeneration) return;
     } on BackendException catch (e) {
+      if (_disposed || generation != _assetsGeneration) return;
       promptAssetsError = e.message;
     } finally {
-      loadingPromptAssets = false;
-      notifyListeners();
+      if (!_disposed && generation == _assetsGeneration) {
+        loadingPromptAssets = false;
+        notifyListeners();
+      }
     }
   }
 
+  /// Pins this device's Reality session character without changing server
+  /// `active_character`. Other devices / admin active changes stay separate.
+  Future<void> selectSessionCharacter(String id) async {
+    final cleaned = SessionScope.normalize(id);
+    if (cleaned == null) return;
+    final assets = promptAssets;
+    if (assets != null &&
+        assets.characters.isNotEmpty &&
+        !assets.characters.any((item) => item.id == cleaned)) {
+      promptAssetsError = 'character unavailable';
+      notifyListeners();
+      return;
+    }
+    sessionCharacterId = cleaned;
+    await _settings.saveSessionCharacterId(
+      cleaned,
+      origin: _currentOrigin,
+      owner: _currentOwner,
+    );
+    notifyListeners();
+  }
+
+  /// Admin/server active character write. Not used for this-device session
+  /// switching; retained for explicit persona scope operations.
   Future<void> updateActiveCharacter(String id) async {
     final token = _accessToken;
-    if (savingPromptAssets || token == null) return;
+    if (token == null) return;
+    final generation = ++_assetsGeneration;
     savingPromptAssets = true;
     promptAssetsError = null;
     notifyListeners();
     try {
-      promptAssets = await _backend().updatePromptAssets(
+      final assets = await _backend().updatePromptAssets(
         token: token,
         activeCharacter: id,
       );
+      if (_disposed || generation != _assetsGeneration) return;
+      promptAssets = assets;
     } on BackendException catch (e) {
+      if (_disposed || generation != _assetsGeneration) return;
       promptAssetsError = e.message;
     } finally {
-      savingPromptAssets = false;
-      notifyListeners();
+      if (!_disposed && generation == _assetsGeneration) {
+        savingPromptAssets = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -228,6 +298,39 @@ class ProfileAppearanceController extends ChangeNotifier {
     notifyListeners();
     await _cacheDisplayName();
     return switched;
+  }
+
+  Future<void> _reconcileSessionCharacter(PromptAssets assets) async {
+    final stored = SessionScope.normalize(
+      await _settings.loadSessionCharacterId(
+        origin: _currentOrigin,
+        owner: _currentOwner,
+      ),
+    );
+    final knownIds = {for (final item in assets.characters) item.id};
+    if (stored != null && (knownIds.isEmpty || knownIds.contains(stored))) {
+      sessionCharacterId = stored;
+      return;
+    }
+    final serverActive = SessionScope.normalize(assets.activeCharacter);
+    if (serverActive != null &&
+        (knownIds.isEmpty || knownIds.contains(serverActive))) {
+      sessionCharacterId = serverActive;
+      await _settings.saveSessionCharacterId(
+        serverActive,
+        origin: _currentOrigin,
+        owner: _currentOwner,
+      );
+      return;
+    }
+    sessionCharacterId = knownIds.isEmpty ? null : knownIds.first;
+    if (sessionCharacterId != null) {
+      await _settings.saveSessionCharacterId(
+        sessionCharacterId,
+        origin: _currentOrigin,
+        owner: _currentOwner,
+      );
+    }
   }
 
   Future<void> _cacheDisplayName() =>

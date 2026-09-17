@@ -68,6 +68,7 @@ class ProfileSettingsContent extends StatelessWidget {
     super.key,
     required this.c,
     required this.promptAssets,
+    this.sessionCharacterId,
     required this.loadingPromptAssets,
     required this.savingPromptAssets,
     required this.promptAssetsError,
@@ -83,6 +84,7 @@ class ProfileSettingsContent extends StatelessWidget {
 
   final YxPalette c;
   final PromptAssets? promptAssets;
+  final String? sessionCharacterId;
   final bool loadingPromptAssets;
   final bool savingPromptAssets;
   final String? promptAssetsError;
@@ -195,9 +197,9 @@ class ProfileSettingsContent extends StatelessWidget {
                 DropdownButtonFormField<String>(
                   value:
                       promptAssets!.characters.any(
-                        (item) => item.id == promptAssets!.activeCharacter,
+                        (item) => item.id == sessionCharacterId,
                       )
-                      ? promptAssets!.activeCharacter
+                      ? sessionCharacterId
                       : null,
                   items: [
                     for (final item in promptAssets!.characters)

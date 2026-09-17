@@ -217,6 +217,43 @@ class AppSettingsStore {
     }
   }
 
+  /// Local Reality session character for [origin]+[owner]. Independent of
+  /// server `active_character`; does not authorize chat scope by itself.
+  Future<String?> loadSessionCharacterId({
+    String? origin,
+    String? owner,
+  }) async {
+    if (!_channelAvailable) return null;
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<String>(
+        'getSessionCharacterId',
+        {'origin': origin, 'owner': owner},
+      );
+    } on PlatformException {
+      return null;
+    }
+  }
+
+  Future<void> saveSessionCharacterId(
+    String? characterId, {
+    String? origin,
+    String? owner,
+  }) async {
+    if (!_channelAvailable) return;
+    try {
+      await PlatformSettingsChannel.channel.invokeMethod<void>(
+        'setSessionCharacterId',
+        {
+          'characterId': characterId,
+          'origin': origin,
+          'owner': owner,
+        },
+      );
+    } on PlatformException {
+      // Session preference stays in memory if persistence fails.
+    }
+  }
+
   Future<String?> loadProfileDisplayName({String? characterId}) async {
     if (!_channelAvailable) return null;
     try {
@@ -633,6 +670,24 @@ class AppSettingsStore {
     await PlatformSettingsChannel.channel.invokeMethod<void>(
       'bindMobileDeliveryScope',
       {'origin': origin, 'owner': owner},
+    );
+  }
+
+  /// Parks poll items for another character under the shared origin+owner
+  /// cursor so ack can advance without dropping them.
+  Future<void> stashPendingMobileEnvelopes(
+    List<Map<String, dynamic>> items, {
+    String? origin,
+    String? owner,
+  }) async {
+    if (!_channelAvailable || items.isEmpty) return;
+    await PlatformSettingsChannel.channel.invokeMethod<void>(
+      'stashPendingMobileEnvelopes',
+      {
+        'items': items,
+        'origin': origin,
+        'owner': owner,
+      },
     );
   }
 

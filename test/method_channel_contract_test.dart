@@ -262,6 +262,52 @@ void main() {
       });
     });
 
+    test('session character get/set are scoped by origin and owner', () async {
+      reply('char-b');
+      expect(
+        await store.loadSessionCharacterId(
+          origin: 'http://127.0.0.1:8080',
+          owner: 'owner',
+        ),
+        'char-b',
+      );
+      expect(calls.single.method, 'getSessionCharacterId');
+      expect(calls.single.arguments, {
+        'origin': 'http://127.0.0.1:8080',
+        'owner': 'owner',
+      });
+      calls.clear();
+      await store.saveSessionCharacterId(
+        'char-a',
+        origin: 'http://127.0.0.1:8080',
+        owner: 'owner',
+      );
+      expect(calls.single.method, 'setSessionCharacterId');
+      expect(calls.single.arguments, {
+        'characterId': 'char-a',
+        'origin': 'http://127.0.0.1:8080',
+        'owner': 'owner',
+      });
+    });
+
+    test('stashPendingMobileEnvelopes forwards items and scope', () async {
+      await store.stashPendingMobileEnvelopes(
+        [
+          {'id': 'm2', 'content': 'hello', 'char_id': 'char-a', 'seq': 2},
+        ],
+        origin: 'http://127.0.0.1:8080',
+        owner: 'owner',
+      );
+      expect(calls.single.method, 'stashPendingMobileEnvelopes');
+      expect(calls.single.arguments, {
+        'items': [
+          {'id': 'm2', 'content': 'hello', 'char_id': 'char-a', 'seq': 2},
+        ],
+        'origin': 'http://127.0.0.1:8080',
+        'owner': 'owner',
+      });
+    });
+
     test('getBackgroundPollStatus parses the platform map', () async {
       reply({
         'lastBackgroundPollAt': 1781280000000,

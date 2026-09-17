@@ -58,6 +58,19 @@ cross-reference it. P2-3 旧 6 小时补偿阈值已失效：中继断线 1 分�
 Pipeline with `/desktop/chat`, while retaining mobile provenance, mobile-safe probe tools, and an independent
 durable mobile mirror for the assistant reply.
 
+### 本机会话角色与共享 cursor（2026-09-17，partial / blocked）
+
+- 本机 Reality 会话角色按 `origin|owner` 持久化（`getSessionCharacterId` /
+  `setSessionCharacterId`），与服务器 `active_character` 分离；资料页切换不再 PATCH
+  全局 active。角色名/头像仍不是执行授权。
+- Delivery cursor 仍是 **origin+owner 节点级共享**（见 `MobileDeliveryStateStore`），
+  不按角色分 cursor。前台 poll 解析可选 `char_id`：匹配本机会话的消息进入当前聊天；
+  其他角色消息经 `stashPendingMobileEnvelopes` 写入 pending，再统一 ack，避免共享
+  cursor 推进时丢弃其他角色条目。consume 仍按 char 过滤。
+- **blocked on 后端 B/C**：`/mobile/chat` 请求侧冻结 `char_id`/request_id、授权错误码、
+  capability/version、媒体按角色读取权限、多角色通知展示/点击目标。未收到 B fixtures
+  前手机不猜字段、不改 cursor 作用域。Dream 仍是独立域，不复用 Reality pending。
+
 ## 基础消息
 
 当前手机端兼容的字段：
@@ -69,6 +82,7 @@ durable mobile mirror for the assistant reply.
   "content": "消息正文",
   "user_id": "<owner_user_id>",
   "timestamp": 1779026400,
+  "char_id": "optional-speaker-character",
   "behavior": {
     "kind": "overlay_message",
     "delivery": "overlay",
@@ -85,6 +99,7 @@ Flutter `MobilePollMessage` 会读取：
 - `content`
 - `user_id`
 - `timestamp`
+- `char_id`（可选；缺省视为无作用域，当前会话可显示）
 - `behavior.kind`
 - `behavior.delivery`
 - `behavior.level`

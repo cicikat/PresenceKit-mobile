@@ -1265,6 +1265,7 @@ class MobilePollMessage {
     required this.behaviorDelivery,
     required this.behaviorLevel,
     required this.behaviorId,
+    this.charId,
     this.voiceAvailable = false,
     this.sticker,
   });
@@ -1275,6 +1276,7 @@ class MobilePollMessage {
     final behavior = rawBehavior is Map
         ? Map<String, dynamic>.from(rawBehavior)
         : const <String, dynamic>{};
+    final rawChar = json['char_id']?.toString().trim();
     return MobilePollMessage(
       id: (json['id'] ?? '').toString(),
       seq: json['seq'] is num ? (json['seq'] as num).toInt() : null,
@@ -1290,6 +1292,7 @@ class MobilePollMessage {
       behaviorDelivery: (behavior['delivery'] ?? '').toString(),
       behaviorLevel: (behavior['level'] ?? '').toString(),
       behaviorId: (behavior['behavior_id'] ?? '').toString(),
+      charId: (rawChar == null || rawChar.isEmpty) ? null : rawChar,
       voiceAvailable: json['voice_available'] == true,
       sticker: StickerPayload.fromJson(json['sticker']),
     );
@@ -1305,8 +1308,32 @@ class MobilePollMessage {
   final String behaviorDelivery;
   final String behaviorLevel;
   final String behaviorId;
+  final String? charId;
   final bool voiceAvailable;
   final StickerPayload? sticker;
+
+  Map<String, dynamic> toQueueItemJson() => {
+        'id': id,
+        if (seq != null) 'seq': seq,
+        'content': content,
+        if (displayText != null) 'display_text': displayText,
+        'user_id': userId,
+        if (timestamp != null)
+          'timestamp': timestamp!.millisecondsSinceEpoch / 1000.0,
+        if (charId != null) 'char_id': charId,
+        if (behaviorKind.isNotEmpty ||
+            behaviorDelivery.isNotEmpty ||
+            behaviorLevel.isNotEmpty ||
+            behaviorId.isNotEmpty)
+          'behavior': {
+            'kind': behaviorKind,
+            'delivery': behaviorDelivery,
+            'level': behaviorLevel,
+            'behavior_id': behaviorId,
+          },
+        if (voiceAvailable) 'voice_available': true,
+        if (sticker != null) 'sticker': sticker!.toJson(),
+      };
 
   ChatMessage toChatMessage() {
     return ChatMessage(
@@ -1468,6 +1495,12 @@ class StickerPayload {
 
   final String emotion;
   final String dataUrl;
+
+  Map<String, dynamic> toJson() => {
+        'kind': 'sticker',
+        'emotion': emotion,
+        'data_url': dataUrl,
+      };
 }
 
 class BackendChatResponse {

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../models/app_models.dart';
 import '../models/inline_display.dart';
 import '../models/screen_context.dart';
+import '../models/session_scope.dart';
 import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/device_services.dart';
@@ -308,6 +309,18 @@ class ChatController extends ChangeNotifier {
   Future<String> loadReasoning(String turnId) =>
       _backend().loadTurnReasoning(turnId, token: _accessToken!);
 
+  String _mediaCacheKey(String digest) {
+    final scope = _captureScope(_session.generation);
+    return '${scope.mediaCachePrefix}|$digest';
+  }
+
+  SessionScope _captureScope(int generation) => SessionScope(
+        origin: _deliveryOrigin(),
+        owner: _deliveryOwner(),
+        charId: _deliveryCharId(),
+        generation: generation,
+      );
+
   Future<Uint8List?> loadCanonicalMedia(ChatMediaRef ref) {
     final digest = (ref.sha256 ?? '').trim().toLowerCase();
     if (digest.isEmpty ||
@@ -315,33 +328,45 @@ class ChatController extends ChangeNotifier {
         ref.availability == 'unavailable') {
       return Future<Uint8List?>.value(null);
     }
-    final cached = _canonicalMedia[digest];
+    final key = _mediaCacheKey(digest);
+    final cached = _canonicalMedia[key];
     if (cached != null) return Future<Uint8List?>.value(cached);
-    final inflight = _canonicalMediaInflight[digest];
+    final inflight = _canonicalMediaInflight[key];
     if (inflight != null) return inflight;
     final token = _accessToken;
     if (token == null) return Future<Uint8List?>.value(null);
-    final pending = _downloadCanonicalMedia(digest, token);
-    _canonicalMediaInflight[digest] = pending;
+    final scope = _captureScope(_session.generation);
+    final pending = _downloadCanonicalMedia(digest, token, key, scope);
+    _canonicalMediaInflight[key] = pending;
     return pending;
   }
 
   Future<Uint8List?> _downloadCanonicalMedia(
     String digest,
     String token,
+    String key,
+    SessionScope scope,
   ) async {
     try {
       final bytes = await _backend().downloadChatMedia(digest, token: token);
       if (bytes.isEmpty) return null;
+      if (!scope.matchesLive(
+        generation: _session.generation,
+        origin: _deliveryOrigin(),
+        owner: _deliveryOwner(),
+        charId: _deliveryCharId(),
+      )) {
+        return null;
+      }
       if (_canonicalMedia.length >= _canonicalMediaCacheLimit) {
         _canonicalMedia.remove(_canonicalMedia.keys.first);
       }
-      _canonicalMedia[digest] = bytes;
+      _canonicalMedia[key] = bytes;
       return bytes;
     } catch (_) {
       return null;
     } finally {
-      _canonicalMediaInflight.remove(digest);
+      _canonicalMediaInflight.remove(key);
     }
   }
 
@@ -356,16 +381,26 @@ class ChatController extends ChangeNotifier {
     ReplyTarget? replyTo,
   }) async {
     final generation = _session.generation;
+    final scope = _captureScope(generation);
     final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
     sent.add(anchor);
     notifyListeners();
     try {
+      // char_id wire freeze awaits backend B/C; local scope still gates apply.
       final response = await _backend().sendChat(
         text,
         token: _accessToken!,
         replyTo: replyTo,
       );
-      if (_session.isStale(generation)) return;
+      if (_session.isStale(generation) ||
+          !scope.matchesLive(
+            generation: _session.generation,
+            origin: _deliveryOrigin(),
+            owner: _deliveryOwner(),
+            charId: _deliveryCharId(),
+          )) {
+        return;
+      }
       _bindUserTurn(userId, response.turnId);
       final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
       if (anchorIndex >= 0) {
@@ -388,7 +423,15 @@ class ChatController extends ChangeNotifier {
         );
       }
     } on BackendException catch (e) {
-      if (_session.isStale(generation)) return;
+      if (_session.isStale(generation) ||
+          !scope.matchesLive(
+            generation: _session.generation,
+            origin: _deliveryOrigin(),
+            owner: _deliveryOwner(),
+            charId: _deliveryCharId(),
+          )) {
+        return;
+      }
       backendError = e.message;
       _markLastSendFailed();
       /*
@@ -400,7 +443,15 @@ class ChatController extends ChangeNotifier {
       ); */
       scrollToBottom();
     } catch (e) {
-      if (_session.isStale(generation)) return;
+      if (_session.isStale(generation) ||
+          !scope.matchesLive(
+            generation: _session.generation,
+            origin: _deliveryOrigin(),
+            owner: _deliveryOwner(),
+            charId: _deliveryCharId(),
+          )) {
+        return;
+      }
       backendError = e.toString();
       _markLastSendFailed();
       /* sent.add(
@@ -409,18 +460,26 @@ class ChatController extends ChangeNotifier {
       scrollToBottom();
     } finally {
       if (_session.isCurrent(generation)) {
-        if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
+        final live = scope.matchesLive(
+          generation: _session.generation,
+          origin: _deliveryOrigin(),
+          owner: _deliveryOwner(),
+          charId: _deliveryCharId(),
+        );
+        if (live && backendError != null) {
+          sent.removeWhere((m) => m.id == anchor.id);
+        }
         sending = false;
         himTyping = false;
         notifyListeners();
-        if (backendError == null) {
+        if (live && backendError == null) {
           unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
         }
-        if (_pendingSends.isNotEmpty) {
+        if (live && _pendingSends.isNotEmpty) {
           final next = _pendingSends.removeAt(0);
           send(next.text, replyToOverride: next.replyTo);
         }
-        _flushHistoryRefresh();
+        if (live) _flushHistoryRefresh();
       }
     }
   }
@@ -743,8 +802,14 @@ class ChatController extends ChangeNotifier {
         return;
       }
       final messages = result.messages;
+      final scope = _captureScope(generation);
       final fresh = <MobilePollMessage>[];
+      final foreign = <MobilePollMessage>[];
       for (final message in messages) {
+        if (!scope.acceptsMessageChar(message.charId)) {
+          foreign.add(message);
+          continue;
+        }
         if (message.id.isNotEmpty) {
           final known =
               _seenIds.contains(message.id) ||
@@ -767,6 +832,15 @@ class ChatController extends ChangeNotifier {
           _rememberReply(message.content);
         }
         fresh.add(message);
+      }
+      // Shared cursor: park other-character items before ack so advancing
+      // seq does not drop them. Cursor scope stays origin+owner (backend B5).
+      if (foreign.isNotEmpty) {
+        await _settings.stashPendingMobileEnvelopes(
+          [for (final message in foreign) message.toQueueItemJson()],
+          origin: origin,
+          owner: owner,
+        );
       }
       // Only a turn observed while actively polling is live. Initial hydration
       // and foreground recovery must never enter the reveal queue. A large

@@ -1,5 +1,17 @@
 # 后端集成
 
+## 本机会话 scope（2026-09-17，partial / blocked）
+
+手机本机 Reality 会话角色按后端节点 origin + owner 持久化，与管理面/其他端
+`active_character` 分离；资料页切换不再写全局 active。发送/回包应用、媒体进程内缓存与
+poll 展示使用本地 `SessionScope`（含 generation）。共享 mobile queue cursor 仍为
+origin+owner；前台对其它角色条目 stash pending 后再 ack。
+
+**blocked**：后端综合工单 B/C 尚未交付 capability/version、冻结 char_id 授权、错误码与
+fixtures；当前 `POST /mobile/chat` 仍走 active 角色，手机不猜字段、不改 cursor 作用域。
+Dream 独立。详见 [mobile-channel.md](../protocols/mobile-channel.md) 与
+[22 号工单](../../cc-tasks/22-session-scope-backend-coordination.md)。
+
 ## 跨来源消息身份（2026-09-17）
 
 `POST /mobile/chat` 返回 persisted `turn_id`（可空）与传输 `msg_id`（非空）。有 persisted
