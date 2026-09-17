@@ -66,7 +66,7 @@
 - [x] 核对管理面 capability/effective/无正文诊断由后端提供，手机只展示必要连接/权限/降级，不增运维面板。新持久状态如有独立排障需求须与后端观测同单交付。
   - 证据：仅本机会话角色 prefs + stash；无新管理面板。会话偏好无独立远端观测需求（本机 UI 可见）。
 - [x] 每个独立可验收子单完成后差异/换行检查并单独 commit，记录后端版本、客户端版本及测试证据；真实后端/真机未跑明确 not-run。
-  - 后端版本：`session_scope=v1` current（presence `docs/session-scope-contract.md` + `tests/protocol_fixtures/v1/session_scope.json`）。客户端：见本提交。真机/真实后端：**not-run**。
+  - 后端版本：`session_scope=v1` current（presence `docs/session-scope-contract.md` + `tests/protocol_fixtures/v1/session_scope.json`）。客户端功能提交：`d1436df`。真机/真实后端：**not-run**。
 
 顺序：后端 B → M1/M2 方案；后端 C 可用 → M1/M2/M3 接入 → M4 联调。与 21 号工单相同 controller/store 的修改串行。本单不要求手机配合纯后端 scheduler、tool authority、Memory shadow 重构；Dream settings 仅在后端 F 明确归属且合同实际变化后追加接入项。不启动 23 号工单。
 
