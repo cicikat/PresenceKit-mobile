@@ -20,6 +20,24 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 
 `ChatSessionCoordinator` 是 ChatController 内部对象，记录 hydration、send/reveal、history read 与 connection generation 四组可并行维度，不是单一状态枚举，也不引入通用状态框架。允许：发送/上传与 live poll、用户刷新与在途发送、reveal 期间把新分段排到队尾、分页与发送并行。禁止：dispose 或 generation bump 后应用迟到结果；静默历史刷新覆盖正在发送或 reveal 的气泡；并发第二路 history/sync/refresh/send/poll；把 queued send 或失败气泡当成可丢弃中间态。公开 `sending`/`himTyping` 与 reconciliation 算法不变。角色切换走 `resetForConnectionChange` 升代。
 
+## AppShell 职责收口（2026-09-17）
+
+不新建平行 theme / profile-status / connection / device 状态源。现有所有权：
+
+| 对象 | 拥有 | 不拥有 |
+|---|---|---|
+| `ThemeController` | 日夜模式、预设、mods、导出 | 聊天/梦境背景字节、字体、角色资料 |
+| `PersonalizationController` | 本机用户名/签名/头像/字体/界面字号 | 角色备注名、角色头像槽 |
+| `ProfileStatusController` | 活动/心情快照及过期标记 | 角色切换、本机资料 |
+| `ConnectionController` | 节点、token、owner、可信 origin、中继、BackendClient | 安全确认对话框 |
+| `DeviceController` | 锁屏/购物/悬浮窗/无障碍、屏幕与传感器 Timer | 后台通知开关、能力页快照 |
+| `ProfileAppearanceController` | 角色备注名/头像、prompt assets、聊天与梦境背景、外观 prefs | 主题预设、用户字体 |
+| `CapabilitySettingsController` | 后台通知/表情/语音开关、能力页只读快照 | 设备 Timer、权限请求执行 |
+| `AttachmentCoordinator` | 选文件、类型/大小校验、预览名 | 实际上传与气泡发送 |
+| `app_shell.dart` | DI、路由、生命周期、可信 HTTP origin 确认、跨域连接切换 | 领域 Timer、角色资料槽、能力标志 |
+
+组合根仍弹出 Token/节点/中继/裁剪/附言对话框，不把安全授权迁到无 UI 的隐式执行路径。角色切换后由组合根清空日记/花园并 `resetForConnectionChange`。
+
 
 ## 聊天情况与角色资料设置（2026-09-12）
 
@@ -87,9 +105,12 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 | 路径 | 职责 |
 |---|---|
 | `lib/main.dart` | Flutter 入口、根主题、全局错误兜底 |
-| `lib/pages/app_shell.dart` | 组合根、路由、应用生命周期和少量跨域 UI 协调 |
+| `lib/pages/app_shell.dart` | 组合根、路由、应用生命周期、可信 origin 确认和跨域连接切换 |
 | `lib/controllers/connection_controller.dart` | 节点、token、owner、可信 origin、中继配置与 BackendClient 重建 |
 | `lib/controllers/chat_controller.dart` | 历史加载/分页、发送、附件回复、去重、前台 mobile poll、ack 与聊天滚动 |
+| `lib/controllers/profile_appearance_controller.dart` | 角色资料槽、prompt assets、聊天/梦境背景与外观 prefs |
+| `lib/controllers/capability_settings_controller.dart` | 后台通知等设置开关与能力页快照 |
+| `lib/controllers/attachment_coordinator.dart` | 附件选取与校验；上传仍走 ChatController |
 | `lib/controllers/device_controller.dart` | 锁屏、购物/悬浮窗、语音、屏幕上下文和传感器 Timer |
 | `lib/controllers/dream_controller.dart` | Dream state/settings/stats/messages 与轮询 |
 | `lib/controllers/garden_controller.dart` | 花园状态与刷新 Timer |
@@ -113,8 +134,8 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 
 - `ChatScene` 直接通过 `AnimatedBuilder` 监听 `ChatController`。
 - `DreamPage`、`GardenPage`、`DiaryPage` 直接监听各自 controller；app shell 不再展开传递领域状态、加载标记和刷新回调。
-- 资料页的本机备注名编辑弹窗属于纯 UI，位于 `profile_widgets.dart`；app shell 只负责保存编辑结果和更新组合状态。
-- Token、后端节点和中继设置对话框位于 `settings_dialog_widgets.dart`；附件选择与上传仍由 app shell 协调，`upload_feedback_widgets.dart` 负责其可见反馈和预览文案。
+- 资料页的本机备注名编辑弹窗属于纯 UI，位于 `profile_widgets.dart`；保存走 `ProfileAppearanceController`。
+- Token、后端节点和中继设置对话框位于 `settings_dialog_widgets.dart`；可信 HTTP origin 确认仍在组合根。附件由 `AttachmentCoordinator` 选取校验，`upload_feedback_widgets.dart` 负责可见反馈，上传仍走 `ChatController.uploadFiles`。
 - controller 通过构造注入获取 BackendClient、token getter 和设备门面，不反向依赖 app shell。
 - `AppSettingsStore` 保留 `presence_mobile/settings` channel 兼容契约；Dart 侧由 `SettingsStore`、`VoiceService`、`DeviceControlService`、`ScreenSensorService`、`RelayStatusService` 分域使用。
 - 根 `MaterialApp` 监听 `LocaleController`；设置页语言项位于第一行，切换后整棵 Flutter UI 即时按新 locale 重建。完整契约见 `localization.md`。
@@ -123,7 +144,7 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 
 启动后：
 
-1. 并行恢复 ConnectionController 与 DeviceController。
+1. 并行恢复 ConnectionController、DeviceController、ProfileAppearanceController 与 CapabilitySettingsController。
 2. token 存在时启动 ChatController、GardenController 和 mobile channel 激活。
 3. ChatController 每 5 秒触发前台检查；原生后台服务运行时跳过，实际 poll 使用 25 秒长轮询并防重入。
 4. DeviceController 每 45 秒推送一次允许的屏幕上下文，每 30 分钟上报一次电量/步数传感器快照。
@@ -131,7 +152,7 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 
 ## 当前结构债
 
-`app_shell.dart` 已从本轮开始时约 2406 行降至约 1196 行，连接、聊天、设备、Dream、Garden、Diary 的领域状态和 Timer 已迁出；资料、Dream、Token、节点和中继的纯 UI 对话框也已迁至 `widgets/`。它仍包含 profile、theme、capability/settings 页面编排、附件选择和可信 HTTP origin 等安全确认协调，尚未达到工单最初提出的 `<=600` 行愿景。后续新增领域功能仍必须新建 controller 和 widget，不得把领域字段、Timer 或成组业务方法加回 app shell。
+`app_shell.dart` 已把 profile/appearance、capability 设置开关和附件校验迁出；测试上限仍是 `<= 1499` 行，不按 `<=600` 行验收。组合根保留 DI、路由、生命周期、可信 origin 确认和跨域连接。后续新增领域功能仍必须进入现有 controller 或新建 controller/widget，不得把领域字段、Timer 或成组业务方法加回 app shell。
 
 ## 验证
 

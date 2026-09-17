@@ -86,7 +86,7 @@ Current: canonical turn reconciliation, clock normalization and one reasoning an
 ## 当前仍存在（2026-08-02 更新后的权威清单）
 
 - **设备重启后后台通道不自恢复** — `observe`。自用阶段接受，能力页能看见失活；要根治时另开 boot receiver 工单。
-- **`app_shell.dart` 剩余结构债** — `open`。下一步按 profile、theme、capability/settings、附件与弹窗协调继续拆分，保持领域状态不回流。
+- **`app_shell.dart` 剩余结构债** — `current`。profile/appearance、capability 设置开关和附件校验已迁出；组合根仍保留 DI、路由、生命周期、可信 HTTP origin 确认和跨域连接。测试上限 `<= 1499`，不按 `<=600` 行验收。
 
 本轮已关闭：维护者已确认 Mobile ntfy 后台推送恢复；debug 与正式构建路径已分离。正式包签名升级仍以 [`docs/v1-release-readiness.md`](v1-release-readiness.md) 和 [`docs/android/release-signing-and-upgrade.md`](android/release-signing-and-upgrade.md) 为准，当前不把正式候选包、keystore 和真机升级验收写成已完成。历史记录曾写有“`flutter test` 全量 105 项已通过”，但当前测试说明记录 tester 在断言前断开，因此该数字不能作为现行通过证据；以 [`docs/quality/testing-and-dev.md`](quality/testing-and-dev.md) 的带日期验证记录和当前重跑结果为准。外卖/购物悬浮窗硬编码示例订单已改为中性确认且不展示虚构商品/金额；通知权限不再在 `onCreate()` 弹出，改由能力检查页或首次开启后台通知触发。
 
@@ -324,7 +324,7 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 
 **状态（2026-07-22）**：app shell 已降至约 1196 行；资料、Dream、Token、节点和中继的纯 UI 对话框，以及附件可见反馈/预览文案已迁至 `widgets/`。
 
-**剩余**：app shell 仍包含 profile、theme、capability/settings、附件选择和可信 HTTP origin 等安全确认协调，尚未达到工单 07 的 `<=600` 行长期目标。影响主要是可维护性，不改变当前接口和安全闸门。
+**状态（2026-09-17）**：profile/appearance、capability 设置开关和附件校验已迁到独立 controller；ThemeController / ProfileStatusController / ConnectionController / DeviceController 所有权不变。组合根仍弹出安全确认对话框。不按 `<=600` 行验收。
 
 </details>
 

@@ -157,6 +157,9 @@ Flutter Web 已可编译。双击仓库根目录的 `电脑浏览器预览.bat`�
 - `mobile_poll_lifecycle_test.dart`
 - `no_hardcoded_qq_number_test.dart`
 - `profile_status_controller_test.dart`
+- `profile_appearance_controller_test.dart`
+- `capability_settings_controller_test.dart`
+- `attachment_coordinator_test.dart`
 - `sticker_message_test.dart`
 - `theme_controller_test.dart`
 - `widget_test.dart`
@@ -171,6 +174,9 @@ Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/Creden
   - `SystemSettingsSheet`：访问 Token 入口排在能力检查之前，点击"更换"触发回调。
   - `DreamPage`：保留独立作曲框和"醒来"退出按钮。
 - `theme_controller_test.dart`：多预设保存/恢复、旧单色盘迁移、重置/删除和颜色 mod 往返解析。
+- `profile_appearance_controller_test.dart`：外观恢复、角色资料隔离、头像取消/失败不覆盖、日夜背景分槽保存与重置。
+- `capability_settings_controller_test.dart`：后台通知/表情/语音开关持久化，能力快照读取现有 Chat/Garden/Device 状态。
+- `attachment_coordinator_test.dart`：取消选取、类型/大小拒绝、图片预览名截断。
 - `locale_controller_test.dart`：默认跟随系统、持久化恢复、未知值回退，以及 `中文 → English → 中文` 即时切换和存储往返。
 - `localization_contract_test.dart`：中英文 ARB 消息 key 完全一致、所有翻译非空，以及 `l10n.yaml` 保持生成输出与未翻译报告配置。
 

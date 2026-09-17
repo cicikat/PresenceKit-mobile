@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../controllers/attachment_coordinator.dart';
+import '../controllers/capability_settings_controller.dart';
 import '../controllers/chat_controller.dart';
 import '../controllers/life_records_controller.dart';
 import '../widgets/life_records_widgets.dart';
@@ -13,6 +15,7 @@ import '../controllers/dream_controller.dart';
 import '../controllers/diary_controller.dart';
 import '../controllers/garden_controller.dart';
 import '../controllers/locale_controller.dart';
+import '../controllers/profile_appearance_controller.dart';
 import '../controllers/profile_status_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/personalization_controller.dart';
@@ -20,7 +23,6 @@ import '../controllers/voice_input_controller.dart';
 import '../models/app_models.dart';
 import '../models/background_status.dart';
 import '../widgets/scene_background.dart';
-import '../models/capability_status.dart';
 import '../models/screen_context.dart';
 import '../l10n/l10n.dart';
 import '../services/app_settings_store.dart';
@@ -61,20 +63,9 @@ class CompanionApp extends StatefulWidget {
 class _CompanionAppState extends State<CompanionApp>
     with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  Timer? _sensorPushTimer;
   AppRoute _route = AppRoute.chat;
-  bool _backgroundNotifications = true;
-  bool _stickerEnabled = false;
-  bool _autoPlayVoice = false;
   bool _backendSyncStarted = false;
-  bool _loadingPromptAssets = false;
-  bool _savingPromptAssets = false;
   String? _backendError;
-  String? _promptAssetsError;
-  PromptAssets? _promptAssets;
-  String? _profileNameOverride;
-  Uint8List? _profileAvatarBytes;
-  String? _activeCharacterId;
   late final SettingsStore _settings;
   late final DeviceControlService _deviceService;
   late final ScreenSensorService _screenService;
@@ -88,10 +79,12 @@ class _CompanionAppState extends State<CompanionApp>
   late final GardenController _gardenController;
   late final DiaryController _diaryController;
   late final LifeRecordsController _lifeRecordsController;
-  YxPrefs _prefs = const YxPrefs();
   late final ThemeController _themeController;
   late final PersonalizationController _personalization;
   late final ProfileStatusController _profileStatusController;
+  late final ProfileAppearanceController _profileAppearance;
+  late final CapabilitySettingsController _capabilitySettings;
+  late final AttachmentCoordinator _attachments;
   late final LocaleController _localeController;
   late final bool _ownsLocaleController;
 
@@ -106,34 +99,9 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   bool get _hasAdminToken => _adminToken.trim().isNotEmpty;
-
-  String? get _backendCharacterDisplayName {
-    final assets = _promptAssets;
-    if (assets == null) return null;
-    for (final character in assets.characters) {
-      if (character.id == assets.activeCharacter) return character.label;
-    }
-    return null;
-  }
-
-  String? get _currentCharacterId {
-    final id = _promptAssets?.activeCharacter.trim();
-    return (id == null || id.isEmpty) ? null : id;
-  }
-
-  String get _profileDisplayName => resolveCharacterDisplayName(
-    localOverride: _profileNameOverride,
-    backendName: _backendCharacterDisplayName,
-  );
-
-  /// Pushes the resolved display name to native prefs so background push
-  /// notifications (`MobileNotificationService`) can title themselves with
-  /// the character's name instead of the generic app label. Call after any
-  /// state change that can affect [_profileDisplayName] (nickname override,
-  /// prompt assets load/switch).
-  void _syncCachedCharacterDisplayName() {
-    unawaited(_settings.cacheCharacterDisplayName(_profileDisplayName));
-  }
+  String? get _currentCharacterId => _profileAppearance.currentCharacterId;
+  String get _profileDisplayName => _profileAppearance.profileDisplayName;
+  YxPrefs get _prefs => _profileAppearance.prefs;
 
   String _requireAdminToken() {
     final token = _adminToken.trim();
@@ -175,7 +143,12 @@ class _CompanionAppState extends State<CompanionApp>
       backend: () => _backend,
       token: () => _adminToken,
     );
-    _profileStatusController.addListener(_handleProfileStatusChanged);
+    _profileStatusController.addListener(_handleShellChanged);
+    _profileAppearance = ProfileAppearanceController(
+      settings: _settings,
+      backend: () => _backend,
+      token: () => _adminToken,
+    )..addListener(_handleShellChanged);
     _voiceService = VoiceService(settingsStore);
     _deviceController = DeviceController(
       device: _deviceService,
@@ -183,14 +156,25 @@ class _CompanionAppState extends State<CompanionApp>
       backend: () => _backend,
       token: () => _adminToken,
     );
+    _capabilitySettings = CapabilitySettingsController(
+      settings: _settings,
+      device: _deviceService,
+      deviceController: _deviceController,
+      relay: _relayService,
+      chat: () => _chatController,
+      garden: () => _gardenController,
+      backendBaseUrl: () => _backendBaseUrl,
+      extraBackendError: () => _backendError,
+    )..addListener(_handleShellChanged);
+    _attachments = AttachmentCoordinator(settings: _settings);
     _chatController = ChatController(
       backend: () => _backend,
       token: () => _adminToken,
       settings: _settings,
       relay: _relayService,
       voice: _voiceService,
-      stickerEnabled: () => _stickerEnabled,
-      autoPlayVoice: () => _autoPlayVoice,
+      stickerEnabled: () => _capabilitySettings.stickerEnabled,
+      autoPlayVoice: () => _capabilitySettings.autoPlayVoice,
       deliveryOrigin: () => _backendBaseUrl,
       deliveryOwner: () => _ownerUserId,
       deliveryCharId: () => _currentCharacterId,
@@ -233,28 +217,9 @@ class _CompanionAppState extends State<CompanionApp>
     await Future.wait([
       _connectionController.restore(),
       _deviceController.restore(),
+      _profileAppearance.restore(),
+      _capabilitySettings.restore(),
     ]);
-    final chatAppearance = await _settings.loadChatAppearance();
-    final dreamBackground = await _settings.loadDreamBackground();
-    final appearancePrefs = await _settings.loadAppearancePrefs();
-    final backgroundNotifications = await _settings
-        .loadBackgroundNotificationsEnabled();
-    final stickerEnabled = await _settings.loadStickerEnabled();
-    final autoPlayVoice = await _settings.loadAutoPlayVoice();
-    if (mounted) {
-      setState(() {
-        _backgroundNotifications = backgroundNotifications;
-        _stickerEnabled = stickerEnabled;
-        _autoPlayVoice = autoPlayVoice;
-        _prefs = appearancePrefs.copyWith(
-          chatBackground: chatAppearance.background,
-          nightChatBackground: chatAppearance.nightBackground,
-          chatBackgroundBlur: chatAppearance.blur,
-          chatBubbleOpacity: chatAppearance.opacity,
-          dreamBackground: dreamBackground,
-        );
-      });
-    }
     if (!mounted) return;
     if (_hasAdminToken) {
       _lifeRecordsController.start();
@@ -304,7 +269,6 @@ class _CompanionAppState extends State<CompanionApp>
     WidgetsBinding.instance.removeObserver(this);
     _gardenController.dispose();
     _diaryController.dispose();
-    _sensorPushTimer?.cancel();
     _deviceController.dispose();
     _voiceInputController.dispose();
     _chatController.dispose();
@@ -313,8 +277,12 @@ class _CompanionAppState extends State<CompanionApp>
     _themeController.dispose();
     _personalization.removeListener(_handleThemeChanged);
     _personalization.dispose();
-    _profileStatusController.removeListener(_handleProfileStatusChanged);
+    _profileStatusController.removeListener(_handleShellChanged);
     _profileStatusController.dispose();
+    _profileAppearance.removeListener(_handleShellChanged);
+    _profileAppearance.dispose();
+    _capabilitySettings.removeListener(_handleShellChanged);
+    _capabilitySettings.dispose();
     if (_ownsLocaleController) _localeController.dispose();
     super.dispose();
   }
@@ -331,7 +299,7 @@ class _CompanionAppState extends State<CompanionApp>
     _applySystemUi();
   }
 
-  void _handleProfileStatusChanged() {
+  void _handleShellChanged() {
     if (!mounted) return;
     setState(() {});
   }
@@ -465,21 +433,11 @@ class _CompanionAppState extends State<CompanionApp>
     );
   }
 
-  Future<void> _changeBackgroundNotifications(bool enabled) async {
-    setState(() => _backgroundNotifications = enabled);
-    await _settings.saveBackgroundNotificationsEnabled(enabled);
-    if (!mounted) return;
-    if (enabled) {
-      await _deviceService.requestNotificationPermission();
-    } else {
-      await _deviceService.stopBackgroundNotifications();
-    }
-  }
+  Future<void> _changeBackgroundNotifications(bool enabled) =>
+      _capabilitySettings.setBackgroundNotifications(enabled);
 
-  Future<void> _changeScreenContextUploadEnabled(bool enabled) async {
-    await _deviceController.setScreenUploadEnabled(enabled);
-    if (enabled) unawaited(_deviceController.pushScreenContext(silent: true));
-  }
+  Future<void> _changeScreenContextUploadEnabled(bool enabled) =>
+      _capabilitySettings.setScreenContextUploadEnabled(enabled);
 
   Future<void> _openThemePresetManager({bool? selectingDark}) async {
     await showModalBottomSheet<void>(
@@ -645,19 +603,17 @@ class _CompanionAppState extends State<CompanionApp>
       context: context,
       builder: (_) => ProfileNameDialog(
         c: c,
-        initialName: cleanCharacterDisplayName(_profileNameOverride) ?? '',
+        initialName:
+            cleanCharacterDisplayName(_profileAppearance.profileNameOverride) ??
+            '',
       ),
     );
     if (value == null) return;
-    final cleaned = cleanCharacterDisplayName(value);
-    await _settings.saveProfileName(cleaned ?? '', characterId: _currentCharacterId);
-    if (!mounted) return;
-    setState(() => _profileNameOverride = cleaned);
-    _syncCachedCharacterDisplayName();
+    await _profileAppearance.saveProfileName(cleanCharacterDisplayName(value));
   }
 
   Future<void> _importProfileAvatar() async {
-    final sourceBytes = await _settings.pickProfileImage();
+    final sourceBytes = await _profileAppearance.pickProfileImage();
     if (!mounted || sourceBytes == null) return;
     final cropped = await showDialog<Uint8List>(
       context: context,
@@ -665,25 +621,19 @@ class _CompanionAppState extends State<CompanionApp>
       builder: (context) => AvatarCropDialog(c: c, bytes: sourceBytes),
     );
     if (!mounted || cropped == null) return;
-    final saved = await _settings.saveAvatar(cropped, characterId: _currentCharacterId);
+    final saved = await _profileAppearance.saveAvatar(cropped);
     if (!mounted) return;
-    if (saved) {
-      setState(() => _profileAvatarBytes = cropped);
-    } else {
+    if (!saved) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.avatarSaveFailed)));
     }
   }
 
-  Future<void> _resetProfileAvatar() async {
-    await _settings.deleteAvatar(characterId: _currentCharacterId);
-    if (!mounted) return;
-    setState(() => _profileAvatarBytes = null);
-  }
+  Future<void> _resetProfileAvatar() => _profileAppearance.deleteAvatar();
 
   Future<void> _importChatBackground({bool night = false}) async {
-    final sourceBytes = await _settings.pickChatBackgroundImage();
+    final sourceBytes = await _profileAppearance.pickBackgroundImage();
     if (!mounted || sourceBytes == null) return;
     final draft = await showDialog<ChatBackgroundDraft>(
       context: context,
@@ -696,25 +646,14 @@ class _CompanionAppState extends State<CompanionApp>
       ),
     );
     if (!mounted || draft == null) return;
-    final saved = await _settings.saveChatAppearance(
-      ChatAppearanceSettings(
-        background: night ? _prefs.chatBackground : draft.bytes,
-        nightBackground: night ? draft.bytes : _prefs.nightChatBackground,
-        blur: draft.blur,
-        opacity: draft.opacity,
-      ),
+    final saved = await _profileAppearance.saveChatBackground(
+      night: night,
+      bytes: draft.bytes,
+      blur: draft.blur,
+      opacity: draft.opacity,
     );
     if (!mounted) return;
-    if (saved) {
-      setState(() {
-        _prefs = _prefs.copyWith(
-          chatBackground: night ? null : draft.bytes,
-          nightChatBackground: night ? draft.bytes : null,
-          chatBackgroundBlur: draft.blur,
-          chatBubbleOpacity: draft.opacity,
-        );
-      });
-    } else {
+    if (!saved) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.chatBackgroundSaveFailed)),
       );
@@ -722,7 +661,7 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   Future<void> _importDreamBackground() async {
-    final bytes = await _settings.pickChatBackgroundImage();
+    final bytes = await _profileAppearance.pickBackgroundImage();
     if (!mounted || bytes == null) return;
     final draft = await showDialog<ChatBackgroundDraft>(
       context: context,
@@ -735,79 +674,14 @@ class _CompanionAppState extends State<CompanionApp>
       ),
     );
     if (!mounted || draft == null) return;
-    if (await _settings.saveDreamBackground(draft.bytes)) {
-      setState(() => _prefs = _prefs.copyWith(dreamBackground: draft.bytes));
-    }
+    await _profileAppearance.saveDreamBackground(draft.bytes);
   }
 
-  Future<void> _resetDreamBackground() async {
-    await _settings.deleteDreamBackground();
-    if (mounted) {
-      setState(() => _prefs = _prefs.copyWith(clearDreamBackground: true));
-    }
-  }
+  Future<void> _resetDreamBackground() =>
+      _profileAppearance.resetDreamBackground();
 
-  Future<void> _resetChatBackground({bool night = false}) async {
-    final saved = await _settings.saveChatAppearance(
-      ChatAppearanceSettings(
-        background: night ? _prefs.chatBackground : null,
-        nightBackground: night ? null : _prefs.nightChatBackground,
-        blur: _prefs.chatBackgroundBlur,
-        opacity: _prefs.chatBubbleOpacity,
-      ),
-    );
-    if (mounted && saved) {
-      setState(
-        () => _prefs = _prefs.copyWith(
-          clearChatBackground: !night,
-          clearNightChatBackground: night,
-        ),
-      );
-    }
-  }
-
-  Future<CapabilityStatus> _loadCapabilityStatus() async {
-    final results = await Future.wait<dynamic>([
-      _deviceService.areNotificationsEnabled(),
-      _deviceService.canDrawOverlays(),
-      _deviceController.isAccessibilityEnabled(),
-      _deviceService.isDeviceAdminActive(),
-      _relayService.isBackgroundServiceRunning(),
-      _relayService.loadBackgroundPollStatus(),
-      _relayService.loadConnectionStatus(),
-      _relayService.loadNotificationGateStatus(),
-      _deviceService.isIgnoringBatteryOptimizations(),
-      _deviceService.loadLastOverlayError(),
-    ]);
-    return CapabilityStatus(
-      notificationsEnabled: results[0] as bool,
-      overlayEnabled: results[1] as bool,
-      accessibilityEnabled: results[2] as bool,
-      deviceAdminEnabled: results[3] as bool,
-      backgroundNotificationsEnabled: _backgroundNotifications,
-      backgroundServiceRunning: results[4] as bool,
-      backgroundPollStatus: results[5] as BackgroundPollStatus,
-      relayConnectionStatus: results[6] as RelayConnectionStatus,
-      notificationGateStatus: results[7] as NotificationGateStatus,
-      overlayErrorStatus: results[9] as OverlayErrorStatus,
-      ignoringBatteryOptimizations: results[8] as bool,
-      screenContextUploadEnabled: _deviceController.screenUploadEnabled,
-      backendBaseUrl: _backendBaseUrl,
-      backendReachable:
-          _chatController.mobileError == null &&
-          (_chatController.mobileActive ||
-              _chatController.historyLoaded ||
-              _gardenController.state != null),
-      backendBusy:
-          _chatController.pollingMobile ||
-          _chatController.loadingHistory ||
-          _gardenController.loading,
-      backendError:
-          _chatController.mobileError ??
-          _backendError ??
-          _chatController.historyError,
-    );
-  }
+  Future<void> _resetChatBackground({bool night = false}) =>
+      _profileAppearance.resetChatBackground(night: night);
 
   Future<void> _testBackendConnectivity() async {
     await _chatController.activateMobile();
@@ -827,7 +701,7 @@ class _CompanionAppState extends State<CompanionApp>
       builder: (context) => CapabilitySheet(
         controlsOnly: controlsOnly,
         c: c,
-        onLoadStatus: _loadCapabilityStatus,
+        onLoadStatus: _capabilitySettings.loadStatus,
         onRequestNotifications: _deviceService.requestNotificationPermission,
         onRequestIgnoreBatteryOptimizations:
             _deviceService.requestIgnoreBatteryOptimizations,
@@ -946,60 +820,25 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   Future<void> _loadPromptAssets() async {
-    if (_loadingPromptAssets || !_hasAdminToken) return;
-    setState(() {
-      _loadingPromptAssets = true;
-      _promptAssetsError = null;
-    });
-    try {
-      final assets = await _backend.loadPromptAssets(
-        token: _requireAdminToken(),
-      );
-      if (!mounted) return;
-      setState(() => _promptAssets = assets);
-      await _applyActiveCharacterPresentation(reloadConversation: false);
-    } on BackendException catch (e) {
-      if (mounted) setState(() => _promptAssetsError = e.message);
-    } finally {
-      if (mounted) setState(() => _loadingPromptAssets = false);
-    }
+    if (!_hasAdminToken) return;
+    await _profileAppearance.loadPromptAssets();
+    if (!mounted || _profileAppearance.promptAssetsError != null) return;
+    await _applyActiveCharacterPresentation(reloadConversation: false);
   }
 
   Future<void> _updatePromptAssets({String? activeCharacter}) async {
-    if (_savingPromptAssets || !_hasAdminToken) return;
-    setState(() {
-      _savingPromptAssets = true;
-      _promptAssetsError = null;
-    });
-    try {
-      final assets = await _backend.updatePromptAssets(
-        token: _requireAdminToken(),
-        activeCharacter: activeCharacter,
-      );
-      if (!mounted) return;
-      setState(() => _promptAssets = assets);
-      await _applyActiveCharacterPresentation();
-    } on BackendException catch (e) {
-      if (mounted) setState(() => _promptAssetsError = e.message);
-    } finally {
-      if (mounted) setState(() => _savingPromptAssets = false);
-    }
+    if (!_hasAdminToken || activeCharacter == null) return;
+    await _profileAppearance.updateActiveCharacter(activeCharacter);
+    if (!mounted || _profileAppearance.promptAssetsError != null) return;
+    await _applyActiveCharacterPresentation();
   }
 
   Future<void> _applyActiveCharacterPresentation({
     bool reloadConversation = true,
   }) async {
-    final id = _currentCharacterId;
-    final switched = id != _activeCharacterId;
-    final name = await _settings.loadProfileName(characterId: id);
-    final avatar = await _settings.loadAvatar(characterId: id);
+    final switched = await _profileAppearance
+        .applyActiveCharacterPresentation();
     if (!mounted) return;
-    setState(() {
-      _activeCharacterId = id;
-      _profileNameOverride = name;
-      _profileAvatarBytes = avatar;
-    });
-    _syncCachedCharacterDisplayName();
     if (!switched || !reloadConversation || !_hasAdminToken) return;
     _diaryController.clear();
     _gardenController.clear();
@@ -1022,6 +861,8 @@ class _CompanionAppState extends State<CompanionApp>
             _personalization,
             _localeController,
             _profileStatusController,
+            _profileAppearance,
+            _capabilitySettings,
           ]),
           builder: (context, _) => StatefulBuilder(
             builder: (context, sheetSetState) {
@@ -1043,9 +884,7 @@ class _CompanionAppState extends State<CompanionApp>
               }
 
               void updatePrefs(YxPrefs prefs) {
-                sheetSetState(() => _prefs = prefs);
-                setState(() {});
-                unawaited(_settings.saveAppearancePrefs(prefs));
+                unawaited(_profileAppearance.savePrefs(prefs));
               }
 
               void updateTheme(bool dark) {
@@ -1078,7 +917,7 @@ class _CompanionAppState extends State<CompanionApp>
                 themePresetCount: _themeController.presets.length,
                 prefs: _prefs,
                 profileDisplayName: _profileDisplayName,
-                profileAvatarBytes: _profileAvatarBytes,
+                profileAvatarBytes: _profileAppearance.profileAvatarBytes,
                 chatBackground: _prefs.chatBackground,
                 nightChatBackground: _prefs.nightChatBackground,
                 onImportNightChatBackground: () async {
@@ -1147,7 +986,8 @@ class _CompanionAppState extends State<CompanionApp>
                 },
                 onResetDreamBackground: _resetDreamBackground,
                 hasAdminToken: _hasAdminToken,
-                backgroundNotifications: _backgroundNotifications,
+                backgroundNotifications:
+                    _capabilitySettings.backgroundNotifications,
                 backendBaseUrl: _backendBaseUrl,
                 ownerUserId: _ownerUserId,
                 notificationTestMode: notificationTestMode,
@@ -1161,23 +1001,22 @@ class _CompanionAppState extends State<CompanionApp>
                 },
                 onEditRelay: _openRelaySettings,
                 onBackgroundNotifications: (enabled) {
-                  sheetSetState(() => _backgroundNotifications = enabled);
                   unawaited(_changeBackgroundNotifications(enabled));
                 },
                 onNotificationTestMode: (enabled) {
                   sheetSetState(() => notificationTestMode = enabled);
-                  unawaited(_deviceService.setNotificationTestMode(enabled));
+                  unawaited(
+                    _capabilitySettings.setNotificationTestMode(enabled),
+                  );
                 },
                 onOpenCapabilities: _openCapabilityCheck,
-                stickerEnabled: _stickerEnabled,
-                autoPlayVoice: _autoPlayVoice,
+                stickerEnabled: _capabilitySettings.stickerEnabled,
+                autoPlayVoice: _capabilitySettings.autoPlayVoice,
                 onStickerEnabledChanged: (enabled) {
-                  sheetSetState(() => _stickerEnabled = enabled);
-                  unawaited(_settings.saveStickerEnabled(enabled));
+                  unawaited(_capabilitySettings.setStickerEnabled(enabled));
                 },
                 onAutoPlayVoiceChanged: (enabled) {
-                  sheetSetState(() => _autoPlayVoice = enabled);
-                  unawaited(_settings.saveAutoPlayVoice(enabled));
+                  unawaited(_capabilitySettings.setAutoPlayVoice(enabled));
                 },
                 onDreamLorebook: (value) {
                   unawaited(() async {
@@ -1237,57 +1076,44 @@ class _CompanionAppState extends State<CompanionApp>
 
   Future<void> _pickAndUploadFile() async {
     if (_chatController.sending) return;
-    final picked = await _settings.pickUploadFile();
+    final picked = await _attachments.pickFile();
     if (!mounted || picked == null) return;
-    final lowerName = picked.name.toLowerCase();
-    const supported = ['.txt', '.md', '.docx'];
-    if (!supported.any(lowerName.endsWith)) {
-      UploadFeedback.fileTypeUnsupported(context);
-      return;
-    }
-    if (picked.bytes.length > 5 * 1024 * 1024) {
-      UploadFeedback.fileTooLarge(context);
-      return;
+    switch (_attachments.validateFile(picked)) {
+      case AttachmentValidationError.typeUnsupported:
+        UploadFeedback.fileTypeUnsupported(context);
+        return;
+      case AttachmentValidationError.tooLarge:
+        UploadFeedback.fileTooLarge(context);
+        return;
+      case null:
+        break;
     }
     await _chatController.uploadFiles(
       [picked],
-      preview: UploadFeedback.filePreview(picked.name),
+      preview: _attachments.filePreview(picked),
       failureLabel: UploadFeedback.fileFailureLabel(context),
     );
   }
 
   Future<void> _pickAndUploadImages() async {
     if (_chatController.sending) return;
-    final picked = await _settings.pickUploadImages();
+    final picked = await _attachments.pickImages();
     if (!mounted || picked.isEmpty) return;
-    const supported = [
-      '.jpg',
-      '.jpeg',
-      '.png',
-      '.gif',
-      '.webp',
-      '.heic',
-      '.heif',
-      '.bmp',
-    ];
-    if (picked.any(
-      (file) => !supported.any(file.name.toLowerCase().endsWith),
-    )) {
-      UploadFeedback.imageTypeUnsupported(context);
-      return;
+    switch (_attachments.validateImages(picked)) {
+      case AttachmentValidationError.typeUnsupported:
+        UploadFeedback.imageTypeUnsupported(context);
+        return;
+      case AttachmentValidationError.tooLarge:
+        UploadFeedback.imageTooLarge(context);
+        return;
+      case null:
+        break;
     }
-    if (picked.any((file) => file.bytes.length > 10 * 1024 * 1024)) {
-      UploadFeedback.imageTooLarge(context);
-      return;
-    }
-    final names = picked.length == 1
-        ? picked.first.name
-        : picked.take(3).map((file) => file.name).join('、');
     final preview = UploadFeedback.imagePreview(
       context,
       count: picked.length,
-      names: names,
-      hasMore: picked.length > 3,
+      names: _attachments.imageNamesPreview(picked),
+      hasMore: _attachments.imagesHaveMore(picked),
     );
     final message = await showDialog<String>(
       context: context,
@@ -1358,7 +1184,7 @@ class _CompanionAppState extends State<CompanionApp>
             c: c,
             route: _route,
             profileDisplayName: _profileDisplayName,
-            profileAvatarBytes: _profileAvatarBytes,
+            profileAvatarBytes: _profileAppearance.profileAvatarBytes,
             onRoute: _pickRoute,
             onOpenSettings: _openSettings,
           ),
@@ -1391,10 +1217,10 @@ class _CompanionAppState extends State<CompanionApp>
   Widget _buildProfile({VoidCallback? onChanged}) {
     return ProfileSettingsContent(
       c: c,
-      promptAssets: _promptAssets,
-      loadingPromptAssets: _loadingPromptAssets,
-      savingPromptAssets: _savingPromptAssets,
-      promptAssetsError: _promptAssetsError,
+      promptAssets: _profileAppearance.promptAssets,
+      loadingPromptAssets: _profileAppearance.loadingPromptAssets,
+      savingPromptAssets: _profileAppearance.savingPromptAssets,
+      promptAssetsError: _profileAppearance.promptAssetsError,
       onSelectCharacter: (value) async {
         final pending = _updatePromptAssets(activeCharacter: value);
         onChanged?.call();
@@ -1440,7 +1266,7 @@ class _CompanionAppState extends State<CompanionApp>
           dark: _themeController.isDark,
           prefs: _prefs,
           profileDisplayName: _profileDisplayName,
-          profileAvatarBytes: _profileAvatarBytes,
+          profileAvatarBytes: _profileAppearance.profileAvatarBytes,
           controller: _chatController,
           onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
           onOpenSettings: _openSettings,
@@ -1465,7 +1291,7 @@ class _CompanionAppState extends State<CompanionApp>
           c: c,
           prefs: _prefs,
           profileDisplayName: _profileDisplayName,
-          profileAvatarBytes: _profileAvatarBytes,
+          profileAvatarBytes: _profileAppearance.profileAvatarBytes,
           controller: _dreamController,
           onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
           onWake: _wakeFromDream,

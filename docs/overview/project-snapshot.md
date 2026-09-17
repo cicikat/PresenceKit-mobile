@@ -20,7 +20,7 @@
 
 - Flutter 入口 `lib/main.dart` 仅保留启动和 `MyApp`；数据模型、HTTP、本机设置、controller、主壳状态和领域 UI 已分别位于 `models/`、`services/`、`controllers/`、`pages/`、`widgets/`，通过普通 `import` 建立独立 library 边界，历史 Dart `part` 已移除。
 - Android 原生层按能力拆成多个 Kotlin 类，边界相对清楚。
-- 当前状态所有权：Connection/Chat/Device/Dream/Garden/Diary controller 持有对应领域状态和 Timer；页面直接监听 controller。`app_shell.dart` 只负责组合、路由、生命周期和尚未下沉的 profile/theme/capability/settings/附件协调。
+- 当前状态所有权：Connection/Chat/Device/Dream/Garden/Diary/Theme/ProfileStatus/Personalization controller 持有对应领域状态；`ProfileAppearanceController` 持有角色资料槽与外观 prefs，`CapabilitySettingsController` 持有设置开关与能力快照，`AttachmentCoordinator` 校验附件。`app_shell.dart` 只负责组合、路由、生命周期、可信 origin 确认和跨域连接。
 - `pubspec.yaml` 依赖很轻，目前主要使用 Flutter SDK、Material、Cupertino Icons。
 - 多平台模板目录仍存在，但实际能力集中在 Android；iOS/macOS/windows/linux/web 基本是 Flutter 模板。
 
