@@ -29,8 +29,13 @@ appearance prefs 增加 `reasoningOpacity`，Float，0–1，默认 0.85；Dart 
 
 - `image_picker` 调用系统相机/照片选择器，用户在预览页明确保存后才持久化并允许上传。不读取淘宝账号、cookie，不增加无障碍、悬浮窗或支付动作。图片仅接受 JPEG/PNG/WebP、单图 ≤10 MiB。
 - 独立 channel `presence_mobile/life_records` 由 `LifeRecordsBridge` 注册，方法为 snapshot/save/delete/image/sync/query/observe/acceptServer；Dart `LifeRecordsService` 是唯一门面。不改 `presence_mobile/settings` 或 legacy prefs 契约。
-- `LifeRecordsStore` 在 `noBackupFilesDir/life_records/` 保存 SQLite 队列/已查询记录缓存和 fsync 后的源图。上限 200 个待办、100 MiB 图片；无静默过期，空间不足明确失败。原图与 token 不写日志，token 不入队列；正式数据在电脑。操作与记录事务更新，已发送请求保持相同 operation_id 和内容；ack 验证 ID/revision/delete 后才出队，最后一个操作成功后清理源图。
-- `LifeRecordsSync` 是前后台共享 HTTP 实现（生活记录是 `BackendClient` 以外的原生后台传输边界）；复用 `BackendSecurityPolicy` origin、Keystore token 和 owner，禁止重定向，连接 8s、读取 20s、单请求总截止 35s。每轮按序连续发送待办，最多 200 个或 60 秒预算；收到有效 ack 后才发下一项，断网停止本轮并保留剩余待办，后台取消后不再发新请求。先读取后端 capability；缺失/关闭时不上传图片，background_sync=false 时不在后台上传。
+- `LifeRecordsStore` 在 `noBackupFilesDir/life_records/` 保存 SQLite 队列/已查询记录缓存和 fsync 后的源图。上限 200 个待办、100 MiB 图片；无静默过期，空间不足明确失败。原图与 token 不写日志，token 不入队列；正式数据在电脑。操作与记录事务更新，已发送请求保持相同 operation_id 和内容；ack 验证 ID/revision/delete 后才出队。源图仅在删除或无 pending 的远程 tombstone 时清理，ack 后保留本机预览。
+- 操作状态在 `operations` 表：`queued` / `retry` / `conflict` / `rejected` / `failed`。`next()` 只出 queued/retry，且同一 record 按 seq 串行。409→conflict（存顶层 `current_record`），确定 4xx→rejected，invalid_ack→failed，网络/401/403/429→retry。`retry(realm)` 把 retry/failed/rejected 改回 queued，不动 conflict。
+- `prepare()` 在网络前冻结 wire `request`（去掉 image_base64）；不确定结果不得换 `operation_id`。确定 4xx 后校正删 rejected 行并 mint 新 ID。`wire()` 仅首次 upsert（`base_revision==0`）才附加 `image_base64`。
+- 记录同步：revision 可由 ack 或**无 pending 的** `merge()` 推进。`hasPending` 时 query/merge 不得覆盖本地。`stale_revision` 拒绝用旧 revision 保存。`acceptServer(realm,id)` 仅用户确认后丢该记录本地 intentions、采用 conflict 快照；未确认冲突不自动覆盖。冲突 UI 只有采用电脑版本，keep-local merge 仍为 open。
+- 删除：未发送且 revision=0 可本地抹掉含图；已发送或已尝试过的请求则 tombstone 排队。图片：创建必带图、之后 immutable；ack/上传后保留本机预览；仅删除或无 pending 的远程 tombstone 清源图。未同步/冲突图不得按聊天缓存策略删除。
+- 识别态在记录 body `recognition_status`（pending/processing/ready/failed），与操作态无关；本机不得把待上传素材显示为已识别。客户端不能设置 `deleted`/`revision`/`recognition_status`。
+- `LifeRecordsSync` 是前后台共享 HTTP 实现（生活记录是 `BackendClient` 以外的原生后台传输边界）；复用 `BackendSecurityPolicy` origin、Keystore token 和 owner，禁止重定向，连接 8s、读取 20s、单请求总截止 35s。每轮按序连续发送待办，最多 200 个或 60 秒预算；收到有效 ack 后才发下一项，断网停止本轮并保留剩余待办，后台取消后不再发新请求。先读取后端 capability；缺失/关闭时不上传图片，background_sync=false 时不在后台上传。enabled/effective 由管理面拥有，手机只消费 capabilities 与 `/life-records/observability`，不新增管理开关。
 - `LifeRecordsJobService` 使用系统 JobScheduler，声明 `BIND_JOB_SERVICE`，新增 `ACCESS_NETWORK_STATE` 与 `RECEIVE_BOOT_COMPLETED` 以支持联网条件和持久任务。没有新增前台常驻服务、通知权限弹窗或精确闹钟。Job 可在普通进程退出/重启后恢复；Doze、系统调度及用户强停会延迟，不能承诺立即上传。前台每 30 秒重试，恢复前台重启计时器。
 - 401/403 对相同凭证暂停自动网络请求；新凭证或手动重试重新检查。429/网络错误退避最高 15 分钟；404/501 提示后端未接入。409 保留本机修改、等待用户确认采用电脑版本，其他记录仍可同步。确定未提交的 4xx 拒绝可通过校正生成新操作；结果不确定的请求不能换 ID。
 - 本机“同步与队列”显示各记录状态/待办数/最近 ack，`observe` 消费后端 `/life-records/observability`。后端未上线及 OEM 真机验收边界见 `docs/known-issues.md` 与工单 17。

@@ -73,6 +73,10 @@ class LifeRecognitionImport {
   }
 }
 
+/// Display mapping over three independent dimensions. Do not store a single enum.
+/// Operation: queued / retry / conflict / rejected / failed.
+/// Sync: revision, local_deleted, presence of local_operations.
+/// Recognition: recognition_status from the backend body.
 class LifeRecord {
   LifeRecord(this.data);
   final Map<String, dynamic> data;

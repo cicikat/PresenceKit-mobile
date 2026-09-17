@@ -96,6 +96,21 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 这是 Android 优先能力，其他平台明确提示不支持采集/离线存储；其余页面仍可使用。
 识别和角色工具已在后端实现，本地显示的排队状态不代表上传或识别完成。
 
+三组状态分开推导，不合成一个 Dart/Kotlin enum。`LOCAL_PENDING` 等只作概念映射，存储仍用
+`queued` / `retry` / `conflict` / `rejected` / `failed`。
+
+| 维度 | 权威 | 取值 | 展示 |
+|---|---|---|---|
+| 操作 | `operations.state` | queued、retry、conflict、rejected、failed | 有待办时优先于识别文案：排队 / 冲突 / 拒绝 |
+| 记录同步 | `revision`、`local_deleted`、是否仍有 `local_operations` | 未发送 revision=0；ack 或无 pending 的 merge 可推进 revision；tombstone 为 `local_deleted` | 删除中 / 已存本机 |
+| 后端识别 | 记录 body `recognition_status` | pending、processing、ready、failed；客户端不可写 | 仅无 pending 时显示识别中 / 已识别 / 识别失败 |
+
+`LifeRecord` 映射：`pending`=有 local_operations，`conflict`=state==conflict，
+`failed`=failed\|rejected，`deleted`=`local_deleted`，`recognition`=`recognition_status`。
+冲突卡片只提供「采用电脑版本」；取消或未确认不得调用 `acceptServer`，也不得用 query/merge
+丢本地意图。keep-local 合并入口仍为 open，见 known-issues。手机只读
+`/life-records/observability` 与 capabilities 的 enabled/effective，不新增管理开关。
+
 ## 当前入口与模块边界
 
 `lib/main.dart` 是薄入口，负责全局错误兜底、根 `MaterialApp` 和 `CompanionApp` 挂载。历史 `part` / `part of` 结构已全部移除；`lib/` 下的 models、services、controllers、pages、widgets 现在都是独立 library，通过普通 `import` 建立编译器可检查的依赖边界。

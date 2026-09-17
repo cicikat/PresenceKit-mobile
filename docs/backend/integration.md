@@ -85,6 +85,8 @@ Roadmap: native desktop/mobile heatmap and day detail UI. Observe: real provider
 先检查 capability，再发送不可变操作；operation_id 去重，base_revision 乐观并发，确认
 operation_id/record_id/revision/delete 后 ack 出队。金额/数量用十进制字符串，日期采用
 occurred_on 本地日历日期，拍照时刻另存 UTC captured_at；用户编辑字段优先于后端识别。
+操作态、记录同步态与识别态分开，不合成客户端 enum；冲突未确认不丢本地修改，用户确认后才
+`acceptServer`。手机不新增 enabled/effective 开关，只读既有 observability。
 
 管理面需要 enabled/effective reason、模型配置、background_sync、角色读取授权与脱敏观测；
 桌面一期 UI 列 roadmap，本次不增加第二个配置真值。照片确认是本机上传授权，不等于后端角色

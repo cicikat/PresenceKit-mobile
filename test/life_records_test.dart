@@ -14,6 +14,24 @@ import 'package:presencekit_mobile/models/life_record.dart';
 import 'package:presencekit_mobile/services/life_records_service.dart';
 import 'package:presencekit_mobile/widgets/life_records_widgets.dart';
 
+Map<String, dynamic> conflictRow({
+  required String id,
+  required String localTitle,
+  required String serverTitle,
+  int serverRevision = 4,
+}) {
+  final server = row(id)
+    ..['title'] = serverTitle
+    ..['revision'] = serverRevision
+    ..['local_operations'] = [];
+  return row(id, pending: true)
+    ..['title'] = localTitle
+    ..['local_operations'] = [
+      {'state': 'conflict', 'action': 'upsert'},
+    ]
+    ..['conflict_record'] = Map<String, dynamic>.from(server);
+}
+
 Map<String, dynamic> row(
   String id, {
   String category = 'diet',
@@ -61,6 +79,26 @@ class FakeLifeService extends LifeRecordsService {
     arguments.add(args);
     if (method == 'save' && saveFails) {
       throw PlatformException(code: 'storage_error');
+    }
+    if (method == 'acceptServer') {
+      final id = args['id'] as String;
+      final index = rows.indexWhere((r) => r['id'] == id);
+      if (index < 0) {
+        throw PlatformException(code: 'conflict_unavailable');
+      }
+      final row = rows[index];
+      final ops = (row['local_operations'] as List? ?? []).whereType<Map>();
+      if (ops.every((op) => op['state'] != 'conflict')) {
+        throw PlatformException(code: 'conflict_unavailable');
+      }
+      final server = row['conflict_record'];
+      if (server is Map) {
+        rows[index] = Map<String, dynamic>.from(server)
+          ..['local_operations'] = [];
+      } else {
+        rows[index] = Map<String, dynamic>.from(row)..['local_operations'] = [];
+      }
+      return null;
     }
     return 'saved-id';
   }
@@ -112,6 +150,46 @@ void main() {
     );
   });
   tearDown(() => controller.dispose());
+
+  test('operation, sync and recognition stay independent', () {
+    final queued = LifeRecord(
+      row('queued', pending: true)..['recognition_status'] = 'ready',
+    );
+    expect(queued.pending, isTrue);
+    expect(queued.conflict, isFalse);
+    expect(queued.failed, isFalse);
+    expect(queued.deleted, isFalse);
+    expect(queued.recognition, 'ready');
+    expect(queued.revision, 1);
+
+    final conflicted = LifeRecord(
+      row('conflicted')
+        ..['local_operations'] = [
+          {'state': 'conflict', 'action': 'upsert'},
+        ]
+        ..['recognition_status'] = 'pending'
+        ..['revision'] = 3,
+    );
+    expect(conflicted.pending, isTrue);
+    expect(conflicted.conflict, isTrue);
+    expect(conflicted.recognition, 'pending');
+    expect(conflicted.revision, 3);
+
+    final rejected = LifeRecord(
+      row('rejected')
+        ..['local_operations'] = [
+          {'state': 'rejected'},
+        ]
+        ..['recognition_status'] = 'ready',
+    );
+    expect(rejected.failed, isTrue);
+    expect(rejected.conflict, isFalse);
+    expect(rejected.recognition, 'ready');
+
+    final deleted = LifeRecord(row('gone')..['local_deleted'] = true);
+    expect(deleted.deleted, isTrue);
+    expect(deleted.pending, isFalse);
+  });
 
   test('date, category and item text filter cached records', () async {
     service.rows = [
@@ -238,6 +316,56 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(service.calls, contains('sync'));
       expect(service.calls.where((m) => m == 'save'), hasLength(1));
+    },
+  );
+
+  test(
+    'reloading a conflict snapshot never auto-accepts the computer copy',
+    () async {
+      service.rows = [
+        conflictRow(
+          id: 'conflicted',
+          localTitle: 'Local',
+          serverTitle: 'Server',
+        ),
+      ];
+      await controller.reload();
+      await controller.synchronize();
+      expect(service.calls, isNot(contains('acceptServer')));
+      expect(controller.records.single.title, 'Local');
+      expect(controller.records.single.conflict, isTrue);
+    },
+  );
+
+  test(
+    'acceptServer adopts the computer copy and leaves unrelated pending records',
+    () async {
+      service.rows = [
+        conflictRow(
+          id: 'conflicted',
+          localTitle: 'Local',
+          serverTitle: 'Server',
+        ),
+        row('other', pending: true)..['title'] = 'Other',
+      ];
+      await controller.reload();
+      await controller.synchronize();
+      expect(await controller.acceptServer('conflicted'), isTrue);
+      expect(service.calls, contains('acceptServer'));
+      expect(
+        service.arguments[service.calls.indexOf('acceptServer')]['id'],
+        'conflicted',
+      );
+      final resolved = controller.records.firstWhere(
+        (r) => r.id == 'conflicted',
+      );
+      expect(resolved.pending, isFalse);
+      expect(resolved.conflict, isFalse);
+      expect(resolved.title, 'Server');
+      expect(resolved.revision, 4);
+      final other = controller.records.firstWhere((r) => r.id == 'other');
+      expect(other.pending, isTrue);
+      expect(other.title, 'Other');
     },
   );
 
@@ -442,6 +570,66 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('queued record prefers queue status over recognition ready', (
+    tester,
+  ) async {
+    service.rows = [
+      row('one', pending: true)..['recognition_status'] = 'ready',
+    ];
+    await controller.reload();
+    await tester.pumpWidget(
+      app(
+        LifeRecordsPage(
+          c: YxPalette.light,
+          controller: controller,
+          onBack: () {},
+        ),
+      ),
+    );
+    expect(find.text('已存本机 · 等待同步'), findsOneWidget);
+    expect(find.text('已识别 · 可校正'), findsNothing);
+  });
+
+  testWidgets('conflict offers computer version only and cancel keeps local', (
+    tester,
+  ) async {
+    service.rows = [
+      conflictRow(
+        id: 'conflicted',
+        localTitle: 'Local draft',
+        serverTitle: 'Server',
+      ),
+    ];
+    await controller.reload();
+    await tester.pumpWidget(
+      app(
+        LifeRecordsPage(
+          c: YxPalette.light,
+          controller: controller,
+          onBack: () {},
+        ),
+      ),
+    );
+    expect(find.text('电脑记录已变更，需要处理版本冲突。'), findsOneWidget);
+    expect(find.text('采用电脑版本'), findsOneWidget);
+    expect(find.text('查看 / 校正'), findsNothing);
+    expect(find.text('删除记录'), findsNothing);
+    await tester.tap(find.text('采用电脑版本'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    expect(service.calls, isNot(contains('acceptServer')));
+    expect(controller.records.single.title, 'Local draft');
+    expect(controller.records.single.conflict, isTrue);
+    await tester.tap(find.text('采用电脑版本'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('确认'));
+    await tester.pumpAndSettle();
+    expect(service.calls, contains('acceptServer'));
+    expect(controller.records.single.title, 'Server');
+    expect(controller.records.single.conflict, isFalse);
+  });
 
   testWidgets('editor requires currency when an amount is provided', (
     tester,
