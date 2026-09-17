@@ -4,6 +4,8 @@
 
 工单 F：状态表写入 flutter-structure / native-capabilities；Dart 补冲突不自动覆盖、确认才 acceptServer、排队优先于识别 ready。Kotlin LifeRecordsTest 既有覆盖不重写 outbox。keep-local 合并与真机断网/Doze/重启仍 observe。
 
+工单 H：ABI 保留 `yexuan_memery` 与现有 `presence_mobile/*` channel；mobile-channel 为现行规范，P2-3 旧补偿阈值关闭。定点更新过时行数/静音/proposed 描述，不恢复已删除工单，不把历史测试记成当前通过。
+
 ## 梦境与生活记录 UI（2026-09-13）
 
 本轮生成中英文本地化；静态分析零问题，梦境、生活记录、设置通道、聊天交互和本地化定向回归 77 项通过。覆盖等待回复时发送按钮保留/草稿恢复、描写统一缩进与透明底、隐藏用户时间、识别字段导入/未知内容保留、明确导入后覆盖备注并通过原 save 保存。Dev debug APK 构建通过，未安装真机；视觉与触摸验收待进行。
@@ -221,7 +223,7 @@ Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/Creden
   - 语言偏好：`getAppLanguage` / `setAppLanguage` 的通道方法名和 `value` 参数。
   - `PlatformSettingsChannel` 为此保留了 `debugForceChannelAvailable` 测试钩子：`flutter test` 始终以宿主 OS（如 Windows）运行，`Platform.isAndroid` 恒为 `false`，不加这个测试钩子的话所有方法在测试里都会被早退守卫直接短路，永远走不到 channel 调用。生产环境该值恒为 `false`，不影响真机行为。
 - `no_hardcoded_qq_number_test.dart`：扫描 `lib/`、`android/`、`docs/`、`test/` 下的文本文件，确保真实 QQ 号不会被提交进仓库（与 `Emerald-presence` 后端仓库的同名测试各自独立，是镜像关系，不是重复）。
-- `app_shell_structure_test.dart`：守住 `app_shell.dart` 当前 1499 行基线，并断言历史 `part` 结构不再回到入口。
+- `app_shell_structure_test.dart`：守住 `app_shell.dart` 上限 `<= 1499`（当前约 1325 行），并断言历史 `part` 结构不再回到入口。
 
 ### 仍未覆盖（真实缺口，不是文档没写）
 

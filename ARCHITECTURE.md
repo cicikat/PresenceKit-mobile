@@ -54,8 +54,11 @@ Android 原生入口是 `MainActivity.kt`：
 
 - 当前 Android namespace/applicationId 为 `com.presencekit.mobile`，Dart package 为
   `presencekit_mobile`。Kotlin 源码位于 `android/app/src/main/kotlin/com/presencekit/mobile/`。
-- `presence_mobile/settings` MethodChannel 与 `SharedPreferences("yexuan_memery")` 仅作为历史兼容契约；前者是当前 channel 名，后者是历史存储名
-  契约保留，不代表当前项目名；未经数据迁移不得改名。
+- ABI 兼容边界：`SharedPreferences("yexuan_memery")` 存储名不得改名；现有 channel 为
+  `presence_mobile/settings`、`presence_mobile/life_records`、`presence_mobile/screen_observation`。
+  前者是当前 settings 通道名，后者是历史 prefs 名，未经数据迁移不得 rename。
+  不另开改名工程。seen / lastAckedSeq / pending 仍落在同一 prefs 名下，由
+  `MobileDeliveryStateStore` 单写。
 
 - 普通设置（后端节点、owner id、可信私网 HTTP origin、屏幕上下文上传开关、主题、备注名、头像和后台通知开关）持久化到 legacy `SharedPreferences("yexuan_memery")`；admin/relay 访问凭证通过 `BackendSecurityPolicy` 走 `AndroidKeystoreCredentialStore`，旧 token 只作为一次性迁移来源。
 - 提供通知、悬浮窗、设备管理器、无障碍权限检查和跳转。
@@ -72,7 +75,7 @@ Android 原生入口是 `MainActivity.kt`：
 - 中继订阅失败或连续断开 1 分钟后，通过 `AlarmManager` 执行一次非阻塞 `/mobile/poll?limit=20&after=<lastAckedSeq>`
   补偿；之后每 15 分钟一次，中继恢复即取消。SSE 保持连接时也按 15 分钟执行安全 poll。
 - 收到 mobile channel 消息后优先根据 behavior metadata 映射悬浮窗；否则走普通通知。
-- 普通通知受 23:30-06:30 静音和 30 分钟冷却控制。
+- 普通通知保留 30 分钟冷却；固定 23:30–06:30 静音已取消。legacy `nightSilent` 仍可读可写，不再抑制通知。
 - `seenMobileMessageIds`、`lastAckedSeq` 与 pending envelope 由 native
   `MobileDeliveryStateStore` 单写。MainActivity 与 `MobileNotificationService` 共用进程级串行锁；
   Flutter 只经 MethodChannel 做 mergeSeen / 单调 advanceAck / 带身份 consume，不再整快照覆盖。

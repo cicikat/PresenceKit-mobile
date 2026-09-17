@@ -18,7 +18,7 @@
 
 - Flutter 主界面已经实现主对话、资料、日记、花园、能力检查、后端节点设置和主题编辑。
 - `lib/main.dart` 已完成重构，现在只有约 164 行入口代码；之前提到的 8k+ 行已拆分完毕。
-- `lib/pages/app_shell.dart` 当前约 1196 行，已迁出连接、聊天、设备、Dream、Garden、Diary 的领域状态与 Timer，并将资料、Dream、Token、节点和中继的纯 UI 对话框下沉至 `widgets/`；仍保留组合根、路由以及 profile/theme/capability/settings 等 UI 协调。结构债状态以 `docs/mobile/flutter-structure.md` 为准。
+- `lib/pages/app_shell.dart` 当前约 1325 行（测试上限 `<= 1499`，不按 `<=600` 验收），已迁出连接、聊天、设备、Dream、Garden、Diary、profile/appearance、capability 设置和附件校验；组合根保留 DI、路由、生命周期、可信 origin 确认和跨域连接。结构债状态以 `docs/mobile/flutter-structure.md` 为准。
 - `lib/pages/chat_page.dart`、`lib/widgets/api_service.dart`、`lib/services/message_bubble.dart` **已废弃/不再使用**，上述路径已不存在或为空壳。
 - 主对话发送消息走 `POST /mobile/chat`；桌面端使用 `/desktop/chat`；聊天历史只读 `/chat-log/*`。
 - Dream 是独立页面和消息流，走 `GET /dream/state`、`POST /dream/enter|chat|exit`。
@@ -169,9 +169,9 @@ flutter build apk --debug --flavor dev
 5. **小步 commit，无需确认**：每完成一个独立修复并验收通过（测试过/验证过）就直接 `git add` + `git commit`（信息一行即可），不必等我说"commit一下"、不要为此专门提问确认。当场固化，不留过夜、不攒大坨。这是预先授权，覆盖"仅在用户明确要求时才 commit"的默认行为。
 6. 新增 Flutter 可见文案必须同时维护 `lib/l10n/app_zh.arb` 与 `app_en.arb`，使用语义化 key，并执行 `flutter gen-l10n`；后端内容、用户输入和协议字段保持原文。
 
-## ����������߽�
+## ����������߽�
 
-������������á�effective state ��Ȩ��բ�ŵ�Ψһ��ʵ��Դ���ֻ���ֻչʾ�ֻ������ѵ����á��ϱ�����/����״̬����ִ���û�ȷ�Ϻ�ı��ض�������Ҫ���ƺ��Ȩ���жϣ�Ҳ��Ҫ�ѱ��ؿ��ص��ɺ���ܿ��ء���������������� capability ��۲� �� ���������� �� mobile channel ��Լ �� Flutter/Android ���á�Ȩ�޺ͽ�����ʾ��˳����롣
+������������á�effective state ��Ȩ��բ�ŵ�Ψһ��ʵ��Դ���ֻ���ֻչʾ�ֻ������ѵ����á��ϱ�����/����״̬����ִ���û�ȷ�Ϻ�ı��ض�������Ҫ���ƺ��Ȩ���жϣ�Ҳ��Ҫ�ѱ��ؿ��ص��ɺ���ܿ��ء���������������� capability ��۲� �� ���������� �� mobile channel ��Լ �� Flutter/Android ���á�Ȩ�޺ͽ�����ʾ��˳����롣
 
 
 ## UI consistency

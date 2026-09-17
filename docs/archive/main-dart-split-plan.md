@@ -111,7 +111,7 @@ models
   -> Dart / 最少量 Flutter 类型
 ```
 
-Android 原生仍是通知、后台长轮询/中继、悬浮窗、无障碍和 origin 安全判断的执行端。Dart 拆分不能复制这套逻辑，也不能改变 `MethodChannel('yexuan_memery/settings')` 契约。
+Android 原生仍是通知、后台长轮询/中继、悬浮窗、无障碍和 origin 安全判断的执行端。Dart 拆分不能复制这套逻辑。现行 settings 通道是 `presence_mobile/settings`；`yexuan_memery` 仅为历史 SharedPreferences 名。本文为 Historical，现行结构见 `docs/mobile/flutter-structure.md`。
 
 ## 入口与顶层辅助清单
 

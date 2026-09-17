@@ -13,7 +13,7 @@
 
 ## 通知与主动消息
 
-- 现在后台收消息的通道已经打通，手机端先实现了本机通知闸门：23:30-06:30 静音、普通通知 30 分钟冷却、静默计数摘要。详见 [背景通知设计](mobile/background-notification-design.md)。
+- 现在后台收消息的通道已经打通。现行闸门以 [mobile-channel](protocols/mobile-channel.md) 为准：普通通知 30 分钟冷却、静默计数摘要；固定 23:30–06:30 静音已取消。设计说明见 [背景通知设计](mobile/background-notification-design.md)。
 - 当前 `mobile_queue` 只有 `content/user_id/timestamp`，没有优先级或 trigger 元数据，所以手机端不根据内容自动判断紧急程度。
 - 后续如果后端增加 `priority` / `trigger` / `ttl`，再把通知强度分级扩成：静默记录、普通通知、悬浮窗建议、全屏提醒建议、锁屏建议。
 - 任何悬浮窗、全屏、锁屏都必须保留单独授权和用户确认，普通主动消息不能自动升级。

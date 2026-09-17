@@ -42,7 +42,7 @@ appearance prefs 增加 `reasoningOpacity`，Float，0–1，默认 0.85；Dart 
 
 ## v1 credential storage
 
-`SharedPreferences("yexuan_memery")` is the compatibility name and must not be renamed. It still holds ordinary settings: backend URL, owner ID, relay URL/topic, language, and notification settings. `adminToken` (access token) and `relayToken` are sensitive and are no longer retained as plaintext there.
+`SharedPreferences("yexuan_memery")` is the compatibility name and must not be renamed. It still holds ordinary settings: backend URL, owner ID, relay URL/topic, language, and notification settings, plus delivery seen/cursor/pending keys written only by `MobileDeliveryStateStore`. `adminToken` (access token) and `relayToken` are sensitive and are no longer retained as plaintext there. Current MethodChannels stay `presence_mobile/settings`, `presence_mobile/life_records`, and `presence_mobile/screen_observation`; do not rename them without a migration.
 
 `AndroidKeystoreCredentialStore` encrypts values in private app preferences using a non-exportable Android Keystore key (AES-GCM on Android 6.0+, Android Keystore RSA compatibility on older supported versions). Its migration state machine is: secure value wins and removes redundant legacy plaintext; otherwise legacy is written securely and cleared only after a committed write; a failed secure write preserves the legacy value. Replacement and deletion also operate on secure storage first. Generic MethodChannel failures never include the token value. Both Flutter foreground calls and `MobileNotificationService` use this same path, so an upgraded installation keeps working without re-entering its token.
 

@@ -48,7 +48,8 @@
 
 | 工单 | 当前仓库状态 | 现状依据 |
 |---|---|---|
-| 旧工单 07（正文未随当前工作树提供） | T1、T2、T3 当前阶段已完成；T4 文档与守则已同步；app shell 仍有 profile/theme/capability/settings/附件协调结构债 | `lib/controllers/`、`lib/services/device_services.dart`、`docs/mobile/flutter-structure.md` |
+| 旧工单 07（正文未随当前工作树提供） | T1–T3 已完成；profile/appearance、capability 设置与附件校验已迁出；`app_shell.dart` 约 1325 行，测试上限 `<= 1499` | `lib/controllers/`、`docs/mobile/flutter-structure.md` |
+| 9.17 审计工单 | A–H 自动测试范围见 `cc-tasks/21-9.17审计评判与工单.md`；不恢复已删除的 16–19 工单正文 | `cc-tasks/21-9.17审计评判与工单.md` |
 | 其他编号工单 | 当前工作树未提供可审计的工单正文，不推断为已完成 | 先查 `git log -- cc-tasks` 或外部仓库对应工单，再补实现状态 |
 
 当前工作树中的 `cc-tasks/` 以实际文件为准；旧工单 07 正文不在本仓库，不能继续作为链接目标。新增领域施工必须先建立对应工单或在现有工单追加“目标、代码落点、验证、遗留问题”四项，避免只改代码不留接力记录。

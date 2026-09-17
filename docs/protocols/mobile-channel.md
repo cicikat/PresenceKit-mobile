@@ -19,13 +19,15 @@ message/notification path; no new native switch, raw IME read permission, WS pay
 Physical device delivery remains observe. Backend contract: docs/ime-ingest.md.
 
 
-## 生活记录队列边界（2026-09-11）
+## 生活记录队列边界（2026-09-17）
 
-生活记录使用独立 proposed `/life-records/*` 与 native `presence_mobile/life_records`。
+生活记录使用独立 `/life-records/*` 与 native `presence_mobile/life_records`。
 不往 mobile durable queue 写识别任务，不使用 `ack_seq`，不改变 chat/poll/ack/relay 字段。
 记录关联键是 record_id + operation_id，版本为 revision；操作确认后才清本机 outbox。
-字段、scope 待办、日期/金额、图片保留期、角色读取权限与观测端点见
-[`Emerald-presence/docs/life-records.md`](../../../Emerald-presence/docs/life-records.md)，尚未有真实后端联调通过证据。
+字段、scope、日期/金额、图片保留期、角色读取权限与观测端点见
+[`Emerald-presence/docs/life-records.md`](../../../Emerald-presence/docs/life-records.md)。
+手机状态表与冲突规则见 [`../android/native-capabilities.md`](../android/native-capabilities.md)。
+真机拍照/Doze/识别联调仍 observe。
 
 MCP is backend-only and is not part of the desktop/mobile client transport contract.
 
@@ -41,7 +43,13 @@ mobile channel 是后端向手机端投递主动消息的通道。手机端不�
 三仓接口总账（含 `/mobile/*`、`/sensor/*`、relay、桌面 WS、Tauri IPC 和设置/观测闭环）见
 `Emerald-presence/docs/three-repo-interface-catalog.md`。
 
-Appearance preferences use the same `presence_mobile/settings` channel via `getAppearancePrefs` / `setAppearancePrefs`: `infoStrip`, `fontSize` (14-20), `showYouAvatar`, and `nightSilent`. `nightSilent` controls native notification quiet hours from 23:30 to 06:30. `proactiveRate` is intentionally not exposed because there is no backend scheduler field or local consumer.
+Appearance preferences use the same `presence_mobile/settings` channel via `getAppearancePrefs` / `setAppearancePrefs`. `nightSilent` remains readable/writable for compatibility and no longer suppresses notifications; fixed 23:30–06:30 quiet hours were removed. `proactiveRate` is intentionally not exposed because there is no backend scheduler field or local consumer.
+
+ABI: do not rename `SharedPreferences("yexuan_memery")`. Current channels stay
+`presence_mobile/settings`, `presence_mobile/life_records`, and
+`presence_mobile/screen_observation`. This protocol page is the current mobile
+channel authority; design notes in `../mobile/background-notification-design.md`
+cross-reference it. P2-3 旧 6 小时补偿阈值已失效：中继断线 1 分钟后补偿，之后每 15 分钟。
 
 ## Scope boundary
 

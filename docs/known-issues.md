@@ -1,6 +1,6 @@
 # 已知问题与技术债
 
-## 9.17 审计复核（A/B/D/G current）
+## 9.17 审计复核（A–H current）
 
 - 通知交接（A，current）：native `consumePendingMobileEnvelopes` 已接；pending 为带 id/seq/time/turn_id 与 origin/owner/char_id 的 envelope。无身份旧正文消费时丢弃。history 已有相同身份不重复回放。MissingPluginException / PlatformException 仍刷新正式历史并保留诊断错误。真机通知点击/离线恢复仍 observe。
 - Delivery 单一写入口（B，current）：`MobileDeliveryStateStore` 进程级串行 mergeSeen / 单调 advanceAck / pending；Flutter 不再整快照覆盖。persist→ack→cursor；迟到 poll 不得写当前 origin+owner。这不是 exactly-once 证明。
@@ -8,7 +8,8 @@
 - 聊天媒体（G，current）：身份为 sha256。`GET /chat/media/{sha256}`（chat）按 owner+活跃角色读仍可恢复原图；410 不可恢复，不承诺已删数据。inbox 7 天 / image_cache 30 天或 500 条 GC 有 live-ref 守卫。上传只回 `media_refs`。管理面 `/observability/chat-media` 只计引用与保留策略。手机本机附件优先，否则鉴权下载，失败/离线/`unavailable`/无 sha256 用缺图占位。本机聊天图本轮不删。生活记录未同步/冲突图不走该 GC。真机换设备、重装、断网、权限失效 observe。
 - Chat 协调层（C，current）：hydration / send-reveal / history read / connection generation 可并行，不合成一个 enum。迟到结果按 generation 丢弃；静默刷新不得覆盖在途发送或 reveal。真机长回复滚动与暂停恢复仍 observe。
 - 生活记录 authority（F，current）：操作 / 同步 / 识别三张状态表分开，不合成 enum。冻结 request、pending 优先、用户确认才 `acceptServer`。Kotlin outbox 不变量已有；Dart 补冲突不自动覆盖与确认采用电脑版本。open：keep-local 冲突合并。真机断网/Doze/重启仍 observe。
-- 评判、证据及分步验收见 [9.17 审计评判与工单](../cc-tasks/21-9.17审计评判与工单.md)。两份通知文档当前均为 1 分钟断线阈值/15 分钟补偿，原报告 P2-3 不再成立。
+- ABI / 文档（H，current）：保留 `yexuan_memery` prefs 名与现有 `presence_mobile/*` channel；不发起 rename。P2-3 旧补偿阈值已关闭。规范以 `docs/protocols/mobile-channel.md` 为准。不恢复已删除工单 16–19。
+- 评判、证据及分步验收见 [9.17 审计评判与工单](../cc-tasks/21-9.17审计评判与工单.md)。通知补偿当前为 1 分钟断线阈值/15 分钟续约，原报告 P2-3 不再成立。
 
 Brief 253.6 observe：现有录音转写已透传一次性语调凭据，请求层验证通过；实际麦克风与 STT 联调未验收。
 新 STT 默认关闭，配置位于后端管理面；未提供 tone 时使用 unclear，编辑文字后不沿用语调。
@@ -323,9 +324,9 @@ manifest 错配时的防御性关闭与恢复路径保留，并已加注释说�
 
 **状态（2026-07-13）**：`part` 已移除；Connection、Chat、Device、Dream、Garden、Diary controller 已建立并接线，Chat/Dream/Garden/Diary 页面直接监听 controller；app shell 不再持有这些领域的 Timer 和成组业务状态。`AppSettingsStore` 已由五个域门面包装，app shell 无直接方法调用。
 
-**状态（2026-07-22）**：app shell 已降至约 1196 行；资料、Dream、Token、节点和中继的纯 UI 对话框，以及附件可见反馈/预览文案已迁至 `widgets/`。
+**状态（2026-07-22，历史快照）**：当时 app shell 约 1196 行；资料、Dream、Token、节点和中继的纯 UI 对话框，以及附件可见反馈/预览文案已迁至 `widgets/`。现行行数与职责以 2026-09-17 条目和 `docs/mobile/flutter-structure.md` 为准，不把该数字当当前通过证据。
 
-**状态（2026-09-17）**：profile/appearance、capability 设置开关和附件校验已迁到独立 controller；ThemeController / ProfileStatusController / ConnectionController / DeviceController 所有权不变。组合根仍弹出安全确认对话框。不按 `<=600` 行验收。
+**状态（2026-09-17）**：profile/appearance、capability 设置开关和附件校验已迁到独立 controller；ThemeController / ProfileStatusController / ConnectionController / DeviceController 所有权不变。组合根仍弹出安全确认对话框。`app_shell.dart` 约 1325 行，测试上限 `<= 1499`，不按 `<=600` 行验收。
 
 </details>
 
