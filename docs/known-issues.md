@@ -2,11 +2,29 @@
 
 ## 9.18 补扫复核（2026-09-17，open/observe）
 
-- partial：22 已落地本机会话角色（origin+owner）、PromptAssets 代际守卫、发送/媒体 SessionScope 校验、前台 poll 异角色 stash+共享 cursor ack。仍 **blocked** 于后端 B/C：chat/上传/媒体读取冻结 char_id、授权错误码、capability、多角色通知策略。真机与真实后端 not-run。
-- open：当前 token 保存未统一失效各领域会话。PromptAssets 迟到保护已由 22 补上；其余领域由 [23 号工单](../cc-tasks/23-session-lifecycle-audit-followup.md) 在接收 22 成果后补漏。
-- open：角色呈现切换未重置 Dream；已有部分 generation/token/backend 保护，尚非完整生命周期闭环。节点/凭据失效需补齐，Dream settings 角色归属等待后端 F，不臆定契约。
-- open：DeviceController Timer 未随 hidden/paused 停止；原生后台已有屏幕上传路径，交接边界未闭合，尚未复现双采。pushSensorData 在无运动权限时可主动索权，拟改为周期跳过步数、设置页显式申请。
-- observe：设备生命周期矩阵当前 14 项均 not-run，复用 22/M4 与 21/A5/G5 的真实证据补验。全局 cleartext 为已记录兼容策略，列防御纵深评估，不标成已证实漏洞。补扫末尾 pending handler、delivery 单写、Chat/AppShell 重构及 ABI 改名建议不重复立项；详见 23 的证据表。
+- partial：22 已落地本机会话角色（origin+owner）、PromptAssets 代际守卫、发送/媒体 SessionScope 校验、前台 poll 异角色 stash+共享 cursor ack。仍 **blocked** 于后端 B/C：chat/上传/媒体读取冻结 char_id、授权错误码、capability、多角色通知策略。真机与真实后端 not-run。提交 `67c812c`。
+- open：当前 token 保存未统一失效各领域会话。PromptAssets 迟到保护已由 22 补上；其余领域由 [23 号工单](../cc-tasks/23-session-lifecycle-audit-followup.md) 在接收 22 成果后补漏（23/A）。
+- open：角色呈现切换未重置 Dream；已有部分 generation/token/backend 保护，尚非完整生命周期闭环。节点/凭据失效需补齐，Dream settings 角色归属等待后端 F，不臆定契约（23/B）。
+- open：DeviceController Timer 未随 hidden/paused 停止；原生后台已有屏幕上传路径，交接边界未闭合，尚未复现双采（23/C）。
+- current：23/D — `pushSensorData` / start 不再索取 `ACTIVITY_RECOGNITION`；无权限跳过 steps、电量照常上报。显式入口在「系统配置 → 权限与功能」。提交 `d552d02`。真机授权往返 not-run。
+- current（评估结案）：23/E — 见下方「明文 HTTP 防御纵深评估」；**不改 Manifest**。
+- observe：设备生命周期矩阵当前 14 项均 not-run；补扫末尾 pending handler、delivery 单写、Chat/AppShell 重构及 ABI 改名建议不重复立项。
+
+## 明文 HTTP 防御纵深评估（23/E，2026-09-17，current）
+
+定点核查（源码，非“未来 SDK 可能绕过”）：
+
+| 入口 | origin 校验 | 禁止自动重定向 | 备注 |
+|---|---|---|---|
+| Flutter `BackendClient`（含 media） | `_endpoint` 前 `isAllowedBaseUrl` | `followRedirects = false` | 统一 Bearer |
+| `MobileNotificationService` poll/ack/activate/relay | `BackendSecurityPolicy.isAllowedBaseUrl` | `instanceFollowRedirects = false` | 与前台同源策略 |
+| `LifeRecordsSync` | `require(isAllowedBaseUrl)` | false | 独立 channel |
+| `ScreenObservationClient` / `PhoneControlService` | 同源策略 | false | |
+| Manifest | `usesCleartextTraffic=true` | — | 无 `network_security_config` |
+
+允许矩阵（`BackendSecurityPolicy`）：HTTPS 任意；HTTP 仅 loopback、`100.64/10` Tailscale、用户确认过的 RFC1918 精确 IPv4 或 `*.ts.net` MagicDNS；**公网 HTTP 拒绝**。
+
+结论：静态 Network Security Config 无法表达“用户确认后的动态私网 origin”，强行加 cleartext 域名白名单会破坏现有 LAN/Tailscale 流程或被迫过宽。保留 Manifest cleartext + 应用层守卫；既有 `BackendSecurityPolicyTest` 覆盖确认型私网判定。未发现当前入口在未校验 origin 时携带凭据跟随重定向的实锤绕过。公网 HTTPS-only 不作为本阶段强制项。
 
 ## 9.17 审计复核（A–H current）
 
