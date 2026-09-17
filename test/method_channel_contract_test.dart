@@ -214,6 +214,54 @@ void main() {
       expect(calls.single.arguments, isNull);
     });
 
+    test('consumes pending envelopes with origin owner and character', () async {
+      reply([
+        {
+          'id': 'm1',
+          'seq': 4,
+          'content': 'hello',
+          'turn_id': 'm1',
+          'origin': 'http://127.0.0.1:8080',
+          'owner': 'owner',
+          'char_id': 'char-a',
+          'replayable': true,
+        },
+      ]);
+      final envelopes = await store.consumePendingMobileEnvelopes(
+        origin: 'http://127.0.0.1:8080',
+        owner: 'owner',
+        charId: 'char-a',
+      );
+      expect(calls.single.method, 'consumePendingMobileEnvelopes');
+      expect(calls.single.arguments, {
+        'origin': 'http://127.0.0.1:8080',
+        'owner': 'owner',
+        'charId': 'char-a',
+      });
+      expect(envelopes.single.id, 'm1');
+      expect(envelopes.single.replayable, isTrue);
+    });
+
+    test('pending envelope consume does not swallow missing plugin', () async {
+      handler = (_) async => throw MissingPluginException('missing');
+      expect(
+        () => store.consumePendingMobileEnvelopes(),
+        throwsA(isA<MissingPluginException>()),
+      );
+    });
+
+    test('bindMobileDeliveryScope sends origin and owner', () async {
+      await store.bindMobileDeliveryScope(
+        origin: 'http://127.0.0.1:8080',
+        owner: 'owner',
+      );
+      expect(calls.single.method, 'bindMobileDeliveryScope');
+      expect(calls.single.arguments, {
+        'origin': 'http://127.0.0.1:8080',
+        'owner': 'owner',
+      });
+    });
+
     test('getBackgroundPollStatus parses the platform map', () async {
       reply({
         'lastBackgroundPollAt': 1781280000000,

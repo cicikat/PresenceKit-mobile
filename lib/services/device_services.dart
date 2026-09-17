@@ -56,11 +56,28 @@ class SettingsStore {
       _store.loadSeenMobileMessageIds();
   Future<List<String>> consumePendingMobileContents() =>
       _store.consumePendingMobileContents();
-  Future<void> saveSeenMobileMessageIds(List<String> ids) =>
-      _store.saveSeenMobileMessageIds(ids);
+  Future<List<PendingMobileEnvelope>> consumePendingMobileEnvelopes({
+    String? origin,
+    String? owner,
+    String? charId,
+  }) => _store.consumePendingMobileEnvelopes(
+    origin: origin,
+    owner: owner,
+    charId: charId,
+  );
+  Future<void> bindMobileDeliveryScope({String? origin, String? owner}) =>
+      _store.bindMobileDeliveryScope(origin: origin, owner: owner);
+  Future<void> saveSeenMobileMessageIds(
+    List<String> ids, {
+    String? origin,
+    String? owner,
+  }) => _store.saveSeenMobileMessageIds(ids, origin: origin, owner: owner);
   Future<int?> loadLastAckedMobileSeq() => _store.loadLastAckedMobileSeq();
-  Future<void> saveLastAckedMobileSeq(int value) =>
-      _store.saveLastAckedMobileSeq(value);
+  Future<void> saveLastAckedMobileSeq(
+    int value, {
+    String? origin,
+    String? owner,
+  }) => _store.saveLastAckedMobileSeq(value, origin: origin, owner: owner);
   Future<String?> loadCustomThemePalette() => _store.loadCustomThemePalette();
   Future<void> saveCustomThemePalette(String value) =>
       _store.saveCustomThemePalette(value);

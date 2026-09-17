@@ -1,5 +1,11 @@
 # 已知问题与技术债
 
+## 9.17 审计复核（A/B current；D/G 跨仓施工中）
+
+- 通知交接（A，current）：native `consumePendingMobileEnvelopes` 已接；pending 为带 id/seq/time/turn_id 与 origin/owner/char_id 的 envelope。无身份旧正文消费时丢弃。history 已有相同身份不重复回放。MissingPluginException / PlatformException 仍刷新正式历史并保留诊断错误。真机通知点击/离线恢复仍 observe。
+- Delivery 单一写入口（B，current）：`MobileDeliveryStateStore` 进程级串行 mergeSeen / 单调 advanceAck / pending；Flutter 不再整快照覆盖。persist→ack→cursor；迟到 poll 不得写当前 origin+owner。这不是 exactly-once 证明。
+- 评判、证据及分步验收见 [9.17 审计评判与工单](../cc-tasks/21-9.17审计评判与工单.md)。两份通知文档当前均为 1 分钟断线阈值/15 分钟补偿，原报告 P2-3 不再成立。
+
 Brief 253.6 observe：现有录音转写已透传一次性语调凭据，请求层验证通过；实际麦克风与 STT 联调未验收。
 新 STT 默认关闭，配置位于后端管理面；未提供 tone 时使用 unclear，编辑文字后不沿用语调。
 

@@ -609,24 +609,58 @@ class AppSettingsStore {
     }
   }
 
-  Future<void> saveSeenMobileMessageIds(List<String> ids) async {
+  Future<void> saveSeenMobileMessageIds(
+    List<String> ids, {
+    String? origin,
+    String? owner,
+  }) async {
     if (!_channelAvailable) return;
     await PlatformSettingsChannel.channel.invokeMethod<void>(
       'setSeenMobileMessageIds',
-      {'ids': ids},
+      {
+        'ids': ids,
+        if (origin != null) 'origin': origin,
+        if (owner != null) 'owner': owner,
+      },
+    );
+  }
+
+  Future<void> bindMobileDeliveryScope({
+    String? origin,
+    String? owner,
+  }) async {
+    if (!_channelAvailable) return;
+    await PlatformSettingsChannel.channel.invokeMethod<void>(
+      'bindMobileDeliveryScope',
+      {'origin': origin, 'owner': owner},
     );
   }
 
   Future<List<String>> consumePendingMobileContents() async {
+    final envelopes = await consumePendingMobileEnvelopes();
+    return envelopes
+        .map((envelope) => envelope.content)
+        .where((text) => text.trim().isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<List<PendingMobileEnvelope>> consumePendingMobileEnvelopes({
+    String? origin,
+    String? owner,
+    String? charId,
+  }) async {
     if (!_channelAvailable) return const [];
-    try {
-      final values = await PlatformSettingsChannel.channel
-          .invokeMethod<List<dynamic>>('consumePendingMobileContents');
-      return values?.map((value) => value.toString()).toList(growable: false) ??
-          const [];
-    } on PlatformException {
-      return const [];
-    }
+    final values = await PlatformSettingsChannel.channel
+        .invokeMethod<List<dynamic>>('consumePendingMobileEnvelopes', {
+          'origin': origin,
+          'owner': owner,
+          'charId': charId,
+        });
+    return [
+      for (final value in values ?? const [])
+        if (value is Map)
+          PendingMobileEnvelope.fromJson(Map<String, dynamic>.from(value)),
+    ];
   }
 
   Future<List<String>> loadSeenMobileMessageIds() async {
@@ -644,11 +678,19 @@ class AppSettingsStore {
     );
   }
 
-  Future<void> saveLastAckedMobileSeq(int value) async {
+  Future<void> saveLastAckedMobileSeq(
+    int value, {
+    String? origin,
+    String? owner,
+  }) async {
     if (!_channelAvailable) return;
     await PlatformSettingsChannel.channel.invokeMethod<void>(
       'setLastAckedMobileSeq',
-      {'value': value},
+      {
+        'value': value,
+        if (origin != null) 'origin': origin,
+        if (owner != null) 'owner': owner,
+      },
     );
   }
 

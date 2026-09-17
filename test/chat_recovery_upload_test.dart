@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/controllers/chat_controller.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
@@ -9,8 +9,24 @@ import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
 
 class _Settings extends AppSettingsStore {
+  List<PendingMobileEnvelope> pending = const [];
+  Object? pendingError;
+  int consumeCalls = 0;
+
   @override
   Future<bool> isBackgroundNotificationServiceRunning() async => false;
+
+  @override
+  Future<List<PendingMobileEnvelope>> consumePendingMobileEnvelopes({
+    String? origin,
+    String? owner,
+    String? charId,
+  }) async {
+    consumeCalls += 1;
+    final error = pendingError;
+    if (error != null) throw error;
+    return pending;
+  }
 }
 
 class _Backend extends BackendClient {
@@ -92,6 +108,9 @@ void main() {
       token: () => 'test-token',
       settings: SettingsStore(settings),
       relay: RelayStatusService(settings),
+      deliveryOrigin: () => 'http://127.0.0.1:8080',
+      deliveryOwner: () => 'owner',
+      deliveryCharId: () => 'char-a',
     );
   });
   tearDown(() => controller.dispose());
@@ -178,6 +197,67 @@ void main() {
       expect(backend.historyReads, 2);
     },
   );
+
+  test('offline pending replay keeps identity and skips history duplicates', () async {
+    backend.offline = false;
+    backend.day = ChatLogDay.fromJson({
+      'date': '2026-09-12',
+      'entries': [
+        {
+          'time': '12:01',
+          'assistant': 'already in history',
+          'turn_id': 'dup',
+        },
+      ],
+    });
+    await controller.start();
+    settings.pending = [
+      const PendingMobileEnvelope(
+        content: 'already in history',
+        id: 'dup',
+        turnId: 'dup',
+        origin: 'http://127.0.0.1:8080',
+        owner: 'owner',
+        charId: 'char-a',
+        replayable: true,
+      ),
+      const PendingMobileEnvelope(
+        content: 'offline only',
+        id: 'fresh',
+        turnId: 'fresh',
+        origin: 'http://127.0.0.1:8080',
+        owner: 'owner',
+        charId: 'char-a',
+        replayable: true,
+      ),
+      const PendingMobileEnvelope(
+        content: 'legacy body',
+        replayable: false,
+      ),
+    ];
+    await controller.catchUpFromNotification();
+    expect(controller.sent.where((m) => m.text == 'offline only'), hasLength(1));
+    expect(controller.sent.where((m) => m.text == 'already in history'), isEmpty);
+    expect(controller.sent.where((m) => m.text == 'legacy body'), isEmpty);
+    expect(controller.sent.single.turnId, 'fresh');
+    await controller.catchUpFromNotification();
+    expect(controller.sent.where((m) => m.text == 'offline only'), hasLength(1));
+  });
+
+  test('missing plugin still refreshes history and keeps a diagnostic error', () async {
+    backend.offline = false;
+    backend.day = ChatLogDay.fromJson({
+      'date': '2026-09-12',
+      'entries': [
+        {'time': '12:00', 'assistant': 'from history', 'turn_id': 'h1'},
+      ],
+    });
+    settings.pendingError = MissingPluginException('consumePendingMobileEnvelopes');
+    await controller.catchUpFromNotification();
+    expect(controller.history.last.text, 'from history');
+    expect(controller.pendingHandoffError, isNotNull);
+    expect(backend.historyReads, 1);
+  });
   test(
     'manual refresh recovers failed startup and coalesces repeated refreshes',
     () async {

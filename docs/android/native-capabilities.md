@@ -117,11 +117,13 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 - 中继重连从 1 秒开始指数退避，最长 60 秒，成功后重置；SSE 90 秒无心跳会触发重连。
 - 服务单写 `lastBackgroundPollAt`、`lastBackgroundError`、中继连接状态、最近中继心跳和最近信号时间；
   能力检查页只读展示。
-- `seenMobileMessageIds` 是上述单写约定的有意例外：服务在 `consumeMobileMessage()` 写，Flutter
-  在 `_pollMobile()` 经 MethodChannel 写，依赖前后台时序互斥；这不是 bug。未来可选统一为
-  MethodChannel 合并写，当前不据此重构。
-- `lastAckedSeq` 同样由 Flutter 前台与后台服务共用，依赖同一前后台时序互斥；双方只做单调递增写入，
-  且严格遵守“先持久化消息去重记录，再 ack，最后持久化游标”。
+- `seenMobileMessageIds`、`lastAckedSeq` 与 `pendingMobileEnvelopes` 由
+  `MobileDeliveryStateStore` 单写。Activity 与 Service 同默认进程，线程锁足够。Flutter
+  `setSeenMobileMessageIds` 是 merge 不是 replace；`setLastAckedMobileSeq` 单调前进。
+  带 origin/owner 的迟到 persist 不得写当前 cursor 作用域。旧无身份
+  `pendingMobileContents` 消费时丢弃，不插入当前聊天。
+- persist→ack→cursor 顺序不变：先合并 seen，再 `/mobile/ack`，成功后才推进 `lastAckedSeq`。
+  落盘失败不 ack。这不是 exactly-once 投递证明，只是单一写入口与单调游标。
 - 当前 `specialUse` 前台服务不受 Android 15 `dataSync` 配额限制。`onTimeout` 仅作为防御路径保留：
   若未来 manifest 错误改回受限类型，会使中继和轮询 generation 失效、断开连接并安排恢复轮询。
 

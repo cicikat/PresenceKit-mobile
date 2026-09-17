@@ -8,18 +8,34 @@ import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
 
 class _Settings extends AppSettingsStore {
-  _Settings({this.failSeenPersistence = false});
+  _Settings({this.failSeenPersistence = false, this.holdPersist = false});
 
   final bool failSeenPersistence;
+  final bool holdPersist;
   final List<String> seenIds = [];
   int? lastAckedSeq;
+  String? boundOrigin;
+  String? boundOwner;
+  String? persistOrigin;
+  String? persistOwner;
+  Completer<void>? persistGate;
 
   @override
   Future<List<String>> loadSeenMobileMessageIds() async => seenIds;
 
   @override
-  Future<void> saveSeenMobileMessageIds(List<String> ids) async {
+  Future<void> saveSeenMobileMessageIds(
+    List<String> ids, {
+    String? origin,
+    String? owner,
+  }) async {
+    persistOrigin = origin;
+    persistOwner = owner;
     if (failSeenPersistence) throw Exception('seen persistence failed');
+    if (holdPersist) {
+      persistGate = Completer<void>();
+      await persistGate!.future;
+    }
     seenIds
       ..clear()
       ..addAll(ids);
@@ -29,8 +45,23 @@ class _Settings extends AppSettingsStore {
   Future<int?> loadLastAckedMobileSeq() async => lastAckedSeq;
 
   @override
-  Future<void> saveLastAckedMobileSeq(int value) async {
+  Future<void> saveLastAckedMobileSeq(
+    int value, {
+    String? origin,
+    String? owner,
+  }) async {
+    persistOrigin = origin;
+    persistOwner = owner;
     lastAckedSeq = value;
+  }
+
+  @override
+  Future<void> bindMobileDeliveryScope({
+    String? origin,
+    String? owner,
+  }) async {
+    boundOrigin = origin;
+    boundOwner = owner;
   }
 
   @override
@@ -99,13 +130,19 @@ class _Backend extends BackendClient {
   }
 }
 
-ChatController _controller(_Backend backend, _Settings settings) =>
-    ChatController(
-      backend: () => backend,
-      token: () => 'test-token',
-      settings: SettingsStore(settings),
-      relay: RelayStatusService(settings),
-    );
+ChatController _controller(
+  _Backend backend,
+  _Settings settings, {
+  String? Function()? deliveryOrigin,
+  String? Function()? deliveryOwner,
+}) => ChatController(
+  backend: () => backend,
+  token: () => 'test-token',
+  settings: SettingsStore(settings),
+  relay: RelayStatusService(settings),
+  deliveryOrigin: deliveryOrigin,
+  deliveryOwner: deliveryOwner,
+);
 
 MobilePollMessage _message(int index) => MobilePollMessage(
   id: 'message-$index',
@@ -337,6 +374,41 @@ void main() {
 
     expect(backend.ackCalls, 0);
     expect(controller.lastAckedMobileSeq, isNull);
+    controller.dispose();
+  });
+
+  test('late persist after origin change does not write the new scope', () async {
+    var origin = 'http://127.0.0.1:8080';
+    var owner = 'owner';
+    final settings = _Settings(holdPersist: true);
+    final backend = _Backend(
+      settings,
+      activation: const MobileActivationResult(ok: true, active: true),
+      pollResults: [
+        MobilePollResult(ok: true, active: true, messages: [_message(4)]),
+      ],
+    );
+    final controller = _controller(
+      backend,
+      settings,
+      deliveryOrigin: () => origin,
+      deliveryOwner: () => owner,
+    );
+
+    final poll = controller.pollMobile(animate: false);
+    for (var i = 0; i < 20 && settings.persistGate == null; i += 1) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(settings.persistGate, isNotNull);
+    origin = 'http://10.0.0.2:8080';
+    owner = 'other';
+    settings.persistGate!.complete();
+    await poll;
+
+    expect(settings.persistOrigin, 'http://127.0.0.1:8080');
+    expect(settings.persistOwner, 'owner');
+    expect(controller.lastAckedMobileSeq, isNull);
+    expect(backend.ackCalls, 0);
     controller.dispose();
   });
 }

@@ -35,13 +35,21 @@ class _ForegroundSettingsStore extends AppSettingsStore {
   Future<int?> loadLastAckedMobileSeq() async => lastAckedSeq;
 
   @override
-  Future<void> saveLastAckedMobileSeq(int value) async {
+  Future<void> saveLastAckedMobileSeq(
+    int value, {
+    String? origin,
+    String? owner,
+  }) async {
     events.add('cursor:$value');
     lastAckedSeq = value;
   }
 
   @override
-  Future<void> saveSeenMobileMessageIds(List<String> ids) async {
+  Future<void> saveSeenMobileMessageIds(
+    List<String> ids, {
+    String? origin,
+    String? owner,
+  }) async {
     events.add('persist:${ids.join(',')}');
     seenIds = List<String>.of(ids);
   }

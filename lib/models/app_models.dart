@@ -1268,6 +1268,73 @@ class MobilePollMessage {
       dateKey: timestamp == null ? null : _chatDateKey(timestamp!),
       time: timestamp == null ? '刚才' : _formatDateTime(timestamp!),
       sticker: sticker,
+      turnId: id.trim().isEmpty ? null : id.trim(),
+    );
+  }
+}
+
+class PendingMobileEnvelope {
+  const PendingMobileEnvelope({
+    required this.content,
+    this.id,
+    this.seq,
+    this.timestamp,
+    this.turnId,
+    this.origin,
+    this.owner,
+    this.charId,
+    this.displayText,
+    this.replayable = false,
+  });
+
+  factory PendingMobileEnvelope.fromJson(Map<String, dynamic> json) {
+    final rawTimestamp = json['timestamp'];
+    return PendingMobileEnvelope(
+      content: (json['content'] ?? '').toString(),
+      id: _optionalId(json['id']),
+      seq: json['seq'] is num ? (json['seq'] as num).toInt() : null,
+      timestamp: rawTimestamp is num
+          ? DateTime.fromMillisecondsSinceEpoch((rawTimestamp * 1000).round())
+          : null,
+      turnId: _optionalId(json['turn_id']) ?? _optionalId(json['id']),
+      origin: _optionalId(json['origin']),
+      owner: _optionalId(json['owner']),
+      charId: _optionalId(json['char_id']),
+      displayText: json['display_text'] is String
+          ? json['display_text'] as String
+          : null,
+      replayable: json['replayable'] == true,
+    );
+  }
+
+  static String? _optionalId(Object? value) {
+    final text = value?.toString().trim() ?? '';
+    return text.isEmpty ? null : text;
+  }
+
+  final String content;
+  final String? id;
+  final int? seq;
+  final DateTime? timestamp;
+  final String? turnId;
+  final String? origin;
+  final String? owner;
+  final String? charId;
+  final String? displayText;
+  final bool replayable;
+
+  String? get identity => turnId ?? id;
+
+  ChatMessage toChatMessage() {
+    return ChatMessage(
+      role: 'him',
+      text: content,
+      displayText: displayText,
+      dateKey: timestamp == null ? null : _chatDateKey(timestamp!),
+      time: timestamp == null ? '刚刚' : _formatDateTime(timestamp!),
+      timestamp: timestamp,
+      turnId: identity,
+      retainOnRefresh: true,
     );
   }
 }

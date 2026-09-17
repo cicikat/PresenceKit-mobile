@@ -72,9 +72,11 @@ Android 原生入口是 `MainActivity.kt`：
   补偿；之后每 15 分钟一次，中继恢复即取消。SSE 保持连接时也按 15 分钟执行安全 poll。
 - 收到 mobile channel 消息后优先根据 behavior metadata 映射悬浮窗；否则走普通通知。
 - 普通通知受 23:30-06:30 静音和 30 分钟冷却控制。
-- `seenMobileMessageIds` 是有意的前后台时序互斥双写：后台服务在 `consumeMobileMessage()` 写，
-  Flutter 前台在 `_pollMobile()` 经 MethodChannel 写；这不是 bug。未来可选统一为 MethodChannel
-  合并写，当前不据此重构。
+- `seenMobileMessageIds`、`lastAckedSeq` 与 pending envelope 由 native
+  `MobileDeliveryStateStore` 单写。MainActivity 与 `MobileNotificationService` 共用进程级串行锁；
+  Flutter 只经 MethodChannel 做 mergeSeen / 单调 advanceAck / 带身份 consume，不再整快照覆盖。
+  旧「有意双写不是 bug」描述已失效。Cursor 作用域是 origin+owner（节点级，非按角色）。
+  persist→ack→cursor；落盘失败不 ack。迟到 poll 不得写当前作用域。
 
 悬浮行为由 `FloatingBubbleService.kt` 和 `YexuanAccessibilityService.kt` 配合：
 

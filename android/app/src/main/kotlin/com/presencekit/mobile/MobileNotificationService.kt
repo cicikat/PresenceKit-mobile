@@ -61,7 +61,6 @@ class MobileNotificationService : Service() {
     private val notificationIndex = AtomicInteger(0)
     private val pollGeneration = AtomicInteger(0)
     private val pollStateLock = Any()
-    private val messageConsumptionLock = Any()
     @Volatile private var activePollConnection: HttpURLConnection? = null
     @Volatile private var activeRelayConnection: HttpURLConnection? = null
 
@@ -569,8 +568,13 @@ class MobileNotificationService : Service() {
                 return true
             }
             // signal 即时回源与周期补偿都只做一次非阻塞拉取，不在后台维持长轮询。
-            val lastAckedSeq = prefs.getLong("lastAckedSeq", Long.MIN_VALUE)
-            val afterQuery = if (lastAckedSeq == Long.MIN_VALUE) "" else "&after=$lastAckedSeq"
+            val store = MobileDeliveryStateStore.of(prefs)
+            store.bindCursorScope(
+                BackendSecurityPolicy.originFor(baseUrl),
+                BackendSecurityPolicy.ownerUserId(prefs).ifBlank { null },
+            )
+            val lastAckedSeq = store.lastAckedSeq()
+            val afterQuery = if (lastAckedSeq == null) "" else "&after=$lastAckedSeq"
             val body = pollJson("$baseUrl/mobile/poll?limit=20$afterQuery", token)
             val decoded = JSONObject(body)
             if (!decoded.optBoolean("ok") || !decoded.optBoolean("active")) {
@@ -609,7 +613,7 @@ class MobileNotificationService : Service() {
                 if (!ack.optBoolean("ok")) {
                     throw IOException(ack.optString("error", "mobile acknowledgement failed"))
                 }
-                persistLastAckedSeq(batchMaxSeq)
+                store.advanceAck(batchMaxSeq)
             }
             if (!timeoutTriggered) {
                 recordBackgroundError(notificationPermissionError())
@@ -771,57 +775,18 @@ class MobileNotificationService : Service() {
         val content = item.optString("content").trim()
         if (content.isEmpty()) return false
         val id = item.optString("id").trim()
-        synchronized(messageConsumptionLock) {
+        val prefs = servicePrefs()
+        val store = MobileDeliveryStateStore.of(prefs)
+        val origin = BackendSecurityPolicy.originFor(backendBaseUrl().orEmpty())
+        val owner = BackendSecurityPolicy.ownerUserId(prefs).ifBlank { null }
+        if (!store.acceptIncoming(item, origin, owner)) {
             if (id.isNotEmpty()) {
-                val seenIds = readSeenMobileMessageIds()
-                if (!seenIds.add(id)) {
-                    Log.d(tag, "skipping already-seen $source message id=$id")
-                    return false
-                }
-                while (seenIds.size > 200) {
-                    seenIds.iterator().let { iterator ->
-                        iterator.next()
-                        iterator.remove()
-                    }
-                }
-                // Intentional dual write with Flutter _pollMobile (via MethodChannel), guarded by
-                // foreground/background handoff timing; this is not a bug. A future option is one
-                // MethodChannel merge writer.
-                val persisted = servicePrefs().edit()
-                    .putString("seenMobileMessageIds", JSONArray(seenIds.toList()).toString())
-                    .commit()
-                if (!persisted) throw IOException("could not persist seen mobile message ids")
+                Log.d(tag, "skipping already-seen $source message id=$id")
             }
-            val pending = runCatching {
-                JSONArray(servicePrefs().getString("pendingMobileContents", "[]"))
-            }.getOrElse { JSONArray() }
-            pending.put(content)
-            while (pending.length() > 20) pending.remove(0)
-            servicePrefs().edit()
-                .putString("pendingMobileContents", pending.toString())
-                .apply()
-            deliverBackgroundMessage(content, item.optJSONObject("behavior"))
+            return false
         }
+        deliverBackgroundMessage(content, item.optJSONObject("behavior"))
         return true
-    }
-
-    private fun readSeenMobileMessageIds(): LinkedHashSet<String> {
-        val json = servicePrefs().getString("seenMobileMessageIds", null) ?: return LinkedHashSet()
-        return runCatching {
-            val arr = JSONArray(json)
-            (0 until arr.length()).mapTo(LinkedHashSet()) { arr.getString(it) }
-        }.getOrElse { LinkedHashSet() }
-    }
-
-    private fun persistLastAckedSeq(value: Long) {
-        synchronized(messageConsumptionLock) {
-            val prefs = servicePrefs()
-            val current = prefs.getLong("lastAckedSeq", Long.MIN_VALUE)
-            if (value <= current) return
-            if (!prefs.edit().putLong("lastAckedSeq", value).commit()) {
-                throw IOException("could not persist last acked mobile seq")
-            }
-        }
     }
 
     private fun relayConfig(): RelayConfig? {

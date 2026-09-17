@@ -197,7 +197,9 @@ Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/Creden
   - ack **网络调用成功但游标持久化失败**（`saveLastAckedMobileSeq` 抛错）时，内存态和下一轮 poll 的 `after` 参数都不能推进——区别于"ack 网络调用本身失败"的既有用例。
   - 同一条消息（同 id/同 seq）在后续 poll 批次里被再次投递时，按 id 去重，不会重复展示。
 - `background_status_test.dart`：`RelayConnectionStatus.connected` 的新鲜度窗口（3 分钟心跳）判定。
-- `android_relay_signal_contract_test.dart`：直接读取 `MobileNotificationService.kt` 源码文本，断言中继信号事件（`signal` 字段）会转入认证 poll、旧版 `content` 字段负载不会被直接投递。这是"源码文本契约"，不是运行时行为测试。
+- `android_relay_signal_contract_test.dart`：直接读取 `MobileNotificationService.kt` 源码文本，断言中继信号事件（`signal` 字段）会转入认证 poll、旧版 `content` 字段负载不会被直接投递。这是"源码文本契约"，不是运行时行为测试。现亦断言 `MobileDeliveryChannel` 承接 consume/merge，服务不再标注 Intentional dual write。
+- `mobile_catchup_state_test.dart`：seen 落盘失败不 ack；persist 途中换 origin/owner 不得推进当前 cursor。
+- Android Robolectric：`MobileDeliveryStateStoreTest`（merge、单调 ack、身份 envelope、legacy 丢弃、作用域、并发）与 `SettingsChannelDeliveryTest`（真实 `MobileDeliveryChannel` 分发 + store 读写）。真机通知点击仍 observe。
 
 ### Android MethodChannel
 
@@ -215,7 +217,7 @@ Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/Creden
 
 - `presence_mobile/settings` 通道里除上述三类之外的方法（`Backend`/`RelayBaseUrl`/`RelayToken`/`RelayTopic`/`OwnerUserId`、自定义主题、头像与文件选取、可信明文域名等）暂无契约测试。
 - `BackendClient.uploadFiles`（multipart 上传）、`fetchDiagnostics`（并发聚合多个只读端点）、`updatePromptAssets`/`updateDreamSettings`（PATCH 分支）没有针对请求层的专门测试，只在别处被间接调用。
-- Android 原生代码（Kotlin）本身的运行时行为（通知闸门、无障碍采集、悬浮窗确认、设备管理器锁屏）完全没有测试；`android_relay_signal_contract_test.dart` 只是对源码文本做字符串断言，不是真实运行 Kotlin 代码。这类覆盖需要 Android instrumented test，`flutter test` 覆盖不到。
+- Android 原生代码中通知闸门、无障碍采集、悬浮窗确认、设备管理器锁屏仍无运行时测试；delivery store/channel 已有 Robolectric 单测。`android_relay_signal_contract_test.dart` 对中继路径仍是源码文本契约。真机 instrumented 覆盖见 `docs/android/instrumented-testing.md`。
 - 后台原生 poll 与前台 `_pollMobile` 的交接时机（`isBackgroundNotificationServiceRunning() == true` 时前台跳过 poll）目前只在 Dart 侧假设为真，没有场景化测试验证切换瞬间的行为。
 
 ## 上一次本机验证记录（2026-07-19；非本轮结果）

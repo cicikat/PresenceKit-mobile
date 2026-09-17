@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import '../models/app_models.dart';
 import '../models/inline_display.dart';
@@ -23,13 +24,19 @@ class ChatController extends ChangeNotifier {
     VoiceService? voice,
     bool Function()? stickerEnabled,
     bool Function()? autoPlayVoice,
+    String? Function()? deliveryOrigin,
+    String? Function()? deliveryOwner,
+    String? Function()? deliveryCharId,
   }) : _backend = backend,
        _token = token,
        _settings = settings,
        _relay = relay,
        _voice = voice ?? const VoiceService(AppSettingsStore()),
        _stickerEnabled = stickerEnabled ?? _alwaysEnabled,
-       _autoPlayVoice = autoPlayVoice ?? _alwaysDisabled {
+       _autoPlayVoice = autoPlayVoice ?? _alwaysDisabled,
+       _deliveryOrigin = deliveryOrigin ?? _alwaysNull,
+       _deliveryOwner = deliveryOwner ?? _alwaysNull,
+       _deliveryCharId = deliveryCharId ?? _alwaysNull {
     scrollController.addListener(_handleScroll);
   }
 
@@ -41,6 +48,7 @@ class ChatController extends ChangeNotifier {
   static const revealCps = 40.0;
   static bool _alwaysEnabled() => true;
   static bool _alwaysDisabled() => false;
+  static String? _alwaysNull() => null;
   final BackendClient Function() _backend;
   final String? Function() _token;
   final SettingsStore _settings;
@@ -48,6 +56,12 @@ class ChatController extends ChangeNotifier {
   final VoiceService _voice;
   final bool Function() _stickerEnabled;
   final bool Function() _autoPlayVoice;
+  final String? Function() _deliveryOrigin;
+  final String? Function() _deliveryOwner;
+  final String? Function() _deliveryCharId;
+  String? pendingHandoffError;
+  String? _boundDeliveryOrigin;
+  String? _boundDeliveryOwner;
   final ScrollController scrollController = ScrollController();
   final List<ChatMessage> history = [];
   final List<ChatMessage> sent = [];
@@ -142,19 +156,49 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> catchUpFromNotification() async {
-    final pending = await _settings.consumePendingMobileContents();
-    if (pending.isNotEmpty) {
-      sent.addAll(
-        pending
-            .where((text) => text.trim().isNotEmpty)
-            .map((text) => ChatMessage(role: 'him', text: text, time: '刚刚')),
+    pendingHandoffError = null;
+    try {
+      final pending = await _settings.consumePendingMobileEnvelopes(
+        origin: _deliveryOrigin(),
+        owner: _deliveryOwner(),
+        charId: _deliveryCharId(),
       );
-      mobileReceivedCount += pending.length;
-      lastMobileContent = pending.last;
-      notifyListeners();
+      final fresh = <PendingMobileEnvelope>[];
+      for (final envelope in pending) {
+        if (!_shouldReplayPending(envelope)) continue;
+        fresh.add(envelope);
+        final identity = envelope.identity;
+        if (identity != null && !_seenIds.contains(identity)) {
+          _seenIds.add(identity);
+          while (_seenIds.length > 200) {
+            _seenIds.removeAt(0);
+          }
+        }
+      }
+      if (fresh.isNotEmpty) {
+        sent.addAll(fresh.map((envelope) => envelope.toChatMessage()));
+        mobileReceivedCount += fresh.length;
+        lastMobileContent = fresh.last.content;
+        await _settings.saveSeenMobileMessageIds(
+          List.unmodifiable(_seenIds),
+          origin: _deliveryOrigin(),
+          owner: _deliveryOwner(),
+        );
+        notifyListeners();
+      }
+    } on MissingPluginException catch (e) {
+      pendingHandoffError = e.message ?? e.toString();
+    } on PlatformException catch (e) {
+      pendingHandoffError = e.message ?? e.code;
+    } catch (e) {
+      pendingHandoffError = e.toString();
     }
-    await refreshConnection();
-    scrollToBottom();
+    try {
+      await refreshConnection();
+    } finally {
+      if (pendingHandoffError != null) notifyListeners();
+      scrollToBottom();
+    }
   }
 
   Future<void> refreshConnection() =>
@@ -624,10 +668,18 @@ class ChatController extends ChangeNotifier {
     final token = _accessToken;
     if (pollingMobile || token == null) return;
     pollingMobile = true;
+    final generation = _generation;
+    final origin = _deliveryOrigin()?.trim();
+    final owner = _deliveryOwner()?.trim();
     try {
+      await _bindDeliveryScope();
+      if (_staleDelivery(generation, origin, owner)) return;
+      _syncDeliveryScope(origin, owner);
       final persistedSeq = await _settings.loadLastAckedMobileSeq();
-      if (persistedSeq != null &&
-          (lastAckedMobileSeq == null || persistedSeq > lastAckedMobileSeq!)) {
+      if (persistedSeq == null) {
+        lastAckedMobileSeq = null;
+      } else if (lastAckedMobileSeq == null ||
+          persistedSeq > lastAckedMobileSeq!) {
         lastAckedMobileSeq = persistedSeq;
       }
       for (final id in await _settings.loadSeenMobileMessageIds()) {
@@ -641,6 +693,7 @@ class ChatController extends ChangeNotifier {
         after: lastAckedMobileSeq,
         waitSeconds: source == ChatDeliverySource.live ? 5 : 0,
       );
+      if (_staleDelivery(generation, origin, owner)) return;
       if (!result.ok || !result.active) {
         mobileActive = false;
         mobileError = result.error ?? 'mobile channel is not active';
@@ -651,18 +704,25 @@ class ChatController extends ChangeNotifier {
       final fresh = <MobilePollMessage>[];
       for (final message in messages) {
         if (message.id.isNotEmpty) {
-          if (_seenIds.contains(message.id)) continue;
-          _seenIds.add(message.id);
-          if (_seenIds.length > 200) _seenIds.removeAt(0);
-          if (source != ChatDeliverySource.live &&
-                  _matchesLoadedHistory(message.content) ||
+          final known =
+              _seenIds.contains(message.id) ||
               _syncReplyIds.contains(message.id) ||
+              _historyContainsIdentity(message.id);
+          if (!_seenIds.contains(message.id)) {
+            _seenIds.add(message.id);
+            if (_seenIds.length > 200) _seenIds.removeAt(0);
+          }
+          if (known ||
               _isRecentReply(message.content, msgId: message.id)) {
             continue;
           }
           _rememberReply(message.content, msgId: message.id);
         } else {
-          if (_isRecentReply(message.content)) continue;
+          if (source != ChatDeliverySource.live &&
+                  _matchesLoadedHistory(message.content) ||
+              _isRecentReply(message.content)) {
+            continue;
+          }
           _rememberReply(message.content);
         }
         fresh.add(message);
@@ -689,9 +749,15 @@ class ChatController extends ChangeNotifier {
         }
       }
       notifyListeners();
+      if (_staleDelivery(generation, origin, owner)) return;
       if (_seenIds.isNotEmpty) {
-        await _settings.saveSeenMobileMessageIds(List.unmodifiable(_seenIds));
+        await _settings.saveSeenMobileMessageIds(
+          List.unmodifiable(_seenIds),
+          origin: origin,
+          owner: owner,
+        );
       }
+      if (_staleDelivery(generation, origin, owner)) return;
       int? maxSeq;
       for (final message in messages) {
         final seq = message.seq;
@@ -699,7 +765,13 @@ class ChatController extends ChangeNotifier {
       }
       if (maxSeq != null) {
         await _backend().ackMobile(token: token, ackSeq: maxSeq);
-        await _settings.saveLastAckedMobileSeq(maxSeq);
+        if (_staleDelivery(generation, origin, owner)) return;
+        await _settings.saveLastAckedMobileSeq(
+          maxSeq,
+          origin: origin,
+          owner: owner,
+        );
+        if (_staleDelivery(generation, origin, owner)) return;
         lastAckedMobileSeq = maxSeq;
       }
     } on BackendException catch (e) {
@@ -762,6 +834,7 @@ class ChatController extends ChangeNotifier {
                 displayText: displayParts[entry.key],
                 time: base.time,
                 dateKey: _dateKey(base.timestamp),
+                turnId: message.id.trim().isEmpty ? null : message.id.trim(),
               ),
             ),
           );
@@ -799,6 +872,8 @@ class ChatController extends ChangeNotifier {
               message.displayText,
               parts,
             ),
+            turnId: message.id.trim().isEmpty ? null : message.id.trim(),
+            timestamp: message.timestamp,
           ),
         );
       }
@@ -1023,6 +1098,55 @@ class ChatController extends ChangeNotifier {
         .where((e) => e.isNotEmpty)
         .toList();
     return parts.isEmpty ? const ['……'] : parts;
+  }
+
+  bool _staleDelivery(int generation, String? origin, String? owner) {
+    return _disposed ||
+        generation != _generation ||
+        origin != _deliveryOrigin()?.trim() ||
+        owner != _deliveryOwner()?.trim();
+  }
+
+  void _syncDeliveryScope(String? origin, String? owner) {
+    final changed =
+        _boundDeliveryOrigin != origin || _boundDeliveryOwner != owner;
+    if (!changed) return;
+    if (_boundDeliveryOrigin != null || _boundDeliveryOwner != null) {
+      lastAckedMobileSeq = null;
+      _seenIds.clear();
+    }
+    _boundDeliveryOrigin = origin;
+    _boundDeliveryOwner = owner;
+  }
+
+  Future<void> _bindDeliveryScope() async {
+    final origin = _deliveryOrigin()?.trim();
+    final owner = _deliveryOwner()?.trim();
+    if (origin == null || origin.isEmpty || owner == null || owner.isEmpty) {
+      return;
+    }
+    await _settings.bindMobileDeliveryScope(origin: origin, owner: owner);
+  }
+
+  bool _shouldReplayPending(PendingMobileEnvelope envelope) {
+    if (!envelope.replayable) return false;
+    final text = envelope.content.trim();
+    if (text.isEmpty) return false;
+    final identity = envelope.identity;
+    if (identity == null) return false;
+    if (_seenIds.contains(identity) ||
+        _syncReplyIds.contains(identity) ||
+        _historyContainsIdentity(identity)) {
+      return false;
+    }
+    if (_isRecentReply(text, msgId: identity)) return false;
+    _rememberReply(text, msgId: identity);
+    return true;
+  }
+
+  bool _historyContainsIdentity(String identity) {
+    return history.any((message) => message.turnId == identity) ||
+        sent.any((message) => message.turnId == identity);
   }
 
   String _fingerprint(String text) =>

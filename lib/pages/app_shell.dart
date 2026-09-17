@@ -191,6 +191,9 @@ class _CompanionAppState extends State<CompanionApp>
       voice: _voiceService,
       stickerEnabled: () => _stickerEnabled,
       autoPlayVoice: () => _autoPlayVoice,
+      deliveryOrigin: () => _backendBaseUrl,
+      deliveryOwner: () => _ownerUserId,
+      deliveryCharId: () => _currentCharacterId,
     );
     _voiceInputController = VoiceInputController(
       voice: _voiceService,

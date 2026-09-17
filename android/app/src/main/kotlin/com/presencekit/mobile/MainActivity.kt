@@ -101,6 +101,7 @@ class MainActivity : FlutterActivity() {
 
     private fun handleSettingsMethodCall(call: MethodCall, result: MethodChannel.Result) {
         val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
+        if (MobileDeliveryChannel.dispatch(call, prefs, result)) return
         when (call.method) {
                     "getAppLanguage" -> {
                         result.success(prefs.getString("appLanguage", null))
@@ -120,7 +121,14 @@ class MainActivity : FlutterActivity() {
                     "setBackendBaseUrl" -> {
                         val value = call.argument<String>("value").orEmpty()
                         if (BackendSecurityPolicy.isAllowedBaseUrl(value, prefs)) {
+                            val previous = BackendSecurityPolicy.originFor(
+                                prefs.getString("backendBaseUrl", null).orEmpty(),
+                            )
+                            val next = BackendSecurityPolicy.originFor(value)
                             prefs.edit().putString("backendBaseUrl", value).apply()
+                            if (previous != next) {
+                                MobileDeliveryStateStore.of(prefs).clearCursorForScopeChange()
+                            }
                             result.success(null)
                         } else {
                             result.error("untrusted_backend", "Backend URL is not trusted", null)
@@ -139,10 +147,14 @@ class MainActivity : FlutterActivity() {
                     }
                     "setOwnerUserId" -> {
                         val value = call.argument<String>("value").orEmpty().trim()
+                        val previous = BackendSecurityPolicy.ownerUserId(prefs)
                         if (value.isBlank()) {
                             prefs.edit().remove(BackendSecurityPolicy.OWNER_USER_ID_KEY).apply()
                         } else {
                             prefs.edit().putString(BackendSecurityPolicy.OWNER_USER_ID_KEY, value).apply()
+                        }
+                        if (previous != value) {
+                            MobileDeliveryStateStore.of(prefs).clearCursorForScopeChange()
                         }
                         result.success(null)
                     }
@@ -467,58 +479,6 @@ class MainActivity : FlutterActivity() {
                     "openShoppingApp" -> {
                         val target = call.argument<String>("target").orEmpty()
                         result.success(openShoppingApp(target))
-                    }
-                    "getSeenMobileMessageIds" -> {
-                        val raw = prefs.getString("seenMobileMessageIds", null)
-                        val ids = runCatching {
-                            val array = org.json.JSONArray(raw ?: "[]")
-                            (0 until array.length()).map { array.getString(it) }
-                        }.getOrElse { emptyList() }
-                        result.success(ids)
-                    }
-                    "setSeenMobileMessageIds" -> {
-                        val ids = call.argument<List<String>>("ids").orEmpty().takeLast(200)
-                        val saved = prefs.edit()
-                            .putString("seenMobileMessageIds", org.json.JSONArray(ids).toString())
-                            .commit()
-                        if (saved) {
-                            result.success(null)
-                        } else {
-                            result.error(
-                                "prefs_write_failed",
-                                "Could not persist seen mobile message ids",
-                                null,
-                            )
-                        }
-                    }
-                    "getLastAckedMobileSeq" -> {
-                        result.success(
-                            if (prefs.contains("lastAckedSeq")) {
-                                prefs.getLong("lastAckedSeq", 0L)
-                            } else {
-                                null
-                            },
-                        )
-                    }
-                    "setLastAckedMobileSeq" -> {
-                        val value = call.argument<Number>("value")?.toLong()
-                        if (value == null) {
-                            result.error("invalid_ack_seq", "Missing last acked mobile seq", null)
-                        } else {
-                            val current = prefs.getLong("lastAckedSeq", Long.MIN_VALUE)
-                            val saved =
-                                value <= current ||
-                                    prefs.edit().putLong("lastAckedSeq", value).commit()
-                            if (saved) {
-                                result.success(null)
-                            } else {
-                                result.error(
-                                    "prefs_write_failed",
-                                    "Could not persist last acked mobile seq",
-                                    null,
-                                )
-                            }
-                        }
                     }
                     "isAllowedBaseUrl" -> {
                         val value = call.argument<String>("value").orEmpty()

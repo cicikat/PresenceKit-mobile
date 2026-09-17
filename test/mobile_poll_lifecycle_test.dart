@@ -43,7 +43,11 @@ class _LifecycleSettingsStore extends AppSettingsStore {
   Future<int?> loadLastAckedMobileSeq() async => lastAckedSeq;
 
   @override
-  Future<void> saveLastAckedMobileSeq(int value) async {
+  Future<void> saveLastAckedMobileSeq(
+    int value, {
+    String? origin,
+    String? owner,
+  }) async {
     cursorPersistAttempts += 1;
     if (cursorPersistThrows) {
       throw Exception('local storage write failed');
@@ -53,7 +57,11 @@ class _LifecycleSettingsStore extends AppSettingsStore {
   }
 
   @override
-  Future<void> saveSeenMobileMessageIds(List<String> ids) async {
+  Future<void> saveSeenMobileMessageIds(
+    List<String> ids, {
+    String? origin,
+    String? owner,
+  }) async {
     events.add('persist:${ids.join(',')}');
     seenIds = List<String>.of(ids);
   }

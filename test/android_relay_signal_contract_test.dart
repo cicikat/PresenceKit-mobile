@@ -119,5 +119,17 @@ void main() {
     );
     expect(activitySource, contains('"pendingOpenLatestMessage"'));
     expect(activitySource, contains('"consumePendingOpenLatestMessage"'));
+    expect(activitySource, contains('MobileDeliveryChannel.dispatch(call, prefs, result)'));
+    final channelSource = File(
+      'android/app/src/main/kotlin/com/presencekit/mobile/MobileDeliveryChannel.kt',
+    ).readAsStringSync();
+    expect(channelSource, contains('"consumePendingMobileContents"'));
+    expect(channelSource, contains('"consumePendingMobileEnvelopes"'));
+    expect(channelSource, contains('store.mergeSeen(ids)'));
+    expect(
+      serviceSource,
+      contains('store.acceptIncoming(item, origin, owner)'),
+    );
+    expect(serviceSource, isNot(contains('Intentional dual write')));
   });
 }

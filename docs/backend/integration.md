@@ -234,9 +234,13 @@ Token 明文只在创建/轮换时返回一次；吊销、轮换均走后端 `/a
 - 前台由 Flutter 每 5 秒轮询主动消息并直接写入会话流；后台中继只实时推送 signal，Android 收到后
   立即 poll 拉取正文。中继断线 1 分钟后由 `AlarmManager` 每 15 分钟补偿一次；中继 SSE 保持连接时也
   每 15 分钟执行一次安全 poll，限制单个 signal 丢失造成的队列滞留。
-- 前后台共用 legacy `SharedPreferences("yexuan_memery")` 中的 `lastAckedSeq`。poll 带
-  `after=<lastAckedSeq>`；消息先进入会话/通知消费管线并持久化 `seenMobileMessageIds`，然后 ack，
-  ack 成功后才推进本地游标。ack 失败会让下次重收，客户端依靠 `message.id` 去重。
+- 前后台共用 legacy `SharedPreferences("yexuan_memery")` 中的 `lastAckedSeq`，由 native
+  `MobileDeliveryStateStore` 单写。poll 带 `after=<lastAckedSeq>`；消息先进入会话/通知消费管线
+  并 merge `seenMobileMessageIds`，然后 ack，ack 成功后才推进本地游标。ack 失败会让下次重收，
+  客户端依靠 `message.id` 去重。Cursor 作用域是 origin+owner；角色切换不重置。
+- 后台写入的 pending 是带身份 envelope，不是正文数组。Flutter 通知打开走
+  `consumePendingMobileEnvelopes`；无身份旧条目消费时丢弃。MissingPluginException /
+  PlatformException 仍尝试正式历史刷新。
 - 主动消息正文不经过中继服务器；中继 signal 只包含 `id`、`seq`、`user_id`、`timestamp` 和
   `signal`，正文与 behavior 由受鉴权的 `/mobile/poll` 返回。
 - `/mobile/poll` 队列现在是有 TTL、容量上限的非销毁式补偿副本；前后台消费后通过 `/mobile/ack`

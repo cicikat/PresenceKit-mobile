@@ -92,12 +92,13 @@ GET /mobile/poll?limit=20&after=<lastAckedSeq>
 
 收到消息后：
 
-1. 追加为 `him` 消息。
-2. 持久化 `seenMobileMessageIds`。
-3. 先检查 poll JSON 的 `ok` 与 `active`；响应始终可读取 `messages`、`cursor` 和可选 `error`。`ok:false` 或 `active:false` 不是成功，即使 HTTP 状态为 200。
+1. 先检查 poll JSON 的 `ok` 与 `active`；响应始终可读取 `messages`、`cursor` 和可选 `error`。`ok:false` 或 `active:false` 不是成功，即使 HTTP 状态为 200。
+2. 有身份的消息按 `id`/`turn_id` 去重后追加为 `him` 消息；history 已有相同身份不重复。
+3. 经 native `MobileDeliveryStateStore` 合并持久化 `seenMobileMessageIds`（merge，非整快照覆盖）。
 4. 调用 `POST /mobile/ack {"ack_seq": <本批最大 seq>}`。
-5. ack 成功后持久化共享的 `lastAckedSeq`；失败则不推进游标，下次重收时按 `id` 去重。
+5. ack 成功后单调推进共享的 `lastAckedSeq`；失败或落盘失败都不推进游标，下次重收时按 `id` 去重。
 6. 不论 metadata 是否表示 overlay/direct action，都只显示在会话内，不额外弹系统通知或悬浮窗。
+7. poll 必须绑定当前 origin+owner；迟到结果不得写入当前作用域。角色切换不重置节点级 cursor。
 
 同步 chat 响应会记录 `msg_id`（兼容 `turn_id`）；poll 返回相同 `id` 时按 id 丢弃重复副本。
 内容指纹只用于同步响应或 poll 消息缺少 id 的旧后端兜底。
@@ -122,8 +123,10 @@ GET /mobile/poll?limit=20&after=<lastAckedSeq>
 2. 否则走普通通知。
 3. 普通通知受静音时段和 30 分钟冷却控制。
 
-补偿 poll 消费时会先持久化 `seenMobileMessageIds`，再 ack 本批已处理的最大 `seq`，最后单调推进与
-Flutter 前台共用的 `lastAckedSeq`。ack 失败不推进游标。
+补偿 poll 消费时由 `MobileDeliveryStateStore.acceptIncoming` 原子写入 seen+pending envelope
+（id/seq/time/turn_id + origin/owner/char_id），再 ack 本批已处理的最大 `seq`，最后单调推进
+`lastAckedSeq`。ack 失败不推进游标。通知点击走 `consumePendingMobileEnvelopes`；缺 ID 的旧正文
+一次性丢弃，不冒充身份回放。channel 缺失不得中断 catch-up，仍刷新正式历史。
 
 ## behavior 映射
 
