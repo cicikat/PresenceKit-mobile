@@ -67,17 +67,21 @@ class DeviceController extends ChangeNotifier {
     _sensorTimer = null;
   }
 
+  Future<bool> hasActivityPermission() => _screen.hasActivityPermission();
+
+  /// Explicit user action only. Periodic sensor upload must never call this.
+  Future<void> requestActivityPermission() =>
+      _screen.requestActivityPermission();
+
   Future<void> pushSensorData() async {
     final token = _token()?.trim();
     if (token == null || token.isEmpty) return;
     try {
       final battery = await _screen.readBatteryPercent();
-      int? steps;
-      if (await _screen.hasActivityPermission()) {
-        steps = await _screen.readTodaySteps();
-      } else {
-        await _screen.requestActivityPermission();
-      }
+      // Skip steps without permission; do not prompt from timers/start.
+      final steps = await _screen.hasActivityPermission()
+          ? await _screen.readTodaySteps()
+          : null;
       if (battery == null && steps == null) return;
       await _backend().pushSensorData(
         token: token,

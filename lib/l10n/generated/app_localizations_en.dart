@@ -1905,6 +1905,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Reads the current app, window title and visible text summary; screenshots are not uploaded.';
 
   @override
+  String get capabilityActivityRecognitionTitle =>
+      'Activity and steps permission';
+
+  @override
+  String get capabilityActivityRecognitionEnabled =>
+      'Granted: periodic sensor uploads may include today\'s step count. Declining will not auto-prompt again.';
+
+  @override
+  String get capabilityActivityRecognitionDisabled =>
+      'Not granted: battery can still upload; steps are skipped. Authorize explicitly under Permissions & features — timers never prompt.';
+
+  @override
   String get capabilityScreenContextTitle => 'Screen context';
 
   @override

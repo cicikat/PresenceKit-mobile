@@ -19,10 +19,21 @@ class _Store extends AppSettingsStore {
   bool backgroundRunning = false;
   bool ignoringBattery = true;
   bool screenUpload = false;
+  bool activityRecognition = false;
   int notificationPermissionCalls = 0;
   int stopBackgroundCalls = 0;
   int overlayRequests = 0;
+  int activityPermissionRequests = 0;
   bool? lastNotificationTestMode;
+
+  @override
+  Future<bool> hasActivityRecognitionPermission() async => activityRecognition;
+
+  @override
+  Future<void> requestActivityRecognitionPermission() async {
+    activityPermissionRequests += 1;
+    activityRecognition = true;
+  }
 
   @override
   Future<bool> loadBackgroundNotificationsEnabled() async =>
@@ -201,10 +212,15 @@ void main() {
       expect(status.notificationsEnabled, isFalse);
       expect(status.overlayEnabled, isFalse);
       expect(status.accessibilityEnabled, isFalse);
+      expect(status.activityRecognitionEnabled, isFalse);
       expect(status.backendBaseUrl, 'http://127.0.0.1:8080');
       expect(status.backendReachable, isTrue);
       expect(status.backendError, 'node missing');
       expect(status.screenContextUploadEnabled, isFalse);
+
+      store.activityRecognition = true;
+      final granted = await controller.loadStatus();
+      expect(granted.activityRecognitionEnabled, isTrue);
     },
   );
 }

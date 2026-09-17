@@ -1820,6 +1820,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get capabilityAccessibilitySubtitle => '读取当前 App、窗口标题和可见文字摘要；不上传截图。';
 
   @override
+  String get capabilityActivityRecognitionTitle => '运动与步数权限';
+
+  @override
+  String get capabilityActivityRecognitionEnabled =>
+      '已授权：定时传感器上报可附带今日步数；拒绝后不会自动再弹。';
+
+  @override
+  String get capabilityActivityRecognitionDisabled =>
+      '未授权：电量仍可上报，步数跳过。请在「权限与功能」中显式授权，定时任务不会索权。';
+
+  @override
   String get capabilityScreenContextTitle => '屏幕上下文';
 
   @override

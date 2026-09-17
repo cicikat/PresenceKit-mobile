@@ -6,6 +6,7 @@ class CapabilityStatus {
     required this.overlayEnabled,
     required this.accessibilityEnabled,
     required this.deviceAdminEnabled,
+    required this.activityRecognitionEnabled,
     required this.backgroundNotificationsEnabled,
     required this.backgroundServiceRunning,
     required this.backgroundPollStatus,
@@ -24,6 +25,7 @@ class CapabilityStatus {
   final bool overlayEnabled;
   final bool accessibilityEnabled;
   final bool deviceAdminEnabled;
+  final bool activityRecognitionEnabled;
   final bool backgroundNotificationsEnabled;
   final bool backgroundServiceRunning;
   final BackgroundPollStatus backgroundPollStatus;

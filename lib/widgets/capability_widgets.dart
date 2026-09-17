@@ -24,6 +24,7 @@ class CapabilitySheet extends StatefulWidget {
     required this.onRequestOverlay,
     required this.onRequestAccessibility,
     required this.onRequestDeviceAdmin,
+    required this.onRequestActivityRecognition,
     required this.onToggleBackgroundNotifications,
     required this.onToggleScreenContextUpload,
     required this.onTestBackend,
@@ -57,6 +58,7 @@ class CapabilitySheet extends StatefulWidget {
   final Future<void> Function() onRequestOverlay;
   final Future<void> Function() onRequestAccessibility;
   final Future<void> Function() onRequestDeviceAdmin;
+  final Future<void> Function() onRequestActivityRecognition;
   final Future<void> Function(bool enabled) onToggleBackgroundNotifications;
   final Future<void> Function(bool enabled) onToggleScreenContextUpload;
   final Future<void> Function() onTestBackend;
@@ -338,6 +340,22 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                         !widget.controlsOnly || status.accessibilityEnabled
                         ? null
                         : () => _run(widget.onRequestAccessibility),
+                  ),
+                  CapabilityRow(
+                    c: c,
+                    icon: Icons.directions_walk_rounded,
+                    title: context.l10n.capabilityActivityRecognitionTitle,
+                    subtitle: status.activityRecognitionEnabled
+                        ? context.l10n.capabilityActivityRecognitionEnabled
+                        : context.l10n.capabilityActivityRecognitionDisabled,
+                    enabled: status.activityRecognitionEnabled,
+                    actionLabel: status.activityRecognitionEnabled
+                        ? context.l10n.enabledStatus
+                        : context.l10n.authorizeAction,
+                    onPressed: !widget.controlsOnly ||
+                            status.activityRecognitionEnabled
+                        ? null
+                        : () => _run(widget.onRequestActivityRecognition),
                   ),
                   if (!widget.controlsOnly)
                     ScreenObservationSettings(c: c, accessibilityEnabled: status.accessibilityEnabled, readOnly: true),

@@ -710,6 +710,8 @@ class _CompanionAppState extends State<CompanionApp>
         onRequestOverlay: _deviceService.requestOverlayPermission,
         onRequestAccessibility: _deviceService.requestAccessibilityPermission,
         onRequestDeviceAdmin: _deviceService.requestDeviceAdmin,
+        onRequestActivityRecognition:
+            _deviceController.requestActivityPermission,
         onToggleBackgroundNotifications: _changeBackgroundNotifications,
         onToggleScreenContextUpload: _changeScreenContextUploadEnabled,
         onTestBackend: _testBackendConnectivity,
