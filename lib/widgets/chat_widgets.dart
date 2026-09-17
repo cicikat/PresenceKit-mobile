@@ -260,6 +260,7 @@ class ChatScene extends StatelessWidget {
                               text: m.text,
                               attachments: m.attachments,
                               mediaRefs: m.mediaRefs,
+                              loadCanonicalMedia: controller.loadCanonicalMedia,
                               uploadNote: m.uploadNote,
                               quotedText: m.quotedText,
                               failed: m.failed,
@@ -1291,6 +1292,81 @@ class _JumpingDotsState extends State<JumpingDots>
   }
 }
 
+class CanonicalChatImage extends StatefulWidget {
+  const CanonicalChatImage({super.key, required this.ref, this.load});
+
+  final ChatMediaRef ref;
+  final Future<Uint8List?> Function(ChatMediaRef ref)? load;
+
+  @override
+  State<CanonicalChatImage> createState() => _CanonicalChatImageState();
+}
+
+class _CanonicalChatImageState extends State<CanonicalChatImage> {
+  Uint8List? _bytes;
+  int _generation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  @override
+  void didUpdateWidget(covariant CanonicalChatImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ref.sha256 != widget.ref.sha256 ||
+        oldWidget.ref.filename != widget.ref.filename ||
+        oldWidget.ref.availability != widget.ref.availability) {
+      unawaited(_load());
+    }
+  }
+
+  Future<void> _load() async {
+    final generation = ++_generation;
+    final loader = widget.load;
+    final digest = widget.ref.sha256;
+    if (loader == null ||
+        digest == null ||
+        digest.isEmpty ||
+        widget.ref.availability == 'unavailable') {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _bytes = Uint8List(0);
+      });
+      return;
+    }
+    try {
+      final bytes = await loader(widget.ref);
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _bytes = bytes ?? Uint8List(0);
+      });
+    } catch (_) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _bytes = Uint8List(0);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = _bytes;
+    if (bytes == null) {
+      return const SizedBox(
+        width: 100,
+        height: 70,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return ChatImage(
+      bytes: bytes,
+      missingLabel: widget.ref.filename.isEmpty ? null : widget.ref.filename,
+    );
+  }
+}
+
 class YouMessage extends StatefulWidget {
   const YouMessage({
     super.key,
@@ -1308,6 +1384,7 @@ class YouMessage extends StatefulWidget {
     this.mediaRefs = const [],
     this.uploadNote = '',
     this.showHeader = true,
+    this.loadCanonicalMedia,
   });
 
   final YxPalette c;
@@ -1324,6 +1401,7 @@ class YouMessage extends StatefulWidget {
   final List<ChatMediaRef> mediaRefs;
   final String uploadNote;
   final bool showHeader;
+  final Future<Uint8List?> Function(ChatMediaRef ref)? loadCanonicalMedia;
 
   @override
   State<YouMessage> createState() => _YouMessageState();
@@ -1451,11 +1529,9 @@ class _YouMessageState extends State<YouMessage> {
                               for (final ref in canonicalImages)
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 6),
-                                  child: ChatImage(
-                                    bytes: Uint8List(0),
-                                    missingLabel: ref.filename.isEmpty
-                                        ? null
-                                        : ref.filename,
+                                  child: CanonicalChatImage(
+                                    ref: ref,
+                                    load: widget.loadCanonicalMedia,
                                   ),
                                 ),
                             ],

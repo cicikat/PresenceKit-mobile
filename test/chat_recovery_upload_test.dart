@@ -42,6 +42,9 @@ class _Backend extends BackendClient {
   String? caption;
   List<PickedUploadFile>? uploaded;
   Completer<void>? gate;
+  Uint8List? mediaBytes;
+  int mediaDownloads = 0;
+  Completer<void>? mediaGate;
   @override
   Future<ChatLogDates> loadChatLogDates({required String token}) async {
     historyReads++;
@@ -93,6 +96,21 @@ class _Backend extends BackendClient {
     if (offline) throw const BackendException('offline');
     return const BackendChatResponse(reply: '', emotion: 'neutral');
   }
+
+  @override
+  Future<Uint8List> downloadChatMedia(
+    String sha256, {
+    required String token,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    mediaDownloads += 1;
+    await mediaGate?.future;
+    final bytes = mediaBytes;
+    if (bytes == null) {
+      throw const BackendException('媒体文件已不可恢复', statusCode: 410);
+    }
+    return bytes;
+  }
 }
 
 void main() {
@@ -114,6 +132,66 @@ void main() {
     );
   });
   tearDown(() => controller.dispose());
+
+  test(
+    'canonical media caches bytes and coalesces inflight downloads',
+    () async {
+      const digest =
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      backend.mediaBytes = Uint8List.fromList([1, 2, 3]);
+      backend.mediaGate = Completer<void>();
+      const ref = ChatMediaRef(
+        kind: 'image',
+        filename: 'scene.png',
+        sha256: digest,
+      );
+      final first = controller.loadCanonicalMedia(ref);
+      final second = controller.loadCanonicalMedia(ref);
+      backend.mediaGate!.complete();
+      expect(await first, backend.mediaBytes);
+      expect(await second, backend.mediaBytes);
+      expect(backend.mediaDownloads, 1);
+      expect(await controller.loadCanonicalMedia(ref), backend.mediaBytes);
+      expect(backend.mediaDownloads, 1);
+    },
+  );
+
+  test('canonical media skips unavailable and invalid fingerprints', () async {
+    expect(
+      await controller.loadCanonicalMedia(
+        const ChatMediaRef(
+          kind: 'image',
+          filename: 'gone.png',
+          sha256:
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          availability: 'unavailable',
+        ),
+      ),
+      isNull,
+    );
+    expect(
+      await controller.loadCanonicalMedia(
+        const ChatMediaRef(kind: 'image', filename: 'gone.png', sha256: 'bad'),
+      ),
+      isNull,
+    );
+    expect(backend.mediaDownloads, 0);
+  });
+
+  test('canonical media treats download failure as a missing image', () async {
+    expect(
+      await controller.loadCanonicalMedia(
+        const ChatMediaRef(
+          kind: 'image',
+          filename: 'gone.png',
+          sha256:
+              'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        ),
+      ),
+      isNull,
+    );
+    expect(backend.mediaDownloads, 1);
+  });
 
   test(
     'history keeps tool receipts out of bubbles and gives each turn one reasoning anchor',
@@ -198,66 +276,80 @@ void main() {
     },
   );
 
-  test('offline pending replay keeps identity and skips history duplicates', () async {
-    backend.offline = false;
-    backend.day = ChatLogDay.fromJson({
-      'date': '2026-09-12',
-      'entries': [
-        {
-          'time': '12:01',
-          'assistant': 'already in history',
-          'turn_id': 'dup',
-        },
-      ],
-    });
-    await controller.start();
-    settings.pending = [
-      const PendingMobileEnvelope(
-        content: 'already in history',
-        id: 'dup',
-        turnId: 'dup',
-        origin: 'http://127.0.0.1:8080',
-        owner: 'owner',
-        charId: 'char-a',
-        replayable: true,
-      ),
-      const PendingMobileEnvelope(
-        content: 'offline only',
-        id: 'fresh',
-        turnId: 'fresh',
-        origin: 'http://127.0.0.1:8080',
-        owner: 'owner',
-        charId: 'char-a',
-        replayable: true,
-      ),
-      const PendingMobileEnvelope(
-        content: 'legacy body',
-        replayable: false,
-      ),
-    ];
-    await controller.catchUpFromNotification();
-    expect(controller.sent.where((m) => m.text == 'offline only'), hasLength(1));
-    expect(controller.sent.where((m) => m.text == 'already in history'), isEmpty);
-    expect(controller.sent.where((m) => m.text == 'legacy body'), isEmpty);
-    expect(controller.sent.single.turnId, 'fresh');
-    await controller.catchUpFromNotification();
-    expect(controller.sent.where((m) => m.text == 'offline only'), hasLength(1));
-  });
+  test(
+    'offline pending replay keeps identity and skips history duplicates',
+    () async {
+      backend.offline = false;
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-09-12',
+        'entries': [
+          {
+            'time': '12:01',
+            'assistant': 'already in history',
+            'turn_id': 'dup',
+          },
+        ],
+      });
+      await controller.start();
+      settings.pending = [
+        const PendingMobileEnvelope(
+          content: 'already in history',
+          id: 'dup',
+          turnId: 'dup',
+          origin: 'http://127.0.0.1:8080',
+          owner: 'owner',
+          charId: 'char-a',
+          replayable: true,
+        ),
+        const PendingMobileEnvelope(
+          content: 'offline only',
+          id: 'fresh',
+          turnId: 'fresh',
+          origin: 'http://127.0.0.1:8080',
+          owner: 'owner',
+          charId: 'char-a',
+          replayable: true,
+        ),
+        const PendingMobileEnvelope(content: 'legacy body', replayable: false),
+      ];
+      await controller.catchUpFromNotification();
+      expect(
+        controller.sent.where((m) => m.text == 'offline only'),
+        hasLength(1),
+      );
+      expect(
+        controller.sent.where((m) => m.text == 'already in history'),
+        isEmpty,
+      );
+      expect(controller.sent.where((m) => m.text == 'legacy body'), isEmpty);
+      expect(controller.sent.single.turnId, 'fresh');
+      await controller.catchUpFromNotification();
+      expect(
+        controller.sent.where((m) => m.text == 'offline only'),
+        hasLength(1),
+      );
+    },
+  );
 
-  test('missing plugin still refreshes history and keeps a diagnostic error', () async {
-    backend.offline = false;
-    backend.day = ChatLogDay.fromJson({
-      'date': '2026-09-12',
-      'entries': [
-        {'time': '12:00', 'assistant': 'from history', 'turn_id': 'h1'},
-      ],
-    });
-    settings.pendingError = MissingPluginException('consumePendingMobileEnvelopes');
-    await controller.catchUpFromNotification();
-    expect(controller.history.last.text, 'from history');
-    expect(controller.pendingHandoffError, isNotNull);
-    expect(backend.historyReads, 1);
-  });
+  test(
+    'missing plugin still refreshes history and keeps a diagnostic error',
+    () async {
+      backend.offline = false;
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-09-12',
+        'entries': [
+          {'time': '12:00', 'assistant': 'from history', 'turn_id': 'h1'},
+        ],
+      });
+      settings.pendingError = MissingPluginException(
+        'consumePendingMobileEnvelopes',
+      );
+      await controller.catchUpFromNotification();
+      expect(controller.history.last.text, 'from history');
+      expect(controller.pendingHandoffError, isNotNull);
+      expect(backend.historyReads, 1);
+    },
+  );
   test(
     'manual refresh recovers failed startup and coalesces repeated refreshes',
     () async {

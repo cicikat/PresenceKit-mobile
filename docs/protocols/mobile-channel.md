@@ -190,4 +190,4 @@ The Flutter parser mirrors desktop paired-tag rules (up to 200 characters, no ne
 
 ## 聊天产物（253.3）
 
-后端 mobile/chat 与 mobile/poll 可附带 artifacts[]（id、filename、mime、size、download_url、previewable、可选 preview_url），不含正文与绝对路径；既有 ack/TTL 不变。下载与预览为 chat scope，路径 /chat/artifacts/{id} 与 /chat/artifacts/{id}/preview。手机目前忽略此附加字段，文件卡片、下载和预览 UI 为 roadmap。
+后端 mobile/chat 与 mobile/poll 可附带 artifacts[]（id、filename、mime、size、download_url、previewable、可选 preview_url），不含正文与绝对路径；既有 ack/TTL 不变。下载与预览为 chat scope，路径 /chat/artifacts/{id} 与 /chat/artifacts/{id}/preview。手机目前忽略此附加字段，文件卡片、下载和预览 UI 为 roadmap。聊天原图不走产物路径，而走 `GET /chat/media/{sha256}`；身份为 sha256，不把磁盘路径当 URL。

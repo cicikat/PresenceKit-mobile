@@ -9,6 +9,10 @@ turn_id 时两者相等；否则 `msg_id` 为 minted transport，不得当作 re
 思考继续 `GET /chat/turns/{turn_id}/reasoning`。Dream 不隐式变持久历史。
 三面：管理面覆盖率观测；桌面本轮不改代码；手机接入新身份与缺图占位。真机联调 observe。
 
+## 聊天媒体读取（2026-09-17）
+
+`GET /chat/media/{sha256}`（chat）按 sha256 读取仍可恢复的原图/原文件；非法指纹 422，不可恢复 410，不返回磁盘路径。`POST /upload/ingest` 只回 `media_refs`。`GET /observability/chat-media`（state.read）只计引用与保留策略。手机 `BackendClient.downloadChatMedia` 进程内缓存；本机 attachments 优先。生活记录源图生命周期不变。桌面无需施工。真机换设备/重装 observe。
+
 ## Brief 253.6：语音感知
 
 继续使用原录音与 POST /transcribe；BackendClient 暂存可选语调凭据，并仅随下一条原样转写文字发送。
@@ -50,7 +54,7 @@ Roadmap: native desktop/mobile heatmap and day detail UI. Observe: real provider
 
 手机恢复/通知进入先重读 /chat-log/*，再执行原 mobile activation/catch-up，避免后台 ack 已推进后前台只读队列而漏显。历史读取既有 assistant_display_text 字段，经 canonical 文本一致性校验后按段呈现，不新增 HTTP 字段或修改后端；缺失/不匹配时保留普通正文。自回复仍发送原 reply_to，复制/选区只操作本机 UI，思考仍按 canonical turn_id 读取。
 
-三面闭环：管理面仍拥有 life_records 的 enabled/effective、识别路由、后台同步与失败任务观测；桌面独立展示无需新增本机外观开关。手机日夜背景、紧凑思考与卡片配色不影响后端配置。通知鉴权、msg_id/turn_id、seen 去重、ack、TTL、后台服务及 fallback 不变。生活记录现有队列和源图路径继续沿用，原图上传成功后保留本机预览；已删旧图无下载端点，3 个识别失败任务的只读证据见 known-issues，不修改后端。
+三面闭环：管理面仍拥有 life_records 的 enabled/effective、识别路由、后台同步与失败任务观测；桌面独立展示无需新增本机外观开关。手机日夜背景、紧凑思考与卡片配色不影响后端配置。通知鉴权、msg_id/turn_id、seen 去重、ack、TTL、后台服务及 fallback 不变。生活记录现有队列和源图路径继续沿用，原图上传成功后保留本机预览；聊天历史原图走 `GET /chat/media/{sha256}`。3 个识别失败任务的只读证据见 known-issues。
 
 ## 回合思考显示（2026-09-11）
 
@@ -103,7 +107,7 @@ mobile poll/ack/TTL、relay、通知和购物辅助调用链。后台系统限�
 健康历史不因手动刷新被全量重载。上传继续使用 `/upload/ingest` 的 Bearer、`files`、`message`、
 `channel=mobile` 契约；原始图片字节仅作为当前会话 UI 附件保留，失败重试发送同一文件和附言。
 本轮未新增协议字段、服务端配置、权限、队列或落盘状态，无需管理面板/桌面设置开关；背景和
-裁切属于本机 UI。历史原图跨端读取仍为 open，边界及后端入口证据见 `docs/known-issues.md`。
+裁切属于本机 UI。历史原图有 sha256 时走鉴权读取；无身份或已不可恢复仍占位，见 `docs/known-issues.md`。
 
 聊天背景属于本机外观设置，不进入后端接口或 mobile channel 消息队列。Flutter 通过
 `presence_mobile/settings` 的 `pickChatBackgroundImage`、`getChatAppearance`、

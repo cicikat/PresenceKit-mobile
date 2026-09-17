@@ -14,7 +14,7 @@ DreamController 负责关闭确认、防重入、迟到响应失效和串行段�
 
 ## Chat history reconciliation and tool receipts (2026-09-13)
 
-Canonical reasoning anchors bound local turn reconciliation; legacy clocks normalize to HH:mm. ToolActivityRow renders existing history receipts with a local showToolActivity preference. Implementation, three-surface audit and acceptance limits: [chat-history-and-tools.md](chat-history-and-tools.md).
+Canonical reasoning anchors bound local turn reconciliation; legacy clocks normalize to HH:mm. ToolActivityRow renders existing history receipts with a local showToolActivity preference. ChatController caches authenticated `GET /chat/media/{sha256}` bytes in-process; YouMessage prefers local attachments, otherwise CanonicalChatImage. Implementation, three-surface audit and acceptance limits: [chat-history-and-tools.md](chat-history-and-tools.md).
 
 
 ## 聊天情况与角色资料设置（2026-09-12）

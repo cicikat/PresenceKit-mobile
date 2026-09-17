@@ -125,6 +125,106 @@ void main() {
     expect(find.text(uri), findsNothing);
   });
 
+  testWidgets(
+    'canonical media refs download bytes and keep local attachments first',
+    (tester) async {
+      final bytes = (await tester.runAsync(picture))!;
+      const digest =
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      var loads = 0;
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: YouMessage(
+              c: YxPalette.light,
+              time: '12:00',
+              text: 'caption',
+              prefs: const YxPrefs(),
+              mediaRefs: const [
+                ChatMediaRef(
+                  kind: 'image',
+                  filename: 'scene.png',
+                  sha256: digest,
+                ),
+              ],
+              loadCanonicalMedia: (ref) async {
+                loads += 1;
+                expect(ref.sha256, digest);
+                return bytes;
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 60));
+      });
+      await tester.pumpAndSettle();
+      expect(find.byType(CanonicalChatImage), findsOneWidget);
+      expect(find.byType(ChatImage), findsOneWidget);
+      expect(loads, 1);
+      expect(find.text('caption'), findsNothing);
+
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: YouMessage(
+              c: YxPalette.light,
+              time: '12:00',
+              text: 'local',
+              prefs: const YxPrefs(),
+              attachments: [PickedUploadFile(name: 'one.png', bytes: bytes)],
+              mediaRefs: const [
+                ChatMediaRef(
+                  kind: 'image',
+                  filename: 'scene.png',
+                  sha256: digest,
+                ),
+              ],
+              loadCanonicalMedia: (_) async =>
+                  fail('local attachments must win'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CanonicalChatImage), findsNothing);
+      expect(find.byType(ChatImage), findsOneWidget);
+    },
+  );
+
+  testWidgets('unavailable canonical media shows a filename placeholder', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      app(
+        Scaffold(
+          body: YouMessage(
+            c: YxPalette.light,
+            time: '12:00',
+            text: 'gone',
+            prefs: const YxPrefs(),
+            mediaRefs: const [
+              ChatMediaRef(
+                kind: 'image',
+                filename: 'old.png',
+                sha256:
+                    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+                availability: 'unavailable',
+              ),
+            ],
+            loadCanonicalMedia: (_) async =>
+                fail('unavailable refs must not download'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('old.png'), findsOneWidget);
+    expect(find.byType(InteractiveViewer), findsNothing);
+  });
+
   testWidgets('crop dialogs fit a landscape small window', (tester) async {
     tester.view.physicalSize = const Size(640, 360);
     tester.view.devicePixelRatio = 1;

@@ -103,6 +103,9 @@ class ChatController extends ChangeNotifier {
   String? lastMobileContent;
   BackendChatResponse? lastBackendReply;
   ChatMessage? replyTarget;
+  static const _canonicalMediaCacheLimit = 32;
+  final Map<String, Uint8List> _canonicalMedia = {};
+  final Map<String, Future<Uint8List?>> _canonicalMediaInflight = {};
 
   String? get _accessToken {
     final value = _token()?.trim();
@@ -312,12 +315,53 @@ class ChatController extends ChangeNotifier {
   Future<String> loadReasoning(String turnId) =>
       _backend().loadTurnReasoning(turnId, token: _accessToken!);
 
+  Future<Uint8List?> loadCanonicalMedia(ChatMediaRef ref) {
+    final digest = (ref.sha256 ?? '').trim().toLowerCase();
+    if (digest.isEmpty ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(digest) ||
+        ref.availability == 'unavailable') {
+      return Future<Uint8List?>.value(null);
+    }
+    final cached = _canonicalMedia[digest];
+    if (cached != null) return Future<Uint8List?>.value(cached);
+    final inflight = _canonicalMediaInflight[digest];
+    if (inflight != null) return inflight;
+    final token = _accessToken;
+    if (token == null) return Future<Uint8List?>.value(null);
+    final pending = _downloadCanonicalMedia(digest, token);
+    _canonicalMediaInflight[digest] = pending;
+    return pending;
+  }
+
+  Future<Uint8List?> _downloadCanonicalMedia(
+    String digest,
+    String token,
+  ) async {
+    try {
+      final bytes = await _backend().downloadChatMedia(digest, token: token);
+      if (bytes.isEmpty) return null;
+      if (_canonicalMedia.length >= _canonicalMediaCacheLimit) {
+        _canonicalMedia.remove(_canonicalMedia.keys.first);
+      }
+      _canonicalMedia[digest] = bytes;
+      return bytes;
+    } catch (_) {
+      return null;
+    } finally {
+      _canonicalMediaInflight.remove(digest);
+    }
+  }
+
   void _bindUserTurn(int id, String? turnId) {
     final index = sent.indexWhere((m) => m.id == id);
     if (index >= 0) sent[index] = sent[index].copyWith(turnId: turnId);
   }
 
-  Future<void> _send(String text, {required int userId, ReplyTarget? replyTo}) async {
+  Future<void> _send(
+    String text, {
+    required int userId,
+    ReplyTarget? replyTo,
+  }) async {
     final generation = _generation;
     final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
     sent.add(anchor);
@@ -344,7 +388,11 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
-        await _appendReply(response.reply, displayText: response.displayText, turnId: response.turnId);
+        await _appendReply(
+          response.reply,
+          displayText: response.displayText,
+          turnId: response.turnId,
+        );
       }
     } on BackendException catch (e) {
       if (_disposed || generation != _generation) return;
@@ -368,18 +416,18 @@ class ChatController extends ChangeNotifier {
       scrollToBottom();
     } finally {
       if (!_disposed && generation == _generation) {
-      if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
-      sending = false;
-      himTyping = false;
-      notifyListeners();
-      if (backendError == null) {
-        unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
-      }
-      if (_pendingSends.isNotEmpty) {
-        final next = _pendingSends.removeAt(0);
-        send(next.text, replyToOverride: next.replyTo);
-      }
-      _flushHistoryRefresh();
+        if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
+        sending = false;
+        himTyping = false;
+        notifyListeners();
+        if (backendError == null) {
+          unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
+        }
+        if (_pendingSends.isNotEmpty) {
+          final next = _pendingSends.removeAt(0);
+          send(next.text, replyToOverride: next.replyTo);
+        }
+        _flushHistoryRefresh();
       }
     }
   }
@@ -406,7 +454,8 @@ class ChatController extends ChangeNotifier {
   Future<void> loadHistory({
     bool reconcileLocal = false,
     bool backgroundRefresh = false,
-  }) => _historyRead ??= _readHistory(
+  }) => _historyRead ??=
+      _readHistory(
         reconcileLocal: reconcileLocal,
         backgroundRefresh: backgroundRefresh,
       ).whenComplete(() {
@@ -424,9 +473,7 @@ class ChatController extends ChangeNotifier {
       return;
     }
     _historyRefreshPending = false;
-    unawaited(
-      loadHistory(reconcileLocal: true, backgroundRefresh: true),
-    );
+    unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
   }
 
   Future<void> _readHistory({
@@ -597,7 +644,11 @@ class ChatController extends ChangeNotifier {
         _availableDates[targetIndex],
         token: token,
       );
-      if (_disposed || generation != _generation || _accessToken != token || !identical(_backend(), backend)) return;
+      if (_disposed ||
+          generation != _generation ||
+          _accessToken != token ||
+          !identical(_backend(), backend))
+        return;
       history.insertAll(0, _messagesFromDay(day));
       _loadedDates.insert(0, _availableDates[targetIndex]);
       noMoreHistory = targetIndex >= _availableDates.length - 1;
@@ -712,8 +763,7 @@ class ChatController extends ChangeNotifier {
             _seenIds.add(message.id);
             if (_seenIds.length > 200) _seenIds.removeAt(0);
           }
-          if (known ||
-              _isRecentReply(message.content, msgId: message.id)) {
+          if (known || _isRecentReply(message.content, msgId: message.id)) {
             continue;
           }
           _rememberReply(message.content, msgId: message.id);
@@ -960,7 +1010,11 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
       lastBackendReply = response;
       if (_shouldAppendSynchronousReply(response)) {
-        await _appendReply(response.reply, displayText: response.displayText, turnId: response.turnId);
+        await _appendReply(
+          response.reply,
+          displayText: response.displayText,
+          turnId: response.turnId,
+        );
       }
     } on BackendException catch (e) {
       if (_disposed || generation != _generation) return;
@@ -976,19 +1030,23 @@ class ChatController extends ChangeNotifier {
       scrollToBottom();
     } finally {
       if (!_disposed && generation == _generation) {
-      if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
-      sending = false;
-      himTyping = false;
-      notifyListeners();
-      if (backendError == null) {
-        unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
-      }
-      _flushHistoryRefresh();
+        if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
+        sending = false;
+        himTyping = false;
+        notifyListeners();
+        if (backendError == null) {
+          unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
+        }
+        _flushHistoryRefresh();
       }
     }
   }
 
-  Future<void> _appendReply(String reply, {String? displayText, String? turnId}) async {
+  Future<void> _appendReply(
+    String reply, {
+    String? displayText,
+    String? turnId,
+  }) async {
     final parts = _splitSegments(reply);
     await _appendSegments(
       parts,
@@ -1044,7 +1102,9 @@ class ChatController extends ChangeNotifier {
     _playingSegments = true;
     final random = math.Random();
     try {
-      while (_messageQueue.isNotEmpty && !_disposed && generation == _generation) {
+      while (_messageQueue.isNotEmpty &&
+          !_disposed &&
+          generation == _generation) {
         final batch = _messageQueue.first;
         final message = batch.removeAt(0);
         if (batch.isEmpty) _messageQueue.removeAt(0);
@@ -1368,6 +1428,8 @@ class ChatController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     pausePolling();
+    _canonicalMedia.clear();
+    _canonicalMediaInflight.clear();
     scrollController.removeListener(_handleScroll);
     scrollController.dispose();
     final token = _accessToken;

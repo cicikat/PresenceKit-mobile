@@ -8,7 +8,7 @@
 
 发送/附件回复完成且停留最新消息时刷新历史；发送中、动画中、已滚离底部时不做额外刷新。启动、恢复、通知和手动刷新仍是既有入口。手机没有订阅桌面实时 WS，不承诺调用刚开始就显示。
 
-三面闭环：管理面继续拥有 action_trace enabled/event_log_echo 与 /observability/tool-traces，并另有无正文的 `/observability/chat-identity` 覆盖率。桌面既有本机开关独立。手机已消费 chat-log `turn_id` 与 `media_refs`；有身份时不再猜正文。memory.read、reasoning turn_id、poll/msg_id/seen/ack/TTL、通知、权限及后台服务契约不变。
+三面闭环：管理面继续拥有 action_trace enabled/event_log_echo 与 /observability/tool-traces，并另有无正文的 `/observability/chat-identity` 覆盖率与 `/observability/chat-media` 引用计数。桌面既有本机开关独立。手机已消费 chat-log `turn_id` 与 `media_refs`；有身份时不再猜正文；有 sha256 的图走 `GET /chat/media/{sha256}`，本机附件优先。memory.read、reasoning turn_id、poll/msg_id/seen/ack/TTL、通知、权限及后台服务契约不变。
 
 ## 验收边界
 

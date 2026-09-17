@@ -55,7 +55,10 @@ class _FakeHttpClientRequest implements HttpClientRequest {
     _client.lastRequestBody = utf8.decode(_body.toBytes());
     final error = _client.errorOnClose;
     if (error != null) throw error;
-    return _FakeHttpClientResponse(_client.statusCode, _client.responseBody);
+    return _FakeHttpClientResponse(
+      _client.statusCode,
+      _client.responseBytes ?? utf8.encode(_client.responseBody),
+    );
   }
 
   @override
@@ -64,8 +67,7 @@ class _FakeHttpClientRequest implements HttpClientRequest {
 
 class _FakeHttpClientResponse extends Stream<List<int>>
     implements HttpClientResponse {
-  _FakeHttpClientResponse(this.statusCode, String body)
-    : _bytes = utf8.encode(body);
+  _FakeHttpClientResponse(this.statusCode, List<int> bytes) : _bytes = bytes;
 
   @override
   final int statusCode;
@@ -78,9 +80,12 @@ class _FakeHttpClientResponse extends Stream<List<int>>
     void Function()? onDone,
     bool? cancelOnError,
   }) {
-    return Stream<List<int>>.fromIterable([
-      _bytes,
-    ]).listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    return Stream<List<int>>.fromIterable([_bytes]).listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
+    );
   }
 
   @override
@@ -93,6 +98,7 @@ class _FakeHttpClientResponse extends Stream<List<int>>
 class _FakeHttpClient implements HttpClient {
   int statusCode = 200;
   String responseBody = '{}';
+  List<int>? responseBytes;
   Object? errorOnClose;
 
   String? method;
@@ -292,38 +298,62 @@ void main() {
     },
   );
 
-
   test('voice receipt is scoped to unchanged text and consumed once', () async {
     final temp = await Directory.systemTemp.createTemp('voice-receipt-');
     final file = File('${temp.path}/voice.m4a');
     await file.writeAsBytes([1, 2, 3]);
     try {
-      fakeClient.responseBody = jsonEncode({'text': 'hello', 'audio_perception_id': 'receipt'});
-      expect(await backend.transcribeAudio(filePath: file.path, token: 'tok-1'), 'hello');
+      fakeClient.responseBody = jsonEncode({
+        'text': 'hello',
+        'audio_perception_id': 'receipt',
+      });
+      expect(
+        await backend.transcribeAudio(filePath: file.path, token: 'tok-1'),
+        'hello',
+      );
       fakeClient.responseBody = jsonEncode({'reply': 'ok'});
       await backend.sendChat('hello', token: 'tok-1');
-      expect(jsonDecode(fakeClient.lastRequestBody)['audio_perception_id'], 'receipt');
+      expect(
+        jsonDecode(fakeClient.lastRequestBody)['audio_perception_id'],
+        'receipt',
+      );
       await backend.sendChat('hello', token: 'tok-1');
-      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('audio_perception_id'), isFalse);
-      fakeClient.responseBody = jsonEncode({'text': 'hello', 'audio_perception_id': 'receipt'});
+      expect(
+        jsonDecode(
+          fakeClient.lastRequestBody,
+        ).containsKey('audio_perception_id'),
+        isFalse,
+      );
+      fakeClient.responseBody = jsonEncode({
+        'text': 'hello',
+        'audio_perception_id': 'receipt',
+      });
       await backend.transcribeAudio(filePath: file.path, token: 'tok-1');
       fakeClient.responseBody = jsonEncode({'reply': 'ok'});
       await backend.sendChat('edited', token: 'tok-1');
-      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('audio_perception_id'), isFalse);
+      expect(
+        jsonDecode(
+          fakeClient.lastRequestBody,
+        ).containsKey('audio_perception_id'),
+        isFalse,
+      );
     } finally {
       await temp.delete(recursive: true);
     }
   });
 
   group('base url 拼接与鉴权前置检查', () {
-    test('GET requests hit baseUrl + path with a Bearer token header', () async {
-      fakeClient.responseBody = jsonEncode({'entries': []});
-      await backend.loadGardenState(token: 'tok-1');
+    test(
+      'GET requests hit baseUrl + path with a Bearer token header',
+      () async {
+        fakeClient.responseBody = jsonEncode({'entries': []});
+        await backend.loadGardenState(token: 'tok-1');
 
-      expect(fakeClient.method, 'GET');
-      expect(fakeClient.requestedUri, Uri.parse('$baseUrl/garden/state'));
-      expect(fakeClient.lastRequestHeaders['authorization'], 'Bearer tok-1');
-    });
+        expect(fakeClient.method, 'GET');
+        expect(fakeClient.requestedUri, Uri.parse('$baseUrl/garden/state'));
+        expect(fakeClient.lastRequestHeaders['authorization'], 'Bearer tok-1');
+      },
+    );
 
     test('POST requests send a JSON body to the expected path', () async {
       fakeClient.responseBody = jsonEncode({'reply': 'hi'});
@@ -332,6 +362,52 @@ void main() {
       expect(fakeClient.method, 'POST');
       expect(fakeClient.requestedUri, Uri.parse('$baseUrl/mobile/chat'));
       expect(jsonDecode(fakeClient.lastRequestBody), {'message': 'hello'});
+    });
+
+    test('chat media downloads authenticated bytes by sha256', () async {
+      const digest =
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      fakeClient.responseBytes = [137, 80, 78, 71];
+      final bytes = await backend.downloadChatMedia(digest, token: 'tok-1');
+      expect(bytes, Uint8List.fromList([137, 80, 78, 71]));
+      expect(fakeClient.method, 'GET');
+      expect(fakeClient.requestedUri, Uri.parse('$baseUrl/chat/media/$digest'));
+      expect(
+        fakeClient.lastRequestHeaders[HttpHeaders.authorizationHeader],
+        'Bearer tok-1',
+      );
+    });
+
+    test(
+      'chat media rejects an invalid fingerprint before any request',
+      () async {
+        await expectLater(
+          backend.downloadChatMedia('not-a-hash', token: 'tok-1'),
+          throwsA(
+            isA<BackendException>().having(
+              (e) => e.message,
+              'message',
+              '媒体指纹不合法',
+            ),
+          ),
+        );
+        expect(fakeClient.requestedUri, isNull);
+      },
+    );
+
+    test('chat media surfaces an irrecoverable 410', () async {
+      const digest =
+          'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      fakeClient.statusCode = 410;
+      fakeClient.responseBody = jsonEncode({'detail': '媒体文件已不可恢复'});
+      await expectLater(
+        backend.downloadChatMedia(digest, token: 'tok-1'),
+        throwsA(
+          isA<BackendException>()
+              .having((e) => e.statusCode, 'statusCode', 410)
+              .having((e) => e.message, 'message', '媒体文件已不可恢复'),
+        ),
+      );
     });
 
     test('an empty token is rejected before any request is made', () async {
@@ -348,71 +424,83 @@ void main() {
       expect(fakeClient.requestedUri, isNull);
     });
 
-    test('an untrusted base url is rejected before any request is made', () async {
-      final untrusted = BackendClient(
-        baseUrl: baseUrl,
-        settingsStore: const _DisallowedSettingsStore(),
-        httpClientFactory: () => fakeClient,
-      );
-      await expectLater(
-        untrusted.loadGardenState(token: 'tok-1'),
-        throwsA(
-          isA<BackendException>().having(
-            (e) => e.message,
-            'message',
-            'Backend origin is not trusted',
+    test(
+      'an untrusted base url is rejected before any request is made',
+      () async {
+        final untrusted = BackendClient(
+          baseUrl: baseUrl,
+          settingsStore: const _DisallowedSettingsStore(),
+          httpClientFactory: () => fakeClient,
+        );
+        await expectLater(
+          untrusted.loadGardenState(token: 'tok-1'),
+          throwsA(
+            isA<BackendException>().having(
+              (e) => e.message,
+              'message',
+              'Backend origin is not trusted',
+            ),
           ),
-        ),
-      );
-      expect(fakeClient.requestedUri, isNull);
-    });
+        );
+        expect(fakeClient.requestedUri, isNull);
+      },
+    );
   });
 
   group('正常 JSON 解析', () {
-    test('a 200 response with a JSON object body parses into the model', () async {
-      fakeClient.responseBody = jsonEncode({
-        'entries': [
-          {'date': '2026-07-01'},
-        ],
-      });
-      final state = await backend.loadGardenState(token: 'tok-1');
-      expect(state, isNotNull);
-    });
+    test(
+      'a 200 response with a JSON object body parses into the model',
+      () async {
+        fakeClient.responseBody = jsonEncode({
+          'entries': [
+            {'date': '2026-07-01'},
+          ],
+        });
+        final state = await backend.loadGardenState(token: 'tok-1');
+        expect(state, isNotNull);
+      },
+    );
 
-    test('a 200 response whose body is not a JSON object is rejected', () async {
-      fakeClient.responseBody = jsonEncode([1, 2, 3]);
-      await expectLater(
-        backend.loadGardenState(token: 'tok-1'),
-        throwsA(
-          isA<BackendException>().having(
-            (e) => e.message,
-            'message',
-            '后端返回格式不是 JSON object',
+    test(
+      'a 200 response whose body is not a JSON object is rejected',
+      () async {
+        fakeClient.responseBody = jsonEncode([1, 2, 3]);
+        await expectLater(
+          backend.loadGardenState(token: 'tok-1'),
+          throwsA(
+            isA<BackendException>().having(
+              (e) => e.message,
+              'message',
+              '后端返回格式不是 JSON object',
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   });
 
   group('非 200 走错误提取', () {
-    test('a non-2xx response throws a BackendException carrying the status and detail', () async {
-      fakeClient.statusCode = 403;
-      fakeClient.responseBody = jsonEncode({
-        'detail': 'insufficient scope, need: hardware',
-      });
-      await expectLater(
-        backend.loadGardenState(token: 'tok-1'),
-        throwsA(
-          isA<BackendException>()
-              .having((e) => e.statusCode, 'statusCode', 403)
-              .having(
-                (e) => e.message,
-                'message',
-                'token 权限不足：insufficient scope, need: hardware',
-              ),
-        ),
-      );
-    });
+    test(
+      'a non-2xx response throws a BackendException carrying the status and detail',
+      () async {
+        fakeClient.statusCode = 403;
+        fakeClient.responseBody = jsonEncode({
+          'detail': 'insufficient scope, need: hardware',
+        });
+        await expectLater(
+          backend.loadGardenState(token: 'tok-1'),
+          throwsA(
+            isA<BackendException>()
+                .having((e) => e.statusCode, 'statusCode', 403)
+                .having(
+                  (e) => e.message,
+                  'message',
+                  'token 权限不足：insufficient scope, need: hardware',
+                ),
+          ),
+        );
+      },
+    );
 
     test('a 401 response reports the invalid-token message', () async {
       fakeClient.statusCode = 401;
@@ -431,46 +519,48 @@ void main() {
   });
 
   group('超时/网络异常路径', () {
-    test('a socket error surfaces as the "can\'t reach backend" message', () async {
-      fakeClient.errorOnClose = const SocketException('connection refused');
-      await expectLater(
-        backend.loadGardenState(token: 'tok-1'),
-        throwsA(
-          isA<BackendException>().having(
-            (e) => e.message,
-            'message',
-            '连不上后端：请确认后端已启动，或 adb reverse 已生效',
+    test(
+      'a socket error surfaces as the "can\'t reach backend" message',
+      () async {
+        fakeClient.errorOnClose = const SocketException('connection refused');
+        await expectLater(
+          backend.loadGardenState(token: 'tok-1'),
+          throwsA(
+            isA<BackendException>().having(
+              (e) => e.message,
+              'message',
+              '连不上后端：请确认后端已启动，或 adb reverse 已生效',
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
 
     test('a timeout surfaces as the timeout message', () async {
       fakeClient.errorOnClose = TimeoutException('mock timeout');
       await expectLater(
         backend.loadGardenState(token: 'tok-1'),
         throwsA(
-          isA<BackendException>().having(
-            (e) => e.message,
-            'message',
-            '后端响应超时',
-          ),
+          isA<BackendException>().having((e) => e.message, 'message', '后端响应超时'),
         ),
       );
     });
 
-    test('a body that is not valid JSON surfaces as the malformed-JSON message', () async {
-      fakeClient.responseBody = 'not json';
-      await expectLater(
-        backend.loadGardenState(token: 'tok-1'),
-        throwsA(
-          isA<BackendException>().having(
-            (e) => e.message,
-            'message',
-            '后端返回不是有效 JSON',
+    test(
+      'a body that is not valid JSON surfaces as the malformed-JSON message',
+      () async {
+        fakeClient.responseBody = 'not json';
+        await expectLater(
+          backend.loadGardenState(token: 'tok-1'),
+          throwsA(
+            isA<BackendException>().having(
+              (e) => e.message,
+              'message',
+              '后端返回不是有效 JSON',
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   });
 }

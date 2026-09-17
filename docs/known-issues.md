@@ -1,10 +1,11 @@
 # 已知问题与技术债
 
-## 9.17 审计复核（A/B/D current；G 跨仓施工中）
+## 9.17 审计复核（A/B/D/G current）
 
 - 通知交接（A，current）：native `consumePendingMobileEnvelopes` 已接；pending 为带 id/seq/time/turn_id 与 origin/owner/char_id 的 envelope。无身份旧正文消费时丢弃。history 已有相同身份不重复回放。MissingPluginException / PlatformException 仍刷新正式历史并保留诊断错误。真机通知点击/离线恢复仍 observe。
 - Delivery 单一写入口（B，current）：`MobileDeliveryStateStore` 进程级串行 mergeSeen / 单调 advanceAck / pending；Flutter 不再整快照覆盖。persist→ack→cursor；迟到 poll 不得写当前 origin+owner。这不是 exactly-once 证明。
 - 跨来源消息身份（D，current）：后端 mint 传输 `msg_id`（优先 persisted turn_id）；chat-log 投影 turn_id/media_refs，不伪造旧日志、不把磁盘路径当 URL。手机有身份时按 turn 对账，思考仍要明确 turn_id。管理面 `/observability/chat-identity` 只统计覆盖率。真机跨端同文/附件 observe。
+- 聊天媒体（G，current）：身份为 sha256。`GET /chat/media/{sha256}`（chat）按 owner+活跃角色读仍可恢复原图；410 不可恢复，不承诺已删数据。inbox 7 天 / image_cache 30 天或 500 条 GC 有 live-ref 守卫。上传只回 `media_refs`。管理面 `/observability/chat-media` 只计引用与保留策略。手机本机附件优先，否则鉴权下载，失败/离线/`unavailable`/无 sha256 用缺图占位。本机聊天图本轮不删。生活记录未同步/冲突图不走该 GC。真机换设备、重装、断网、权限失效 observe。
 - 评判、证据及分步验收见 [9.17 审计评判与工单](../cc-tasks/21-9.17审计评判与工单.md)。两份通知文档当前均为 1 分钟断线阈值/15 分钟补偿，原报告 P2-3 不再成立。
 
 Brief 253.6 observe：现有录音转写已透传一次性语调凭据，请求层验证通过；实际麦克风与 STT 联调未验收。
@@ -33,7 +34,7 @@ Current: canonical turn reconciliation, clock normalization and one reasoning an
 
 ## 手机交互工单 19（2026-09-12）
 
-- `open`：旧版 LifeRecordsStore 在成功 ack 后删除本机图片，merge/接受服务器版本还会覆盖 image 引用；本轮保留现有图片及引用，并在删除记录时清理。已被旧版删除的图片无法由本次更新复原：后端只有结构化详情，没有受鉴权的原图读取端点。建议后续由后端提供 owner/scope/删除闸门一致的图片读取契约，再接手机重取；本次按用户要求不修改后端。新图与仍在本机的图片可继续展示，不把它写成旧图恢复完成。
+- `open`：旧版 LifeRecordsStore 在成功 ack 后删除本机图片，merge/接受服务器版本还会覆盖 image 引用；本轮保留现有图片及引用，并在删除记录时清理。已被旧版删除的生活记录图无法由本次更新复原：生活记录仍无独立原图读取端点。聊天历史原图走工单 G 的 `GET /chat/media/{sha256}`，不恢复生活记录已删文件。新图与仍在本机的图片可继续展示，不把它写成旧图恢复完成。
 - `open`：只读查询现有后端生活记录 SQLite jobs，发现 2 个 ValidationError、1 个 JSONDecodeError（均 failed）；这是已上传后识别结果处理失败。未修改后端、未重试识别。管理面现有 /life-records/observability 可继续查看失败任务与回执。
 - `observe`：通知点击、下拉刷新、相册往返、日夜背景迁移及生活记录视觉验收仍需真实手机。本次 adb devices 无已连接设备。自动测试、离屏布局和 Dev APK 不等同真机验收。
 - 本机图片继续使用既有 100 MiB 上限，满额明确拒绝新图，不静默驱逐用户图片；队列观测显示 local_images 的数量、字节数和上限。未新增队列/数据库/trace；桌面和后端管理开关、effective state、识别原图保留策略不变。后端总账未修改，遵守此次仅改手机端的边界。
@@ -62,11 +63,10 @@ Current: canonical turn reconciliation, clock normalization and one reasoning an
 后端默认存档 API 已返回思考并提供 admin-only 列表/详情。手机 UI、受限读取契约及
 聊天 turn_id 关联尚未实现；不能把管理员凭据发给手机作为替代。真机展示未验收。
 
-## P2：历史图片原图读取尚未闭环（2026-09-09，open）
+## P2：历史图片原图读取（2026-09-17，current / observe）
 
-- 影响：本轮修复让新选择的图片通过 `ChatMessage.attachments` 在当前会话显示原图并支持放大、带原附件重试；重启 App 或切换节点后，历史仍不能仅凭文件名恢复原图。旧记录若实际保留了合法 image data URI，可直接显示。
-- 证据：后端 `admin/routers/chat.py` 的 `/upload/ingest` 写入 `media_refs`（kind、filename、sha256），返回 `stored_paths`；当前手机 `/chat-log/*` 模型没有受鉴权的图片读取地址。手机不得把后端磁盘路径当成手机路径或未鉴权 URL。
-- 建议：后端提供与历史消息关联的稳定 media id 和受鉴权读取接口、保留期及不可用状态，再同步三仓接口总账和两端历史渲染。本轮未修改后端/桌面仓库，也未新增本地图片落盘缓存；不能把当前会话原图显示写成历史媒体功能已完成。
+- current：有 sha256 的历史图走 `GET /chat/media/{sha256}`；本机会话附件仍优先本地字节。无 sha256、`availability=unavailable`、410 或离线显示缺图占位。旧 data URI 仍可直接显示。本机聊天图本轮不删。
+- observe：换设备、重装、真实后端断网与权限失效仍需真机。已删且无 raw blob 的旧图不可恢复。
 
 ## 本轮交互修复（2026-09-09）
 

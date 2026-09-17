@@ -2,6 +2,7 @@ import '../models/conversation_calendar.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
@@ -91,6 +92,45 @@ class BackendClient {
       throw const BackendException('Backend origin is not trusted');
     }
     return Uri.parse('$baseUrl$path');
+  }
+
+  Future<Uint8List> downloadChatMedia(
+    String sha256, {
+    required String token,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    final digest = sha256.trim().toLowerCase();
+    if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(digest)) {
+      throw const BackendException('媒体指纹不合法');
+    }
+    final client = _httpClientFactory()
+      ..connectionTimeout = const Duration(seconds: 8);
+    try {
+      final endpoint = await _endpoint('/chat/media/$digest', token: token);
+      final request = await client.getUrl(endpoint);
+      request.followRedirects = false;
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      final response = await request.close().timeout(timeout);
+      final builder = BytesBuilder(copy: false);
+      await for (final chunk in response) {
+        builder.add(chunk);
+      }
+      final bytes = builder.takeBytes();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final text = utf8.decode(bytes, allowMalformed: true);
+        throw BackendException(
+          _extractError(text, response.statusCode),
+          statusCode: response.statusCode,
+        );
+      }
+      return Uint8List.fromList(bytes);
+    } on TimeoutException {
+      throw const BackendException('后端响应超时');
+    } on SocketException {
+      throw const BackendException('连不上后端：请确认后端已启动，或 adb reverse 已生效');
+    } finally {
+      client.close(force: true);
+    }
   }
 
   Future<Map<String, dynamic>> _request(
