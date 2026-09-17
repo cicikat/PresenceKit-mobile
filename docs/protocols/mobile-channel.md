@@ -100,8 +100,9 @@ GET /mobile/poll?limit=20&after=<lastAckedSeq>
 6. 不论 metadata 是否表示 overlay/direct action，都只显示在会话内，不额外弹系统通知或悬浮窗。
 7. poll 必须绑定当前 origin+owner；迟到结果不得写入当前作用域。角色切换不重置节点级 cursor。
 
-同步 chat 响应会记录 `msg_id`（兼容 `turn_id`）；poll 返回相同 `id` 时按 id 丢弃重复副本。
-内容指纹只用于同步响应或 poll 消息缺少 id 的旧后端兜底。
+同步 chat 响应记录传输 `msg_id`（有 persisted turn_id 时两者相等，否则 `msg_id` 为 minted
+transport，`turn_id` 可空）。poll 返回相同 `id` 时按 id 丢弃重复副本。思考读取仍只用明确
+`turn_id`，不用 `msg_id` 代替。内容指纹只用于同步响应或 poll 消息缺少 id 的旧后端兜底。
 
 前后台切换窗口依赖已有 generation 与同一 `message.id` 去重；允许后台 relay SSE 重连一次，
 无需依据 relay connected 状态丢弃 Flutter 已拉取的结果。

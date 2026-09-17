@@ -259,6 +259,7 @@ class ChatScene extends StatelessWidget {
                               prefs: prefs,
                               text: m.text,
                               attachments: m.attachments,
+                              mediaRefs: m.mediaRefs,
                               uploadNote: m.uploadNote,
                               quotedText: m.quotedText,
                               failed: m.failed,
@@ -1304,6 +1305,7 @@ class YouMessage extends StatefulWidget {
     this.showDateDivider = false,
     this.dateKey,
     this.attachments = const [],
+    this.mediaRefs = const [],
     this.uploadNote = '',
     this.showHeader = true,
   });
@@ -1319,6 +1321,7 @@ class YouMessage extends StatefulWidget {
   final bool showDateDivider;
   final String? dateKey;
   final List<PickedUploadFile> attachments;
+  final List<ChatMediaRef> mediaRefs;
   final String uploadNote;
   final bool showHeader;
 
@@ -1353,9 +1356,13 @@ class _YouMessageState extends State<YouMessage> {
     final text = widget.text;
     final prefs = widget.prefs;
     final attachment = AttachmentPlaceholder.parse(text);
+    final canonicalImages = widget.mediaRefs
+        .where((ref) => ref.isImage)
+        .toList(growable: false);
     final hasImages =
         widget.attachments.any((file) => file.isImage) ||
-        attachment?.isImage == true;
+        attachment?.isImage == true ||
+        (widget.attachments.isEmpty && canonicalImages.isNotEmpty);
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -1434,6 +1441,23 @@ class _YouMessageState extends State<YouMessage> {
                                           color: c.userBubbleText,
                                         ),
                                       ),
+                            ],
+                          )
+                        : canonicalImages.isNotEmpty
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              for (final ref in canonicalImages)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: ChatImage(
+                                    bytes: Uint8List(0),
+                                    missingLabel: ref.filename.isEmpty
+                                        ? null
+                                        : ref.filename,
+                                  ),
+                                ),
                             ],
                           )
                         : attachment != null

@@ -1184,6 +1184,12 @@ abstract class AppLocalizations {
   /// **'图片附件'**
   String get imageAttachment;
 
+  /// No description provided for @imageUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'图片暂不可用'**
+  String get imageUnavailable;
+
   /// No description provided for @stickerLoadFailed.
   ///
   /// In zh, this message translates to:

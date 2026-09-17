@@ -1,5 +1,14 @@
 # 后端集成
 
+## 跨来源消息身份（2026-09-17）
+
+`POST /mobile/chat` 返回 persisted `turn_id`（可空）与传输 `msg_id`（非空）。有 persisted
+turn_id 时两者相等；否则 `msg_id` 为 minted transport，不得当作 reasoning turn_id。
+`GET /chat-log/{date}` 条目可带 `turn_id` 与 `media_refs`（kind/filename/sha256/availability），
+手机历史对账有身份时只按 turn 匹配，旧无 ID 仍 clock+正文 fallback，不发明 ids。
+思考继续 `GET /chat/turns/{turn_id}/reasoning`。Dream 不隐式变持久历史。
+三面：管理面覆盖率观测；桌面本轮不改代码；手机接入新身份与缺图占位。真机联调 observe。
+
 ## Brief 253.6：语音感知
 
 继续使用原录音与 POST /transcribe；BackendClient 暂存可选语调凭据，并仅随下一条原样转写文字发送。

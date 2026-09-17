@@ -570,6 +570,7 @@ class ChatMessage {
     this.uploadNote = '',
     this.toolActivity,
     this.turnId,
+    this.mediaRefs = const [],
     this.retainOnRefresh = false,
   }) : id = id ?? _nextId++,
        timestamp = timestamp ?? DateTime.now(),
@@ -597,6 +598,8 @@ class ChatMessage {
 
   /// Server identity, independent of the text rendered for an upload preview.
   final String? turnId;
+  /// Canonical media refs from history; never a local disk path.
+  final List<ChatMediaRef> mediaRefs;
   /// In-memory local content not yet represented by a server history row.
   final bool retainOnRefresh;
 
@@ -622,6 +625,7 @@ class ChatMessage {
     uploadNote: uploadNote,
     toolActivity: toolActivity,
     turnId: turnId,
+    mediaRefs: mediaRefs,
     retainOnRefresh: retainOnRefresh,
   );
 
@@ -650,6 +654,7 @@ class ChatMessage {
     uploadNote: uploadNote,
     toolActivity: toolActivity,
     turnId: turnId ?? this.turnId,
+    mediaRefs: mediaRefs,
     retainOnRefresh: retainOnRefresh ?? this.retainOnRefresh,
   );
 }
@@ -997,18 +1002,50 @@ class AttachmentPlaceholder {
   }
 }
 
+class ChatMediaRef {
+  const ChatMediaRef({
+    required this.kind,
+    required this.filename,
+    this.sha256,
+    this.availability,
+  });
+
+  factory ChatMediaRef.fromJson(Map<String, dynamic> json) {
+    return ChatMediaRef(
+      kind: (json['kind'] ?? '').toString(),
+      filename: (json['filename'] ?? '').toString(),
+      sha256: _optionalMediaId(json['sha256']),
+      availability: _optionalMediaId(json['availability']),
+    );
+  }
+
+  static String? _optionalMediaId(Object? value) {
+    final text = value?.toString().trim() ?? '';
+    return text.isEmpty ? null : text;
+  }
+
+  final String kind;
+  final String filename;
+  final String? sha256;
+  final String? availability;
+
+  bool get isImage => kind == 'image';
+}
+
 class ChatLogEntry {
   const ChatLogEntry({
     this.entryKind = '',
     this.toolActivity,
     this.turnId,
     this.assistantDisplayText,
+    this.mediaRefs = const [],
     required this.time,
     required this.user,
     required this.assistant,
   });
 
   factory ChatLogEntry.fromJson(Map<String, dynamic> json) {
+    final rawRefs = json['media_refs'];
     return ChatLogEntry(
       entryKind: (json['entry_kind'] ?? '').toString(),
       toolActivity: ToolActivity.tryParse(json['tool_activity']),
@@ -1016,6 +1053,16 @@ class ChatLogEntry {
       assistantDisplayText: json['assistant_display_text'] is String
           ? json['assistant_display_text'] as String
           : null,
+      mediaRefs: rawRefs is List
+          ? rawRefs
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      ChatMediaRef.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .where((item) => item.filename.isNotEmpty || item.sha256 != null)
+                .toList(growable: false)
+          : const [],
       time: (json['time'] ?? '').toString(),
       user: (json['user'] ?? '').toString(),
       assistant: (json['assistant'] ?? '').toString(),
@@ -1024,6 +1071,7 @@ class ChatLogEntry {
 
   final String? turnId;
   final String? assistantDisplayText;
+  final List<ChatMediaRef> mediaRefs;
   final String entryKind;
   final ToolActivity? toolActivity;
   final String time;

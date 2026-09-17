@@ -208,4 +208,47 @@ void main() {
     expect(result[2].attachments, isNotEmpty);
     expect(result[2].id, image.id);
   });
+
+  test('canonical identity matches without guessing body text', () {
+    final local = ChatMessage(
+      role: 'him',
+      text: 'local copy',
+      time: '12:00:10',
+      dateKey: '2026-09-13',
+      turnId: 'turn-same',
+    );
+    final sent = [local];
+    final result = reconcileChatHistory(
+      [
+        ChatMessage(
+          role: 'him',
+          text: 'server copy',
+          time: '12:00',
+          dateKey: '2026-09-13',
+          turnId: 'turn-same',
+        ),
+      ],
+      [],
+      [local],
+      sent,
+    );
+    expect(sent, isEmpty);
+    expect(result.single.id, local.id);
+    expect(result.single.text, 'server copy');
+    expect(result.single.turnId, 'turn-same');
+  });
+
+  test('legacy unmatched text still uses clock fallback without inventing ids', () {
+    final local = message('him', 'same minute', '12:00:10');
+    final sent = [local];
+    final result = reconcileChatHistory(
+      [message('him', 'same minute', '12:00')],
+      [],
+      [local],
+      sent,
+    );
+    expect(sent, isEmpty);
+    expect(result.single.id, local.id);
+    expect(result.single.turnId, isNull);
+  });
 }

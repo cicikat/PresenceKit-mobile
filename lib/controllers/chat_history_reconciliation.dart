@@ -51,6 +51,9 @@ List<ChatMessage> reconcileChatHistory(
         uploadNote: item.uploadNote,
         quotedText: item.quotedText,
         quotedLabel: item.quotedLabel,
+        mediaRefs: remote[found].mediaRefs.isNotEmpty
+            ? remote[found].mediaRefs
+            : item.mediaRefs,
         retainOnRefresh: keepImage || item.retainOnRefresh,
       );
       if (identical(source, local)) {
@@ -83,11 +86,7 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
       } else if (item.role == 'reasoning') {
         if (item.text.isNotEmpty && item.text == candidate.text) { candidates.add(j); }
       } else if (turn != null && turn == remoteTurn) {
-        if (item.text == candidate.text ||
-            (item.role == 'you' && item.attachments.isNotEmpty) ||
-            (item.role == 'you' && _imagePlaceholder(candidate))) {
-          candidates.add(j);
-        }
+        candidates.add(j);
       } else if (j >= cursor &&
           (item.text == candidate.text ||
               (item.role == 'you' &&

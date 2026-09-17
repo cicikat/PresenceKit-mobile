@@ -1233,6 +1233,7 @@ class ChatController extends ChangeNotifier {
             time: entry.time,
             dateKey: day.date,
             turnId: entry.turnId,
+            mediaRefs: entry.mediaRefs,
           ),
         if (entry.turnId?.isNotEmpty == true &&
             entry.assistant.trim().isNotEmpty &&

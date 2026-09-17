@@ -244,6 +244,7 @@
   "replyAction": "Reply",
   "cancelReplyTooltip": "Cancel reply",
   "imageAttachment": "Image attachment",
+  "imageUnavailable": "Image unavailable",
   "stickerLoadFailed": "Sticker failed to load",
   "fileAttachment": "File attachment",
   "composerPlaceholder": "Say something to him…",
