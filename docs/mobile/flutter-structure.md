@@ -16,6 +16,10 @@ DreamController 负责关闭确认、防重入、迟到响应失效和串行段�
 
 Canonical reasoning anchors bound local turn reconciliation; legacy clocks normalize to HH:mm. ToolActivityRow renders existing history receipts with a local showToolActivity preference. ChatController caches authenticated `GET /chat/media/{sha256}` bytes in-process; YouMessage prefers local attachments, otherwise CanonicalChatImage. Implementation, three-surface audit and acceptance limits: [chat-history-and-tools.md](chat-history-and-tools.md).
 
+## Chat 协调层（2026-09-17）
+
+`ChatSessionCoordinator` 是 ChatController 内部对象，记录 hydration、send/reveal、history read 与 connection generation 四组可并行维度，不是单一状态枚举，也不引入通用状态框架。允许：发送/上传与 live poll、用户刷新与在途发送、reveal 期间把新分段排到队尾、分页与发送并行。禁止：dispose 或 generation bump 后应用迟到结果；静默历史刷新覆盖正在发送或 reveal 的气泡；并发第二路 history/sync/refresh/send/poll；把 queued send 或失败气泡当成可丢弃中间态。公开 `sending`/`himTyping` 与 reconciliation 算法不变。角色切换走 `resetForConnectionChange` 升代。
+
 
 ## 聊天情况与角色资料设置（2026-09-12）
 

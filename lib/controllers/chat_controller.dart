@@ -12,6 +12,7 @@ import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/device_services.dart';
 import 'chat_history_reconciliation.dart';
+import 'chat_session_coordinator.dart';
 
 enum ChatDeliverySource { initialSync, catchUp, live }
 
@@ -75,17 +76,12 @@ class ChatController extends ChangeNotifier {
   Timer? _pollTimer;
   final List<List<ChatMessage>> _messageQueue = [];
   Completer<void>? _revealWake;
-  Future<void>? _initialSync;
-  Future<void>? _refresh;
-  bool _playingSegments = false;
-  bool _disposed = false;
-  int _generation = 0;
-  bool _historyRefreshPending = false;
-  Future<void>? _historyRead;
-  bool _initialSyncComplete = false;
+  final ChatSessionCoordinator _session = ChatSessionCoordinator();
   double? _lastScrollPixels;
-  bool sending = false;
-  bool himTyping = false;
+  bool get sending => _session.sending;
+  set sending(bool value) => _session.sending = value;
+  bool get himTyping => _session.himTyping;
+  set himTyping(bool value) => _session.himTyping = value;
   bool loadingHistory = false;
   bool loadingMoreHistory = false;
   bool noMoreHistory = false;
@@ -114,25 +110,25 @@ class ChatController extends ChangeNotifier {
 
   Future<void> start() async {
     if (_accessToken == null) return;
-    if (_initialSync != null) return _initialSync!;
-    if (_initialSyncComplete) {
+    if (_session.initialSync != null) return _session.initialSync!;
+    if (_session.initialSyncComplete) {
       _ensurePollTimer();
       await pollIfBackgroundUnavailable();
       return;
     }
     _pollTimer?.cancel();
-    _initialSync = _startInitialSync();
+    _session.initialSync = _startInitialSync();
     try {
-      await _initialSync;
+      await _session.initialSync;
     } finally {
-      _initialSync = null;
+      _session.initialSync = null;
     }
   }
 
   Future<void> _startInitialSync() async {
     await loadHistory();
     await activateMobile(source: ChatDeliverySource.initialSync);
-    _initialSyncComplete = true;
+    _session.initialSyncComplete = true;
     _ensurePollTimer();
   }
 
@@ -150,7 +146,7 @@ class ChatController extends ChangeNotifier {
   }
 
   void resumePolling() {
-    if (!_initialSyncComplete) {
+    if (!_session.initialSyncComplete) {
       unawaited(start());
       return;
     }
@@ -204,12 +200,12 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  Future<void> refreshConnection() =>
-      _refresh ??= _refreshConnection().whenComplete(() => _refresh = null);
+  Future<void> refreshConnection() => _session.refresh ??= _refreshConnection()
+      .whenComplete(() => _session.refresh = null);
 
   Future<void> _refreshConnection() async {
     if (_accessToken == null) return;
-    if (_initialSync != null) await _initialSync;
+    if (_session.initialSync != null) await _session.initialSync;
     await loadHistory(reconcileLocal: true);
     await activateMobile(source: ChatDeliverySource.catchUp);
     if (mobileActive && mobileError == null) backendError = null;
@@ -218,20 +214,17 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> resetForConnectionChange() async {
-    _generation++;
-    _historyRefreshPending = false;
+    _session.beginEpoch();
     _messageQueue.clear();
     _pendingSends.clear();
     if (_revealWake?.isCompleted == false) _revealWake!.complete();
-    if (_historyRead != null) await _historyRead;
-    sending = false;
-    himTyping = false;
+    if (_session.historyRead != null) await _session.historyRead;
+    _session.clearLiveWork();
     pausePolling();
     history.clear();
     sent.clear();
     _availableDates.clear();
     _loadedDates.clear();
-    _initialSyncComplete = false;
     historyLoaded = false;
     noMoreHistory = false;
     lastBackendReply = null;
@@ -362,7 +355,7 @@ class ChatController extends ChangeNotifier {
     required int userId,
     ReplyTarget? replyTo,
   }) async {
-    final generation = _generation;
+    final generation = _session.generation;
     final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
     sent.add(anchor);
     notifyListeners();
@@ -372,7 +365,7 @@ class ChatController extends ChangeNotifier {
         token: _accessToken!,
         replyTo: replyTo,
       );
-      if (_disposed || generation != _generation) return;
+      if (_session.isStale(generation)) return;
       _bindUserTurn(userId, response.turnId);
       final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
       if (anchorIndex >= 0) {
@@ -395,7 +388,7 @@ class ChatController extends ChangeNotifier {
         );
       }
     } on BackendException catch (e) {
-      if (_disposed || generation != _generation) return;
+      if (_session.isStale(generation)) return;
       backendError = e.message;
       _markLastSendFailed();
       /*
@@ -407,7 +400,7 @@ class ChatController extends ChangeNotifier {
       ); */
       scrollToBottom();
     } catch (e) {
-      if (_disposed || generation != _generation) return;
+      if (_session.isStale(generation)) return;
       backendError = e.toString();
       _markLastSendFailed();
       /* sent.add(
@@ -415,7 +408,7 @@ class ChatController extends ChangeNotifier {
       ); */
       scrollToBottom();
     } finally {
-      if (!_disposed && generation == _generation) {
+      if (_session.isCurrent(generation)) {
         if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
         sending = false;
         himTyping = false;
@@ -454,25 +447,21 @@ class ChatController extends ChangeNotifier {
   Future<void> loadHistory({
     bool reconcileLocal = false,
     bool backgroundRefresh = false,
-  }) => _historyRead ??=
+  }) => _session.historyRead ??=
       _readHistory(
         reconcileLocal: reconcileLocal,
         backgroundRefresh: backgroundRefresh,
       ).whenComplete(() {
-        _historyRead = null;
+        _session.historyRead = null;
         _flushHistoryRefresh();
       });
 
   void _flushHistoryRefresh() {
-    if (!_historyRefreshPending ||
-        _disposed ||
-        sending ||
-        _playingSegments ||
-        loadingMoreHistory ||
-        _historyRead != null) {
+    if (!_session.takeDeferredHistoryFlush(
+      loadingMoreHistory: loadingMoreHistory,
+    )) {
       return;
     }
-    _historyRefreshPending = false;
     unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
   }
 
@@ -482,17 +471,18 @@ class ChatController extends ChangeNotifier {
   }) async {
     // Silent refresh waits for an in-flight send; a user refresh still
     // applies so missed remote turns are not stuck behind the pending bubble.
-    if (_playingSegments ||
-        loadingMoreHistory ||
-        (backgroundRefresh && sending)) {
-      _historyRefreshPending = true;
+    if (_session.shouldHoldHistoryRead(
+      backgroundRefresh: backgroundRefresh,
+      loadingMoreHistory: loadingMoreHistory,
+    )) {
+      _session.deferHistoryRefresh();
       return;
     }
-    if (_disposed) return;
+    if (_session.disposed) return;
     final token = _accessToken;
     if (loadingHistory || token == null) return;
     final backend = _backend();
-    final generation = _generation;
+    final generation = _session.generation;
     final previousSnapshot = List<ChatMessage>.of(history);
     final localSnapshot = List<ChatMessage>.of(sent);
     final silent = backgroundRefresh && historyLoaded;
@@ -525,17 +515,18 @@ class ChatController extends ChangeNotifier {
         final earliest = dates.indexOf(firstDate);
         exhausted = earliest < 0 || earliest >= dates.length - 1;
       }
-      if (_disposed ||
-          generation != _generation ||
+      if (_session.isStale(generation) ||
           _accessToken != token ||
           !identical(_backend(), backend)) {
         return;
       }
-      if (_playingSegments ||
-          (backgroundRefresh && sending) ||
-          !listEquals(localSnapshot, sent) ||
-          !listEquals(previousSnapshot, history)) {
-        _historyRefreshPending = true;
+      if (_session.shouldAbandonHistoryApply(
+        backgroundRefresh: backgroundRefresh,
+        localMutated:
+            !listEquals(localSnapshot, sent) ||
+            !listEquals(previousSnapshot, history),
+      )) {
+        _session.deferHistoryRefresh();
         return;
       }
       if (reconcileLocal) {
@@ -584,12 +575,12 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
       if (!silent || _isAtBottom) scrollToBottom(animate: !silent);
     } on BackendException catch (e) {
-      if (generation == _generation && !_disposed) historyError = e.message;
+      if (_session.isCurrent(generation)) historyError = e.message;
     } catch (e) {
-      if (generation == _generation && !_disposed) historyError = e.toString();
+      if (_session.isCurrent(generation)) historyError = e.toString();
     } finally {
       loadingHistory = false;
-      if (!_disposed && !silent) notifyListeners();
+      if (!_session.disposed && !silent) notifyListeners();
     }
   }
 
@@ -622,7 +613,7 @@ class ChatController extends ChangeNotifier {
         _availableDates.isEmpty) {
       return;
     }
-    final generation = _generation;
+    final generation = _session.generation;
     final backend = _backend();
     final earliestIndex = _availableDates.indexOf(_loadedDates.first);
     final targetIndex = earliestIndex + 1;
@@ -644,11 +635,11 @@ class ChatController extends ChangeNotifier {
         _availableDates[targetIndex],
         token: token,
       );
-      if (_disposed ||
-          generation != _generation ||
+      if (_session.isStale(generation) ||
           _accessToken != token ||
-          !identical(_backend(), backend))
+          !identical(_backend(), backend)) {
         return;
+      }
       history.insertAll(0, _messagesFromDay(day));
       _loadedDates.insert(0, _availableDates[targetIndex]);
       noMoreHistory = targetIndex >= _availableDates.length - 1;
@@ -670,7 +661,7 @@ class ChatController extends ChangeNotifier {
       historyError = e.toString();
     } finally {
       loadingMoreHistory = false;
-      if (!_disposed) {
+      if (!_session.disposed) {
         notifyListeners();
         _flushHistoryRefresh();
       }
@@ -719,7 +710,7 @@ class ChatController extends ChangeNotifier {
     final token = _accessToken;
     if (pollingMobile || token == null) return;
     pollingMobile = true;
-    final generation = _generation;
+    final generation = _session.generation;
     final origin = _deliveryOrigin()?.trim();
     final owner = _deliveryOwner()?.trim();
     try {
@@ -959,7 +950,7 @@ class ChatController extends ChangeNotifier {
   }) async {
     final token = _accessToken;
     if (sending || token == null || files.isEmpty) return;
-    final generation = _generation;
+    final generation = _session.generation;
     sending = true;
     himTyping = true;
     backendError = null;
@@ -994,7 +985,7 @@ class ChatController extends ChangeNotifier {
         channel: 'mobile',
         message: message,
       );
-      if (_disposed || generation != _generation) return;
+      if (_session.isStale(generation)) return;
       _bindUserTurn(outgoing.id, response.turnId);
       final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
       if (anchorIndex >= 0) {
@@ -1017,19 +1008,19 @@ class ChatController extends ChangeNotifier {
         );
       }
     } on BackendException catch (e) {
-      if (_disposed || generation != _generation) return;
+      if (_session.isStale(generation)) return;
       backendError = e.message;
       final index = sent.indexWhere((item) => item.id == outgoing.id);
       if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
       scrollToBottom();
     } catch (e) {
-      if (_disposed || generation != _generation) return;
+      if (_session.isStale(generation)) return;
       backendError = e.toString();
       final index = sent.indexWhere((item) => item.id == outgoing.id);
       if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
       scrollToBottom();
     } finally {
-      if (!_disposed && generation == _generation) {
+      if (_session.isCurrent(generation)) {
         if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
         sending = false;
         himTyping = false;
@@ -1095,16 +1086,14 @@ class ChatController extends ChangeNotifier {
 
   Future<void> _appendMessages(List<ChatMessage> messages) async {
     if (messages.isEmpty) return;
-    final generation = _generation;
+    final generation = _session.generation;
     final wasAtBottom = _isAtBottom;
     _messageQueue.add(List.of(messages));
-    if (_playingSegments) return;
-    _playingSegments = true;
+    if (_session.playingSegments) return;
+    _session.playingSegments = true;
     final random = math.Random();
     try {
-      while (_messageQueue.isNotEmpty &&
-          !_disposed &&
-          generation == _generation) {
+      while (_messageQueue.isNotEmpty && _session.isCurrent(generation)) {
         final batch = _messageQueue.first;
         final message = batch.removeAt(0);
         if (batch.isEmpty) _messageQueue.removeAt(0);
@@ -1135,8 +1124,8 @@ class ChatController extends ChangeNotifier {
       }
     } finally {
       himTyping = false;
-      _playingSegments = false;
-      if (!_disposed) {
+      _session.playingSegments = false;
+      if (!_session.disposed) {
         notifyListeners();
         _flushHistoryRefresh();
       }
@@ -1161,8 +1150,7 @@ class ChatController extends ChangeNotifier {
   }
 
   bool _staleDelivery(int generation, String? origin, String? owner) {
-    return _disposed ||
-        generation != _generation ||
+    return _session.isStale(generation) ||
         origin != _deliveryOrigin()?.trim() ||
         owner != _deliveryOwner()?.trim();
   }
@@ -1426,7 +1414,7 @@ class ChatController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _disposed = true;
+    _session.markDisposed();
     pausePolling();
     _canonicalMedia.clear();
     _canonicalMediaInflight.clear();

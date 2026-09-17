@@ -42,6 +42,7 @@ class _Backend extends BackendClient {
   String? caption;
   List<PickedUploadFile>? uploaded;
   Completer<void>? gate;
+  Completer<void>? sendGate;
   Uint8List? mediaBytes;
   int mediaDownloads = 0;
   Completer<void>? mediaGate;
@@ -81,6 +82,23 @@ class _Backend extends BackendClient {
   }) async {
     wait = waitSeconds;
     return const MobilePollResult(ok: true, active: true, messages: []);
+  }
+
+  @override
+  Future<BackendChatResponse> sendChat(
+    String message, {
+    required String token,
+    ReplyTarget? replyTo,
+  }) async {
+    chats++;
+    await sendGate?.future;
+    if (offline) throw const BackendException('offline');
+    return BackendChatResponse(
+      reply: 'echo:$message',
+      emotion: 'neutral',
+      msgId: 'msg-$chats',
+      turnId: 'turn-$chats',
+    );
   }
 
   @override
@@ -449,6 +467,33 @@ void main() {
       expect(userMessages, hasLength(1));
       expect(userMessages.single.id, failed.id);
       expect(userMessages.single.failed, isFalse);
+    },
+  );
+
+  test(
+    'connection reset drops a late send and keeps later user input',
+    () async {
+      backend.offline = false;
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-09-12',
+        'entries': [
+          {'time': '12:00', 'assistant': 'ready'},
+        ],
+      });
+      await controller.start();
+      backend.sendGate = Completer<void>();
+      controller.send('first');
+      expect(controller.sending, isTrue);
+      expect(controller.sent.where((m) => m.text == 'first'), hasLength(1));
+      final reset = controller.resetForConnectionChange();
+      await Future<void>.delayed(Duration.zero);
+      controller.send('second');
+      backend.sendGate!.complete();
+      await reset;
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.sent.where((m) => m.text == 'first'), isEmpty);
+      expect(controller.sent.where((m) => m.text == 'second'), hasLength(1));
+      expect(controller.sending, isFalse);
     },
   );
 }
