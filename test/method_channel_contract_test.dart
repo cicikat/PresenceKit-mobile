@@ -574,4 +574,22 @@ void main() {
       expect(await store.openShoppingApp('jd'), isFalse);
     });
   });
+
+  group('identity persistence', () {
+    test('credential writes fail loud instead of half-switching', () async {
+      throwPlatformError();
+      await expectLater(
+        store.saveAdminToken('next'),
+        throwsA(isA<PlatformException>()),
+      );
+      await expectLater(
+        store.saveOwnerUserId('owner-b'),
+        throwsA(isA<PlatformException>()),
+      );
+      await expectLater(
+        store.saveBackendBaseUrl('http://127.0.0.1:9090'),
+        throwsA(isA<PlatformException>()),
+      );
+    });
+  });
 }

@@ -57,23 +57,34 @@ class ConnectionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveToken(String value) async {
-    token = value.trim();
-    await settings.saveToken(token);
+  /// Persist first, then memory. Same value is a no-op. Failed writes leave
+  /// the previous in-memory credential so native and Dart cannot diverge.
+  Future<bool> saveToken(String value) async {
+    final next = value.trim();
+    if (next == token) return false;
+    await settings.saveToken(next);
+    token = next;
     notifyListeners();
+    return true;
   }
 
-  Future<void> saveOwnerUserId(String value) async {
-    ownerUserId = value.trim();
-    await settings.saveOwnerUserId(ownerUserId);
+  Future<bool> saveOwnerUserId(String value) async {
+    final next = value.trim();
+    if (next == ownerUserId) return false;
+    await settings.saveOwnerUserId(next);
+    ownerUserId = next;
     notifyListeners();
+    return true;
   }
 
-  Future<void> saveBaseUrl(String value) async {
-    baseUrl = value.trim();
-    await settings.saveBackendBaseUrl(baseUrl);
+  Future<bool> saveBaseUrl(String value) async {
+    final next = value.trim();
+    if (next == baseUrl) return false;
+    await settings.saveBackendBaseUrl(next);
+    baseUrl = next;
     _rebuildBackend();
     notifyListeners();
+    return true;
   }
 
   Future<String?> normalizeBaseUrl(String raw) async {

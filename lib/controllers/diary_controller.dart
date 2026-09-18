@@ -16,27 +16,37 @@ class DiaryController extends ChangeNotifier {
   String? error;
   bool loading = false;
   bool loaded = false;
+  bool _disposed = false;
+  int _generation = 0;
+
+  bool _live(int generation) => !_disposed && generation == _generation;
 
   Future<void> load({bool silent = false}) async {
     final token = _token()?.trim();
     if (loading || token == null || token.isEmpty) return;
+    final generation = _generation;
     loading = true;
     if (!silent) error = null;
     notifyListeners();
     try {
       final result = await _backend().loadDiaryList(token: token);
+      if (!_live(generation)) return;
       entries
         ..clear()
         ..addAll(result);
       loaded = true;
       error = null;
     } on BackendException catch (e) {
+      if (!_live(generation)) return;
       error = e.message;
     } catch (e) {
+      if (!_live(generation)) return;
       error = e.toString();
     } finally {
-      loading = false;
-      notifyListeners();
+      if (_live(generation)) {
+        loading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -49,10 +59,20 @@ class DiaryController extends ChangeNotifier {
   }
 
   void clear() {
+    _generation++;
     entries.clear();
     error = null;
     loading = false;
     loaded = false;
     notifyListeners();
+  }
+
+  void invalidateForIdentityChange() => clear();
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _generation++;
+    super.dispose();
   }
 }

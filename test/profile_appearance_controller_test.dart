@@ -386,4 +386,13 @@ void main() {
     expect(controller.presenceGrant, isNull);
     expect(controller.sessionBindError, 'character_revoked');
   });
+
+  test('identity invalidation drops grant and late assets', () async {
+    await controller.loadPromptAssets();
+    expect(controller.presenceGrant, isNotNull);
+    await controller.invalidateForIdentityChange(realmChanged: false);
+    expect(controller.presenceGrant, isNull);
+    expect(controller.promptAssets, isNull);
+    expect(controller.loadingPromptAssets, isFalse);
+  });
 }

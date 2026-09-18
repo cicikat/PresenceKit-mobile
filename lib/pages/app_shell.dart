@@ -64,7 +64,8 @@ class _CompanionAppState extends State<CompanionApp>
     with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   AppRoute _route = AppRoute.chat;
-  bool _backendSyncStarted = false;
+  bool _restoreComplete = false;
+  AppLifecycleState _lifecycle = AppLifecycleState.resumed;
   String? _backendError;
   late final SettingsStore _settings;
   late final DeviceControlService _deviceService;
@@ -157,6 +158,10 @@ class _CompanionAppState extends State<CompanionApp>
       screen: _screenService,
       backend: () => _backend,
       token: () => _adminToken,
+      restored: () => _restoreComplete,
+      foreground: () =>
+          _lifecycle == AppLifecycleState.resumed ||
+          _lifecycle == AppLifecycleState.inactive,
     );
     _capabilitySettings = CapabilitySettingsController(
       settings: _settings,
@@ -230,6 +235,7 @@ class _CompanionAppState extends State<CompanionApp>
       _profileAppearance.restore(),
       _capabilitySettings.restore(),
     ]);
+    _restoreComplete = true;
     if (!mounted) return;
     if (_hasAdminToken) {
       _lifeRecordsController.start();
@@ -246,16 +252,15 @@ class _CompanionAppState extends State<CompanionApp>
 
   void _startBackendSync() {
     if (!_hasAdminToken) return;
-    _backendSyncStarted = true;
     unawaited(_chatController.start());
     unawaited(_gardenController.start());
-    unawaited(
-      _deviceController.restore().then((_) => _deviceController.start()),
-    );
+    _deviceController.start();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycle = state;
+    _deviceController.handleAppLifecycle(state);
     if (state == AppLifecycleState.resumed) {
       _lifeRecordsController.start();
       _applySystemUi();
@@ -264,9 +269,33 @@ class _CompanionAppState extends State<CompanionApp>
         unawaited(_consumeNotificationOpen());
       }
     } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden) {
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
       _lifeRecordsController.pause();
       _chatController.pausePolling();
+    }
+  }
+
+  Future<void> _invalidateIdentity({
+    required bool realmChanged,
+    bool restartSync = false,
+  }) async {
+    _backendError = null;
+    _gardenController.invalidateForIdentityChange();
+    _diaryController.invalidateForIdentityChange();
+    _profileStatusController.invalidateForIdentityChange();
+    _deviceController.invalidateForIdentityChange();
+    _dreamController.invalidateLocalSession(clearSettings: true);
+    await _profileAppearance.invalidateForIdentityChange(
+      realmChanged: realmChanged,
+    );
+    await _chatController.resetForConnectionChange();
+    if (!mounted) return;
+    if (restartSync && _hasAdminToken) {
+      _startBackendSync();
+      unawaited(_diaryController.load());
+      unawaited(_profileStatusController.load());
+      unawaited(_loadPromptAssets());
     }
   }
 
@@ -374,47 +403,34 @@ class _CompanionAppState extends State<CompanionApp>
     return await _connectionController.trustCleartextOrigin(origin) && mounted;
   }
 
-  Future<void> _changeBackendBaseUrl(String raw) async {
+  Future<bool> _changeBackendBaseUrl(String raw) async {
     final normalized = await _normalizeBackendBaseUrl(raw);
     if (normalized == null) {
       setState(() => _backendError = context.l10n.backendInvalidAddress);
-      return;
+      return false;
     }
     if (!await _ensureTrustedBackendOrigin(normalized)) {
       if (mounted) {
         setState(() => _backendError = 'Backend origin was not trusted');
       }
-      return;
+      return false;
     }
-    if (normalized == _backendBaseUrl) return;
+    if (normalized == _backendBaseUrl) return false;
 
-    _gardenController.stop();
-    _chatController.pausePolling();
-    final previousBackend = _backend;
-    if (_hasAdminToken) {
-      unawaited(
-        previousBackend
-            .deactivateMobile(token: _adminToken)
-            .then<void>((_) {})
-            .catchError((_) {}),
-      );
+    try {
+      await _connectionController.saveBaseUrl(normalized);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _backendError = error.toString());
+      }
+      return false;
     }
-    setState(() {
-      _backendError = null;
-      _gardenController.error = null;
-      _diaryController.error = null;
-      _gardenController.state = null;
-      _diaryController.loaded = false;
-      _diaryController.entries.clear();
-    });
-    await _connectionController.saveBaseUrl(normalized);
-    await _chatController.resetForConnectionChange();
-    if (!mounted) return;
-    if (_hasAdminToken) _startBackendSync();
+    return true;
   }
 
   Future<void> _openAdminTokenSettings({bool required = false}) async {
     if (!mounted) return;
+    final previousToken = _adminToken;
     final savedToken = await showDialog<String>(
       barrierDismissible: !required,
       context: context,
@@ -425,8 +441,21 @@ class _CompanionAppState extends State<CompanionApp>
       ),
     );
     if (savedToken == null || !mounted) return;
-    final shouldStartSync = !_backendSyncStarted;
-    _backendError = null;
+    final replaced = previousToken.trim() != savedToken.trim();
+    if (replaced && previousToken.trim().isNotEmpty) {
+      unawaited(
+        _backend
+            .deactivateMobile(token: previousToken)
+            .then<void>((_) {})
+            .catchError((_) {}),
+      );
+    }
+    if (replaced) {
+      await _invalidateIdentity(
+        realmChanged: false,
+        restartSync: _hasAdminToken,
+      );
+    }
     unawaited(
       Future<void>.delayed(const Duration(milliseconds: 320), () {
         if (!mounted) return;
@@ -434,11 +463,7 @@ class _CompanionAppState extends State<CompanionApp>
           context,
           rootNavigator: true,
         )?.popUntil((route) => route.isFirst);
-        if (shouldStartSync) {
-          _startBackendSync();
-        } else {
-          setState(() {});
-        }
+        if (!replaced) setState(() {});
       }),
     );
   }
@@ -769,12 +794,28 @@ class _CompanionAppState extends State<CompanionApp>
       ),
     );
     if (result == null || !mounted) return;
+    var realmChanged = false;
     if (result.ownerUserId != _ownerUserId) {
-      await _connectionController.saveOwnerUserId(result.ownerUserId);
+      try {
+        realmChanged = await _connectionController.saveOwnerUserId(
+          result.ownerUserId,
+        );
+      } catch (error) {
+        if (mounted) {
+          setState(() => _backendError = error.toString());
+        }
+        return;
+      }
       if (!mounted) return;
-      setState(() {});
     }
-    unawaited(_changeBackendBaseUrl(result.baseUrl));
+    final nodeChanged = await _changeBackendBaseUrl(result.baseUrl);
+    if (!mounted) return;
+    if (realmChanged || nodeChanged) {
+      await _invalidateIdentity(
+        realmChanged: true,
+        restartSync: _hasAdminToken,
+      );
+    }
   }
 
   Future<void> _openRelaySettings() async {
@@ -852,6 +893,7 @@ class _CompanionAppState extends State<CompanionApp>
         .applyActiveCharacterPresentation();
     if (!mounted) return;
     if (!switched || !reloadConversation || !_hasAdminToken) return;
+    _dreamController.invalidateLocalSession(clearSettings: false);
     _diaryController.clear();
     _gardenController.clear();
     unawaited(_diaryController.load());

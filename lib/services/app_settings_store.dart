@@ -55,14 +55,10 @@ class AppSettingsStore {
 
   Future<void> saveBackendBaseUrl(String value) async {
     if (!_channelAvailable) return;
-    try {
-      await PlatformSettingsChannel.channel.invokeMethod<void>(
-        'setBackendBaseUrl',
-        {'value': value},
-      );
-    } on PlatformException {
-      // The app can still use the runtime value even if persistence fails.
-    }
+    await PlatformSettingsChannel.channel.invokeMethod<void>(
+      'setBackendBaseUrl',
+      {'value': value},
+    );
   }
 
   Future<String?> loadAdminToken() async {

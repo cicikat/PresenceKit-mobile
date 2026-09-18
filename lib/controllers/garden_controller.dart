@@ -18,9 +18,17 @@ class GardenController extends ChangeNotifier {
   GardenState? state;
   String? error;
   bool loading = false;
+  bool _disposed = false;
+  int _generation = 0;
+
+  bool _live(int generation) => !_disposed && generation == _generation;
 
   Future<void> start() async {
-    _refreshTimer?.cancel();
+    if (_disposed) return;
+    if (_refreshTimer != null) {
+      unawaited(load(silent: true));
+      return;
+    }
     unawaited(load());
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -28,37 +36,55 @@ class GardenController extends ChangeNotifier {
     );
   }
 
-  void stop() => _refreshTimer?.cancel();
+  void stop() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
 
   Future<void> load({bool silent = false}) async {
     final token = _token()?.trim();
     if (loading || token == null || token.isEmpty) return;
+    final generation = _generation;
     loading = true;
     if (!silent) error = null;
     notifyListeners();
     try {
-      state = await _backend().loadGardenState(token: token);
+      final loaded = await _backend().loadGardenState(token: token);
+      if (!_live(generation)) return;
+      state = loaded;
       error = null;
     } on BackendException catch (e) {
+      if (!_live(generation)) return;
       error = e.message;
     } catch (e) {
+      if (!_live(generation)) return;
       error = e.toString();
     } finally {
-      loading = false;
-      notifyListeners();
+      if (_live(generation)) {
+        loading = false;
+        notifyListeners();
+      }
     }
   }
 
   void clear() {
+    _generation++;
     state = null;
     error = null;
     loading = false;
     notifyListeners();
   }
 
+  void invalidateForIdentityChange() {
+    stop();
+    clear();
+  }
+
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    _disposed = true;
+    _generation++;
+    stop();
     super.dispose();
   }
 }

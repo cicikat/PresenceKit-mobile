@@ -37,6 +37,7 @@ class DreamController extends ChangeNotifier {
   int _generation = 0;
   Completer<void>? _revealDone;
   int? _revealingId;
+  bool _pollingWanted = false;
 
   void markRevealStarted(ChatMessage message) {
     final index = messages.indexWhere((m) => m.id == message.id);
@@ -58,8 +59,15 @@ class DreamController extends ChangeNotifier {
     return value == null || value.isEmpty ? null : value;
   }
 
+  bool _live(int generation) => !_disposed && generation == _generation;
+
   Future<void> startPolling() async {
-    _stateTimer?.cancel();
+    if (_disposed) return;
+    _pollingWanted = true;
+    if (_stateTimer != null) {
+      unawaited(loadState(silent: true));
+      return;
+    }
     unawaited(loadState());
     unawaited(loadStats());
     _stateTimer = Timer.periodic(
@@ -68,64 +76,110 @@ class DreamController extends ChangeNotifier {
     );
   }
 
-  void stopPolling() => _stateTimer?.cancel();
+  void stopPolling() {
+    _pollingWanted = false;
+    _stateTimer?.cancel();
+    _stateTimer = null;
+  }
+
+  /// Local display invalidation only. Does not POST exit/wake/archive.
+  void invalidateLocalSession({required bool clearSettings}) {
+    _generation++;
+    finishReveal();
+    _stateTimer?.cancel();
+    _stateTimer = null;
+    messages.clear();
+    state = null;
+    stats = null;
+    error = null;
+    settingsError = null;
+    loadingState = false;
+    entering = false;
+    sending = false;
+    loadingSettings = false;
+    savingSettings = false;
+    transitioning = false;
+    transitionFailed = false;
+    if (clearSettings) {
+      settings = null;
+      worlds = [];
+      presets = [];
+    }
+    notifyListeners();
+    if (_pollingWanted && !_disposed) unawaited(startPolling());
+  }
 
   Future<void> loadState({bool silent = false}) async {
     final token = _accessToken;
     if (loadingState || token == null) return;
+    final generation = _generation;
+    final backend = _backend();
     loadingState = true;
     if (!silent) {
       error = null;
       notifyListeners();
     }
     try {
-      final generation = _generation;
-      final loaded = await _backend().loadDreamState(token: token);
-      if (_disposed || generation != _generation) return;
+      final loaded = await backend.loadDreamState(token: token);
+      if (!_live(generation)) return;
       state = loaded;
       error = null;
     } on BackendException catch (e) {
+      if (!_live(generation)) return;
       error = e.message;
     } catch (e) {
+      if (!_live(generation)) return;
       error = e.toString();
     } finally {
-      loadingState = false;
-      notifyListeners();
+      if (_live(generation)) {
+        loadingState = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> loadStats() async {
     final token = _accessToken;
     if (token == null) return;
+    final generation = _generation;
     try {
-      stats = await _backend().loadDreamStats(token: token);
+      final loaded = await _backend().loadDreamStats(token: token);
+      if (!_live(generation)) return;
+      stats = loaded;
       notifyListeners();
     } catch (_) {
-      // 只读统计失败时保留上一次成功值。
+      // Keep the last successful stats when a read-only refresh fails.
     }
   }
 
   Future<void> enter() async {
     final token = _accessToken;
     if (entering || transitioning || token == null) return;
+    final generation = _generation;
+    final backend = _backend();
     entering = true;
     error = null;
     notifyListeners();
     try {
-      if (!await _backend().enterDream(token: token)) {
+      if (!await backend.enterDream(token: token)) {
+        if (!_live(generation)) return;
         error = '后端没有允许这次入梦';
         return;
       }
+      if (!_live(generation)) return;
       messages.add(
         ChatMessage(role: 'system', text: '— 坠入梦中 —', time: _nowLabel()),
       );
       await loadState(silent: true);
       _scrollToBottom();
     } on BackendException catch (e) {
+      if (!_live(generation)) return;
       error = e.message;
     } finally {
-      entering = false;
-      notifyListeners();
+      if (_live(generation)) {
+        entering = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -144,10 +198,11 @@ class DreamController extends ChangeNotifier {
   Future<void> _send(String message) async {
     final token = _accessToken;
     final generation = _generation;
+    final backend = _backend();
     if (token == null) return;
     try {
-      final response = await _backend().sendDreamChat(message, token: token);
-      if (_disposed || generation != _generation) return;
+      final response = await backend.sendDreamChat(message, token: token);
+      if (!_live(generation)) return;
       if (response.error != null && response.error!.trim().isNotEmpty) {
         messages.add(
           ChatMessage(
@@ -162,7 +217,7 @@ class DreamController extends ChangeNotifier {
             : [NarrativeSegment(type: 'say', text: response.reply)];
         for (final segment in segments) {
           for (final part in _splitReply(segment.text)) {
-            if (_disposed || generation != _generation) return;
+            if (!_live(generation)) return;
             final done = Completer<void>();
             _revealDone = done;
             final revealed = ChatMessage(
@@ -199,22 +254,23 @@ class DreamController extends ChangeNotifier {
             await done.future;
             timer.cancel();
             follow.cancel();
+            if (!_live(generation)) return;
             markRevealStarted(revealed);
             if (identical(_revealDone, done)) _revealDone = null;
           }
         }
       }
-      if (_disposed || generation != _generation) return;
+      if (!_live(generation)) return;
       if (response.exitAccepted || response.forceExited) {
         await loadState(silent: true);
       }
       _scrollToBottom();
     } catch (e) {
-      if (!_disposed && generation == _generation) {
+      if (_live(generation)) {
         error = e is BackendException ? e.message : e.toString();
       }
     } finally {
-      if (!_disposed && generation == _generation) sending = false;
+      if (_live(generation)) sending = false;
       notifyListeners();
     }
   }
@@ -222,53 +278,70 @@ class DreamController extends ChangeNotifier {
   Future<DreamWakeResult?> wake() async {
     final token = _accessToken;
     if (transitioning || entering || token == null) return null;
+    final generation = _generation;
+    final backend = _backend();
     transitioning = true;
     transitionFailed = false;
     notifyListeners();
     try {
-      final result = await _backend().dreamWake(token: token);
+      final result = await backend.dreamWake(token: token);
+      if (!_live(generation)) return null;
       transitionFailed = !result.retained && !result.confirmedClosed;
       return result;
     } catch (_) {
+      if (!_live(generation)) return null;
       transitionFailed = true;
       return null;
     } finally {
-      transitioning = false;
-      notifyListeners();
+      if (_live(generation)) {
+        transitioning = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> resume() async {
     final token = _accessToken;
     if (token == null || transitioning) return;
+    final generation = _generation;
+    final backend = _backend();
     transitioning = true;
     transitionFailed = false;
     notifyListeners();
     try {
-      await _backend().dreamResume(token: token);
+      await backend.dreamResume(token: token);
+      if (!_live(generation)) return;
     } catch (_) {
+      if (!_live(generation)) return;
       transitionFailed = true;
     } finally {
-      transitioning = false;
-      notifyListeners();
+      if (_live(generation)) {
+        transitioning = false;
+        notifyListeners();
+      }
     }
-    await loadState(silent: true);
+    if (_live(generation)) await loadState(silent: true);
   }
 
   Future<bool> exit({bool callBackendExit = true}) async {
     final token = _accessToken;
     if (transitioning || entering) return false;
+    final generation = _generation;
+    final backend = _backend();
     transitioning = true;
     transitionFailed = false;
     notifyListeners();
+    var closed = false;
     try {
       if (callBackendExit) {
         if (token == null ||
-            !(await _backend().exitDream(token: token)).confirmedClosed) {
+            !(await backend.exitDream(token: token)).confirmedClosed) {
+          if (!_live(generation)) return false;
           transitionFailed = true;
           return false;
         }
       }
+      if (!_live(generation)) return false;
       _generation++;
       sending = false;
       finishReveal();
@@ -277,13 +350,20 @@ class DreamController extends ChangeNotifier {
       stats = null;
       error = null;
       messages.clear();
+      closed = true;
       return true;
     } catch (_) {
+      if (!_live(generation)) return false;
       transitionFailed = true;
       return false;
     } finally {
-      transitioning = false;
-      notifyListeners();
+      // Success increments generation once. Identity invalidation increments
+      // independently. Only this call may clear transitioning.
+      final expected = closed ? generation + 1 : generation;
+      if (!_disposed && _generation == expected) {
+        transitioning = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -298,6 +378,7 @@ class DreamController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    final generation = _generation;
     final backend = _backend();
     loadingSettings = true;
     settingsError = null;
@@ -315,21 +396,18 @@ class DreamController extends ChangeNotifier {
         token: token,
         worlds: false,
       );
-      if (token == _accessToken && identical(backend, _backend())) {
-        settings = loadedSettings;
-        worlds = loadedWorlds;
-        presets = loadedPresets;
-      }
+      if (!_live(generation) || token != _accessToken) return;
+      settings = loadedSettings;
+      worlds = loadedWorlds;
+      presets = loadedPresets;
     } on BackendException catch (e) {
-      if (token == _accessToken && identical(backend, _backend())) {
-        settingsError = e.message;
-      }
+      if (!_live(generation) || token != _accessToken) return;
+      settingsError = e.message;
     } finally {
-      loadingSettings = false;
-      notifyListeners();
-    }
-    if (token != _accessToken || !identical(backend, _backend())) {
-      await loadSettings();
+      if (_live(generation)) {
+        loadingSettings = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -349,11 +427,13 @@ class DreamController extends ChangeNotifier {
         token == null) {
       return;
     }
+    final generation = _generation;
+    final backend = _backend();
     savingSettings = true;
     settingsError = null;
     notifyListeners();
     try {
-      settings = await _backend().updateDreamSettings(
+      final updated = await backend.updateDreamSettings(
         token: token,
         enableDreamLorebook: enableDreamLorebook,
         worldLayer: worldLayer,
@@ -363,11 +443,16 @@ class DreamController extends ChangeNotifier {
         boundaryLevel: boundaryLevel,
         lucidMode: lucidMode,
       );
+      if (!_live(generation) || token != _accessToken) return;
+      settings = updated;
     } on BackendException catch (e) {
+      if (!_live(generation) || token != _accessToken) return;
       settingsError = e.message;
     } finally {
-      savingSettings = false;
-      notifyListeners();
+      if (_live(generation)) {
+        savingSettings = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -403,7 +488,7 @@ class DreamController extends ChangeNotifier {
     _disposed = true;
     _generation++;
     finishReveal();
-    _stateTimer?.cancel();
+    stopPolling();
     scrollController.dispose();
     super.dispose();
   }

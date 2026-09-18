@@ -62,6 +62,8 @@ class ProfileAppearanceController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _assetsGeneration++;
+    _sessionBindGeneration++;
     super.dispose();
   }
 
@@ -450,6 +452,31 @@ class ProfileAppearanceController extends ChangeNotifier {
 
   void invalidatePresenceGrant() {
     presenceGrant = null;
+  }
+
+  /// Drops in-flight prompt/session work after a token, owner, or node change.
+  /// Theme, fonts, and local user profile are not owned here and stay put.
+  Future<void> invalidateForIdentityChange({
+    required bool realmChanged,
+  }) async {
+    _assetsGeneration++;
+    _sessionBindGeneration++;
+    presenceGrant = null;
+    sessionBindError = null;
+    promptAssetsError = null;
+    promptAssets = null;
+    sessionScopeCapability = SessionScopeCapability.unsupported;
+    loadingPromptAssets = false;
+    savingPromptAssets = false;
+    bindingPresenceSession = false;
+    if (realmChanged) {
+      activeCharacterId = null;
+      sessionCharacterId = await _settings.loadSessionCharacterId(
+        origin: _currentOrigin,
+        owner: _currentOwner,
+      );
+    }
+    notifyListeners();
   }
 
   Future<void> _cacheDisplayName() =>

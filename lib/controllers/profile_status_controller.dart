@@ -22,6 +22,8 @@ class ProfileStatusController extends ChangeNotifier {
   DateTime? lastSuccessfulAt;
   String? error;
   bool loading = false;
+  bool _disposed = false;
+  int _generation = 0;
 
   String? get _accessToken {
     final value = _token()?.trim();
@@ -30,9 +32,12 @@ class ProfileStatusController extends ChangeNotifier {
 
   bool get isStale => error != null && lastSuccessfulAt != null;
 
+  bool _live(int generation) => !_disposed && generation == _generation;
+
   Future<void> load() async {
     final token = _accessToken;
     if (loading || token == null) return;
+    final generation = _generation;
     loading = true;
     error = null;
     notifyListeners();
@@ -41,16 +46,38 @@ class ProfileStatusController extends ChangeNotifier {
         _backend().loadActivityCurrent(token: token),
         _backend().loadMoodState(token: token),
       ]);
+      if (!_live(generation)) return;
       activityCurrent = results[0] as ActivityCurrentState;
       moodState = results[1] as MoodStateSnapshot;
       lastSuccessfulAt = DateTime.now();
     } on BackendException catch (e) {
+      if (!_live(generation)) return;
       error = e.message;
     } catch (e) {
+      if (!_live(generation)) return;
       error = e.toString();
     } finally {
-      loading = false;
-      notifyListeners();
+      if (_live(generation)) {
+        loading = false;
+        notifyListeners();
+      }
     }
+  }
+
+  void invalidateForIdentityChange() {
+    _generation++;
+    activityCurrent = null;
+    moodState = null;
+    lastSuccessfulAt = null;
+    error = null;
+    loading = false;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _generation++;
+    super.dispose();
   }
 }
