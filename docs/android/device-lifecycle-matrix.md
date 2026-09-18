@@ -26,3 +26,8 @@ Required execution order:
 The instrumented workflow proves native capability contracts on an emulator;
 it does not prove Doze, process-kill, reboot, OEM background policy, relay
 recovery, or release-artifact acceptance.
+
+Ticket 23 added four still-unexecuted cases: token/owner/node identity
+switch, local character switch without auto-exiting Dream, foreground Dart
+collection handoff, and no implicit activity-recognition prompt. They remain
+`not-run` until a real device run records environment and evidence.

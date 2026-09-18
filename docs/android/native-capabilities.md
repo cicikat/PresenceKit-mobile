@@ -76,6 +76,7 @@ The `presence_mobile/settings` channel also persists mobile appearance preferenc
 - `onResume()` 无条件停止原生服务和中继订阅，由 Flutter 前台每 5 秒轮询。通知点击会以一次性
   `pendingOpenLatestMessage` 标记传给 Flutter；Flutter 在凭证恢复后消费它，完成 catch-up 并定位最新消息。
 - `onStop()` 只有在后台通知开关开启、访问凭证存在且后端 origin 可信时，才启动后台前台服务。
+- Flutter 前台采集与 native 后台采集交接（2026-09-18）：Dart `DeviceController` Timer 在 hidden/paused/detached 停止；`onResume`/`onStop` 窗口不变。native 迟到上传仍在请求前冻结当前 origin+token（`ScreenObservationClient.credentials()`、`MobileNotificationService.postScreenContext`），不把旧会话快照发到新节点。停止 Dart Timer 不等于 native 已承担电量/步数周期上报。
 - `isBackgroundNotificationServiceRunning` 直接读取 `MobileNotificationService.isServiceRunning`
   的进程内生命周期真值，不再用 SharedPreferences 历史标记判断服务是否仍在运行。
 
@@ -86,7 +87,7 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 ## BackendSecurityPolicy.kt 与 SensorAccess.kt
 
 - `BackendSecurityPolicy` 负责 HTTPS/loopback/Tailscale/RFC1918 origin 与 relay URL 校验，拒绝公网明文和自动重定向绕过。
-- `SensorAccess` 负责电量、步数和录音能力的 Android 读取；Flutter `DeviceController` 以 30 分钟周期上报电量/步数，不把屏幕正文写入长期记忆。
+- `SensorAccess` 负责电量、步数和录音能力的 Android 读取；Flutter `DeviceController` 仅在前台以 30 分钟周期上报电量/步数，后台不另开 Dart 替代任务，不把屏幕正文写入长期记忆。
 
 ## MobileNotificationService.kt
 

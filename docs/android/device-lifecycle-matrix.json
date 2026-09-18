@@ -110,6 +110,34 @@
       "scenario": "Verify the documented background and battery-policy guidance on the target OEM image without treating emulator behavior as equivalent.",
       "status": "not-run",
       "evidence": ""
+    },
+    {
+      "id": "session-token-owner-node-switch",
+      "area": "session",
+      "scenario": "Replace token, change owner, and change node URL; verify in-flight chat/dream/device/diary/garden results are discarded, same-owner token swap does not wipe business data, persist failure does not half-switch credentials, and delivery cursor is not cleared on token-only replace.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "session-local-character-switch",
+      "area": "session",
+      "scenario": "Switch this-device Reality character while a Dream is displayed; verify local Dream display is isolated without posting exit/wake/archive, server active is unchanged, and chat history reloads for the new session.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "foreground-collection-handoff",
+      "area": "lifecycle",
+      "scenario": "Background the app and confirm Dart screen/sensor timers stop; native notification-service screen upload may continue when enabled. Resume must restart a single Dart timer set. Permission sheets (inactive) must not be treated as background exit.",
+      "status": "not-run",
+      "evidence": ""
+    },
+    {
+      "id": "no-implicit-activity-permission",
+      "area": "permissions",
+      "scenario": "Cold start and timed sensor upload never prompt ACTIVITY_RECOGNITION; steps are omitted without permission while battery still reports. Explicit grant only from 系统配置 → 权限与功能.",
+      "status": "not-run",
+      "evidence": ""
     }
   ]
 }

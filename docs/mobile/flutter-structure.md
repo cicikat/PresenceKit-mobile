@@ -30,13 +30,13 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 | `PersonalizationController` | 本机用户名/签名/头像/字体/界面字号 | 角色备注名、角色头像槽 |
 | `ProfileStatusController` | 活动/心情快照及过期标记 | 角色切换、本机资料 |
 | `ConnectionController` | 节点、token、owner、可信 origin、中继、BackendClient | 安全确认对话框 |
-| `DeviceController` | 锁屏/购物/悬浮窗/无障碍、屏幕与传感器 Timer | 后台通知开关、能力页快照 |
+| `DeviceController` | 锁屏/购物/悬浮窗/无障碍、前台屏幕与传感器 Timer、身份失效 | 后台通知开关、能力页快照；不拥有 native 后台采集 |
 | `ProfileAppearanceController` | 本机会话角色（origin+owner）、角色备注名/头像、prompt assets（代际守卫）、聊天与梦境背景、外观 prefs | 主题预设、用户字体；不写服务器 active 作为本机切换 |
 | `CapabilitySettingsController` | 后台通知/表情/语音开关、能力页只读快照 | 设备 Timer、权限请求执行 |
 | `AttachmentCoordinator` | 选文件、类型/大小校验、预览名 | 实际上传与气泡发送 |
 | `app_shell.dart` | DI、路由、生命周期、可信 HTTP origin 确认、跨域连接切换 | 领域 Timer、角色资料槽、能力标志 |
 
-组合根仍弹出 Token/节点/中继/裁剪/附言对话框，不把安全授权迁到无 UI 的隐式执行路径。本机会话角色切换（非服务器 active）后由组合根清空日记/花园并 `resetForConnectionChange`。`ProfileAppearanceController` 发现 `session_scope=v1` 并 bind `POST /v1/sessions`；`ChatController` / 日历 / 上传 / 历史 / 媒体 / 思考带 `X-Presence-Session`。本地 `SessionScope` 仍冻结 origin/owner/char/generation 供回包与媒体缓存校验。Dream 独立。
+组合根仍弹出 Token/节点/中继/裁剪/附言对话框，不把安全授权迁到无 UI 的隐式执行路径。凭据写入 persist-first；token/owner/节点变更由 `_invalidateIdentity` 转发各 controller，AppShell 不逐字段清领域状态。本机会话角色切换（非服务器 active）后由组合根清空日记/花园、隔离 Dream 本地展示（不 POST exit）并 `resetForConnectionChange`。`ProfileAppearanceController` 发现 `session_scope=v1` 并 bind `POST /v1/sessions`；`ChatController` / 日历 / 上传 / 历史 / 媒体 / 思考带 `X-Presence-Session`。本地 `SessionScope` 仍冻结 origin/owner/char/generation 供回包与媒体缓存校验。Dream 独立。
 
 
 ## 聊天情况与角色资料设置（2026-09-12）
@@ -162,8 +162,8 @@ Canonical reasoning anchors bound local turn reconciliation; legacy clocks norma
 1. 并行恢复 ConnectionController、DeviceController、ProfileAppearanceController 与 CapabilitySettingsController。
 2. token 存在时启动 ChatController、GardenController 和 mobile channel 激活。
 3. ChatController 每 5 秒触发前台检查；原生后台服务运行时跳过，实际 poll 使用 25 秒长轮询并防重入。
-4. DeviceController 每 45 秒推送一次允许的屏幕上下文，每 30 分钟上报一次电量/步数传感器快照。
-5. app 暂停/隐藏时停止前台 chat poll；恢复时重新激活。
+4. DeviceController 仅在 restore 完成且 Flutter 前台（resumed/inactive）时，每 45 秒推送一次允许的屏幕上下文、每 30 分钟上报一次电量/步数。hidden/paused/detached 停 Dart Timer；native 后台屏幕上传仍由 `MobileNotificationService` 在通知开关开启时承担。
+5. app 暂停/隐藏时停止前台 chat poll 与生活记录周期同步；恢复时重新激活。inactive 不视为后台退出，避免权限弹窗打断采集。
 
 ## 当前结构债
 

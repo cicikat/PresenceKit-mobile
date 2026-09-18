@@ -3,12 +3,12 @@
 ## 9.18 补扫复核（2026-09-17，open/observe）
 
 - current：22 已接入后端 `session_scope=v1`：whoami 发现、`POST /v1/sessions` bind、`X-Presence-Session` 覆盖 chat/upload/media/history/calendar/reasoning；缺失 capability fail-loud；后台通知按信封 `char_id` 展示但不切会话。真机与真实后端联调仍 **not-run**。Dream 独立，不在本单。提交 `d1436df`。
-- open：当前 token 保存未统一失效各领域会话。PromptAssets 迟到保护已由 22 补上；其余领域由 [23 号工单](../cc-tasks/23-session-lifecycle-audit-followup.md) 在接收 22 成果后补漏（23/A）。
-- open：角色呈现切换未重置 Dream；已有部分 generation/token/backend 保护，尚非完整生命周期闭环。节点/凭据失效需补齐，Dream settings 角色归属等待后端 F，不臆定契约（23/B）。
-- open：DeviceController Timer 未随 hidden/paused 停止；原生后台已有屏幕上传路径，交接边界未闭合，尚未复现双采（23/C）。
+- current：23/A — token/owner/节点 persist-first；失败不半切换；同值幂等。`AppShell._invalidateIdentity` 失效 chat/dream/device/diary/garden/profileStatus/prompt assets。同 owner 换 token 不清 delivery cursor。真机 not-run。
+- current：23/B — `DreamController.invalidateLocalSession` 隔离本地展示；节点/凭据清 settings，本机角色切换保留 settings 且不 POST exit/wake。Dream settings 角色归属仍等后端 F，**blocked**，未猜字段。
+- current：23/C — Dart 屏幕/传感器 Timer 仅 restored+前台（resumed/inactive）；hidden/paused/detached 停止。native `MobileNotificationService` 后台屏幕路径保留，不新增电量/步数后台周期。真机交接 not-run。
 - current：23/D — `pushSensorData` / start 不再索取 `ACTIVITY_RECOGNITION`；无权限跳过 steps、电量照常上报。显式入口在「系统配置 → 权限与功能」。提交 `d552d02`。真机授权往返 not-run。
 - current（评估结案）：23/E — 见下方「明文 HTTP 防御纵深评估」；**不改 Manifest**。
-- observe：设备生命周期矩阵当前 14 项均 not-run；补扫末尾 pending handler、delivery 单写、Chat/AppShell 重构及 ABI 改名建议不重复立项。
+- observe：设备生命周期矩阵当前 18 项均 not-run（含 23 新增身份切换、本机角色切换、采集交接、无隐式索权）；补扫末尾 pending handler、delivery 单写、Chat/AppShell 重构及 ABI 改名建议不重复立项。
 
 ## 明文 HTTP 防御纵深评估（23/E，2026-09-17，current）
 
