@@ -219,6 +219,7 @@ class _CompanionAppState extends State<CompanionApp>
 
   Future<void> _consumeNotificationOpen() async {
     if (!_hasAdminToken ||
+        _profileAppearance.promptAssetsError != null ||
         !await _relayService.consumePendingOpenLatestMessage()) {
       return;
     }
@@ -232,15 +233,15 @@ class _CompanionAppState extends State<CompanionApp>
     await Future.wait([
       _connectionController.restore(),
       _deviceController.restore(),
-      _profileAppearance.restore(),
+      _profileAppearance.restore(includeSessionCharacter: false),
       _capabilitySettings.restore(),
     ]);
+    await _profileAppearance.restoreSessionCharacter();
     _restoreComplete = true;
     if (!mounted) return;
     if (_hasAdminToken) {
       _lifeRecordsController.start();
-      _startBackendSync();
-      await _loadPromptAssets();
+      await _prepareSessionAndStartSync();
       await _consumeNotificationOpen();
     } else {
       await _applyActiveCharacterPresentation(reloadConversation: false);
@@ -248,6 +249,13 @@ class _CompanionAppState extends State<CompanionApp>
         (_) => unawaited(_openAdminTokenSettings(required: true)),
       );
     }
+  }
+
+  Future<void> _prepareSessionAndStartSync() async {
+    if (!_hasAdminToken) return;
+    await _loadPromptAssets();
+    if (!mounted || !_hasAdminToken) return;
+    _startBackendSync();
   }
 
   void _startBackendSync() {
@@ -289,13 +297,13 @@ class _CompanionAppState extends State<CompanionApp>
     await _profileAppearance.invalidateForIdentityChange(
       realmChanged: realmChanged,
     );
-    await _chatController.resetForConnectionChange();
+    await _chatController.resetForConnectionChange(restart: false);
     if (!mounted) return;
     if (restartSync && _hasAdminToken) {
-      _startBackendSync();
+      await _prepareSessionAndStartSync();
+      if (!mounted) return;
       unawaited(_diaryController.load());
       unawaited(_profileStatusController.load());
-      unawaited(_loadPromptAssets());
     }
   }
 

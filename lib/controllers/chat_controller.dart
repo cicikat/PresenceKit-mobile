@@ -145,8 +145,11 @@ class ChatController extends ChangeNotifier {
 
   Future<void> _startInitialSync() async {
     await loadHistory();
+    final historyOk = historyLoaded && historyError == null;
     await activateMobile(source: ChatDeliverySource.initialSync);
-    _session.initialSyncComplete = true;
+    if (historyOk) {
+      _session.initialSyncComplete = true;
+    }
     _ensurePollTimer();
   }
 
@@ -231,7 +234,7 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> resetForConnectionChange() async {
+  Future<void> resetForConnectionChange({bool restart = true}) async {
     _session.beginEpoch();
     _messageQueue.clear();
     _pendingSends.clear();
@@ -250,7 +253,7 @@ class ChatController extends ChangeNotifier {
     historyError = null;
     mobileError = null;
     notifyListeners();
-    await start();
+    if (restart) await start();
   }
 
   void send(String text, {ReplyTarget? replyToOverride}) {
@@ -424,7 +427,7 @@ class ChatController extends ChangeNotifier {
   Future<PresenceSessionGrant> _requirePresenceGrant({bool force = false}) async {
     final charId = SessionScope.normalize(_deliveryCharId());
     if (charId == null) {
-      throw const SessionScopeUnsupportedException();
+      throw const BackendException('character_unavailable');
     }
     final resolver = _resolvePresenceSession;
     if (resolver == null) {

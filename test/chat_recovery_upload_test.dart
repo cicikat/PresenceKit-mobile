@@ -396,6 +396,48 @@ void main() {
       expect(backend.historyReads, 1);
     },
   );
+  test('failed history does not complete initial sync so start can retry', () async {
+    await controller.start();
+    expect(controller.historyError, 'offline');
+    expect(controller.historyLoaded, isFalse);
+    expect(controller.mobileActive, isFalse);
+    backend.offline = false;
+    backend.day = ChatLogDay.fromJson({
+      'date': '2026-09-12',
+      'entries': [
+        {'time': '12:00', 'assistant': 'recovered'},
+      ],
+    });
+    await controller.start();
+    expect(controller.historyLoaded, isTrue);
+    expect(controller.historyError, isNull);
+    expect(controller.history.last.text, 'recovered');
+    expect(controller.mobileActive, isTrue);
+  });
+
+  test('missing session character is unavailable, not unsupported', () async {
+    final unbound = ChatController(
+      backend: () => backend,
+      token: () => 'test-token',
+      settings: SettingsStore(settings),
+      relay: RelayStatusService(settings),
+      deliveryOrigin: () => 'http://127.0.0.1:8080',
+      deliveryOwner: () => 'owner',
+      deliveryCharId: () => null,
+      resolvePresenceSession: ({required String charId, bool force = false}) async =>
+          PresenceSessionGrant(
+            sessionId: 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          ),
+    );
+    addTearDown(unbound.dispose);
+    await unbound.start();
+    expect(unbound.historyError, 'character_unavailable');
+    expect(unbound.historyLoaded, isFalse);
+  });
+
   test(
     'manual refresh recovers failed startup and coalesces repeated refreshes',
     () async {

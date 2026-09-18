@@ -10,6 +10,16 @@ void main() {
       final lineCount = '\n'.allMatches(source).length + 1;
 
       expect(
+        source.contains('_prepareSessionAndStartSync()'),
+        isTrue,
+        reason: 'Chat sync must wait for prompt assets and session bind.',
+      );
+      expect(
+        source.indexOf('await _loadPromptAssets()'),
+        lessThan(source.indexOf('_startBackendSync();')),
+        reason: 'Do not start chat history before the session character is ready.',
+      );
+      expect(
         lineCount,
         lessThanOrEqualTo(1499),
         reason:

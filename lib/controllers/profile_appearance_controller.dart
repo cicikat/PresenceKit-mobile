@@ -124,7 +124,7 @@ class ProfileAppearanceController extends ChangeNotifier {
     return grant;
   }
 
-  Future<void> restore() async {
+  Future<void> restore({bool includeSessionCharacter = true}) async {
     final chatAppearance = await _settings.loadChatAppearance();
     final dreamBackground = await _settings.loadDreamBackground();
     final appearancePrefs = await _settings.loadAppearancePrefs();
@@ -135,6 +135,15 @@ class ProfileAppearanceController extends ChangeNotifier {
       chatBubbleOpacity: chatAppearance.opacity,
       dreamBackground: dreamBackground,
     );
+    if (includeSessionCharacter) {
+      await restoreSessionCharacter();
+      return;
+    }
+    notifyListeners();
+  }
+
+  /// Reloads the origin+owner session character after connection identity is known.
+  Future<void> restoreSessionCharacter() async {
     sessionCharacterId = await _settings.loadSessionCharacterId(
       origin: _currentOrigin,
       owner: _currentOwner,

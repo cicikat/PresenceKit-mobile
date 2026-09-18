@@ -203,6 +203,32 @@ void main() {
   tearDown(() => controller.dispose());
 
   test(
+    'session character restore waits until origin and owner are known',
+    () async {
+      store.sessionCharacters['http://node-a|owner-a'] = 'char-b';
+      store.sessionCharacters['|'] = 'char-a';
+      var origin = '';
+      var owner = '';
+      final delayed = ProfileAppearanceController(
+        settings: SettingsStore(store),
+        backend: () => backend,
+        token: () => 'token',
+        origin: () => origin,
+        owner: () => owner,
+      );
+      addTearDown(delayed.dispose);
+
+      await delayed.restore(includeSessionCharacter: false);
+      expect(delayed.sessionCharacterId, isNull);
+
+      origin = 'http://node-a';
+      owner = 'owner-a';
+      await delayed.restoreSessionCharacter();
+      expect(delayed.sessionCharacterId, 'char-b');
+    },
+  );
+
+  test(
     'restore merges appearance prefs with chat and dream backgrounds',
     () async {
       store.prefs = const YxPrefs(fontSize: 18, showChatTime: false);
