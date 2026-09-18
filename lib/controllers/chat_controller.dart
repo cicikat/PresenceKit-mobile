@@ -327,11 +327,16 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<String> loadReasoning(String turnId) async {
-    final grant = await _requirePresenceGrant();
-    return _backend().loadTurnReasoning(
-      turnId,
-      token: _accessToken!,
-      sessionId: grant.sessionId,
+    final generation = _session.generation;
+    final scope = _captureScope(generation);
+    return _withLiveGrant(
+      scope: scope,
+      generation: generation,
+      call: (grant) => _backend().loadTurnReasoning(
+        turnId,
+        token: _accessToken!,
+        sessionId: grant.sessionId,
+      ),
     );
   }
 
@@ -374,19 +379,14 @@ class ChatController extends ChangeNotifier {
     SessionScope scope,
   ) async {
     try {
-      final grant = await _requirePresenceGrant();
-      if (!scope.matchesLive(
-        generation: _session.generation,
-        origin: _deliveryOrigin(),
-        owner: _deliveryOwner(),
-        charId: _deliveryCharId(),
-      )) {
-        return null;
-      }
-      final bytes = await _backend().downloadChatMedia(
-        digest,
-        token: token,
-        sessionId: grant.sessionId,
+      final bytes = await _withLiveGrant(
+        scope: scope,
+        generation: scope.generation,
+        call: (grant) => _backend().downloadChatMedia(
+          digest,
+          token: token,
+          sessionId: grant.sessionId,
+        ),
       );
       if (bytes.isEmpty) return null;
       if (!scope.matchesLive(
@@ -455,30 +455,43 @@ class ChatController extends ChangeNotifier {
     );
   }
 
-  Future<BackendChatResponse> _scopedChatCall({
+  Future<T> _withLiveGrant<T>({
     required SessionScope scope,
     required int generation,
-    required String requestId,
-    required Future<BackendChatResponse> Function(PresenceSessionGrant grant)
-    call,
+    required Future<T> Function(PresenceSessionGrant grant) call,
   }) async {
-    var grant = await _requirePresenceGrant();
-    if (!_scopeStillLive(generation, scope)) {
-      throw const BackendException('session_scope_stale');
+    Future<T> invoke(PresenceSessionGrant grant) {
+      if (!_scopeStillLive(generation, scope)) {
+        return Future<T>.error(const BackendException('session_scope_stale'));
+      }
+      return call(grant);
     }
+
+    var grant = await _requirePresenceGrant();
     try {
-      return await call(grant);
+      return await invoke(grant);
     } on BackendException catch (e) {
       if (!e.isSessionNotFound || !_scopeStillLive(generation, scope)) {
         rethrow;
       }
       _onPresenceSessionInvalid?.call();
       grant = await _requirePresenceGrant(force: true);
-      if (!_scopeStillLive(generation, scope)) {
-        throw const BackendException('session_scope_stale');
-      }
-      return call(grant);
+      return invoke(grant);
     }
+  }
+
+  Future<BackendChatResponse> _scopedChatCall({
+    required SessionScope scope,
+    required int generation,
+    required String requestId,
+    required Future<BackendChatResponse> Function(PresenceSessionGrant grant)
+    call,
+  }) {
+    return _withLiveGrant(
+      scope: scope,
+      generation: generation,
+      call: call,
+    );
   }
 
   Future<void> _applyChatResponse({
@@ -661,24 +674,32 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     }
     try {
-      final grant = await _requirePresenceGrant();
-      if (_session.isStale(generation)) return;
-      final dates = (await backend.loadChatLogDates(
-        token: token,
-        sessionId: grant.sessionId,
-        characterId: _deliveryCharId(),
+      final scope = _captureScope(generation);
+      final dates = (await _withLiveGrant(
+        scope: scope,
+        generation: generation,
+        call: (grant) => backend.loadChatLogDates(
+          token: token,
+          sessionId: grant.sessionId,
+          characterId: _deliveryCharId(),
+        ),
       )).dates;
+      if (_session.isStale(generation)) return;
       final loaded = <String>[];
       var messages = <ChatMessage>[];
       var exhausted = dates.isEmpty;
       if (dates.isNotEmpty) {
         final today = _dateKey(DateTime.now());
         var firstDate = dates.contains(today) ? today : dates.first;
-        var day = await backend.loadChatLogDay(
-          firstDate,
-          token: token,
-          sessionId: grant.sessionId,
-          characterId: _deliveryCharId(),
+        var day = await _withLiveGrant(
+          scope: scope,
+          generation: generation,
+          call: (grant) => backend.loadChatLogDay(
+            firstDate,
+            token: token,
+            sessionId: grant.sessionId,
+            characterId: _deliveryCharId(),
+          ),
         );
         messages = _messagesFromDay(day);
         loaded.add(firstDate);
@@ -687,11 +708,15 @@ class ChatController extends ChangeNotifier {
             ? dates[index + 1]
             : null;
         if (_conversationCount(messages) < 10 && previous != null) {
-          day = await backend.loadChatLogDay(
-            previous,
-            token: token,
-            sessionId: grant.sessionId,
-            characterId: _deliveryCharId(),
+          day = await _withLiveGrant(
+            scope: scope,
+            generation: generation,
+            call: (grant) => backend.loadChatLogDay(
+              previous,
+              token: token,
+              sessionId: grant.sessionId,
+              characterId: _deliveryCharId(),
+            ),
           );
           messages = [..._messagesFromDay(day), ...messages];
           loaded.insert(0, previous);
@@ -816,13 +841,15 @@ class ChatController extends ChangeNotifier {
     historyError = null;
     notifyListeners();
     try {
-      final grant = await _requirePresenceGrant();
-      if (_session.isStale(generation)) return;
-      final day = await backend.loadChatLogDay(
-        _availableDates[targetIndex],
-        token: token,
-        sessionId: grant.sessionId,
-        characterId: _deliveryCharId(),
+      final day = await _withLiveGrant(
+        scope: _captureScope(generation),
+        generation: generation,
+        call: (grant) => backend.loadChatLogDay(
+          _availableDates[targetIndex],
+          token: token,
+          sessionId: grant.sessionId,
+          characterId: _deliveryCharId(),
+        ),
       );
       if (_session.isStale(generation) ||
           _accessToken != token ||

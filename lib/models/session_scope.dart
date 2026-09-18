@@ -86,6 +86,12 @@ class PresenceSessionGrant {
   final String domain;
   final DateTime? expiresAt;
 
+  bool get isExpired {
+    final expires = expiresAt;
+    if (expires == null) return false;
+    return !expires.toUtc().isAfter(DateTime.now().toUtc());
+  }
+
   factory PresenceSessionGrant.fromJson(Map<String, dynamic> json) {
     final sessionId = SessionScope.normalize(json['session_id']?.toString());
     final charId = SessionScope.normalize(json['char_id']?.toString());

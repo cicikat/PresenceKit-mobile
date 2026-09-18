@@ -375,6 +375,21 @@ void main() {
     expect(controller.prefs.nightChatBackground, night);
   });
 
+  test('expired grants are not reused until rebound', () async {
+    await controller.loadPromptAssets();
+    controller.presenceGrant = PresenceSessionGrant(
+      sessionId: 'sess-old',
+      charId: 'char-a',
+      ownerId: 'owner',
+      domain: 'reality',
+      expiresAt: DateTime.now().toUtc().subtract(const Duration(minutes: 1)),
+    );
+    expect(controller.grantFor('char-a'), isNull);
+    final rebound = await controller.ensurePresenceSession(charId: 'char-a');
+    expect(rebound?.sessionId, 'sess-char-a');
+    expect(controller.grantFor('char-a')?.sessionId, 'sess-char-a');
+  });
+
   test('loadPromptAssets binds a Reality session for the local character', () async {
     await controller.loadPromptAssets();
     expect(controller.sessionScopeSupported, isTrue);

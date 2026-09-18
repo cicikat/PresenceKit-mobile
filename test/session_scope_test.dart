@@ -101,6 +101,17 @@ void main() {
     expect(grant.sessionId, 'pss_fixture');
     expect(grant.charId, 'char-b');
     expect(grant.expiresAt!.isUtc, isTrue);
+    expect(grant.isExpired, isTrue);
+    expect(
+      PresenceSessionGrant(
+        sessionId: 'pss_live',
+        charId: 'char-b',
+        ownerId: 'owner',
+        domain: 'reality',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ).isExpired,
+      isFalse,
+    );
     expect(
       () => PresenceSessionGrant.fromJson(const {'char_id': 'char-b'}),
       throwsA(isA<FormatException>()),

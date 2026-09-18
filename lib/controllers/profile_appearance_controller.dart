@@ -121,6 +121,7 @@ class ProfileAppearanceController extends ChangeNotifier {
     final grant = presenceGrant;
     if (expected == null || grant == null) return null;
     if (SessionScope.normalize(grant.charId) != expected) return null;
+    if (grant.isExpired) return null;
     return grant;
   }
 

@@ -45,8 +45,10 @@ class _Backend extends BackendClient {
   Completer<void>? gate;
   Completer<void>? sendGate;
   int sessionMisses = 0;
+  int historySessionMisses = 0;
   final sentSessionIds = <String?>[];
   final sentRequestIds = <String?>[];
+  final historySessionIds = <String?>[];
   Uint8List? mediaBytes;
   int mediaDownloads = 0;
   Completer<void>? mediaGate;
@@ -57,6 +59,11 @@ class _Backend extends BackendClient {
     String? characterId,
   }) async {
     historyReads++;
+    historySessionIds.add(sessionId);
+    if (historySessionMisses > 0) {
+      historySessionMisses -= 1;
+      throw const BackendException('session_not_found', statusCode: 404);
+    }
     if (offline) throw const BackendException('offline');
     return ChatLogDates.fromJson({
       'dates': day == null ? [] : [day!.date],
@@ -564,6 +571,50 @@ void main() {
       expect(controller.sent.where((m) => m.text == 'first'), isEmpty);
       expect(controller.sent.where((m) => m.text == 'second'), hasLength(1));
       expect(controller.sending, isFalse);
+    },
+  );
+
+  test(
+    'history session_not_found rebinds the original character',
+    () async {
+      backend.offline = false;
+      backend.historySessionMisses = 1;
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-09-12',
+        'entries': [
+          {'time': '12:00', 'assistant': 'rebound'},
+        ],
+      });
+      var binds = 0;
+      var invalidated = 0;
+      PresenceSessionGrant grantFor(String charId, {bool force = false}) =>
+          PresenceSessionGrant(
+            sessionId: force ? 'sess-rebound' : 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          );
+      final scoped = ChatController(
+        backend: () => backend,
+        token: () => 'test-token',
+        settings: SettingsStore(settings),
+        relay: RelayStatusService(settings),
+        deliveryOrigin: () => 'http://127.0.0.1:8080',
+        deliveryOwner: () => 'owner',
+        deliveryCharId: () => 'char-a',
+        resolvePresenceSession: ({required String charId, bool force = false}) async {
+          binds += 1;
+          return grantFor(charId, force: force);
+        },
+        onPresenceSessionInvalid: () => invalidated += 1,
+      );
+      addTearDown(scoped.dispose);
+      await scoped.start();
+      expect(scoped.history.last.text, 'rebound');
+      expect(scoped.historyError, isNull);
+      expect(backend.historySessionIds, ['sess-char-a', 'sess-rebound']);
+      expect(binds, greaterThanOrEqualTo(2));
+      expect(invalidated, 1);
     },
   );
 
