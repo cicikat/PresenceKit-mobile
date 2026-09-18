@@ -10,11 +10,14 @@ class DreamController extends ChangeNotifier {
   DreamController({
     required BackendClient Function() backend,
     required String? Function() token,
+    String? Function()? charId,
   }) : _backend = backend,
-       _token = token;
+       _token = token,
+       _charId = charId ?? (() => null);
 
   final BackendClient Function() _backend;
   final String? Function() _token;
+  final String? Function() _charId;
   final ScrollController scrollController = ScrollController();
   final List<ChatMessage> messages = [];
   Timer? _stateTimer;
@@ -120,7 +123,10 @@ class DreamController extends ChangeNotifier {
       notifyListeners();
     }
     try {
-      final loaded = await backend.loadDreamState(token: token);
+      final loaded = await backend.loadDreamState(
+        token: token,
+        charId: _charId(),
+      );
       if (!_live(generation)) return;
       state = loaded;
       error = null;
@@ -143,7 +149,10 @@ class DreamController extends ChangeNotifier {
     if (token == null) return;
     final generation = _generation;
     try {
-      final loaded = await _backend().loadDreamStats(token: token);
+      final loaded = await _backend().loadDreamStats(
+        token: token,
+        charId: _charId(),
+      );
       if (!_live(generation)) return;
       stats = loaded;
       notifyListeners();
@@ -161,7 +170,7 @@ class DreamController extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      if (!await backend.enterDream(token: token)) {
+      if (!await backend.enterDream(token: token, charId: _charId())) {
         if (!_live(generation)) return;
         error = '后端没有允许这次入梦';
         return;
@@ -387,7 +396,10 @@ class DreamController extends ChangeNotifier {
     presets = [];
     notifyListeners();
     try {
-      final loadedSettings = await backend.loadDreamSettings(token: token);
+      final loadedSettings = await backend.loadDreamSettings(
+        token: token,
+        charId: _charId(),
+      );
       final loadedWorlds = await backend.loadDreamOptions(
         token: token,
         worlds: true,
@@ -435,6 +447,7 @@ class DreamController extends ChangeNotifier {
     try {
       final updated = await backend.updateDreamSettings(
         token: token,
+        charId: _charId(),
         enableDreamLorebook: enableDreamLorebook,
         worldLayer: worldLayer,
         jailbreakPreset: jailbreakPreset,

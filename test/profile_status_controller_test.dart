@@ -14,13 +14,19 @@ class _Backend extends BackendClient {
   bool fail = false;
 
   @override
-  Future<ActivityCurrentState> loadActivityCurrent({required String token}) {
+  Future<ActivityCurrentState> loadActivityCurrent({
+    required String token,
+    String? charId,
+  }) {
     if (fail) throw const BackendException('activity unavailable');
     return Future.value(const ActivityCurrentState(text: 'reading', arc: null));
   }
 
   @override
-  Future<MoodStateSnapshot> loadMoodState({required String token}) {
+  Future<MoodStateSnapshot> loadMoodState({
+    required String token,
+    String? charId,
+  }) {
     if (fail) throw const BackendException('mood unavailable');
     return Future.value(
       const MoodStateSnapshot(current: 'gentle', intensity: 0.6),

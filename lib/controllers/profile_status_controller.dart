@@ -11,11 +11,14 @@ class ProfileStatusController extends ChangeNotifier {
   ProfileStatusController({
     required BackendClient Function() backend,
     required String? Function() token,
+    String? Function()? charId,
   }) : _backend = backend,
-       _token = token;
+       _token = token,
+       _charId = charId ?? (() => null);
 
   final BackendClient Function() _backend;
   final String? Function() _token;
+  final String? Function() _charId;
 
   ActivityCurrentState? activityCurrent;
   MoodStateSnapshot? moodState;
@@ -42,9 +45,10 @@ class ProfileStatusController extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
+      final charId = _charId();
       final results = await Future.wait([
-        _backend().loadActivityCurrent(token: token),
-        _backend().loadMoodState(token: token),
+        _backend().loadActivityCurrent(token: token, charId: charId),
+        _backend().loadMoodState(token: token, charId: charId),
       ]);
       if (!_live(generation)) return;
       activityCurrent = results[0] as ActivityCurrentState;

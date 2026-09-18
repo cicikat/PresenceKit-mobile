@@ -241,6 +241,10 @@ class BackendClient {
 
   static String _legacyCharQuery(String? sessionId, String? characterId) {
     if (sessionId != null && sessionId.trim().isNotEmpty) return '';
+    return _charQuery(characterId);
+  }
+
+  static String _charQuery(String? characterId) {
     final charId = SessionScope.normalize(characterId);
     if (charId == null) return '';
     return '?${Uri(queryParameters: {'char_id': charId}).query}';
@@ -282,12 +286,20 @@ class BackendClient {
     }
   }
 
-  Future<GardenState> loadGardenState({required String token}) async {
-    return GardenState.fromJson(await _request('/garden/state', token: token));
+  Future<GardenState> loadGardenState({
+    required String token,
+    String? charId,
+  }) async {
+    return GardenState.fromJson(
+      await _request('/garden/state${_charQuery(charId)}', token: token),
+    );
   }
 
-  Future<List<DiaryListItem>> loadDiaryList({required String token}) async {
-    final d = await _request('/diary/list', token: token);
+  Future<List<DiaryListItem>> loadDiaryList({
+    required String token,
+    String? charId,
+  }) async {
+    final d = await _request('/diary/list${_charQuery(charId)}', token: token);
     final rawEntries = d['entries'];
     if (rawEntries is! List) return const [];
     return rawEntries
@@ -300,8 +312,11 @@ class BackendClient {
   Future<DiaryDetail> loadDiaryEntry(
     String date, {
     required String token,
+    String? charId,
   }) async {
-    return DiaryDetail.fromJson(await _request('/diary/$date', token: token));
+    return DiaryDetail.fromJson(
+      await _request('/diary/$date${_charQuery(charId)}', token: token),
+    );
   }
 
   Future<MobileActivationResult> activateMobile({required String token}) async {
@@ -433,16 +448,22 @@ class BackendClient {
     );
   }
 
-  Future<DreamState> loadDreamState({required String token}) async {
-    return DreamState.fromJson(await _request('/dream/state', token: token));
+  Future<DreamState> loadDreamState({
+    required String token,
+    String? charId,
+  }) async {
+    return DreamState.fromJson(
+      await _request('/dream/state${_charQuery(charId)}', token: token),
+    );
   }
 
-  Future<bool> enterDream({required String token}) async {
+  Future<bool> enterDream({required String token, String? charId}) async {
+    final cleaned = SessionScope.normalize(charId);
     final d = await _request(
       '/dream/enter',
       token: token,
       method: 'POST',
-      body: const {},
+      body: {if (cleaned != null) 'char_id': cleaned},
     );
     return d['ok'] == true;
   }
@@ -473,8 +494,13 @@ class BackendClient {
     );
   }
 
-  Future<DreamStats> loadDreamStats({required String token}) async {
-    return DreamStats.fromJson(await _request('/dream/stats', token: token));
+  Future<DreamStats> loadDreamStats({
+    required String token,
+    String? charId,
+  }) async {
+    return DreamStats.fromJson(
+      await _request('/dream/stats${_charQuery(charId)}', token: token),
+    );
   }
 
   /// 软挽留闸门：不在梦中/已经挽留过一次/未达挽留门槛 → 直接硬退（exited=true）。
@@ -509,15 +535,19 @@ class BackendClient {
 
   Future<ActivityCurrentState> loadActivityCurrent({
     required String token,
+    String? charId,
   }) async {
     return ActivityCurrentState.fromJson(
-      await _request('/activity/current', token: token),
+      await _request('/activity/current${_charQuery(charId)}', token: token),
     );
   }
 
-  Future<MoodStateSnapshot> loadMoodState({required String token}) async {
+  Future<MoodStateSnapshot> loadMoodState({
+    required String token,
+    String? charId,
+  }) async {
     return MoodStateSnapshot.fromJson(
-      await _request('/mood/state', token: token),
+      await _request('/mood/state${_charQuery(charId)}', token: token),
     );
   }
 
@@ -602,9 +632,12 @@ class BackendClient {
     );
   }
 
-  Future<DreamSettings> loadDreamSettings({required String token}) async {
+  Future<DreamSettings> loadDreamSettings({
+    required String token,
+    String? charId,
+  }) async {
     return DreamSettings.fromJson(
-      await _request('/dream/settings', token: token),
+      await _request('/dream/settings${_charQuery(charId)}', token: token),
     );
   }
 
@@ -634,6 +667,7 @@ class BackendClient {
 
   Future<DreamSettings> updateDreamSettings({
     required String token,
+    String? charId,
     bool? enableDreamLorebook,
     String? worldLayer,
     String? jailbreakPreset,
@@ -642,11 +676,13 @@ class BackendClient {
     String? boundaryLevel,
     String? lucidMode,
   }) async {
+    final cleaned = SessionScope.normalize(charId);
     final decoded = await _request(
       '/dream/settings',
       token: token,
       method: 'PATCH',
       body: {
+        if (cleaned != null) 'char_id': cleaned,
         if (enableDreamLorebook != null)
           'enable_dream_lorebook': enableDreamLorebook,
         if (memoryAccess != null) 'memory_access': memoryAccess,

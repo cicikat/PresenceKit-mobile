@@ -7,11 +7,14 @@ class DiaryController extends ChangeNotifier {
   DiaryController({
     required BackendClient Function() backend,
     required String? Function() token,
+    String? Function()? charId,
   }) : _backend = backend,
-       _token = token;
+       _token = token,
+       _charId = charId ?? (() => null);
 
   final BackendClient Function() _backend;
   final String? Function() _token;
+  final String? Function() _charId;
   final List<DiaryListItem> entries = [];
   String? error;
   bool loading = false;
@@ -29,7 +32,10 @@ class DiaryController extends ChangeNotifier {
     if (!silent) error = null;
     notifyListeners();
     try {
-      final result = await _backend().loadDiaryList(token: token);
+      final result = await _backend().loadDiaryList(
+        token: token,
+        charId: _charId(),
+      );
       if (!_live(generation)) return;
       entries
         ..clear()
@@ -55,7 +61,7 @@ class DiaryController extends ChangeNotifier {
     if (token == null || token.isEmpty) {
       throw const BackendException('Please enter an access credential first');
     }
-    return _backend().loadDiaryEntry(date, token: token);
+    return _backend().loadDiaryEntry(date, token: token, charId: _charId());
   }
 
   void clear() {

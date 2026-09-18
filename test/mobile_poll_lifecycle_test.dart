@@ -104,7 +104,10 @@ class _LifecycleBackendClient extends BackendClient {
   }
 
   @override
-  Future<GardenState> loadGardenState({required String token}) async {
+  Future<GardenState> loadGardenState({
+    required String token,
+    String? charId,
+  }) async {
     return GardenState.fromJson(const {});
   }
 

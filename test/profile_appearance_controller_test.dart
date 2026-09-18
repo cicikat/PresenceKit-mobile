@@ -301,6 +301,18 @@ void main() {
     },
   );
 
+  test(
+    'missing stored session character stays selected and fails loud',
+    () async {
+      store.sessionCharacters['|'] = 'char-gone';
+      await controller.loadPromptAssets();
+      expect(controller.currentCharacterId, 'char-gone');
+      expect(controller.promptAssetsError, 'character_unavailable');
+      expect(store.sessionCharacters['|'], 'char-gone');
+      expect(controller.serverActiveCharacterId, 'char-a');
+    },
+  );
+
   test('late prompt asset results do not overwrite newer generation', () async {
     final gate = Completer<void>();
     backend.loadHook = () => gate.future;

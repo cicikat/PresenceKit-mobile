@@ -281,12 +281,14 @@ void main() {
       });
       final settings = await backend.updateDreamSettings(
         token: 'mobile-token',
+        charId: 'char-b',
         jailbreakPresets: ['one', 'two'],
         memoryAccess: 'card_only',
       );
       expect(fakeClient.method, 'PATCH');
       expect(fakeClient.requestedUri, Uri.parse('$baseUrl/dream/settings'));
       expect(jsonDecode(fakeClient.lastRequestBody), {
+        'char_id': 'char-b',
         'jailbreak_presets': ['one', 'two'],
         'memory_access': 'card_only',
       });
@@ -347,10 +349,13 @@ void main() {
       'GET requests hit baseUrl + path with a Bearer token header',
       () async {
         fakeClient.responseBody = jsonEncode({'entries': []});
-        await backend.loadGardenState(token: 'tok-1');
+        await backend.loadGardenState(token: 'tok-1', charId: 'char-b');
 
         expect(fakeClient.method, 'GET');
-        expect(fakeClient.requestedUri, Uri.parse('$baseUrl/garden/state'));
+        expect(
+          fakeClient.requestedUri,
+          Uri.parse('$baseUrl/garden/state?char_id=char-b'),
+        );
         expect(fakeClient.lastRequestHeaders['authorization'], 'Bearer tok-1');
       },
     );

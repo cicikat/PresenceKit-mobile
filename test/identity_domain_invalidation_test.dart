@@ -73,6 +73,9 @@ class _Backend extends BackendClient {
   int gardenLoads = 0;
   int statusLoads = 0;
   int assetLoads = 0;
+  final diaryCharIds = <String?>[];
+  final gardenCharIds = <String?>[];
+  final statusCharIds = <String?>[];
   DiaryListItem lateDiary = const DiaryListItem(
     date: '2026-01-01',
     title: 'stale',
@@ -85,15 +88,23 @@ class _Backend extends BackendClient {
   );
 
   @override
-  Future<List<DiaryListItem>> loadDiaryList({required String token}) async {
+  Future<List<DiaryListItem>> loadDiaryList({
+    required String token,
+    String? charId,
+  }) async {
     diaryLoads += 1;
+    diaryCharIds.add(charId);
     await diaryGate?.future;
     return [lateDiary];
   }
 
   @override
-  Future<GardenState> loadGardenState({required String token}) async {
+  Future<GardenState> loadGardenState({
+    required String token,
+    String? charId,
+  }) async {
     gardenLoads += 1;
+    gardenCharIds.add(charId);
     await gardenGate?.future;
     return lateGarden;
   }
@@ -101,14 +112,19 @@ class _Backend extends BackendClient {
   @override
   Future<ActivityCurrentState> loadActivityCurrent({
     required String token,
+    String? charId,
   }) async {
     statusLoads += 1;
+    statusCharIds.add(charId);
     await statusGate?.future;
     return const ActivityCurrentState(text: 'stale', arc: null);
   }
 
   @override
-  Future<MoodStateSnapshot> loadMoodState({required String token}) async {
+  Future<MoodStateSnapshot> loadMoodState({
+    required String token,
+    String? charId,
+  }) async {
     await statusGate?.future;
     return const MoodStateSnapshot(current: 'stale', intensity: 0.1);
   }
@@ -236,5 +252,33 @@ void main() {
     expect(controller.promptAssets?.activeCharacter, 'char-a');
     expect(controller.loadingPromptAssets, isFalse);
     controller.dispose();
+  });
+
+  test('diary garden and status loaders pass the selected character', () async {
+    final backend = _Backend();
+    final diary = DiaryController(
+      backend: () => backend,
+      token: () => 'token',
+      charId: () => 'char-b',
+    );
+    final garden = GardenController(
+      backend: () => backend,
+      token: () => 'token',
+      charId: () => 'char-b',
+    );
+    final status = ProfileStatusController(
+      backend: () => backend,
+      token: () => 'token',
+      charId: () => 'char-b',
+    );
+    await diary.load();
+    await garden.load();
+    await status.load();
+    expect(backend.diaryCharIds, ['char-b']);
+    expect(backend.gardenCharIds, ['char-b']);
+    expect(backend.statusCharIds, ['char-b']);
+    diary.dispose();
+    garden.dispose();
+    status.dispose();
   });
 }

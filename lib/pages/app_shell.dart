@@ -143,6 +143,7 @@ class _CompanionAppState extends State<CompanionApp>
     _profileStatusController = ProfileStatusController(
       backend: () => _backend,
       token: () => _adminToken,
+      charId: () => _currentCharacterId,
     );
     _profileStatusController.addListener(_handleShellChanged);
     _profileAppearance = ProfileAppearanceController(
@@ -202,14 +203,17 @@ class _CompanionAppState extends State<CompanionApp>
     _dreamController = DreamController(
       backend: () => _backend,
       token: () => _adminToken,
+      charId: () => _currentCharacterId,
     );
     _gardenController = GardenController(
       backend: () => _backend,
       token: () => _adminToken,
+      charId: () => _currentCharacterId,
     );
     _diaryController = DiaryController(
       backend: () => _backend,
       token: () => _adminToken,
+      charId: () => _currentCharacterId,
     );
     WidgetsBinding.instance.addObserver(this);
     _applySystemUi();

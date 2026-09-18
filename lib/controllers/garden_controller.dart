@@ -9,11 +9,14 @@ class GardenController extends ChangeNotifier {
   GardenController({
     required BackendClient Function() backend,
     required String? Function() token,
+    String? Function()? charId,
   }) : _backend = backend,
-       _token = token;
+       _token = token,
+       _charId = charId ?? (() => null);
 
   final BackendClient Function() _backend;
   final String? Function() _token;
+  final String? Function() _charId;
   Timer? _refreshTimer;
   GardenState? state;
   String? error;
@@ -49,7 +52,10 @@ class GardenController extends ChangeNotifier {
     if (!silent) error = null;
     notifyListeners();
     try {
-      final loaded = await _backend().loadGardenState(token: token);
+      final loaded = await _backend().loadGardenState(
+        token: token,
+        charId: _charId(),
+      );
       if (!_live(generation)) return;
       state = loaded;
       error = null;

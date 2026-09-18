@@ -353,14 +353,16 @@ class ProfileAppearanceController extends ChangeNotifier {
         owner: _currentOwner,
       ),
     );
-    final knownIds = {for (final item in assets.characters) item.id};
-    if (stored != null && (knownIds.isEmpty || knownIds.contains(stored))) {
+    if (stored != null) {
       sessionCharacterId = stored;
+      final knownIds = {for (final item in assets.characters) item.id};
+      if (knownIds.isNotEmpty && !knownIds.contains(stored)) {
+        promptAssetsError = 'character_unavailable';
+      }
       return;
     }
     final serverActive = SessionScope.normalize(assets.activeCharacter);
-    if (serverActive != null &&
-        (knownIds.isEmpty || knownIds.contains(serverActive))) {
+    if (serverActive != null) {
       sessionCharacterId = serverActive;
       await _settings.saveSessionCharacterId(
         serverActive,
@@ -368,14 +370,6 @@ class ProfileAppearanceController extends ChangeNotifier {
         owner: _currentOwner,
       );
       return;
-    }
-    sessionCharacterId = knownIds.isEmpty ? null : knownIds.first;
-    if (sessionCharacterId != null) {
-      await _settings.saveSessionCharacterId(
-        sessionCharacterId,
-        origin: _currentOrigin,
-        owner: _currentOwner,
-      );
     }
   }
 

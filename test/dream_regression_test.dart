@@ -46,12 +46,16 @@ class DreamBackend extends BackendClient {
   }
 
   @override
-  Future<DreamState> loadDreamState({required String token}) async =>
-      pendingState == null ? active : await pendingState!.future;
+  Future<DreamState> loadDreamState({
+    required String token,
+    String? charId,
+  }) async => pendingState == null ? active : await pendingState!.future;
 
   @override
-  Future<DreamStats> loadDreamStats({required String token}) async =>
-      pendingStats == null
+  Future<DreamStats> loadDreamStats({
+    required String token,
+    String? charId,
+  }) async => pendingStats == null
       ? const DreamStats(totalValid: 1, totalArchived: 0, lastDreamAt: null)
       : await pendingStats!.future;
 
@@ -62,13 +66,16 @@ class DreamBackend extends BackendClient {
   }) async => chat == null ? reply : await chat!.future;
 
   @override
-  Future<bool> enterDream({required String token}) async {
+  Future<bool> enterDream({required String token, String? charId}) async {
     enters++;
     return pendingEnter == null ? true : await pendingEnter!.future;
   }
 
   @override
-  Future<DreamSettings> loadDreamSettings({required String token}) async {
+  Future<DreamSettings> loadDreamSettings({
+    required String token,
+    String? charId,
+  }) async {
     settingsLoads++;
     if (failSettings) throw const BackendException('settings unavailable');
     if (settingsQueue.isNotEmpty) return settingsQueue.removeAt(0).future;
@@ -92,6 +99,7 @@ class DreamBackend extends BackendClient {
   @override
   Future<DreamSettings> updateDreamSettings({
     required String token,
+    String? charId,
     bool? enableDreamLorebook,
     String? worldLayer,
     String? jailbreakPreset,
