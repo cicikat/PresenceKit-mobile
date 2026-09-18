@@ -12,7 +12,9 @@
 `GET /chat/media/{sha256}`、`GET /chat-log/dates|{date}`、
 `GET /chat-log/stats/calendar`、`GET /chat/turns/{turn_id}/reasoning` 带
 `X-Presence-Session`。chat/upload 仅在有 session 时 mint `request_id`
-（`req_` + hex 微秒）；202 `in_flight` 当错误，不当地成功回复。404
+（`req_` + hex 微秒），并绑到同一条失败气泡；手动重试与 `session_not_found`
+重绑都复用该 ID，不另开一轮。202 `in_flight`、503 `execution_outcome_unknown`、
+超时都标失败保留原气泡，由用户用同一 ID 再试；不当成功回复。404
 `session_not_found` 清 grant 后用同一 `request_id` 重绑一次；403/404 角色错误
 fail-loud。无 session 的旧 chat-log 仍可带 `?char_id=`；有 header 时不再附 query。
 

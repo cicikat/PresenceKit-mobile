@@ -311,7 +311,13 @@ class ChatController extends ChangeNotifier {
     himTyping = true;
     backendError = null;
     notifyListeners();
-    unawaited(_send(message.text, userId: message.id));
+    unawaited(
+      _send(
+        message.text,
+        userId: message.id,
+        requestId: message.requestId,
+      ),
+    );
   }
 
   void clearReplyTarget() {
@@ -522,28 +528,40 @@ class ChatController extends ChangeNotifier {
     }
   }
 
+  String _bindOutgoingRequestId(int userId, {String? requestId}) {
+    final bound = (requestId != null && requestId.trim().isNotEmpty)
+        ? requestId.trim()
+        : mintRequestId();
+    final index = sent.indexWhere((item) => item.id == userId);
+    if (index >= 0 && sent[index].requestId != bound) {
+      sent[index] = sent[index].copyWith(requestId: bound);
+    }
+    return bound;
+  }
+
   Future<void> _send(
     String text, {
     required int userId,
     ReplyTarget? replyTo,
+    String? requestId,
   }) async {
     final generation = _session.generation;
     final scope = _captureScope(generation);
+    final boundRequestId = _bindOutgoingRequestId(userId, requestId: requestId);
     final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
     sent.add(anchor);
     notifyListeners();
     try {
-      final requestId = mintRequestId();
       final response = await _scopedChatCall(
         scope: scope,
         generation: generation,
-        requestId: requestId,
+        requestId: boundRequestId,
         call: (grant) => _sendChatAttempt(
           text: text,
           token: _accessToken!,
           replyTo: replyTo,
           grant: grant,
-          requestId: requestId,
+          requestId: boundRequestId,
         ),
       );
       if (!_scopeStillLive(generation, scope)) return;
@@ -556,7 +574,7 @@ class ChatController extends ChangeNotifier {
       if (!_scopeStillLive(generation, scope)) return;
       backendError = e.message;
       if (e.isSessionNotFound) _onPresenceSessionInvalid?.call();
-      _markLastSendFailed();
+      _markSendFailed(userId);
       /*
         ChatMessage(
           role: 'him',
@@ -576,7 +594,7 @@ class ChatController extends ChangeNotifier {
         return;
       }
       backendError = e.toString();
-      _markLastSendFailed();
+      _markSendFailed(userId);
       /* sent.add(
         ChatMessage(role: 'him', text: '（手机端遇到一个未预期错误：$e）', time: _nowLabel()),
       ); */
@@ -617,7 +635,12 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _markLastSendFailed() {
+  void _markSendFailed(int userId) {
+    final index = sent.indexWhere((item) => item.id == userId);
+    if (index >= 0) {
+      sent[index] = sent[index].copyWith(failed: true);
+      return;
+    }
     for (var i = sent.length - 1; i >= 0; i--) {
       if (sent[i].role == 'you' && !sent[i].failed) {
         sent[i] = sent[i].copyWith(failed: true);
@@ -1210,18 +1233,21 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
     scrollToBottom();
     try {
-      final requestId = mintRequestId();
+      final boundRequestId = _bindOutgoingRequestId(
+        outgoing.id,
+        requestId: outgoing.requestId,
+      );
       final response = await _scopedChatCall(
         scope: _captureScope(generation),
         generation: generation,
-        requestId: requestId,
+        requestId: boundRequestId,
         call: (grant) => _backend().uploadFiles(
           files: files,
           token: token,
           channel: 'mobile',
           message: message,
           sessionId: grant.sessionId,
-          requestId: requestId,
+          requestId: boundRequestId,
         ),
       );
       if (_session.isStale(generation)) return;
@@ -1234,14 +1260,12 @@ class ChatController extends ChangeNotifier {
       if (_session.isStale(generation)) return;
       backendError = e.message;
       if (e.isSessionNotFound) _onPresenceSessionInvalid?.call();
-      final index = sent.indexWhere((item) => item.id == outgoing.id);
-      if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
+      _markSendFailed(outgoing.id);
       scrollToBottom();
     } catch (e) {
       if (_session.isStale(generation)) return;
       backendError = e.toString();
-      final index = sent.indexWhere((item) => item.id == outgoing.id);
-      if (index >= 0) sent[index] = outgoing.copyWith(failed: true);
+      _markSendFailed(outgoing.id);
       scrollToBottom();
     } finally {
       if (_session.isCurrent(generation)) {

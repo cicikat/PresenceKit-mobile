@@ -69,9 +69,12 @@ durable mobile mirror for the assistant reply.
   `X-Presence-Session`；不要把 `char_id`/`session_id`/`request_id` 塞进无 session
   的 legacy `/mobile/chat`（旧服务端会忽略并发给当时 active）。
 - chat/upload 仅在有 session 时带 `request_id`（30 分钟 receipt correlator，不是
-  `msg_id`/`turn_id`）。202 `in_flight`、503 `execution_outcome_unknown`、
-  409 `request_payload_conflict` 不当成功。`session_not_found` 可重绑后复用同一
-  `request_id`；角色撤权/不可用 fail-loud。
+  `msg_id`/`turn_id`）。该 ID 绑到同一逻辑发送；失败气泡重试必须复用，不得重新
+  mint。202 `in_flight`、503 `execution_outcome_unknown`、
+  409 `request_payload_conflict` 不当成功；超时/未知结果保留原气泡，由用户用同一
+  ID 再试。`session_not_found` 可重绑后复用同一 `request_id`；角色撤权/不可用
+  fail-loud。上传重试仍提交本机附件，服务端 completed receipt 应回放原 turn，不
+  再识别/导入。
 - Delivery cursor 仍是 **origin+owner 节点级共享**（见 `MobileDeliveryStateStore`），
   不按角色分 cursor。前台 poll 解析可选 `char_id`：匹配本机会话的消息进入当前聊天；
   其他角色消息经 `stashPendingMobileEnvelopes` 写入 pending，再统一 ack，避免共享

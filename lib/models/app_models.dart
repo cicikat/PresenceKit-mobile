@@ -570,6 +570,7 @@ class ChatMessage {
     this.uploadNote = '',
     this.toolActivity,
     this.turnId,
+    this.requestId,
     this.mediaRefs = const [],
     this.retainOnRefresh = false,
   }) : id = id ?? _nextId++,
@@ -598,6 +599,8 @@ class ChatMessage {
 
   /// Server identity, independent of the text rendered for an upload preview.
   final String? turnId;
+  /// Session-scoped chat/upload correlator; retries must reuse this value.
+  final String? requestId;
   /// Canonical media refs from history; never a local disk path.
   final List<ChatMediaRef> mediaRefs;
   /// In-memory local content not yet represented by a server history row.
@@ -625,12 +628,14 @@ class ChatMessage {
     uploadNote: uploadNote,
     toolActivity: toolActivity,
     turnId: turnId,
+    requestId: requestId,
     mediaRefs: mediaRefs,
     retainOnRefresh: retainOnRefresh,
   );
 
   ChatMessage copyWith({
     String? turnId,
+    String? requestId,
     bool? retainOnRefresh,
     bool? failed,
     String? time,
@@ -654,6 +659,7 @@ class ChatMessage {
     uploadNote: uploadNote,
     toolActivity: toolActivity,
     turnId: turnId ?? this.turnId,
+    requestId: requestId ?? this.requestId,
     mediaRefs: mediaRefs,
     retainOnRefresh: retainOnRefresh ?? this.retainOnRefresh,
   );

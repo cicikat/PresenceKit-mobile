@@ -2,7 +2,7 @@
 
 ## 9.18 补扫复核（2026-09-17，open/observe）
 
-- current：22 已接入后端 `session_scope=v1`：whoami 发现、`POST /v1/sessions` bind、`X-Presence-Session` 覆盖 chat/upload/media/history/calendar/reasoning；缺失 capability fail-loud；后台通知按信封 `char_id` 展示但不切会话。真机与真实后端联调仍 **not-run**。Dream 独立，不在本单。提交 `d1436df`。
+- current：22 已接入后端 `session_scope=v1`：whoami 发现、`POST /v1/sessions` bind、`X-Presence-Session` 覆盖 chat/upload/media/history/calendar/reasoning；缺失 capability fail-loud；后台通知按信封 `char_id` 展示但不切会话。chat/upload 失败气泡保留 `request_id`，手动重试与 completed receipt 回放复用同一 ID。真机与真实后端联调仍 **not-run**。Dream 独立，不在本单。提交 `d1436df`。
 - current：23/A — token/owner/节点 persist-first；失败不半切换；同值幂等。`AppShell._invalidateIdentity` 失效 chat/dream/device/diary/garden/profileStatus/prompt assets。同 owner 换 token 不清 delivery cursor。真机 not-run。
 - current：23/B — `DreamController.invalidateLocalSession` 隔离本地展示；节点/凭据清 settings，本机角色切换保留 settings 且不 POST exit/wake。Dream settings 角色归属仍等后端 F，**blocked**，未猜字段。
 - current：23/C — Dart 屏幕/传感器 Timer 仅 restored+前台（resumed/inactive）；hidden/paused/detached 停止。native `MobileNotificationService` 后台屏幕路径保留，不新增电量/步数后台周期。真机交接 not-run。

@@ -45,6 +45,12 @@ class _Backend extends BackendClient {
   Completer<void>? gate;
   Completer<void>? sendGate;
   int sessionMisses = 0;
+  bool dropCompletedResponse = false;
+  int chatExecutions = 0;
+  int uploadExecutions = 0;
+  final uploadedRequestIds = <String?>[];
+  final _completedChats = <String, BackendChatResponse>{};
+  final _completedUploads = <String, BackendChatResponse>{};
   int historySessionMisses = 0;
   final sentSessionIds = <String?>[];
   final sentRequestIds = <String?>[];
@@ -117,13 +123,26 @@ class _Backend extends BackendClient {
       sessionMisses -= 1;
       throw const BackendException('session_not_found', statusCode: 404);
     }
+    final key = requestId?.trim();
+    if (key != null && key.isNotEmpty && _completedChats.containsKey(key)) {
+      return _completedChats[key]!;
+    }
     if (offline) throw const BackendException('offline');
-    return BackendChatResponse(
+    chatExecutions++;
+    final response = BackendChatResponse(
       reply: 'echo:$message',
       emotion: 'neutral',
-      msgId: 'msg-$chats',
-      turnId: 'turn-$chats',
+      msgId: 'msg-$chatExecutions',
+      turnId: 'turn-$chatExecutions',
     );
+    if (key != null && key.isNotEmpty) {
+      _completedChats[key] = response;
+    }
+    if (dropCompletedResponse) {
+      dropCompletedResponse = false;
+      throw const BackendException('offline');
+    }
+    return response;
   }
 
   @override
@@ -138,8 +157,22 @@ class _Backend extends BackendClient {
     uploads++;
     uploaded = files;
     caption = message;
+    uploadedRequestIds.add(requestId);
+    final key = requestId?.trim();
+    if (key != null && key.isNotEmpty && _completedUploads.containsKey(key)) {
+      return _completedUploads[key]!;
+    }
     if (offline) throw const BackendException('offline');
-    return const BackendChatResponse(reply: '', emotion: 'neutral');
+    uploadExecutions++;
+    const response = BackendChatResponse(reply: '', emotion: 'neutral');
+    if (key != null && key.isNotEmpty) {
+      _completedUploads[key] = response;
+    }
+    if (dropCompletedResponse) {
+      dropCompletedResponse = false;
+      throw const BackendException('offline');
+    }
+    return response;
   }
 
   @override
@@ -660,4 +693,79 @@ void main() {
       expect(scoped.sent.where((m) => m.role == 'him').single.text, 'echo:ping');
     },
   );
+
+  test('manual retry reuses the failed bubble request_id', () async {
+    controller.send('hello');
+    for (var i = 0; i < 20 && controller.sending; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    final failed = controller.sent.singleWhere((item) => item.role == 'you');
+    expect(failed.failed, isTrue);
+    expect(failed.requestId, startsWith('req_'));
+    backend.offline = false;
+    controller.retryMessage(failed);
+    for (var i = 0; i < 20 && controller.sending; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(backend.sentRequestIds, [failed.requestId, failed.requestId]);
+    expect(
+      controller.sent.singleWhere((item) => item.role == 'you').requestId,
+      failed.requestId,
+    );
+  });
+
+  test(
+    'retry after a lost completed response does not execute a second turn',
+    () async {
+      backend.offline = false;
+      backend.dropCompletedResponse = true;
+      controller.send('hello');
+      for (var i = 0; i < 20 && controller.sending; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      final failed = controller.sent.singleWhere((item) => item.role == 'you');
+      expect(failed.failed, isTrue);
+      expect(backend.chatExecutions, 1);
+      controller.retryMessage(failed);
+      for (var i = 0; i < 20 && controller.sending; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(backend.chatExecutions, 1);
+      expect(backend.sentRequestIds, [failed.requestId, failed.requestId]);
+      expect(
+        controller.sent.where((item) => item.role == 'him').single.text,
+        'echo:hello',
+      );
+    },
+  );
+
+  test('upload retry reuses request_id and does not re-ingest', () async {
+    final file = PickedUploadFile(
+      name: 'photo.png',
+      bytes: Uint8List.fromList([1, 2, 3]),
+    );
+    backend.offline = false;
+    backend.dropCompletedResponse = true;
+    await controller.uploadFiles(
+      [file],
+      preview: '📎 photo.png',
+      failureLabel: 'image',
+      message: 'caption',
+    );
+    final failed = controller.sent.singleWhere((item) => item.role == 'you');
+    expect(failed.failed, isTrue);
+    expect(failed.requestId, startsWith('req_'));
+    expect(backend.uploadExecutions, 1);
+    controller.retryMessage(failed);
+    for (var i = 0; i < 20 && controller.sending; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(backend.uploads, 2);
+    expect(backend.uploadExecutions, 1);
+    expect(backend.uploadedRequestIds, [failed.requestId, failed.requestId]);
+    expect(
+      controller.sent.singleWhere((item) => item.role == 'you').id,
+      failed.id,
+    );
+  });
 }
