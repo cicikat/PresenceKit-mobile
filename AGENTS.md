@@ -32,19 +32,38 @@
 
 不在本项目范围内的事：
 
-- 不修改后端仓库 `Emerald-presence`，除非用户明确把后端也纳入任务。
+- 不修改后端仓库 `Emerald-presence`，除非用户明确把后端也纳入任务；例外：`Emerald-presence/docs/three-repo-interface-catalog.md` 等跨仓总账文档允许同步修改。
 - 不修改 `Emerald-client`，它只是桌面客户端和文档组织参考。
 - 不把手机端变成记忆或人格的 single source of truth。
 
-## 代码根目录
+## 开发环境
 
-本文件所在目录即仓库根。所有路径一律相对仓库根书写，不依赖盘符或上级目录名。
+开发环境是 **Windows**（PowerShell / cmd）。命令、脚本和文档一律按 Windows 写：`.bat` / `.ps1`、PowerShell 语法；不要写 bash / Linux / macOS 专用命令（如 `rm -rf`、`export`、`.sh` 脚本）。所有路径一律相对仓库根书写，不依赖盘符或上级目录名。
+
+### 换行：工作区 CRLF，git 仓库 LF
+
+- 本仓 `core.autocrlf=true`：git 里存 LF，工作区文本文件一律 **CRLF**。新建、改写文件都保持 CRLF，不要留下 LF 或混用。
+- 提交前对每个要 `git add` 的文件对比 `git diff --stat -- <path>` 与 `git diff --ignore-cr-at-eol --stat -- <path>`；两者差很多说明换行被误改，先修再提交，不要把换行转换混进功能提交。
+- 已知历史遗留：少数文件在 git 里本身带 CRLF/混用，不要顺手整文件归一化。
+- 例外：后端 `Emerald-presence` 由 `.gitattributes` 强制工作区 **LF**（仅 `.bat` / `.cmd` 用 CRLF）。跨仓改动时按该仓规则，不要把 CRLF 写进后端文件。
+
+### Bash 工具的 Shell 陷阱（先读再动手）
+
+Agent 的 Bash 工具是 Windows 上的 Git Bash（POSIX 语法），不是 PowerShell，也不是真 Linux。下面这些坑已经踩过，不要重复：
+
+- **路径用正斜杠盘符形式**：`/d/ai/<仓库名>/...`。不要在 Bash 里写 `C:\Users\10434...` 这类会话展示用的路径，也不要写带反斜杠的盘符路径，更不要用 `$var` 拼路径：反斜杠会被吃掉，变成 `D:aiEmerald-client` 这类不存在的路径。直接写字面路径。
+- **`/tmp` 实际是 `/d/tmp`**，不是系统临时目录。临时脚本放 `/d/tmp/`，用完删除；放进仓库的临时文件必须删掉，不要提交。
+- **Python 是 Windows 版，不认 Git Bash 路径**：传给 `python3` 的脚本里不要写绝对路径（会被改写成带反斜杠的盘符路径，触发转义错误或 FileNotFoundError）；先 `cd /d/ai/<仓库名>`，脚本里只用相对路径。
+- **不要在命令行或 heredoc 里内联含反斜杠转义（换行符转义、盘符路径）或中文的 Python/sed**：反斜杠和编码会被 shell 改写。改成用 Write 工具写脚本文件，再运行 `python3 -X utf8 /d/tmp/xxx.py`；运行前先 Grep 检查脚本里没有被改写的路径或转义。
+- **多行编辑前先查换行**：`git ls-files --eol <文件>`。Edit 工具的多行匹配失败时，先怀疑 CRLF/LF 混用；脚本里先把 CRLF 统一成 LF 再替换，改完再按本仓约定写回。
+- **文件必须是 UTF-8**。读到整段乱码多半是被按 GBK 写入过，先 `iconv -f GBK -t UTF-8` 验证，再重写，不要照乱码继续改。
+- **失败先看路径，不要原样重试**：先 `pwd` / `ls` 确认命令实际落在哪里，再换写法。
 
 ## 必读文档
 
 | 任务类型 | 必读文档 |
 |---|---|
-| 理解项目全貌 | `ARCHITECTURE.md` |
+| 本文件与目录结构定位不到时 | `ARCHITECTURE.md` |
 | 找文档入口 | `docs/README.md` |
 | 改 Flutter UI / 状态 | `docs/mobile/flutter-structure.md` |
 | 改 Android 原生能力 | `docs/android/native-capabilities.md` |
@@ -139,7 +158,7 @@ docs/
    `app_shell.dart` 最终只保留组合根、路由和生命周期协调。
 9. 发布时必须更新 `pubspec.yaml` 的 `version`（格式为 `x.y.z+build`）。侧边栏“设置”下方的版本号通过 `package_info_plus` 读取安装包元数据并自动同步，发布验收时须确认其显示值与 `pubspec.yaml` 一致；不得另行硬编码版本字符串。
 
-10. 现在这个阶段，新增、删除或修改任何小功能都必须做三面闭环检查：查后端管理面板是否需要设置开关、默认值、effective state、只读观测或审计；查桌面前端和本手机端是否需要同步功能设置、能力检查、权限、降级或后台服务；再沿输入/触发器 → 后端接口/队列 → Flutter/Android → UI/通知的原调用链核对鉴权、字段、关联键、去重、ack、TTL、生命周期和 fallback，确认不会使原调用链或相邻功能失效。
+10. 现在这个阶段，凡新增、删除或修改的功能涉及设置项、落盘状态、接口/mobile channel 契约或跨端行为，都必须做三面闭环检查（纯样式、布局、文案、本仓内部重构可免，但需在提交或交付说明中写明「无跨端影响」）：查后端管理面板是否需要设置开关、默认值、effective state、只读观测或审计；查桌面前端和本手机端是否需要同步功能设置、能力检查、权限、降级或后台服务；再沿输入/触发器 → 后端接口/队列 → Flutter/Android → UI/通知的原调用链核对鉴权、字段、关联键、去重、ack、TTL、生命周期和 fallback，确认不会使原调用链或相邻功能失效。
 11. 新增落盘状态、trace、队列或台账时，观测端点必须同单提供；未做全的功能要写入本仓 `docs/known-issues.md`，并同步 `Emerald-presence/docs/three-repo-interface-catalog.md` 标明 `open`/`roadmap`/`observe`，不得把“接口存在”写成“功能完成”。
 
 ## 启动与调试
@@ -163,15 +182,15 @@ flutter build apk --debug --flavor dev
 ## Codex 施工协作约定（与 `CLAUDE.md` 同步）
 
 1. **用中文回复。**
-2. **默认自主推进、替用户拍板**，不要逐项确认；只在不可逆决策（删数据、改契约、对外发布）时提问。
+2. **默认自主推进、替用户拍板**，不要逐项确认；仅未获授权的不可逆决策（删数据、改契约、对外发布）需要确认。用户已拍板或已授权的事项不重复询问、不复述选项；缺少必要信息时集中提问一次，并继续做不依赖答案的部分；自检中的“确认”不是向用户请求批准。
 3. **不要全仓 grep**，先按 AGENTS.md / 架构文档定位到具体文件再精准搜索。
 4. **交付物一次性批量输出**，多个工单/提示词要标注哪些可并行、哪些有前置依赖，减少一来一回。
 5. **小步 commit，无需确认**：每完成一个独立修复并验收通过（测试过/验证过）就直接 `git add` + `git commit`（信息一行即可），不必等我说"commit一下"、不要为此专门提问确认。当场固化，不留过夜、不攒大坨。这是预先授权，覆盖"仅在用户明确要求时才 commit"的默认行为。
 6. 新增 Flutter 可见文案必须同时维护 `lib/l10n/app_zh.arb` 与 `app_en.arb`，使用语义化 key，并执行 `flutter gen-l10n`；后端内容、用户输入和协议字段保持原文。
 
-## ����������߽�
+## 能力控制面边界
 
-������������á�effective state ��Ȩ��բ�ŵ�Ψһ��ʵ��Դ���ֻ���ֻչʾ�ֻ������ѵ����á��ϱ�����/����״̬����ִ���û�ȷ�Ϻ�ı��ض�������Ҫ���ƺ��Ȩ���жϣ�Ҳ��Ҫ�ѱ��ؿ��ص��ɺ���ܿ��ء���������������� capability ��۲� �� ���������� �� mobile channel ��Լ �� Flutter/Android ���á�Ȩ�޺ͽ�����ʾ��˳����롣
+后端是能力配置、effective state 和权限闸门的唯一真实来源。手机端只展示手机可消费的设置、上报连接/能力状态，并执行用户确认后的本机动作；不要复制后端权限判断，也不要把本地开关当成后端总开关。新增能力按“后端 capability 与观测 → 管理面板控制 → mobile channel 契约 → Flutter/Android 设置、权限和降级提示”顺序接入。
 
 
 ## UI consistency
