@@ -10,6 +10,7 @@ List<ChatMessage> reconcileChatHistory(
 ) {
   final result = List<ChatMessage>.of(remote);
   final insertions = <int, List<ChatMessage>>{};
+  final retainedIds = <int>{};
   for (final source in [previous, local]) {
     final matches = _matches(remote, source);
     final live = identical(source, local);
@@ -18,7 +19,17 @@ List<ChatMessage> reconcileChatHistory(
       final item = source[i];
       final found = matches[i];
       if (found == null) {
+        // A row already parked in history is retained even when the server log
+        // has not caught up with it — dropping it there is what swallowed
+        // delivered replies. A live row that has not matched yet simply stays
+        // in `sent`, still on screen and still reachable by retry.
         if (!(live ? i < lastMatch : item.retainOnRefresh)) continue;
+        if (retainedIds.contains(item.id)) continue;
+        if (_remoteAlreadyOwns(remote, source, i)) {
+          if (live) sent.removeWhere((m) => m.id == item.id);
+          continue;
+        }
+        retainedIds.add(item.id);
         int? next;
         int? preceding;
         for (var j = i + 1; j < source.length; j++) {
@@ -32,17 +43,21 @@ List<ChatMessage> reconcileChatHistory(
         if (live) sent.removeWhere((m) => m.id == item.id);
         continue;
       }
-      // Keep server dates and display projection, local key and rich payload.
-      final keepImage = item.attachments.isNotEmpty;
+      // Keep server dates, local key and the whole local rich payload.
+      // A rich bubble (upload, sticker, reply quote, inline display) renders
+      // from local state; the server log only carries its flattened text.
+      final keepRich =
+          item.attachments.isNotEmpty ||
+          item.sticker != null ||
+          item.quotedText != null ||
+          (item.displayText?.isNotEmpty == true);
       result[found] = ChatMessage(
         id: item.id,
         role: item.role,
-        text: keepImage ? item.text : remote[found].text,
+        text: keepRich ? item.text : remote[found].text,
         time: remote[found].time,
         dateKey: remote[found].dateKey,
-        displayText: keepImage
-            ? item.displayText
-            : remote[found].displayText ?? item.displayText,
+        displayText: item.displayText ?? remote[found].displayText,
         toolActivity: remote[found].toolActivity,
         timestamp: remote[found].timestamp,
         turnId: remote[found].turnId ?? _turn(source, i),
@@ -54,7 +69,7 @@ List<ChatMessage> reconcileChatHistory(
         mediaRefs: remote[found].mediaRefs.isNotEmpty
             ? remote[found].mediaRefs
             : item.mediaRefs,
-        retainOnRefresh: keepImage || item.retainOnRefresh,
+        retainOnRefresh: keepRich || item.retainOnRefresh,
       );
       if (identical(source, local)) {
         sent.removeWhere((m) => m.id == item.id);
@@ -67,14 +82,53 @@ List<ChatMessage> reconcileChatHistory(
   ]];
 }
 
+/// True when the server transcript demonstrably already carries this row, so
+/// retaining the local copy would show it twice. Identity alone is not enough:
+/// one turn spans several bubbles. The remote row must also read the same, or
+/// be the flattened log line of this upload.
+bool _remoteAlreadyOwns(
+  List<ChatMessage> remote,
+  List<ChatMessage> source,
+  int index,
+) {
+  final item = source[index];
+  final identity = item.turnId?.isNotEmpty == true
+      ? item.turnId
+      : (item.requestId?.isNotEmpty == true ? item.requestId : null);
+  if (identity == null) return false;
+  for (final candidate in remote) {
+    if (candidate.role != item.role) continue;
+    if (candidate.turnId != identity && candidate.requestId != identity) {
+      continue;
+    }
+    if (candidate.text == item.text) return true;
+    if (item.attachments.isNotEmpty && _imagePlaceholder(candidate)) return true;
+  }
+  return false;
+}
+
 Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
   final matches = <int, int>{};
   final used = <int>{};
   var cursor = 0;
   for (var i = 0; i < source.length; i++) {
     final item = source[i];
-    if (item.failed || item.sticker != null) continue;
+    if (item.failed) continue;
     final turn = _turn(source, i);
+    // A sticker carries no text the log could echo, so identity is the only
+    // honest match; without one it falls through to the retain path.
+    if (item.sticker != null) {
+      if (turn == null) continue;
+      for (var j = 0; j < remote.length; j++) {
+        if (used.contains(j) || remote[j].role != item.role) continue;
+        if (_turn(remote, j) != turn) continue;
+        matches[i] = j;
+        used.add(j);
+        cursor = j + 1;
+        break;
+      }
+      continue;
+    }
     final candidates = <int>[];
     for (var j = 0; j < remote.length; j++) {
       final candidate = remote[j];
@@ -96,9 +150,18 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
         candidates.add(j);
       }
     }
-    // A preview may replace only an unambiguous user slot in its canonical turn.
-    if (item.attachments.isNotEmpty && candidates.length != 1) continue;
     if (candidates.isEmpty) continue;
+    // A preview may replace only an unambiguous user slot. Ambiguity is first
+    // resolved by canonical turn; if it survives, the local bubble is retained
+    // as-is rather than collapsed onto a log row.
+    if (item.attachments.isNotEmpty && candidates.length != 1) {
+      if (turn == null) continue;
+      final byTurn = candidates.where((j) => _turn(remote, j) == turn).toList();
+      if (byTurn.length != 1) continue;
+      candidates
+        ..clear()
+        ..add(byTurn.first);
+    }
     final found = candidates.first;
     matches[i] = found;
     used.add(found);

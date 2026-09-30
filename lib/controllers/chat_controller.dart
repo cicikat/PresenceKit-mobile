@@ -271,7 +271,14 @@ class ChatController extends ChangeNotifier {
     sending = true;
     himTyping = true;
     backendError = null;
-    sent.add(ChatMessage(role: 'you', text: value, time: '现在'));
+    sent.add(
+      ChatMessage(
+        role: 'you',
+        text: value,
+        time: '现在',
+        retainOnRefresh: true,
+      ),
+    );
     if (sent.isNotEmpty && replyTo != null) {
       sent[sent.length - 1] = sent.last.copyWith(
         quotedText: replyTo.text,
@@ -763,9 +770,15 @@ class ChatController extends ChangeNotifier {
         return;
       }
       if (reconcileLocal) {
+        // A row with no dateKey is local content the server has not dated yet
+        // (synchronous HTTP reply, upload preview, sticker). It belongs to the
+        // reconciled window: the `older` filter below drops it, so excluding it
+        // here would delete it from the transcript on the next refresh.
         messages = reconcileChatHistory(
           messages,
-          history.where((m) => loaded.contains(m.dateKey)).toList(),
+          history
+              .where((m) => m.dateKey == null || loaded.contains(m.dateKey))
+              .toList(),
           localSnapshot,
           sent,
         );
@@ -1130,6 +1143,7 @@ class ChatController extends ChangeNotifier {
                 time: base.time,
                 dateKey: _dateKey(base.timestamp),
                 turnId: message.id.trim().isEmpty ? null : message.id.trim(),
+                retainOnRefresh: true,
               ),
             ),
           );
@@ -1142,6 +1156,7 @@ class ChatController extends ChangeNotifier {
               time: base.time,
               dateKey: _dateKey(base.timestamp),
               sticker: message.sticker,
+              retainOnRefresh: true,
             ),
           );
         }
@@ -1318,6 +1333,7 @@ class ChatController extends ChangeNotifier {
           displayText: displayParts?[entry.key],
           time: time ?? _nowLabel(),
           animate: true,
+          retainOnRefresh: true,
         ),
     ]);
   }
@@ -1329,6 +1345,7 @@ class ChatController extends ChangeNotifier {
           text: '',
           time: time ?? _nowLabel(),
           sticker: sticker,
+          retainOnRefresh: true,
         ),
       ]);
 

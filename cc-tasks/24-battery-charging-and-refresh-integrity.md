@@ -82,24 +82,21 @@ if (!(live ? i < lastMatch : item.retainOnRefresh)) continue;
 
 落点集中在 `lib/controllers/chat_history_reconciliation.dart` 与 `chat_controller.dart` 的消息构造处。
 
-- [ ] B1 本地消息一律标记「尚无服务器行」：`_appendMobileMessages`（`chat_controller.dart:1112-1147`、`1155-1177`）、`_appendSegments`（`:1302-1323`）、`_appendSticker`（`:1325-1333`）、`send` 的用户气泡（`:274`）构造时全部带 `retainOnRefresh: true`。`MobilePollMessage.toChatMessage`（`app_models.dart:1418`）已经是 true，但那个对象没被用于正文气泡，要么复用它、要么补齐参数。
-- [ ] B2 去掉 `i < lastMatch` 这条丢弃规则：`chat_history_reconciliation.dart:21` 改为「未匹配的本地消息默认保留」，只在明确证据下丢弃（同一 `turnId`/`requestId` 已在远端出现、或该条已被 `failed` 重试替换）。保留位置仍按 `next ?? preceding+1` 计算（`:22-31`）。
-- [ ] B3 表情包可匹配：`_matches:76` 不再无条件 `continue` 跳过 `sticker != null`；按 `turnId` 尝试匹配，匹配不上就走 B2 的保留路径而不是丢弃。
-- [ ] B4 防止反向重复：B2 放宽保留后，必须确认同一条消息不会「本地保留 + 远端也有」双份。补 `turnId` / `requestId` 优先匹配（`_matches:82-89` 已有 turn 逻辑），并在 `_historyContainsIdentity`（`chat_controller.dart:1443`）之外增加 reconcile 内的 id 级去重。
-- [ ] B5 回归测试（`test/`，纯逻辑，不引 jsdom/组件栈）：
-  - poll 新回复在远端历史缺失时刷新后仍在，且不重复；
-  - 该条随后出现在远端历史时刷新后只剩一条；
-  - 表情包气泡跨刷新存活；
-  - 连续两次刷新不产生累积重复（幂等）。
+- [x] B1 本地消息一律标记「尚无服务器行」：`_appendMobileMessages`（`chat_controller.dart:1146`、`1160`）、`_appendSegments`（`:1337`）、`_appendSticker`（`:1350`）、`send` 的用户气泡（`:274-281`）构造时全部带 `retainOnRefresh: true`。
+- [x] B2 放宽保留规则：`chat_history_reconciliation.dart:21` 的丢弃规则改为只作用于仍在飞行中的 live 行（它们留在 `sent` 里，屏幕上仍可见、retry 仍可达）；已进 `history` 的投递行凭 `retainOnRefresh` 一律保留，不再因为落在尾部被删。保留位置仍按 `next ?? preceding+1` 计算。
+  - 偏差说明：工单原文要求「未匹配的本地消息默认保留」，含 live 行。实测把未匹配 live 行提升进 `history` 会破坏 retry / reveal 契约（`chat_recovery_upload_test.dart`、`mobile_catchup_state_test.dart` 共 11 例依赖失败气泡与同步回复留在 `sent`），且 live 行本来就不会从屏幕消失。吞消息发生在 `previous` 路径，已按此收敛。
+- [x] B3 表情包可匹配：`_matches` 不再无条件跳过 `sticker != null`，按 canonical turn 匹配；无 turn 时落到 B2 的保留路径。
+- [x] B4 防止反向重复：新增 `_remoteAlreadyOwns()`（turnId/requestId + 同文本或附件占位行双重证据才认定远端已有）与 `retainedIds` 的 id 级去重，`previous`/`local` 两条源不会各插一份。
+- [x] B5 回归测试：`test/chat_history_reconciliation_test.dart` group `refresh neither swallows nor degrades local rows` —— 远端缺失的 poll 回复跨两次刷新存活且唯一、随后落盘时只剩一条、表情包跨刷新存活且不重复、刷新幂等。
 - [ ] B6 真机验收：发一条 → 立刻下拉刷新 → 消息不消失；等自动刷新触发（`:617`、`:1277`）再确认一次。**未做前保持 not-run，不得用 `flutter test` 冒充。**
 
 ## 24/C — 富消息不再被刷成纯文本（P0，紧随 B）
 
-- [ ] C1 匹配分支停止用远端文本覆盖本地富载荷：`chat_history_reconciliation.dart:36-58` 把 `keepImage` 扩展成「本地富载荷」判定（`attachments` 非空 **或** `sticker != null` **或** `quotedText != null` **或** 本地 `displayText` 非空），命中时 `text` / `displayText` 一律保留本地值，只接受远端的 `time` / `dateKey` / `turnId` / `timestamp` / `mediaRefs`。
-- [ ] C2 `displayText` 优先级反转：改为 `item.displayText ?? remote[found].displayText`——本地 inline display 是渲染真值，远端投影（`Emerald-presence/admin/routers/chat_log.py:360`）只作为本地缺失时的补充。
-- [ ] C3 回复引用不丢：`quotedText` / `quotedLabel` 在匹配和插入两条路径都保留（插入路径的 `settled().copyWith` 已保留，确认即可），并补测试。
-- [ ] C4 上传气泡匹配放宽：`:100` 的 `candidates.length != 1` 硬性拒绝改为「优先取 turnId 相同的唯一候选；仍不唯一则保留本地条目而非丢弃」，避免图片/文件退回 `📎 文件名` 纯文本。
-- [ ] C5 回归测试：图片上传气泡、文件上传气泡、带回复引用的气泡、带 inline display 的回复，各自跨一次刷新后字段不降级；远端 `assistant_display_text` 为 null 时不覆盖本地。
+- [x] C1 匹配分支停止用远端文本覆盖本地富载荷：`keepImage` 已改名 `keepRich`，判定含 `attachments` / `sticker` / `quotedText` / 非空 `displayText`；命中时 `text` 保留本地，只接受远端 `time` / `dateKey` / `turnId` / `timestamp` / `mediaRefs`。
+- [x] C2 `displayText` 优先级反转为 `item.displayText ?? remote[found].displayText`（`chat_history_reconciliation.dart:56`）。
+- [x] C3 回复引用不丢：匹配分支保留 `quotedText` / `quotedLabel`（原本已保留，现连带 `keepRich` 一起被测试守住）；插入路径经 `settled().copyWith` 保留，已补测试。
+- [x] C4 上传气泡匹配放宽：`candidates.length != 1` 先按 canonical turn 收敛到唯一候选，仍不唯一则保留本地条目（走 B2 保留路径），不再退回 `📎 文件名` 纯文本。
+- [x] C5 回归测试：同 group 内覆盖引用气泡 + inline display 跨刷新不降级、远端投影为 null 不覆盖本地、远端给出「已清洗」投影也不覆盖本地、歧义文件气泡保留附件。
 - [ ] C6 真机验收：发图 → 自动刷新后仍是图片卡片；引用回复 → 刷新后引用条仍在。**未做前 not-run。**
 
 ## 24/D — 收尾
