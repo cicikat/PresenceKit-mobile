@@ -116,21 +116,25 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
   var cursor = 0;
   for (var i = 0; i < source.length; i++) {
     final item = source[i];
-    if (item.failed) continue;
-    final turn = _turn(source, i);
+    // An unconfirmed send must not inherit the turn of a neighbouring bubble
+    // (it would claim a later message's reply); only its own turn_id,
+    // request_id or exact text can reconcile it.
+    final turn = (item.failed || item.uncertain)
+        ? (item.turnId?.isNotEmpty == true ? item.turnId : null)
+        : _turn(source, i);
     // A sticker carries no text the log could echo, so identity is the only
     // honest match; without one it falls through to the retain path.
     if (item.sticker != null || item.artifacts.isNotEmpty) {
       if (turn == null) continue;
       for (var j = 0; j < remote.length; j++) {
         if (used.contains(j) || remote[j].role != item.role) continue;
+        if (remote[j].artifacts.isNotEmpty != item.artifacts.isNotEmpty) {
+          continue;
+        }
         if (_turn(remote, j) != turn) continue;
         matches[i] = j;
         used.add(j);
         cursor = j + 1;
-        if (remote[j].artifacts.isNotEmpty != item.artifacts.isNotEmpty) {
-          continue;
-        }
         break;
       }
       continue;
@@ -145,6 +149,9 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
         if (item.toolActivity?.eventId == candidate.toolActivity?.eventId) { candidates.add(j); }
       } else if (item.role == 'reasoning') {
         if (item.text.isNotEmpty && item.text == candidate.text) { candidates.add(j); }
+      } else if (item.requestId != null &&
+          item.requestId == candidate.requestId) {
+        candidates.add(j);
       } else if (turn != null && turn == remoteTurn) {
         candidates.add(j);
       } else if (j >= cursor &&

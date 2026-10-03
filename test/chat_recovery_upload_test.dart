@@ -47,6 +47,9 @@ class _Backend extends BackendClient {
   int sessionMisses = 0;
   bool dropCompletedResponse = false;
   int chatExecutions = 0;
+  bool omitTurnId = false;
+  bool networkDown = false;
+  List<MobilePollMessage> pollMessages = const [];
   int uploadExecutions = 0;
   final uploadedRequestIds = <String?>[];
   final _completedChats = <String, BackendChatResponse>{};
@@ -104,7 +107,7 @@ class _Backend extends BackendClient {
     int waitSeconds = 0,
   }) async {
     wait = waitSeconds;
-    return const MobilePollResult(ok: true, active: true, messages: []);
+    return MobilePollResult(ok: true, active: true, messages: pollMessages);
   }
 
   @override
@@ -127,13 +130,14 @@ class _Backend extends BackendClient {
     if (key != null && key.isNotEmpty && _completedChats.containsKey(key)) {
       return _completedChats[key]!;
     }
-    if (offline) throw const BackendException('offline');
+    if (networkDown) throw const BackendException('timeout');
+    if (offline) throw const BackendException('offline', statusCode: 500);
     chatExecutions++;
     final response = BackendChatResponse(
       reply: 'echo:$message',
       emotion: 'neutral',
       msgId: 'msg-$chatExecutions',
-      turnId: 'turn-$chatExecutions',
+      turnId: omitTurnId ? null : 'turn-$chatExecutions',
     );
     if (key != null && key.isNotEmpty) {
       _completedChats[key] = response;
@@ -162,7 +166,7 @@ class _Backend extends BackendClient {
     if (key != null && key.isNotEmpty && _completedUploads.containsKey(key)) {
       return _completedUploads[key]!;
     }
-    if (offline) throw const BackendException('offline');
+    if (offline) throw const BackendException('offline', statusCode: 500);
     uploadExecutions++;
     const response = BackendChatResponse(reply: '', emotion: 'neutral');
     if (key != null && key.isNotEmpty) {
@@ -724,9 +728,13 @@ void main() {
         await Future<void>.delayed(Duration.zero);
       }
       final failed = controller.sent.singleWhere((item) => item.role == 'you');
-      expect(failed.failed, isTrue);
+      expect(failed.uncertain, isTrue);
+      expect(failed.failed, isFalse);
       expect(backend.chatExecutions, 1);
-      controller.retryMessage(failed);
+      controller.clock = () => DateTime.now().add(const Duration(minutes: 6));
+      controller.expireUncertain();
+      expect(controller.sent.singleWhere((m) => m.role == 'you').failed, isTrue);
+      controller.retryMessage(controller.sent.singleWhere((m) => m.role == 'you'));
       for (var i = 0; i < 20 && controller.sending; i++) {
         await Future<void>.delayed(Duration.zero);
       }
@@ -753,10 +761,14 @@ void main() {
       message: 'caption',
     );
     final failed = controller.sent.singleWhere((item) => item.role == 'you');
-    expect(failed.failed, isTrue);
+    expect(failed.uncertain, isTrue);
     expect(failed.requestId, startsWith('req_'));
     expect(backend.uploadExecutions, 1);
-    controller.retryMessage(failed);
+    controller.clock = () => DateTime.now().add(const Duration(minutes: 6));
+    controller.expireUncertain();
+    controller.retryMessage(
+      controller.sent.singleWhere((item) => item.role == 'you'),
+    );
     for (var i = 0; i < 20 && controller.sending; i++) {
       await Future<void>.delayed(Duration.zero);
     }
@@ -767,5 +779,109 @@ void main() {
       controller.sent.singleWhere((item) => item.role == 'you').id,
       failed.id,
     );
+  });
+  Future<void> settle() async {
+    for (var i = 0; i < 20 && controller.sending; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+
+  MobilePollMessage pollReply(String requestId) => MobilePollMessage.fromJson({
+    'id': 'poll-1',
+    'seq': 1,
+    'content': 'late reply',
+    'user_id': 'owner',
+    'char_id': 'char-a',
+    'request_id': requestId,
+  });
+
+  test('timeout marks the send uncertain, not failed, and poll request_id clears it', () async {
+    backend.networkDown = true; // BackendException without HTTP status
+    controller.send('hello');
+    await settle();
+    final unsure = controller.sent.singleWhere((m) => m.role == 'you');
+    expect(unsure.uncertain, isTrue);
+    expect(unsure.failed, isFalse);
+    expect(controller.backendError, isNull);
+    backend.pollMessages = [pollReply('req_other')];
+    await controller.pollMobile();
+    expect(controller.sent.singleWhere((m) => m.role == 'you').uncertain, isTrue);
+    backend.pollMessages = [pollReply(unsure.requestId!)];
+    await controller.pollMobile();
+    final cleared = controller.sent.singleWhere((m) => m.role == 'you');
+    expect(cleared.uncertain, isFalse);
+    expect(cleared.failed, isFalse);
+  });
+
+  test('history refresh carrying the request_id clears an uncertain send', () async {
+    backend.networkDown = true;
+    controller.send('hello');
+    await settle();
+    final unsure = controller.sent.singleWhere((m) => m.role == 'you');
+    expect(unsure.uncertain, isTrue);
+    backend.networkDown = false;
+    backend.offline = false;
+    backend.day = ChatLogDay.fromJson({
+      'date': '2026-09-13',
+      'entries': [
+        {
+          'time': '12:00',
+          'user': 'hello',
+          'assistant': 'echo:hello',
+          'turn_id': 't9',
+          'request_id': unsure.requestId,
+        },
+      ],
+    });
+    await controller.loadHistory(reconcileLocal: true);
+    final all = [...controller.history, ...controller.sent];
+    expect(all.where((m) => m.role == 'you' && (m.uncertain || m.failed)), isEmpty);
+    expect(all.where((m) => m.role == 'you' && m.text == 'hello'), hasLength(1));
+  });
+
+  test('uncertain turns failed only after the window and then offers retry', () async {
+    backend.networkDown = true;
+    controller.send('hello');
+    await settle();
+    expect(controller.expireUncertain(), isFalse);
+    controller.clock = () => DateTime.now().add(const Duration(minutes: 6));
+    expect(controller.expireUncertain(), isTrue);
+    final failed = controller.sent.singleWhere((m) => m.role == 'you');
+    expect(failed.failed, isTrue);
+    expect(failed.uncertain, isFalse);
+  });
+
+  test('a failure never falls back to marking the latest other message', () async {
+    backend.offline = false;
+    controller.send('first');
+    await settle();
+    backend.networkDown = true;
+    controller.send('second');
+    await settle();
+    final users = controller.sent.where((m) => m.role == 'you').toList();
+    expect(users.firstWhere((m) => m.text == 'first').uncertain, isFalse);
+    expect(users.firstWhere((m) => m.text == 'first').failed, isFalse);
+    expect(users.firstWhere((m) => m.text == 'second').uncertain, isTrue);
+  });
+
+  test('an HTTP error status is a definite failure with retry', () async {
+    backend.offline = true; // harness answers HTTP 500
+    controller.send('hello');
+    await settle();
+    final m = controller.sent.singleWhere((x) => x.role == 'you');
+    expect(m.failed, isTrue);
+    expect(m.uncertain, isFalse);
+    expect(controller.backendError, isNotNull);
+  });
+
+  test('a response without turn_id is not a send failure', () async {
+    backend.offline = false;
+    backend.omitTurnId = true;
+    controller.send('hello');
+    await settle();
+    final me = controller.sent.singleWhere((m) => m.role == 'you');
+    expect(me.failed, isFalse);
+    expect(me.uncertain, isFalse);
+    expect(controller.sent.where((m) => m.role == 'reasoning' && m.failed), isEmpty);
   });
 }

@@ -315,7 +315,7 @@ class ChatController extends ChangeNotifier {
       );
       return;
     }
-    sent[index] = message.copyWith(failed: false, time: _nowLabel());
+    sent[index] = message.copyWith(failed: false, clearUncertain: true, time: _nowLabel());
     sending = true;
     himTyping = true;
     backendError = null;
@@ -541,10 +541,11 @@ class ChatController extends ChangeNotifier {
         role: 'reasoning',
         text: response.turnId ?? '',
         time: anchor.time,
-        failed: response.turnId == null,
+        // A missing turn_id is not a send failure: the server accepted it.
         turnId: response.turnId,
       );
     }
+    _settleSend(userId: userId);
     notifyListeners();
     lastBackendReply = response;
     if (_shouldAppendSynchronousReply(response)) {
@@ -553,8 +554,8 @@ class ChatController extends ChangeNotifier {
         displayText: response.displayText,
         turnId: response.turnId,
       );
-    }
       await _appendArtifacts(response.artifacts, turnId: response.turnId);
+    }
   }
 
   String _bindOutgoingRequestId(int userId, {String? requestId}) {
@@ -578,6 +579,7 @@ class ChatController extends ChangeNotifier {
     final scope = _captureScope(generation);
     final boundRequestId = _bindOutgoingRequestId(userId, requestId: requestId);
     final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
+    var dropAnchor = false;
     sent.add(anchor);
     notifyListeners();
     try {
@@ -601,9 +603,11 @@ class ChatController extends ChangeNotifier {
       );
     } on BackendException catch (e) {
       if (!_scopeStillLive(generation, scope)) return;
-      backendError = e.message;
+      final uncertain = _isUncertainOutcome(e);
+      dropAnchor = true;
+      if (!uncertain) backendError = e.message;
       if (e.isSessionNotFound) _onPresenceSessionInvalid?.call();
-      _markSendFailed(userId);
+      _markSendFailed(userId, uncertain: uncertain);
       /*
         ChatMessage(
           role: 'him',
@@ -622,8 +626,8 @@ class ChatController extends ChangeNotifier {
           )) {
         return;
       }
-      backendError = e.toString();
-      _markSendFailed(userId);
+      dropAnchor = true;
+      _markSendFailed(userId, uncertain: true);
       /* sent.add(
         ChatMessage(role: 'him', text: '（手机端遇到一个未预期错误：$e）', time: _nowLabel()),
       ); */
@@ -636,13 +640,14 @@ class ChatController extends ChangeNotifier {
           owner: _deliveryOwner(),
           charId: _deliveryCharId(),
         );
-        if (live && backendError != null) {
+        if (live && (dropAnchor || backendError != null)) {
           sent.removeWhere((m) => m.id == anchor.id);
         }
         sending = false;
         himTyping = false;
         notifyListeners();
-        if (live && backendError == null) {
+        // Always reconcile: after a timeout the server may have finished.
+        if (live) {
           unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
         }
         if (live && _pendingSends.isNotEmpty) {
@@ -664,18 +669,66 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _markSendFailed(int userId) {
+  /// How long an unknown-outcome send may stay "confirming" before it is
+  /// shown as failed with a retry button.
+  Duration uncertainWindow = const Duration(minutes: 5);
+
+  /// Injectable clock for tests.
+  DateTime Function() clock = DateTime.now;
+
+  /// Outcome unknown (timeout / network): the server may still finish the
+  /// turn. Only the exact message is touched; there is no "latest message"
+  /// fallback.
+  void _markSendFailed(int userId, {bool uncertain = false}) {
     final index = sent.indexWhere((item) => item.id == userId);
-    if (index >= 0) {
-      sent[index] = sent[index].copyWith(failed: true);
-      return;
-    }
-    for (var i = sent.length - 1; i >= 0; i--) {
-      if (sent[i].role == 'you' && !sent[i].failed) {
-        sent[i] = sent[i].copyWith(failed: true);
-        return;
+    if (index < 0) return;
+    sent[index] = uncertain
+        ? sent[index].copyWith(uncertainSince: clock())
+        : sent[index].copyWith(failed: true, clearUncertain: true);
+  }
+
+  /// A BackendException with no HTTP status (timeout, socket) or an
+  /// in-flight/unknown-outcome reply means the server may have the message.
+  static bool _isUncertainOutcome(BackendException e) =>
+      e.statusCode == null || e.isInFlight || e.isOutcomeUnknown;
+
+  /// Clears failed/uncertain state on a delivered message, by local id or by
+  /// the request_id the server echoed. Returns true if anything changed.
+  bool _settleSend({int? userId, String? requestId}) {
+    var changed = false;
+    bool matches(ChatMessage m) =>
+        m.role == 'you' &&
+        (m.failed || m.uncertain) &&
+        ((userId != null && m.id == userId) ||
+            (requestId != null &&
+                requestId.isNotEmpty &&
+                m.requestId == requestId));
+    for (final list in [sent, history]) {
+      for (var i = 0; i < list.length; i++) {
+        if (matches(list[i])) {
+          list[i] = list[i].copyWith(failed: false, clearUncertain: true);
+          changed = true;
+        }
       }
     }
+    return changed;
+  }
+
+  /// Uncertain sends not reconciled within [uncertainWindow] become failed.
+  bool expireUncertain() {
+    final now = clock();
+    var changed = false;
+    for (final list in [sent, history]) {
+      for (var i = 0; i < list.length; i++) {
+        final since = list[i].uncertainSince;
+        if (since != null && now.difference(since) >= uncertainWindow) {
+          list[i] = list[i].copyWith(failed: true, clearUncertain: true);
+          changed = true;
+        }
+      }
+    }
+    if (changed) notifyListeners();
+    return changed;
   }
 
   Future<void> loadHistory({
@@ -805,6 +858,10 @@ class ChatController extends ChangeNotifier {
           sent,
         );
       }
+      for (final m in messages) {
+        if (m.requestId != null) _settleSend(requestId: m.requestId);
+      }
+      expireUncertain();
       final older = history
           .where(
             (m) =>
@@ -864,6 +921,7 @@ class ChatController extends ChangeNotifier {
           left.time != right.time ||
           left.dateKey != right.dateKey ||
           left.failed != right.failed ||
+          left.uncertain != right.uncertain ||
           left.attachments.length != right.attachments.length) {
         return false;
       }
@@ -1017,6 +1075,14 @@ class ChatController extends ChangeNotifier {
         return;
       }
       final messages = result.messages;
+      // Reconcile unknown-outcome sends by the request_id the server echoes.
+      var settled = false;
+      for (final message in messages) {
+        final rid = message.requestId;
+        if (rid != null && _settleSend(requestId: rid)) settled = true;
+      }
+      if (expireUncertain()) settled = true;
+      if (settled) notifyListeners();
       final scope = _captureScope(generation);
       final fresh = <MobilePollMessage>[];
       final foreign = <MobilePollMessage>[];
@@ -1182,6 +1248,19 @@ class ChatController extends ChangeNotifier {
             ),
           );
         }
+        if (message.artifacts.isNotEmpty) {
+          immediate.add(
+            ChatMessage(
+              role: 'him',
+              text: '',
+              time: base.time,
+              dateKey: _dateKey(base.timestamp),
+              turnId: message.id.trim().isEmpty ? null : message.id.trim(),
+              artifacts: message.artifacts,
+              retainOnRefresh: true,
+            ),
+          );
+        }
       }
       if (immediate.isNotEmpty) {
         sent.addAll(immediate);
@@ -1211,6 +1290,15 @@ class ChatController extends ChangeNotifier {
       }
       if (message.sticker != null && _stickerEnabled()) {
         unawaited(_appendSticker(message.sticker!, time: base.time));
+      }
+      if (message.artifacts.isNotEmpty) {
+        unawaited(
+          _appendArtifacts(
+            message.artifacts,
+            time: base.time,
+            turnId: message.id.trim().isEmpty ? null : message.id.trim(),
+          ),
+        );
       }
       if (message.voiceAvailable &&
           _autoPlayVoice() &&
@@ -1246,21 +1334,8 @@ class ChatController extends ChangeNotifier {
     himTyping = true;
     backendError = null;
     final outgoing =
-        retryOf?.copyWith(failed: false, time: _nowLabel()) ??
+        retryOf?.copyWith(failed: false, clearUncertain: true, time: _nowLabel()) ??
         ChatMessage(
-        if (message.artifacts.isNotEmpty) {
-          immediate.add(
-            ChatMessage(
-              role: 'him',
-              text: '',
-              time: base.time,
-              dateKey: _dateKey(base.timestamp),
-              turnId: message.id.trim().isEmpty ? null : message.id.trim(),
-              artifacts: message.artifacts,
-              retainOnRefresh: true,
-            ),
-          );
-        }
           role: 'you',
           text: preview,
           time: '现在',
@@ -1279,6 +1354,7 @@ class ChatController extends ChangeNotifier {
       sent[index] = outgoing;
     }
     final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
+    var dropAnchor = false;
     sent.add(anchor);
     notifyListeners();
     scrollToBottom();
@@ -1291,15 +1367,6 @@ class ChatController extends ChangeNotifier {
         scope: _captureScope(generation),
         generation: generation,
         requestId: boundRequestId,
-      if (message.artifacts.isNotEmpty) {
-        unawaited(
-          _appendArtifacts(
-            message.artifacts,
-            time: base.time,
-            turnId: message.id.trim().isEmpty ? null : message.id.trim(),
-          ),
-        );
-      }
         call: (grant) => _backend().uploadFiles(
           files: files,
           token: token,
@@ -1317,24 +1384,26 @@ class ChatController extends ChangeNotifier {
       );
     } on BackendException catch (e) {
       if (_session.isStale(generation)) return;
-      backendError = e.message;
+      final uncertain = _isUncertainOutcome(e);
+      dropAnchor = true;
+      if (!uncertain) backendError = e.message;
       if (e.isSessionNotFound) _onPresenceSessionInvalid?.call();
-      _markSendFailed(outgoing.id);
+      _markSendFailed(outgoing.id, uncertain: uncertain);
       scrollToBottom();
     } catch (e) {
       if (_session.isStale(generation)) return;
-      backendError = e.toString();
-      _markSendFailed(outgoing.id);
+      dropAnchor = true;
+      _markSendFailed(outgoing.id, uncertain: true);
       scrollToBottom();
     } finally {
       if (_session.isCurrent(generation)) {
-        if (backendError != null) sent.removeWhere((m) => m.id == anchor.id);
+        if (dropAnchor || backendError != null) {
+          sent.removeWhere((m) => m.id == anchor.id);
+        }
         sending = false;
         himTyping = false;
         notifyListeners();
-        if (backendError == null) {
-          unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
-        }
+        unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
         _flushHistoryRefresh();
       }
     }
@@ -1379,6 +1448,24 @@ class ChatController extends ChangeNotifier {
           animate: true,
           retainOnRefresh: true,
         ),
+    ]);
+  }
+
+  Future<void> _appendArtifacts(
+    List<ChatArtifact> artifacts, {
+    String? time,
+    String? turnId,
+  }) {
+    if (artifacts.isEmpty) return Future<void>.value();
+    return _appendMessages([
+      ChatMessage(
+        role: 'him',
+        text: '',
+        time: time ?? _nowLabel(),
+        turnId: turnId,
+        artifacts: artifacts,
+        retainOnRefresh: true,
+      ),
     ]);
   }
 
@@ -1451,24 +1538,6 @@ class ChatController extends ChangeNotifier {
     final value = text.trim();
     if (value.isEmpty) return const ['……'];
     final parts = value
-  Future<void> _appendArtifacts(
-    List<ChatArtifact> artifacts, {
-    String? time,
-    String? turnId,
-  }) {
-    if (artifacts.isEmpty) return Future<void>.value();
-    return _appendMessages([
-      ChatMessage(
-        role: 'him',
-        text: '',
-        time: time ?? _nowLabel(),
-        turnId: turnId,
-        artifacts: artifacts,
-        retainOnRefresh: true,
-      ),
-    ]);
-  }
-
         .split(RegExp(r'\r?\n+'))
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
@@ -1608,6 +1677,7 @@ class ChatController extends ChangeNotifier {
             time: entry.time,
             dateKey: day.date,
             turnId: entry.turnId,
+            requestId: entry.requestId,
             mediaRefs: entry.mediaRefs,
           ),
         if (entry.turnId?.isNotEmpty == true &&
@@ -1632,6 +1702,15 @@ class ChatController extends ChangeNotifier {
             )[part.key],
             time: entry.time,
             dateKey: day.date,
+          ),
+        if (entry.artifacts.isNotEmpty)
+          ChatMessage(
+            role: 'him',
+            text: '',
+            turnId: entry.turnId,
+            time: entry.time,
+            dateKey: day.date,
+            artifacts: entry.artifacts,
           ),
       ],
     ];
@@ -1703,15 +1782,6 @@ class ChatController extends ChangeNotifier {
           scrollController.position.minScrollExtent,
           scrollController.position.maxScrollExtent,
         ),
-        if (entry.artifacts.isNotEmpty)
-          ChatMessage(
-            role: 'him',
-            text: '',
-            turnId: entry.turnId,
-            time: entry.time,
-            dateKey: day.date,
-            artifacts: entry.artifacts,
-          ),
       );
     });
     return true;

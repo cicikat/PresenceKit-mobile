@@ -449,7 +449,7 @@ abstract class AppLocalizations {
   /// No description provided for @lifeQueueFull.
   ///
   /// In zh, this message translates to:
-  /// **'本机队列已满（200 项或 100 MiB 图片），请先同步或删除待上传记录。'**
+  /// **'本机待上传队列已满（待上传最多 200 项或 100 MiB 图片；已同步的图片不占用）。请在队列页同步、清除被拒绝项或删除待上传记录。'**
   String get lifeQueueFull;
 
   /// No description provided for @lifeImageTooLarge.
@@ -1063,6 +1063,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'重试'**
   String get chatRetry;
+
+  /// No description provided for @chatConfirming.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认中'**
+  String get chatConfirming;
 
   /// No description provided for @chatSendFailed.
   ///

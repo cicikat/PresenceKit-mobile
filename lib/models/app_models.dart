@@ -567,14 +567,15 @@ class ChatMessage {
     this.quotedText,
     this.quotedLabel,
     this.failed = false,
+    this.uncertainSince,
     this.attachments = const [],
     this.uploadNote = '',
     this.toolActivity,
     this.turnId,
     this.requestId,
     this.mediaRefs = const [],
-    this.retainOnRefresh = false,
     this.artifacts = const [],
+    this.retainOnRefresh = false,
   }) : id = id ?? _nextId++,
        timestamp = timestamp ?? DateTime.now(),
        time = time == '现在'
@@ -595,6 +596,10 @@ class ChatMessage {
   final String? quotedText;
   final String? quotedLabel;
   final bool failed;
+
+  /// Set while a send outcome is unknown (timeout or network error).
+  final DateTime? uncertainSince;
+  bool get uncertain => uncertainSince != null;
   final List<PickedUploadFile> attachments;
   final String uploadNote;
   final ToolActivity? toolActivity;
@@ -605,13 +610,13 @@ class ChatMessage {
   final String? requestId;
   /// Canonical media refs from history; never a local disk path.
   final List<ChatMediaRef> mediaRefs;
+  // Character-sent file cards (metadata only; bytes fetched on demand).
+  final List<ChatArtifact> artifacts;
   /// In-memory local content not yet represented by a server history row.
   final bool retainOnRefresh;
 
   /// 用于「回复」引用(reply_to.ts);历史消息没有真实 epoch,退化为加载时刻——
   /// 只影响后端相对时间前缀的措辞("今天"而非准确日期),不影响功能正确性。
-  // Character-sent file cards (metadata only; bytes fetched on demand).
-  final List<ChatArtifact> artifacts;
   final DateTime timestamp;
 
   /// 保留同一 id（key 稳定），仅关闭 animate；用于 reveal 完成后落定消息。
@@ -628,21 +633,24 @@ class ChatMessage {
     quotedText: quotedText,
     quotedLabel: quotedLabel,
     failed: failed,
+    uncertainSince: uncertainSince,
     attachments: attachments,
     uploadNote: uploadNote,
     toolActivity: toolActivity,
     turnId: turnId,
     requestId: requestId,
     mediaRefs: mediaRefs,
+    artifacts: artifacts,
     retainOnRefresh: retainOnRefresh,
   );
 
   ChatMessage copyWith({
     String? turnId,
     String? requestId,
-    artifacts: artifacts,
     bool? retainOnRefresh,
     bool? failed,
+    DateTime? uncertainSince,
+    bool clearUncertain = false,
     String? time,
     String? quotedText,
     String? quotedLabel,
@@ -660,12 +668,16 @@ class ChatMessage {
     quotedText: quotedText ?? this.quotedText,
     quotedLabel: quotedLabel ?? this.quotedLabel,
     failed: failed ?? this.failed,
+    uncertainSince: clearUncertain
+        ? null
+        : (uncertainSince ?? this.uncertainSince),
     attachments: attachments,
     uploadNote: uploadNote,
     toolActivity: toolActivity,
     turnId: turnId ?? this.turnId,
     requestId: requestId ?? this.requestId,
     mediaRefs: mediaRefs,
+    artifacts: artifacts,
     retainOnRefresh: retainOnRefresh ?? this.retainOnRefresh,
   );
 }
@@ -677,7 +689,6 @@ class ReplyTarget {
   factory ReplyTarget.fromMessage(ChatMessage message) =>
       ReplyTarget(text: message.text, timestamp: message.timestamp);
 
-    artifacts: artifacts,
   final String text;
   final DateTime timestamp;
 
@@ -1049,8 +1060,10 @@ class ChatLogEntry {
     this.entryKind = '',
     this.toolActivity,
     this.turnId,
+    this.requestId,
     this.assistantDisplayText,
     this.mediaRefs = const [],
+    this.artifacts = const [],
     required this.time,
     required this.user,
     required this.assistant,
@@ -1062,8 +1075,11 @@ class ChatLogEntry {
       entryKind: (json['entry_kind'] ?? '').toString(),
       toolActivity: ToolActivity.tryParse(json['tool_activity']),
       turnId: json['turn_id'] is String ? json['turn_id'] as String : null,
+      requestId: json['request_id'] is String &&
+              (json['request_id'] as String).isNotEmpty
+          ? json['request_id'] as String
+          : null,
       assistantDisplayText: json['assistant_display_text'] is String
-    this.artifacts = const [],
           ? json['assistant_display_text'] as String
           : null,
       mediaRefs: rawRefs is List
@@ -1076,6 +1092,7 @@ class ChatLogEntry {
                 .where((item) => item.filename.isNotEmpty || item.sha256 != null)
                 .toList(growable: false)
           : const [],
+      artifacts: ChatArtifact.parseList(json['artifacts']),
       time: (json['time'] ?? '').toString(),
       user: (json['user'] ?? '').toString(),
       assistant: (json['assistant'] ?? '').toString(),
@@ -1083,8 +1100,10 @@ class ChatLogEntry {
   }
 
   final String? turnId;
+  final String? requestId;
   final String? assistantDisplayText;
   final List<ChatMediaRef> mediaRefs;
+  final List<ChatArtifact> artifacts;
   final String entryKind;
   final ToolActivity? toolActivity;
   final String time;
@@ -1092,7 +1111,6 @@ class ChatLogEntry {
   final String assistant;
 }
 
-      artifacts: ChatArtifact.parseList(json['artifacts']),
 class ChatLogDay {
   const ChatLogDay({
     required this.date,
@@ -1103,7 +1121,6 @@ class ChatLogDay {
   factory ChatLogDay.fromJson(Map<String, dynamic> json) {
     final rawEntries = json['entries'];
     return ChatLogDay(
-  final List<ChatArtifact> artifacts;
       date: (json['date'] ?? '').toString(),
       entries: rawEntries is List
           ? rawEntries
@@ -1281,8 +1298,10 @@ class MobilePollMessage {
     required this.behaviorLevel,
     required this.behaviorId,
     this.charId,
+    this.requestId,
     this.voiceAvailable = false,
     this.sticker,
+    this.artifacts = const [],
   });
 
   factory MobilePollMessage.fromJson(Map<String, dynamic> json) {
@@ -1301,7 +1320,6 @@ class MobilePollMessage {
           : null,
       userId: (json['user_id'] ?? '').toString(),
       timestamp: rawTimestamp is num
-    this.artifacts = const [],
           ? DateTime.fromMillisecondsSinceEpoch((rawTimestamp * 1000).round())
           : null,
       behaviorKind: (behavior['kind'] ?? '').toString(),
@@ -1309,8 +1327,13 @@ class MobilePollMessage {
       behaviorLevel: (behavior['level'] ?? '').toString(),
       behaviorId: (behavior['behavior_id'] ?? '').toString(),
       charId: (rawChar == null || rawChar.isEmpty) ? null : rawChar,
+      requestId: json['request_id'] is String &&
+              (json['request_id'] as String).isNotEmpty
+          ? json['request_id'] as String
+          : null,
       voiceAvailable: json['voice_available'] == true,
       sticker: StickerPayload.fromJson(json['sticker']),
+      artifacts: ChatArtifact.parseList(json['artifacts']),
     );
   }
 
@@ -1325,15 +1348,16 @@ class MobilePollMessage {
   final String behaviorLevel;
   final String behaviorId;
   final String? charId;
+  final String? requestId;
   final bool voiceAvailable;
   final StickerPayload? sticker;
+  final List<ChatArtifact> artifacts;
 
   Map<String, dynamic> toQueueItemJson() => {
         'id': id,
         if (seq != null) 'seq': seq,
         'content': content,
         if (displayText != null) 'display_text': displayText,
-      artifacts: ChatArtifact.parseList(json['artifacts']),
         'user_id': userId,
         if (timestamp != null)
           'timestamp': timestamp!.millisecondsSinceEpoch / 1000.0,
@@ -1350,8 +1374,9 @@ class MobilePollMessage {
           },
         if (voiceAvailable) 'voice_available': true,
         if (sticker != null) 'sticker': sticker!.toJson(),
+        if (artifacts.isNotEmpty)
+          'artifacts': [for (final a in artifacts) a.toJson()],
       };
-  final List<ChatArtifact> artifacts;
 
   ChatMessage toChatMessage() {
     return ChatMessage(
@@ -1374,12 +1399,11 @@ class PendingMobileEnvelope {
     this.timestamp,
     this.turnId,
     this.origin,
-        if (artifacts.isNotEmpty)
-          'artifacts': [for (final a in artifacts) a.toJson()],
     this.owner,
     this.charId,
     this.displayText,
     this.replayable = false,
+    this.artifacts = const [],
   });
 
   factory PendingMobileEnvelope.fromJson(Map<String, dynamic> json) {
@@ -1399,11 +1423,11 @@ class PendingMobileEnvelope {
           ? json['display_text'] as String
           : null,
       replayable: json['replayable'] == true,
+      artifacts: ChatArtifact.parseList(json['artifacts']),
     );
   }
 
   static String? _optionalId(Object? value) {
-    this.artifacts = const [],
     final text = value?.toString().trim() ?? '';
     return text.isEmpty ? null : text;
   }
@@ -1418,12 +1442,26 @@ class PendingMobileEnvelope {
   final String? charId;
   final String? displayText;
   final bool replayable;
+  final List<ChatArtifact> artifacts;
 
   String? get identity => turnId ?? id;
 
+  ChatMessage? toArtifactMessage() {
+    if (artifacts.isEmpty) return null;
+    return ChatMessage(
+      role: 'him',
+      text: '',
+      dateKey: timestamp == null ? null : _chatDateKey(timestamp!),
+      time: timestamp == null ? '刚刚' : _formatDateTime(timestamp!),
+      timestamp: timestamp,
+      turnId: identity,
+      artifacts: artifacts,
+      retainOnRefresh: true,
+    );
+  }
+
   ChatMessage toChatMessage() {
     return ChatMessage(
-      artifacts: ChatArtifact.parseList(json['artifacts']),
       role: 'him',
       text: content,
       displayText: displayText,
@@ -1442,24 +1480,9 @@ class MobileActivationResult {
     required this.active,
     this.error,
   });
-  final List<ChatArtifact> artifacts;
 
   factory MobileActivationResult.fromJson(Map<String, dynamic> json) {
     final error = json['error']?.toString().trim();
-  ChatMessage? toArtifactMessage() {
-    if (artifacts.isEmpty) return null;
-    return ChatMessage(
-      role: 'him',
-      text: '',
-      dateKey: timestamp == null ? null : _chatDateKey(timestamp!),
-      time: timestamp == null ? '刚刚' : _formatDateTime(timestamp!),
-      timestamp: timestamp,
-      turnId: identity,
-      artifacts: artifacts,
-      retainOnRefresh: true,
-    );
-  }
-
     return MobileActivationResult(
       ok: json['ok'] == true,
       active: json['active'] == true,
@@ -1547,6 +1570,7 @@ class BackendChatResponse {
     required this.emotion,
     this.msgId,
     this.turnId,
+    this.artifacts = const [],
   });
 
   factory BackendChatResponse.fromJson(Map<String, dynamic> json) {
@@ -1563,14 +1587,15 @@ class BackendChatResponse {
       emotion: (json['emotion'] ?? 'neutral').toString(),
       msgId: toId(json['msg_id']) ?? toId(json['turn_id']),
       turnId: toId(json['turn_id']),
+      artifacts: ChatArtifact.parseList(json['artifacts']),
     );
   }
 
+  final List<ChatArtifact> artifacts;
   final String reply;
   final String? displayText;
   final String emotion;
   final String? msgId;
-    this.artifacts = const [],
   final String? turnId;
 }
 
@@ -1587,11 +1612,9 @@ class BackendDiagnostics {
     this.statusSummary,
     this.statusSummaryError,
     this.activeCharacter,
-      artifacts: ChatArtifact.parseList(json['artifacts']),
     this.activeCharacterError,
     this.lorebookCount,
     this.lorebookError,
-  final List<ChatArtifact> artifacts;
     this.jailbreakCount,
     this.jailbreakError,
     this.dreamSettings,

@@ -285,6 +285,7 @@ class ChatScene extends StatelessWidget {
                               uploadNote: m.uploadNote,
                               quotedText: m.quotedText,
                               failed: m.failed,
+                              uncertain: m.uncertain,
                               onRetry: () => controller.retryMessage(m),
                               onReply: () => controller.setReplyTarget(m),
                               showDateDivider: showDateDivider,
@@ -1397,6 +1398,7 @@ class YouMessage extends StatefulWidget {
     required this.prefs,
     this.quotedText,
     this.failed = false,
+    this.uncertain = false,
     this.onRetry,
     this.onReply,
     this.showDateDivider = false,
@@ -1414,6 +1416,7 @@ class YouMessage extends StatefulWidget {
   final YxPrefs prefs;
   final String? quotedText;
   final bool failed;
+  final bool uncertain;
   final VoidCallback? onRetry;
   final VoidCallback? onReply;
   final bool showDateDivider;
@@ -1576,6 +1579,14 @@ class _YouMessageState extends State<YouMessage> {
                 ),
                 if (widget.quotedText != null)
                   _QuoteBar(c: c, text: widget.quotedText!, dark: true),
+                if (widget.uncertain && !widget.failed)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      context.l10n.chatConfirming,
+                      style: TextStyle(fontSize: 12, color: c.userBubbleText.withValues(alpha: 0.6)),
+                    ),
+                  ),
                 if (widget.failed)
                   TextButton.icon(
                     onPressed: widget.onRetry,
