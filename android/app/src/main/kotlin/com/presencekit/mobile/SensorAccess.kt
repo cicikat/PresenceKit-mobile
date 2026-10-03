@@ -1,6 +1,8 @@
 package com.presencekit.mobile
 
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -25,6 +27,43 @@ object SensorAccess {
         val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager ?: return null
         val level = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         return if (level in 0..100) level else null
+    }
+
+    // 电量 + 充电状态。取不到的字段返回 null（缺失），不编造 false：
+    // "不知道在不充电" 和 "确定没在充电" 对角色是两句不同的话。
+    // 一次性 sticky broadcast 读取，不常驻 receiver（30 分钟周期足够，省电）。
+    fun readBatteryStatus(context: Context): Map<String, Any?> {
+        val percent = readBatteryPercent(context)
+        var charging: Boolean? = null
+        var plugged: String? = null
+        val intent = try {
+            context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        } catch (e: Exception) {
+            null
+        }
+        if (intent != null) {
+            val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+            if (status != -1) {
+                charging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                    status == BatteryManager.BATTERY_STATUS_FULL
+            }
+            plugged = when (intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)) {
+                BatteryManager.BATTERY_PLUGGED_AC -> "ac"
+                BatteryManager.BATTERY_PLUGGED_USB -> "usb"
+                BatteryManager.BATTERY_PLUGGED_WIRELESS -> "wireless"
+                0 -> "none"
+                else -> null
+            }
+        }
+        if (charging == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+            if (bm != null) charging = bm.isCharging
+        }
+        return mapOf(
+            "percent" to percent,
+            "charging" to charging,
+            "plugged" to plugged,
+        )
     }
 
     // TYPE_STEP_COUNTER 是"自上次重启以来的累计步数"（push 型传感器，非同步读取），

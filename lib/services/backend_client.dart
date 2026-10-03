@@ -952,11 +952,16 @@ class BackendClient {
     }
   }
 
-  /// 传感器上报：步数/电量/亮屏次数，均可选，有什么传什么。
+  /// 传感器上报：步数/电量/充电状态/亮屏次数，均可选，有什么传什么。
+  ///
+  /// `charging` / `plugged` 读不到时整个 key 省略，而不是发 false —— 后端据此
+  /// 区分"没在充电"和"不知道"，层 3.7 只在确定充电时加后缀。
   Future<void> pushSensorData({
     required String token,
     int? steps,
     int? battery,
+    bool? charging,
+    String? plugged,
     int? screenSessions,
   }) async {
     await _request(
@@ -966,6 +971,8 @@ class BackendClient {
       body: {
         if (steps != null) 'steps': steps,
         if (battery != null) 'battery': battery,
+        if (charging != null) 'charging': charging,
+        if (plugged != null) 'plugged': plugged,
         if (screenSessions != null) 'screen_sessions': screenSessions,
       },
     );

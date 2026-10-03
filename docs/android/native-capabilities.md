@@ -87,7 +87,7 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 ## BackendSecurityPolicy.kt 与 SensorAccess.kt
 
 - `BackendSecurityPolicy` 负责 HTTPS/loopback/Tailscale/RFC1918 origin 与 relay URL 校验，拒绝公网明文和自动重定向绕过。
-- `SensorAccess` 负责电量、步数和录音能力的 Android 读取；Flutter `DeviceController` 仅在前台以 30 分钟周期上报电量/步数，后台不另开 Dart 替代任务，不把屏幕正文写入长期记忆。
+- `SensorAccess` 负责电量、充电状态、插入类型、步数和录音能力的 Android 读取；`readBatteryPercent` 保持旧 MethodChannel 语义，`readBatteryStatus` 返回可空的 `percent`、`charging`、`plugged`。Flutter `DeviceController` 仅在前台以 30 分钟周期上报电量/充电状态/步数，后台不另开 Dart 替代任务，不把屏幕正文写入长期记忆。
 
 ## MobileNotificationService.kt
 

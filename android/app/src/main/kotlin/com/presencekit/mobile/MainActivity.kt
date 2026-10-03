@@ -652,6 +652,9 @@ class MainActivity : FlutterActivity() {
                     "readBatteryPercent" -> {
                         result.success(SensorAccess.readBatteryPercent(this))
                     }
+                    "readBatteryStatus" -> {
+                        result.success(SensorAccess.readBatteryStatus(this))
+                    }
                     "hasActivityRecognitionPermission" -> {
                         val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) ==

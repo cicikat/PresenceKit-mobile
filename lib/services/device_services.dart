@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../models/background_status.dart';
+import '../models/battery_status.dart';
 import '../models/app_models.dart';
 import '../models/screen_context.dart';
 import 'app_settings_store.dart';
@@ -170,6 +171,7 @@ class ScreenSensorService {
       _store.captureScreenContext();
 
   Future<int?> readBatteryPercent() => _store.readBatteryPercent();
+  Future<BatteryStatus> readBatteryStatus() => _store.readBatteryStatus();
   Future<bool> hasActivityPermission() =>
       _store.hasActivityRecognitionPermission();
   Future<void> requestActivityPermission() =>

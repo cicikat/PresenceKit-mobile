@@ -129,16 +129,20 @@ class DeviceController extends ChangeNotifier {
     final generation = _generation;
     final backend = _backend();
     try {
-      final battery = await _screen.readBatteryPercent();
+      final battery = await _screen.readBatteryStatus();
       // Skip steps without permission; do not prompt from timers/start.
       final steps = await _screen.hasActivityPermission()
           ? await _screen.readTodaySteps()
           : null;
       if (!_live(generation, token, backend)) return;
-      if (battery == null && steps == null) return;
+      // Charging alone is worth sending: the character can react to the phone
+      // being plugged in even when the percentage could not be read.
+      if (battery.isEmpty && steps == null) return;
       await backend.pushSensorData(
         token: token,
-        battery: battery,
+        battery: battery.percent,
+        charging: battery.charging,
+        plugged: battery.plugged,
         steps: steps,
       );
     } catch (_) {}

@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 
 import '../models/app_models.dart';
 import '../models/background_status.dart';
+import '../models/battery_status.dart';
 import '../models/screen_context.dart';
 import 'platform_settings_channel.dart';
 
@@ -1231,6 +1232,21 @@ class AppSettingsStore {
       );
     } on PlatformException {
       return null;
+    }
+  }
+
+  /// 电量 + 充电状态。任一字段读不到就留 null，不代为填 false。
+  Future<BatteryStatus> readBatteryStatus() async {
+    if (!_channelAvailable) return const BatteryStatus();
+    try {
+      final reply = await PlatformSettingsChannel.channel
+          .invokeMapMethod<Object?, Object?>('readBatteryStatus');
+      if (reply == null) return const BatteryStatus();
+      return BatteryStatus.fromChannel(reply);
+    } on PlatformException {
+      return const BatteryStatus();
+    } on MissingPluginException {
+      return const BatteryStatus();
     }
   }
 

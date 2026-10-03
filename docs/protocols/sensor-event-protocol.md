@@ -21,7 +21,7 @@
 | 真实调用方 | mobile `lib/controllers/device_controller.dart::pushSensorData()` → `BackendClient.pushSensorData()`；启动时一次，之后每 30 分钟一次 |
 | 鉴权 | Bearer token，`sensor.write` |
 | 用途 | 低频聚合手机事实；后端更新最近快照，并按写入边界聚合到用户 profile |
-| payload | JSON object；`steps` 非负整数、`battery` 0–100 整数、`screen_sessions` 可选整数、`location` 可选字符串；字段可省略 |
+| payload | JSON object；`steps` 非负整数、`battery` 0–100 整数、`charging` 可选布尔值、`plugged` 可选 `ac`/`usb`/`wireless`/`none`、`screen_sessions` 可选整数、`location` 可选字符串；字段可省略 |
 | 响应/错误 | 成功返回接收消息和归一化 data；字段非法返回 422；客户端不依赖后端物理存储 |
 
 ### POST /sensor/realtime

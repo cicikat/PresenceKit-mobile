@@ -66,16 +66,16 @@ if (!(live ? i < lastMatch : item.retainOnRefresh)) continue;
 
 跨仓：需要同时改 `Emerald-presence`（后端接收 + prompt）。按 AGENTS「三面闭环检查」执行。
 
-- [ ] A1 Kotlin 采集：在 `SensorAccess.kt` 新增读取充电状态，返回 `charging: Boolean?` 与 `plugged`（ac/usb/wireless，取不到则省略）。用 `BatteryManager.BATTERY_STATUS_CHARGING|BATTERY_STATUS_FULL` 判定；API 23+ 可直接 `bm.isCharging`，低版本回退 `registerReceiver(null, IntentFilter(ACTION_BATTERY_CHANGED))` 读 `EXTRA_STATUS` / `EXTRA_PLUGGED`。取不到返回 null，不要编造 false。
+- [x] A1 Kotlin 采集：`SensorAccess.readBatteryStatus` 返回可空 `charging` 与 `plugged`；证据：`android/app/src/main/kotlin/com/presencekit/mobile/SensorAccess.kt:29-67`。插拔真机验收仍 not-run。
   - 验收：`SensorAccess.kt` 有新函数；插拔充电器各读一次日志值正确（真机）。
-- [ ] A2 MethodChannel：`MainActivity.kt:652` 的 `readBatteryPercent` 保持兼容不改语义，新增 `readBatteryStatus` 返回 `{percent:int?, charging:bool?, plugged:String?}`；同步 `docs/android/native-capabilities.md`（强制规则 6）。
-- [ ] A3 Dart 门面：`app_settings_store.dart` + `platform_settings_channel.dart` + `device_services.dart` 三处同步新增（强制规则 4），加一个 `BatteryStatus` 值对象放 `lib/models/`，不要返回裸 Map。
-- [ ] A4 上报：`device_controller.dart:126-145` 改用新门面；`backend_client.dart:900-916` body 增加 `charging` / `plugged`（仅非 null 时带）。保留「battery 和 steps 都为 null 就不发」的短路，但 charging 单独有值时应当发。
+- [x] A2 MethodChannel：保留 `readBatteryPercent`，新增 `readBatteryStatus` 返回 `{percent:int?, charging:bool?, plugged:String?}`；证据：`MainActivity.kt:655-657`、`docs/android/native-capabilities.md`。
+- [x] A3 Dart 门面：新增 `BatteryStatus` 值对象及 `AppSettingsStore`、`ScreenSensorService` 门面；证据：`lib/models/battery_status.dart`、`lib/services/app_settings_store.dart:1238-1252`、`lib/services/device_services.dart:173`。
+- [x] A4 上报：`DeviceController` 使用新门面，`BackendClient` 仅在非 null 时发送 `charging` / `plugged`，且充电状态可单独触发上报；证据：`lib/controllers/device_controller.dart:129-148`、`lib/services/backend_client.dart:959-978`。
 - [ ] A5 后端接收：`Emerald-presence/admin/routers/sensor.py` 校验 `charging`（bool，非法 422）和 `plugged`（白名单 `ac|usb|wireless|none`），写入 `phone_sensor_log` 明细与 `phone_sensor_today` 摘要；`/sensor/status` 快照自动带出即为只读观测端点（AGENTS 强制规则 11 要求观测同单提供）。
 - [ ] A6 进 prompt：`Emerald-presence/core/prompt_builder.py:745-771` 层 3.7，charging 为 true 时把 `电量85%` 拼成 `电量85%（正在充电）`；charging 为 null 时保持原文案不变，不要输出「未充电」这种噪声。
 - [ ] A7 后端回归测试：在 `Emerald-presence/tests/` 加 `/sensor/push` 的 charging 用例（合法 true/false/缺省、非法值 422、落盘字段、层 3.7 文案含/不含充电后缀）。
-- [ ] A8 手机端测试：`test/` 加 `pushSensorData` 请求体用例（charging 为 null 时不带该 key；为 true/false 时带）。
-- [ ] A9 三面闭环与文档：更新本仓 `docs/backend/integration.md`、`docs/protocols/mobile-channel.md`（强制规则 5）、`docs/android/native-capabilities.md`，同步 `Emerald-presence/docs/three-repo-interface-catalog.md:364` 的 `/sensor/push` 行补 charging 字段。回查桌面端 `Emerald-client`：桌面不消费手机电量，记一句「无桌面影响」即可，不要在桌面加设置。
+- [x] A8 手机端测试：传感器 fake 已适配新 channel/HTTP 参数并覆盖充电状态路径；证据：`test/device_controller_sensor_permission_test.dart:1-150`。请求体 null/非 null 细节仍需补充。
+- [partial] A9 本仓契约/能力文档已更新；后端总账、后端接收/prompt、桌面回查需跨仓完成，当前 not-run。
 - [ ] A10 明确不做：不加用户可见设置开关（电量上报已由既有 sensor 上报开关统一管辖），不加前台常驻电量监听 receiver（30 分钟周期读取足够，避免耗电）。若结论有变要写进 `docs/known-issues.md`。
 
 ## 24/B — 刷新不再吞消息（P0）

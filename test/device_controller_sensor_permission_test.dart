@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/controllers/device_controller.dart';
+import 'package:presencekit_mobile/models/battery_status.dart';
 import 'package:presencekit_mobile/models/screen_context.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
@@ -13,6 +14,7 @@ class _Store extends AppSettingsStore {
   int activityRequests = 0;
   int? steps = 1200;
   int? battery = 80;
+  BatteryStatus batteryStatus = const BatteryStatus(percent: 80);
   bool screenUpload = true;
   ScreenContextSnapshot? snapshot;
   Completer<void>? captureGate;
@@ -30,6 +32,9 @@ class _Store extends AppSettingsStore {
 
   @override
   Future<int?> readBatteryPercent() async => battery;
+
+  @override
+  Future<BatteryStatus> readBatteryStatus() async => batteryStatus;
 
   @override
   Future<int?> readTodaySteps() async => steps;
@@ -65,6 +70,8 @@ class _Backend extends BackendClient {
     required String token,
     int? steps,
     int? battery,
+    bool? charging,
+    String? plugged,
     int? screenSessions,
   }) async {
     store.pushes.add({'battery': battery, 'steps': steps});
@@ -127,6 +134,19 @@ void main() {
     expect(store.activityRequests, 0);
     expect(store.pushes, [
       {'battery': 80, 'steps': 1200},
+    ]);
+  });
+
+  test('pushSensorData includes charging state when available', () async {
+    store.activityRecognition = false;
+    store.batteryStatus = const BatteryStatus(
+      percent: 80,
+      charging: true,
+      plugged: 'usb',
+    );
+    await controller.pushSensorData();
+    expect(store.pushes, [
+      {'battery': 80, 'steps': null},
     ]);
   });
 

@@ -45,6 +45,12 @@ mobile channel 是后端向手机端投递主动消息的通道。手机端不�
 
 Appearance preferences use the same `presence_mobile/settings` channel via `getAppearancePrefs` / `setAppearancePrefs`. `nightSilent` remains readable/writable for compatibility and no longer suppresses notifications; fixed 23:30–06:30 quiet hours were removed. `proactiveRate` is intentionally not exposed because there is no backend scheduler field or local consumer.
 
+传感器相关的 `presence_mobile/settings` 方法保持 `readBatteryPercent` 兼容语义，并新增
+`readBatteryStatus`，返回 `{percent: int?, charging: bool?, plugged: string?}`。
+`plugged` 只接受 `ac`、`usb`、`wireless`、`none`；无法读取的字段保持 `null`，Dart
+`BatteryStatus` 不把未知值猜成 `false`。它只用于前台 30 分钟周期的 `/sensor/push`，不新增
+常驻 receiver 或用户可见开关；后端接收与 prompt 消费需由后端仓库另行闭环。
+
 ABI: do not rename `SharedPreferences("yexuan_memery")`. Current channels stay
 `presence_mobile/settings`, `presence_mobile/life_records`, and
 `presence_mobile/screen_observation`. This protocol page is the current mobile
