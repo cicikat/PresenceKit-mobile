@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models/app_models.dart';
+import '../models/chat_artifact.dart';
 import '../models/inline_display.dart';
 import '../models/screen_context.dart';
 import '../models/session_scope.dart';
@@ -197,6 +198,7 @@ class ChatController extends ChangeNotifier {
       }
       if (fresh.isNotEmpty) {
         sent.addAll(fresh.map((envelope) => envelope.toChatMessage()));
+        sent.addAll(fresh.map((e) => e.toArtifactMessage()).whereType<ChatMessage>());
         mobileReceivedCount += fresh.length;
         lastMobileContent = fresh.last.content;
         await _settings.saveSeenMobileMessageIds(
@@ -422,6 +424,25 @@ class ChatController extends ChangeNotifier {
     }
   }
 
+  Future<Uint8List> fetchArtifactBytes(
+    ChatArtifact artifact, {
+    void Function(int received, int? total)? onProgress,
+  }) async {
+    final token = _accessToken;
+    if (token == null) throw const BackendException('尚未连接后端');
+    final scope = _captureScope(_session.generation);
+    return _withLiveGrant(
+      scope: scope,
+      generation: scope.generation,
+      call: (grant) => _backend().downloadChatArtifact(
+        artifact.downloadPath,
+        token: token,
+        sessionId: grant.sessionId,
+        onProgress: onProgress,
+      ),
+    );
+  }
+
   void _bindUserTurn(int id, String? turnId) {
     final index = sent.indexWhere((m) => m.id == id);
     if (index >= 0) sent[index] = sent[index].copyWith(turnId: turnId);
@@ -533,6 +554,7 @@ class ChatController extends ChangeNotifier {
         turnId: response.turnId,
       );
     }
+      await _appendArtifacts(response.artifacts, turnId: response.turnId);
   }
 
   String _bindOutgoingRequestId(int userId, {String? requestId}) {
@@ -1226,6 +1248,19 @@ class ChatController extends ChangeNotifier {
     final outgoing =
         retryOf?.copyWith(failed: false, time: _nowLabel()) ??
         ChatMessage(
+        if (message.artifacts.isNotEmpty) {
+          immediate.add(
+            ChatMessage(
+              role: 'him',
+              text: '',
+              time: base.time,
+              dateKey: _dateKey(base.timestamp),
+              turnId: message.id.trim().isEmpty ? null : message.id.trim(),
+              artifacts: message.artifacts,
+              retainOnRefresh: true,
+            ),
+          );
+        }
           role: 'you',
           text: preview,
           time: '现在',
@@ -1256,6 +1291,15 @@ class ChatController extends ChangeNotifier {
         scope: _captureScope(generation),
         generation: generation,
         requestId: boundRequestId,
+      if (message.artifacts.isNotEmpty) {
+        unawaited(
+          _appendArtifacts(
+            message.artifacts,
+            time: base.time,
+            turnId: message.id.trim().isEmpty ? null : message.id.trim(),
+          ),
+        );
+      }
         call: (grant) => _backend().uploadFiles(
           files: files,
           token: token,
@@ -1407,6 +1451,24 @@ class ChatController extends ChangeNotifier {
     final value = text.trim();
     if (value.isEmpty) return const ['……'];
     final parts = value
+  Future<void> _appendArtifacts(
+    List<ChatArtifact> artifacts, {
+    String? time,
+    String? turnId,
+  }) {
+    if (artifacts.isEmpty) return Future<void>.value();
+    return _appendMessages([
+      ChatMessage(
+        role: 'him',
+        text: '',
+        time: time ?? _nowLabel(),
+        turnId: turnId,
+        artifacts: artifacts,
+        retainOnRefresh: true,
+      ),
+    ]);
+  }
+
         .split(RegExp(r'\r?\n+'))
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
@@ -1641,6 +1703,15 @@ class ChatController extends ChangeNotifier {
           scrollController.position.minScrollExtent,
           scrollController.position.maxScrollExtent,
         ),
+        if (entry.artifacts.isNotEmpty)
+          ChatMessage(
+            role: 'him',
+            text: '',
+            turnId: entry.turnId,
+            time: entry.time,
+            dateKey: day.date,
+            artifacts: entry.artifacts,
+          ),
       );
     });
     return true;

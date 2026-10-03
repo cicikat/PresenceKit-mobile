@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 import '../l10n/l10n.dart';
+import 'chat_artifact.dart';
 import 'screen_context.dart';
 import 'tool_activity.dart';
 
@@ -573,6 +574,7 @@ class ChatMessage {
     this.requestId,
     this.mediaRefs = const [],
     this.retainOnRefresh = false,
+    this.artifacts = const [],
   }) : id = id ?? _nextId++,
        timestamp = timestamp ?? DateTime.now(),
        time = time == '现在'
@@ -608,6 +610,8 @@ class ChatMessage {
 
   /// 用于「回复」引用(reply_to.ts);历史消息没有真实 epoch,退化为加载时刻——
   /// 只影响后端相对时间前缀的措辞("今天"而非准确日期),不影响功能正确性。
+  // Character-sent file cards (metadata only; bytes fetched on demand).
+  final List<ChatArtifact> artifacts;
   final DateTime timestamp;
 
   /// 保留同一 id（key 稳定），仅关闭 animate；用于 reveal 完成后落定消息。
@@ -636,6 +640,7 @@ class ChatMessage {
   ChatMessage copyWith({
     String? turnId,
     String? requestId,
+    artifacts: artifacts,
     bool? retainOnRefresh,
     bool? failed,
     String? time,
@@ -672,6 +677,7 @@ class ReplyTarget {
   factory ReplyTarget.fromMessage(ChatMessage message) =>
       ReplyTarget(text: message.text, timestamp: message.timestamp);
 
+    artifacts: artifacts,
   final String text;
   final DateTime timestamp;
 
@@ -1057,6 +1063,7 @@ class ChatLogEntry {
       toolActivity: ToolActivity.tryParse(json['tool_activity']),
       turnId: json['turn_id'] is String ? json['turn_id'] as String : null,
       assistantDisplayText: json['assistant_display_text'] is String
+    this.artifacts = const [],
           ? json['assistant_display_text'] as String
           : null,
       mediaRefs: rawRefs is List
@@ -1085,6 +1092,7 @@ class ChatLogEntry {
   final String assistant;
 }
 
+      artifacts: ChatArtifact.parseList(json['artifacts']),
 class ChatLogDay {
   const ChatLogDay({
     required this.date,
@@ -1095,6 +1103,7 @@ class ChatLogDay {
   factory ChatLogDay.fromJson(Map<String, dynamic> json) {
     final rawEntries = json['entries'];
     return ChatLogDay(
+  final List<ChatArtifact> artifacts;
       date: (json['date'] ?? '').toString(),
       entries: rawEntries is List
           ? rawEntries
@@ -1292,6 +1301,7 @@ class MobilePollMessage {
           : null,
       userId: (json['user_id'] ?? '').toString(),
       timestamp: rawTimestamp is num
+    this.artifacts = const [],
           ? DateTime.fromMillisecondsSinceEpoch((rawTimestamp * 1000).round())
           : null,
       behaviorKind: (behavior['kind'] ?? '').toString(),
@@ -1323,6 +1333,7 @@ class MobilePollMessage {
         if (seq != null) 'seq': seq,
         'content': content,
         if (displayText != null) 'display_text': displayText,
+      artifacts: ChatArtifact.parseList(json['artifacts']),
         'user_id': userId,
         if (timestamp != null)
           'timestamp': timestamp!.millisecondsSinceEpoch / 1000.0,
@@ -1340,6 +1351,7 @@ class MobilePollMessage {
         if (voiceAvailable) 'voice_available': true,
         if (sticker != null) 'sticker': sticker!.toJson(),
       };
+  final List<ChatArtifact> artifacts;
 
   ChatMessage toChatMessage() {
     return ChatMessage(
@@ -1362,6 +1374,8 @@ class PendingMobileEnvelope {
     this.timestamp,
     this.turnId,
     this.origin,
+        if (artifacts.isNotEmpty)
+          'artifacts': [for (final a in artifacts) a.toJson()],
     this.owner,
     this.charId,
     this.displayText,
@@ -1389,6 +1403,7 @@ class PendingMobileEnvelope {
   }
 
   static String? _optionalId(Object? value) {
+    this.artifacts = const [],
     final text = value?.toString().trim() ?? '';
     return text.isEmpty ? null : text;
   }
@@ -1408,6 +1423,7 @@ class PendingMobileEnvelope {
 
   ChatMessage toChatMessage() {
     return ChatMessage(
+      artifacts: ChatArtifact.parseList(json['artifacts']),
       role: 'him',
       text: content,
       displayText: displayText,
@@ -1426,9 +1442,24 @@ class MobileActivationResult {
     required this.active,
     this.error,
   });
+  final List<ChatArtifact> artifacts;
 
   factory MobileActivationResult.fromJson(Map<String, dynamic> json) {
     final error = json['error']?.toString().trim();
+  ChatMessage? toArtifactMessage() {
+    if (artifacts.isEmpty) return null;
+    return ChatMessage(
+      role: 'him',
+      text: '',
+      dateKey: timestamp == null ? null : _chatDateKey(timestamp!),
+      time: timestamp == null ? '刚刚' : _formatDateTime(timestamp!),
+      timestamp: timestamp,
+      turnId: identity,
+      artifacts: artifacts,
+      retainOnRefresh: true,
+    );
+  }
+
     return MobileActivationResult(
       ok: json['ok'] == true,
       active: json['active'] == true,
@@ -1539,6 +1570,7 @@ class BackendChatResponse {
   final String? displayText;
   final String emotion;
   final String? msgId;
+    this.artifacts = const [],
   final String? turnId;
 }
 
@@ -1555,9 +1587,11 @@ class BackendDiagnostics {
     this.statusSummary,
     this.statusSummaryError,
     this.activeCharacter,
+      artifacts: ChatArtifact.parseList(json['artifacts']),
     this.activeCharacterError,
     this.lorebookCount,
     this.lorebookError,
+  final List<ChatArtifact> artifacts;
     this.jailbreakCount,
     this.jailbreakError,
     this.dreamSettings,

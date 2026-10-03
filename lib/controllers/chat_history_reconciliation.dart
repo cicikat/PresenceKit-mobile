@@ -69,6 +69,9 @@ List<ChatMessage> reconcileChatHistory(
         mediaRefs: remote[found].mediaRefs.isNotEmpty
             ? remote[found].mediaRefs
             : item.mediaRefs,
+        artifacts: remote[found].artifacts.isNotEmpty
+            ? remote[found].artifacts
+            : item.artifacts,
         retainOnRefresh: keepRich || item.retainOnRefresh,
       );
       if (identical(source, local)) {
@@ -117,7 +120,7 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
     final turn = _turn(source, i);
     // A sticker carries no text the log could echo, so identity is the only
     // honest match; without one it falls through to the retain path.
-    if (item.sticker != null) {
+    if (item.sticker != null || item.artifacts.isNotEmpty) {
       if (turn == null) continue;
       for (var j = 0; j < remote.length; j++) {
         if (used.contains(j) || remote[j].role != item.role) continue;
@@ -125,6 +128,9 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
         matches[i] = j;
         used.add(j);
         cursor = j + 1;
+        if (remote[j].artifacts.isNotEmpty != item.artifacts.isNotEmpty) {
+          continue;
+        }
         break;
       }
       continue;

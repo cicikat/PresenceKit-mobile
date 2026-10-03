@@ -107,6 +107,62 @@ class BackendClient {
     return Uri.parse('$baseUrl$path');
   }
 
+  /// Fetch a character-sent artifact (download or read-only preview body).
+  /// Only the fixed `/chat/artifacts/{32-hex id}[/preview]` shapes are allowed.
+  Future<Uint8List> downloadChatArtifact(
+    String path, {
+    required String token,
+    String? sessionId,
+    void Function(int received, int? total)? onProgress,
+    Duration timeout = const Duration(seconds: 60),
+    int maxBytes = 2 * 1024 * 1024,
+  }) async {
+    if (!RegExp(r'^/chat/artifacts/[0-9a-fA-F]{32}(/preview)?$').hasMatch(path)) {
+      throw const BackendException('文件地址不合法');
+    }
+    final client = _httpClientFactory()
+      ..connectionTimeout = const Duration(seconds: 8);
+    try {
+      final endpoint = await _endpoint(path, token: token);
+      final request = await client.getUrl(endpoint);
+      request.followRedirects = false;
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      final scoped = sessionId?.trim();
+      if (scoped != null && scoped.isNotEmpty) {
+        request.headers.set(_presenceSessionHeader, scoped);
+      }
+      final response = await request.close().timeout(timeout);
+      final total = response.contentLength >= 0 ? response.contentLength : null;
+      final builder = BytesBuilder(copy: false);
+      var received = 0;
+      await for (final chunk in response.timeout(timeout)) {
+        received += chunk.length;
+        if (received > maxBytes) {
+          throw const BackendException('文件过大，无法在手机上处理');
+        }
+        builder.add(chunk);
+        onProgress?.call(received, total);
+      }
+      final bytes = builder.takeBytes();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final text = utf8.decode(bytes, allowMalformed: true);
+        throw BackendException(
+          response.statusCode == 404
+              ? '文件已不存在或已过期'
+              : _extractError(text, response.statusCode),
+          statusCode: response.statusCode,
+        );
+      }
+      return Uint8List.fromList(bytes);
+    } on TimeoutException {
+      throw const BackendException('后端响应超时');
+    } on SocketException {
+      throw const BackendException('连不上后端：请确认网络或后端已启动');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<Uint8List> downloadChatMedia(
     String sha256, {
     required String token,

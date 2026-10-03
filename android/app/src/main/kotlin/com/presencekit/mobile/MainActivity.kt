@@ -586,7 +586,7 @@ class MainActivity : FlutterActivity() {
                             try {
                                 startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                                     addCategory(Intent.CATEGORY_OPENABLE)
-                                    type = "application/json"
+                                    type = call.argument<String>("mime") ?: "application/json"
                                     putExtra(Intent.EXTRA_TITLE, call.argument<String>("name") ?: "theme.mobile-theme.json")
                                 }, exportThemeRequest)
                             } catch (_: Exception) {

@@ -14,6 +14,7 @@ import '../services/character_naming.dart';
 import '../widgets/common_widgets.dart';
 import 'edge_refresh.dart';
 import 'chat_image.dart';
+import 'chat_artifact_widgets.dart';
 import 'inline_display_text.dart';
 import '../models/screen_context.dart';
 
@@ -256,6 +257,18 @@ class ChatScene extends StatelessWidget {
                         initiallyExpanded: prefs.expandReasoning,
                         opacity: prefs.reasoningOpacity,
                         load: controller.loadReasoning,
+                      );
+                    }
+                    if (m.role == 'him' &&
+                        m.artifacts.isNotEmpty &&
+                        m.text.isEmpty &&
+                        m.sticker == null) {
+                      return ArtifactMessage(
+                        key: ValueKey('chat-${m.id}'),
+                        c: c,
+                        artifacts: m.artifacts,
+                        fetch: controller.fetchArtifactBytes,
+                        bubbleOpacity: prefs.chatBubbleOpacity,
                       );
                     }
                     return RepaintBoundary(
