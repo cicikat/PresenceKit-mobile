@@ -210,7 +210,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lifeQueueFull =>
-      'Local queue is full (200 operations or 100 MiB of images). Sync or delete pending records first.';
+      'Upload queue is full (max 200 pending operations or 100 MiB of pending images; synced images do not count). Open the queue page to sync, clear rejected items or delete pending records.';
 
   @override
   String get lifeImageTooLarge =>
@@ -549,6 +549,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatRetry => 'Retry';
+
+  @override
+  String get chatConfirming => 'Confirming...';
 
   @override
   String get chatSendFailed => 'Send failed';

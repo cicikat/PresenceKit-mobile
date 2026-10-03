@@ -191,7 +191,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get lifeConflict => '电脑记录已变更，需要处理版本冲突。';
 
   @override
-  String get lifeQueueFull => '本机队列已满（200 项或 100 MiB 图片），请先同步或删除待上传记录。';
+  String get lifeQueueFull =>
+      '本机待上传队列已满（待上传最多 200 项或 100 MiB 图片；已同步的图片不占用）。请在队列页同步、清除被拒绝项或删除待上传记录。';
 
   @override
   String get lifeImageTooLarge => '图片超过 10 MiB，请裁切或压缩后重试。';
@@ -515,6 +516,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatRetry => '重试';
+
+  @override
+  String get chatConfirming => '确认中';
 
   @override
   String get chatSendFailed => '发送失败';

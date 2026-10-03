@@ -9,7 +9,14 @@ import java.io.File
 import java.util.UUID
 
 /** Single executor (LifeRecordsBridge) owns all access, including background jobs. */
-class LifeRecordsStore(context: Context) : AutoCloseable {
+class LifeRecordsStore(context: Context, private val cacheLimitBytes: Long = DEFAULT_CACHE_LIMIT_BYTES) : AutoCloseable {
+    companion object {
+        const val MAX_PENDING_OPERATIONS = 200
+        const val MAX_PENDING_IMAGE_BYTES = 100L * 1024 * 1024
+        const val DEFAULT_CACHE_LIMIT_BYTES = 1024L * 1024 * 1024
+        private const val PENDING_STATES = "('queued','retry')"
+    }
+
     private val directory = File(context.noBackupFilesDir, "life_records").apply { mkdirs() }
     private val db = SQLiteDatabase.openOrCreateDatabase(File(directory, "queue.db"), null)
 
@@ -64,6 +71,7 @@ class LifeRecordsStore(context: Context) : AutoCloseable {
         db.rawQuery("SELECT state,COUNT(*) FROM operations WHERE realm=? GROUP BY state", arrayOf(realm)).use {
             while (it.moveToNext()) counts.put(it.getString(0), it.getInt(1))
         }
+        val usage = queueUsage()
         var imageCount = 0
         var imageBytes = 0L
         db.rawQuery("SELECT image FROM records WHERE realm=? AND image IS NOT NULL", arrayOf(realm)).use { rows ->
@@ -72,14 +80,46 @@ class LifeRecordsStore(context: Context) : AutoCloseable {
                 if (file.exists()) { imageCount++; imageBytes += file.length() }
             }
         }
-        return JSONObject().put("local_images", JSONObject().put("count", imageCount).put("bytes", imageBytes).put("limit_bytes", 100L * 1024 * 1024)).put("records", records).put("queue", counts).put("sync", metadata(realm))
+        return JSONObject().put("local_images", JSONObject().put("count", imageCount).put("bytes", imageBytes).put("limit_bytes", MAX_PENDING_IMAGE_BYTES).put("cache_limit_bytes", cacheLimitBytes).put("pending_bytes", usage.second)).put("pending_operations", usage.first).put("pending_limit", MAX_PENDING_OPERATIONS).put("records", records).put("queue", counts).put("sync", metadata(realm))
     }
 
     private fun record(realm: String, id: String): JSONObject? = db.rawQuery("SELECT body,revision,image FROM records WHERE realm=? AND id=?", arrayOf(realm, id)).use {
         if (!it.moveToFirst()) null else JSONObject(it.getString(0)).put("revision", it.getLong(1)).put("local_image", it.getString(2))
     }
 
-    fun image(realm: String, id: String): ByteArray? = record(realm, id)?.optString("local_image")?.takeIf { it.isNotEmpty() }?.let { File(directory, it).readBytes() }
+    fun image(realm: String, id: String): ByteArray? = record(realm, id)?.optString("local_image")?.takeIf { it.isNotEmpty() }
+        ?.let { File(directory, it) }?.takeIf { it.exists() }?.also { it.setLastModified(System.currentTimeMillis()) }?.readBytes()
+
+    /** Shared by save() and snapshot(): only operations still waiting for upload (queued/retry) and their images count. */
+    fun queueUsage(): Pair<Int, Long> {
+        val count = db.rawQuery("SELECT COUNT(*) FROM operations WHERE state IN $PENDING_STATES", null).use { it.moveToFirst(); it.getInt(0) }
+        var bytes = 0L
+        db.rawQuery("SELECT DISTINCT r.image FROM records r JOIN operations o ON o.realm=r.realm AND o.id=r.id WHERE o.state IN $PENDING_STATES AND r.image IS NOT NULL", null).use { rows ->
+            while (rows.moveToNext()) bytes += File(directory, rows.getString(0)).let { if (it.exists()) it.length() else 0L }
+        }
+        return count to bytes
+    }
+
+    /** Drop rejected operations (a definitive 4xx that never committed) so they stop cluttering the queue. */
+    fun clearRejected(realm: String): Int = db.delete("operations", "realm=? AND state='rejected'", arrayOf(realm))
+
+    /** LRU-evict local copies of fully synced images (no operation left, server revision > 0) until `needed` more bytes fit. */
+    private fun evictCache(needed: Long) {
+        val files = directory.listFiles()?.filter { it.extension == "image" } ?: return
+        var total = files.sumOf { it.length() } + needed
+        if (total <= cacheLimitBytes) return
+        val synced = mutableMapOf<String, Pair<String, String>>()
+        db.rawQuery("SELECT realm,id,image FROM records r WHERE image IS NOT NULL AND revision>0 AND deleted=0 AND NOT EXISTS (SELECT 1 FROM operations o WHERE o.realm=r.realm AND o.id=r.id)", null).use {
+            while (it.moveToNext()) synced[it.getString(2)] = it.getString(0) to it.getString(1)
+        }
+        for (file in files.filter { it.name in synced }.sortedBy { it.lastModified() }) {
+            if (total <= cacheLimitBytes) break
+            val (realm, id) = synced.getValue(file.name)
+            val size = file.length()
+            db.update("records", values("image" to null), "realm=? AND id=?", arrayOf(realm, id))
+            if (file.delete()) total -= size
+        }
+    }
 
     fun save(realm: String, body: JSONObject, image: ByteArray?): String {
         require(body.optString("category") in setOf("diet", "bill", "cart"))
@@ -92,12 +132,12 @@ class LifeRecordsStore(context: Context) : AutoCloseable {
         require(old == null || image == null) { "image_immutable" }
         if (old == null) require(image != null && image.isNotEmpty()) { "image_required" }
         if (image != null) require(image.size <= 10 * 1024 * 1024) { "image_too_large" }
-        val count = db.rawQuery("SELECT COUNT(*) FROM operations", null).use { it.moveToFirst(); it.getInt(0) }
-        require(count < 200) { "queue_full" }
+        val (count, pendingBytes) = queueUsage()
+        require(count < MAX_PENDING_OPERATIONS) { "queue_full" }
         val file = if (image != null) File(directory, "${UUID.randomUUID()}.image") else null
         if (file != null) {
-            val bytes = directory.listFiles()?.filter { it.extension == "image" }?.sumOf { it.length() } ?: 0L
-            require(bytes + image!!.size <= 100L * 1024 * 1024) { "queue_full" }
+            require(pendingBytes + image!!.size <= MAX_PENDING_IMAGE_BYTES) { "queue_full" }
+            evictCache(image.size.toLong())
         }
         try {
             if (file != null) file.outputStream().use { it.write(image!!); it.fd.sync() }

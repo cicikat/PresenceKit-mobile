@@ -36,6 +36,7 @@ object LifeRecordsBridge {
                                 schedule(app); id
                             }
                             "delete" -> { store.delete(realm, call.argument<String>("id")!!); schedule(app); null }
+                            "clearRejected" -> store.clearRejected(realm).toString()
                             "image" -> store.image(realm, call.argument<String>("id")!!)
                             "acceptServer" -> { store.acceptServer(realm, call.argument<String>("id")!!); schedule(app); null }
                             "sync" -> { val value = sync.run(origin, owner, call.argument<Boolean>("manual") == true); schedule(app); value.toString() }

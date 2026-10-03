@@ -23,7 +23,7 @@ Delivery：`stashPendingMobileEnvelopes` 在共享 origin+owner cursor 下暂存
 
 settings channel 的 get/saveChatAppearance 增加可选 nightBytes，bytes 继续表示日间背景。新版保存两个槽位，null 清除对应背景；旧调用不传 nightBytes 时不动夜间槽位。首次读取把旧背景复制到夜间一次，清除后不再次迁移。模糊与气泡透明度仍共用原设置，UI 分别展示两张背景预览。
 
-LifeRecordsStore 上传 ack 后保留现有本机图片，merge/接受服务器版本保留图片引用；删除记录时清理。沿用 realm 隔离、100 MiB 上限、operation_id/revision/ack 及前后台同步。snapshot 新增只读 local_images 数量/字节数/上限，显示于既有队列观测。聊天历史原图走 `GET /chat/media/{sha256}`，不经过生活记录 GC；未同步/冲突生活记录图不得按聊天缓存策略删除。旧版已删除图片及后端识别失败见 known-issues。
+LifeRecordsStore 上传 ack 后保留现有本机图片，merge/接受服务器版本保留图片引用；删除记录时清理。沿用 realm 隔离、待上传 100 MiB / 200 项上限（已同步图片与 rejected 不计入）、本地缓存 1 GiB LRU（只清已同步图）、operation_id/revision/ack 及前后台同步。snapshot 新增只读 local_images 数量/字节数/上限，显示于既有队列观测。聊天历史原图走 `GET /chat/media/{sha256}`，不经过生活记录 GC；未同步/冲突生活记录图不得按聊天缓存策略删除。旧版已删除图片及后端识别失败见 known-issues。
 
 侧栏用户头像改用已有 image_picker 相册来源，读取用户选定图片，不使用通用文件选择器、不请求额外广泛存储权限。
 

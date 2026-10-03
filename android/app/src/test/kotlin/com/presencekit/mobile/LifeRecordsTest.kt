@@ -327,4 +327,51 @@ class LifeRecordsTest {
             assertEquals("New", store.snapshot(realm).getJSONArray("records").getJSONObject(0).getString("title"))
         }
     }
+
+    private fun big(n: Int) = ByteArray(n) { 7 }
+
+    @Test fun `synced images do not count toward the upload queue quota`() {
+        LifeRecordsStore(context).use { store ->
+            repeat(12) {
+                store.save(realm, body("Photo $it"), big(9 * 1024 * 1024))
+                val op = store.next(realm)!!
+                store.wire(realm, "owner", op)
+                store.acknowledge(realm, op, ack(op, 1))
+            }
+            assertEquals(0, store.queueUsage().first)
+            assertEquals(0L, store.queueUsage().second)
+            store.save(realm, body("Next"), big(9 * 1024 * 1024))
+            assertEquals(1, store.queueUsage().first)
+        }
+    }
+
+    @Test fun `rejected operations do not count and can be cleared`() {
+        LifeRecordsStore(context).use { store ->
+            store.save(realm, body(), image)
+            store.fail(store.next(realm)!!, "rejected")
+            assertEquals(0, store.queueUsage().first)
+            assertEquals(0L, store.queueUsage().second)
+            assertEquals(1, store.clearRejected(realm))
+        }
+    }
+
+    @Test fun `pending uploads still hit the real limit`() {
+        LifeRecordsStore(context).use { store ->
+            repeat(11) { store.save(realm, body("P$it"), big(9 * 1024 * 1024)) }
+            try { store.save(realm, body("Over"), big(9 * 1024 * 1024)); fail() } catch (e: IllegalArgumentException) { assertEquals("queue_full", e.message) }
+        }
+    }
+
+    @Test fun `lru cache eviction never removes pending images`() {
+        LifeRecordsStore(context, cacheLimitBytes = 25L).use { store ->
+            val synced = store.save(realm, body("Old"), big(10))
+            val op = store.next(realm)!!
+            store.wire(realm, "owner", op)
+            store.acknowledge(realm, op, ack(op, 1))
+            val pending = store.save(realm, body("Pending"), big(10))
+            store.save(realm, body("Newest"), big(10))
+            assertNull(store.image(realm, synced))
+            assertNotNull(store.image(realm, pending))
+        }
+    }
 }

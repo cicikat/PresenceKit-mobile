@@ -66,7 +66,7 @@ Current: canonical turn reconciliation, clock normalization and one reasoning an
 - `open`：旧版 LifeRecordsStore 在成功 ack 后删除本机图片，merge/接受服务器版本还会覆盖 image 引用；本轮保留现有图片及引用，并在删除记录时清理。已被旧版删除的生活记录图无法由本次更新复原：生活记录仍无独立原图读取端点。聊天历史原图走工单 G 的 `GET /chat/media/{sha256}`，不恢复生活记录已删文件。新图与仍在本机的图片可继续展示，不把它写成旧图恢复完成。
 - `open`：只读查询现有后端生活记录 SQLite jobs，发现 2 个 ValidationError、1 个 JSONDecodeError（均 failed）；这是已上传后识别结果处理失败。未修改后端、未重试识别。管理面现有 /life-records/observability 可继续查看失败任务与回执。
 - `observe`：通知点击、下拉刷新、相册往返、日夜背景迁移及生活记录视觉验收仍需真实手机。本次 adb devices 无已连接设备。自动测试、离屏布局和 Dev APK 不等同真机验收。
-- 本机图片继续使用既有 100 MiB 上限，满额明确拒绝新图，不静默驱逐用户图片；队列观测显示 local_images 的数量、字节数和上限。未新增队列/数据库/trace；桌面和后端管理开关、effective state、识别原图保留策略不变。后端总账未修改，遵守此次仅改手机端的边界。
+- 工单 M1：`queue_full` 改为只统计待上传（queued/retry）操作与其图片（上限 200 项 / 100 MiB），已同步图片与 rejected 操作不再占配额，rejected 可经 `clearRejected` 清除；snapshot 的 local_images 增加 pending_bytes / pending_operations / cache_limit_bytes，与保存检查共用 `queueUsage()`。另设本地缓存总上限（构造参数，默认 1 GiB），超限时 LRU 仅清理已同步（无剩余操作、revision>0）的本地图片，待上传图片永不清理。`open`：生活记录仍无独立原图读取端点，被 LRU 清理的图片展示无法回退到服务端 URL；Dart 侧尚无「清除 rejected」按钮、缓存上限设置入口和队列页跳转。未新增队列/数据库/trace；桌面和后端管理开关、effective state、识别原图保留策略不变。后端总账未修改，遵守此次仅改手机端的边界。
 
 ## 本轮外观及思考验收边界（2026-09-11）
 
