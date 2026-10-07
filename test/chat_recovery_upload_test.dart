@@ -348,6 +348,7 @@ void main() {
     () async {
       final quote = ReplyTarget(
         text: 'quoted',
+        messageId: 'original:assistant',
         timestamp: DateTime(2026, 9, 13, 12),
       );
       controller.send('hello', replyToOverride: quote);

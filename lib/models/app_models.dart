@@ -691,13 +691,16 @@ class ChatMessage {
 
 /// 聊天气泡「回复」引用目标,对齐后端 Brief 98 §2 的 reply_to 契约。
 class ReplyTarget {
-  const ReplyTarget({required this.text, required this.timestamp});
+  const ReplyTarget({required this.text, required this.timestamp, this.messageId});
 
   factory ReplyTarget.fromMessage(ChatMessage message) =>
-      ReplyTarget(text: message.text, timestamp: message.timestamp);
+      ReplyTarget(text: message.text, timestamp: message.timestamp,
+        messageId: message.turnId != null && (message.role == 'you' || message.role == 'him')
+            ? '${message.turnId}:${message.role == 'you' ? 'user' : 'assistant'}' : null);
 
   final String text;
   final DateTime timestamp;
+  final String? messageId;
 
   static const _maxTextLength = 200;
 
@@ -706,6 +709,7 @@ class ReplyTarget {
         ? text.substring(0, _maxTextLength)
         : text,
     'ts': timestamp.millisecondsSinceEpoch / 1000,
+    if (messageId != null) 'message_id': messageId,
   };
 }
 
