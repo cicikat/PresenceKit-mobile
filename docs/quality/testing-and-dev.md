@@ -1,5 +1,9 @@
 # 测试与开发
 
+## 聊天恢复、分段对账与工具时序（2026-10-07）
+
+工单 26：静态分析零问题；Flutter 全量 321 项、Android delivery/store 15 项、后端定向 33 项通过。Dev debug APK 构建成功，产物 build/app/outputs/flutter-apk/app-dev-debug.apk，SHA-256 为 6200A617EDE5D9B52F3DC7E99033AEB41AE319DCCFF12691F5E27E45D8F6ACA9。没有连接设备，未安装、未发布；真实网络、模型、前后台切换仍 not-run。根因与三面闭环见 docs/mobile/chat-integrity-2026-10-07.md。
+
 ## 生活记录 authority（2026-09-17）
 
 工单 F：状态表写入 flutter-structure / native-capabilities；Dart 补冲突不自动覆盖、确认才 acceptServer、排队优先于识别 ready。Kotlin LifeRecordsTest 既有覆盖不重写 outbox。keep-local 合并与真机断网/Doze/重启仍 observe。

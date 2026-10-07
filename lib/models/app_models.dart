@@ -566,6 +566,7 @@ class ChatMessage {
     this.dateKey,
     this.quotedText,
     this.quotedLabel,
+    this.retryReplyTo,
     this.failed = false,
     this.uncertainSince,
     this.attachments = const [],
@@ -595,6 +596,9 @@ class ChatMessage {
   final String? dateKey;
   final String? quotedText;
   final String? quotedLabel;
+
+  /// Frozen wire payload, independent of the rendered quote.
+  final ReplyTarget? retryReplyTo;
   final bool failed;
 
   /// Set while a send outcome is unknown (timeout or network error).
@@ -632,6 +636,7 @@ class ChatMessage {
     dateKey: dateKey,
     quotedText: quotedText,
     quotedLabel: quotedLabel,
+    retryReplyTo: retryReplyTo,
     failed: failed,
     uncertainSince: uncertainSince,
     attachments: attachments,
@@ -645,6 +650,7 @@ class ChatMessage {
   );
 
   ChatMessage copyWith({
+    String? displayText,
     String? turnId,
     String? requestId,
     bool? retainOnRefresh,
@@ -658,7 +664,7 @@ class ChatMessage {
     id: id,
     role: role,
     text: text,
-    displayText: displayText,
+    displayText: displayText ?? this.displayText,
     time: time ?? this.time,
     sticker: sticker,
     animate: animate,
@@ -667,6 +673,7 @@ class ChatMessage {
     dateKey: dateKey,
     quotedText: quotedText ?? this.quotedText,
     quotedLabel: quotedLabel ?? this.quotedLabel,
+    retryReplyTo: retryReplyTo,
     failed: failed ?? this.failed,
     uncertainSince: clearUncertain
         ? null
@@ -1057,6 +1064,8 @@ class ChatMediaRef {
 
 class ChatLogEntry {
   const ChatLogEntry({
+    this.timestamp,
+    this.userTimestamp,
     this.entryKind = '',
     this.toolActivity,
     this.turnId,
@@ -1072,6 +1081,16 @@ class ChatLogEntry {
   factory ChatLogEntry.fromJson(Map<String, dynamic> json) {
     final rawRefs = json['media_refs'];
     return ChatLogEntry(
+      timestamp: json['ts'] is num
+          ? DateTime.fromMillisecondsSinceEpoch(
+              ((json['ts'] as num) * 1000).round(),
+            )
+          : null,
+      userTimestamp: json['user_ts'] is num
+          ? DateTime.fromMillisecondsSinceEpoch(
+              ((json['user_ts'] as num) * 1000).round(),
+            )
+          : null,
       entryKind: (json['entry_kind'] ?? '').toString(),
       toolActivity: ToolActivity.tryParse(json['tool_activity']),
       turnId: json['turn_id'] is String ? json['turn_id'] as String : null,
@@ -1089,7 +1108,8 @@ class ChatLogEntry {
                   (item) =>
                       ChatMediaRef.fromJson(Map<String, dynamic>.from(item)),
                 )
-                .where((item) => item.filename.isNotEmpty || item.sha256 != null)
+                .where((item) => item.filename.isNotEmpty || item.sha256 != null,
+                )
                 .toList(growable: false)
           : const [],
       artifacts: ChatArtifact.parseList(json['artifacts']),
@@ -1105,6 +1125,8 @@ class ChatLogEntry {
   final List<ChatMediaRef> mediaRefs;
   final List<ChatArtifact> artifacts;
   final String entryKind;
+  final DateTime? timestamp;
+  final DateTime? userTimestamp;
   final ToolActivity? toolActivity;
   final String time;
   final String user;
@@ -1398,6 +1420,7 @@ class PendingMobileEnvelope {
     this.seq,
     this.timestamp,
     this.turnId,
+    this.requestId,
     this.origin,
     this.owner,
     this.charId,
@@ -1416,6 +1439,7 @@ class PendingMobileEnvelope {
           ? DateTime.fromMillisecondsSinceEpoch((rawTimestamp * 1000).round())
           : null,
       turnId: _optionalId(json['turn_id']) ?? _optionalId(json['id']),
+      requestId: _optionalId(json['request_id']),
       origin: _optionalId(json['origin']),
       owner: _optionalId(json['owner']),
       charId: _optionalId(json['char_id']),
@@ -1437,6 +1461,7 @@ class PendingMobileEnvelope {
   final int? seq;
   final DateTime? timestamp;
   final String? turnId;
+  final String? requestId;
   final String? origin;
   final String? owner;
   final String? charId;

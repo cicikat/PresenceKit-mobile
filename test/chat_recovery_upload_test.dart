@@ -11,11 +11,14 @@ import 'package:presencekit_mobile/services/device_services.dart';
 
 class _Settings extends AppSettingsStore {
   List<PendingMobileEnvelope> pending = const [];
+  List<String> seen = const [];
   Object? pendingError;
   int consumeCalls = 0;
 
   @override
   Future<bool> isBackgroundNotificationServiceRunning() async => false;
+  @override
+  Future<List<String>> loadSeenMobileMessageIds() async => seen;
 
   @override
   Future<List<PendingMobileEnvelope>> consumePendingMobileEnvelopes({
@@ -44,6 +47,9 @@ class _Backend extends BackendClient {
   List<PickedUploadFile>? uploaded;
   Completer<void>? gate;
   Completer<void>? sendGate;
+  Completer<void>? pollGate;
+  bool pollFailure = false;
+  String? replyDisplayText;
   int sessionMisses = 0;
   bool dropCompletedResponse = false;
   int chatExecutions = 0;
@@ -57,6 +63,7 @@ class _Backend extends BackendClient {
   int historySessionMisses = 0;
   final sentSessionIds = <String?>[];
   final sentRequestIds = <String?>[];
+  final sentReplyTargets = <ReplyTarget?>[];
   final historySessionIds = <String?>[];
   Uint8List? mediaBytes;
   int mediaDownloads = 0;
@@ -107,6 +114,9 @@ class _Backend extends BackendClient {
     int waitSeconds = 0,
   }) async {
     wait = waitSeconds;
+    final fail = pollFailure;
+    await pollGate?.future;
+    if (fail) throw const BackendException('old poll failure');
     return MobilePollResult(ok: true, active: true, messages: pollMessages);
   }
 
@@ -119,6 +129,7 @@ class _Backend extends BackendClient {
     String? requestId,
   }) async {
     chats++;
+    sentReplyTargets.add(replyTo);
     sentSessionIds.add(sessionId);
     sentRequestIds.add(requestId);
     await sendGate?.future;
@@ -136,6 +147,7 @@ class _Backend extends BackendClient {
     final response = BackendChatResponse(
       reply: 'echo:$message',
       emotion: 'neutral',
+      displayText: replyDisplayText,
       msgId: 'msg-$chatExecutions',
       turnId: omitTurnId ? null : 'turn-$chatExecutions',
     );
@@ -222,6 +234,172 @@ void main() {
     );
   });
   tearDown(() => controller.dispose());
+
+  test('old epoch poll failure cannot clear a new successful poll state', () async {
+    backend.pollGate = Completer<void>();
+    final oldGate = backend.pollGate!;
+    backend.pollFailure = true;
+    final oldPoll = controller.pollMobile();
+    await Future<void>.delayed(Duration.zero);
+    await controller.resetForConnectionChange(restart: false);
+    backend.pollGate = null;
+    backend.pollFailure = false;
+    await controller.pollMobile();
+    expect(controller.mobileActive, isTrue);
+    oldGate.complete();
+    await oldPoll;
+    expect(controller.mobileActive, isTrue);
+    expect(controller.mobileError, isNull);
+  });
+
+  testWidgets('unknown outcome expires to retry without any successful poll', (tester) async {
+    backend.networkDown = true;
+    controller.uncertainWindow = const Duration(seconds: 1);
+    var now = DateTime(2026, 10, 7);
+    controller.clock = () => now;
+    controller.send('offline');
+    await tester.pump();
+    expect(controller.sent.singleWhere((m) => m.role == 'you').uncertain, isTrue);
+    now = now.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    expect(controller.sent.singleWhere((m) => m.role == 'you').failed, isTrue);
+  });
+  Future<void> settle() async {
+    for (var i = 0; i < 20 && controller.sending; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+
+  test(
+    'native seen notification still replays its pending paragraphs exactly once',
+    () async {
+      backend.offline = false;
+      settings.seen = ['background'];
+      await controller.pollMobile();
+      settings.pending = [
+        const PendingMobileEnvelope(
+          content: 'first\nsecond',
+          displayText: '<hl>first</hl>\n<big>second</big>',
+          id: 'background',
+          turnId: 'background',
+          replayable: true,
+          origin: 'http://127.0.0.1:8080',
+          owner: 'owner',
+          charId: 'char-a',
+        ),
+      ];
+      await controller.catchUpFromNotification();
+      await controller.catchUpFromNotification();
+      final rows = [
+        ...controller.history,
+        ...controller.sent,
+      ].where((m) => m.role == 'him').toList();
+      expect(rows.map((m) => m.text), ['first', 'second']);
+      expect(rows.map((m) => m.displayText), [
+        '<hl>first</hl>',
+        '<big>second</big>',
+      ]);
+    },
+  );
+
+  test(
+    'server epochs place user then tool then assistant within one minute',
+    () async {
+      backend.offline = false;
+      final epoch = DateTime(2026, 9, 13, 12).millisecondsSinceEpoch / 1000;
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-09-13',
+        'entries': [
+          {
+            'time': '12:00',
+            'ts': epoch + 10,
+            'tool_activity': {
+              'source': 'reality',
+              'event_id': 'e1',
+              'chain_id': 'c1',
+              'char_id': 'char-a',
+              'tool_name': 'get_time',
+              'status': 'success',
+            },
+          },
+          {
+            'time': '12:00',
+            'ts': epoch + 40,
+            'user_ts': epoch + 1,
+            'user': 'question',
+            'assistant': 'answer',
+            'turn_id': 't1',
+          },
+        ],
+      });
+      await controller.loadHistory();
+      expect(controller.history.map((m) => m.role), [
+        'you',
+        'tool',
+        'reasoning',
+        'him',
+      ]);
+      expect(controller.history.last.text, 'answer');
+    },
+  );
+
+  test(
+    'retry preserves the exact quoted wire payload and request identity',
+    () async {
+      final quote = ReplyTarget(
+        text: 'quoted',
+        timestamp: DateTime(2026, 9, 13, 12),
+      );
+      controller.send('hello', replyToOverride: quote);
+      await settle();
+      controller.uncertainWindow = Duration.zero;
+      controller.expireUncertain();
+      final failed = controller.sent.singleWhere((m) => m.role == 'you');
+      backend.offline = false;
+      controller.retryMessage(failed);
+      await settle();
+      expect(backend.sentReplyTargets.map((r) => r?.toJson()), [
+        quote.toJson(),
+        quote.toJson(),
+      ]);
+      expect(backend.sentRequestIds, [failed.requestId, failed.requestId]);
+    },
+  );
+
+  test(
+    'HTTP replay cannot append a turn already restored from history',
+    () async {
+      backend.offline = false;
+      backend.replyDisplayText = '<hl>echo:hello</hl>';
+      backend.sendGate = Completer<void>();
+      controller.send('hello');
+      await Future<void>.delayed(Duration.zero);
+      final user = controller.sent.singleWhere((m) => m.role == 'you');
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-09-13',
+        'entries': [
+          {
+            'time': '12:00',
+            'user': 'hello',
+            'assistant': 'echo:hello',
+            'turn_id': 'turn-1',
+            'request_id': user.requestId,
+          },
+        ],
+      });
+      await controller.loadHistory(reconcileLocal: true);
+      backend.sendGate!.complete();
+      await settle();
+      final all = [...controller.history, ...controller.sent];
+      expect(
+        all.where((m) => m.role == 'him' && m.text == 'echo:hello'),
+        hasLength(1),
+      );
+      expect(all.singleWhere((m) => m.role == 'him').displayText, '<hl>echo:hello</hl>');
+      expect(all.singleWhere((m) => m.role == 'you').turnId, 'turn-1');
+      expect(all.singleWhere((m) => m.role == 'you').requestId, user.requestId);
+    },
+  );
 
   test(
     'canonical media caches bytes and coalesces inflight downloads',
@@ -457,7 +635,8 @@ void main() {
     expect(controller.historyError, isNull);
     expect(controller.history.last.text, 'recovered');
     expect(controller.mobileActive, isTrue);
-  });
+  },
+  );
 
   test('missing session character is unavailable, not unsupported', () async {
     final unbound = ChatController(
@@ -652,8 +831,7 @@ void main() {
       expect(backend.historySessionIds, ['sess-char-a', 'sess-rebound']);
       expect(binds, greaterThanOrEqualTo(2));
       expect(invalidated, 1);
-    },
-  );
+    });
 
   test(
     'session_not_found rebinds and retries the same request_id',
@@ -695,8 +873,7 @@ void main() {
       expect(invalidated, 1);
       expect(scoped.backendError, isNull);
       expect(scoped.sent.where((m) => m.role == 'him').single.text, 'echo:ping');
-    },
-  );
+    });
 
   test('manual retry reuses the failed bubble request_id', () async {
     controller.send('hello');
@@ -733,8 +910,10 @@ void main() {
       expect(backend.chatExecutions, 1);
       controller.clock = () => DateTime.now().add(const Duration(minutes: 6));
       controller.expireUncertain();
-      expect(controller.sent.singleWhere((m) => m.role == 'you').failed, isTrue);
-      controller.retryMessage(controller.sent.singleWhere((m) => m.role == 'you'));
+      expect(controller.sent.singleWhere((m) => m.role == 'you').failed, isTrue,
+      );
+      controller.retryMessage(controller.sent.singleWhere((m) => m.role == 'you'),
+      );
       for (var i = 0; i < 20 && controller.sending; i++) {
         await Future<void>.delayed(Duration.zero);
       }
@@ -780,12 +959,6 @@ void main() {
       failed.id,
     );
   });
-  Future<void> settle() async {
-    for (var i = 0; i < 20 && controller.sending; i++) {
-      await Future<void>.delayed(Duration.zero);
-    }
-  }
-
   MobilePollMessage pollReply(String requestId) => MobilePollMessage.fromJson({
     'id': 'poll-1',
     'seq': 1,
@@ -805,13 +978,15 @@ void main() {
     expect(controller.backendError, isNull);
     backend.pollMessages = [pollReply('req_other')];
     await controller.pollMobile();
-    expect(controller.sent.singleWhere((m) => m.role == 'you').uncertain, isTrue);
+    expect(controller.sent.singleWhere((m) => m.role == 'you').uncertain, isTrue,
+      );
     backend.pollMessages = [pollReply(unsure.requestId!)];
     await controller.pollMobile();
     final cleared = controller.sent.singleWhere((m) => m.role == 'you');
     expect(cleared.uncertain, isFalse);
     expect(cleared.failed, isFalse);
-  });
+  },
+  );
 
   test('history refresh carrying the request_id clears an uncertain send', () async {
     backend.networkDown = true;
@@ -835,9 +1010,12 @@ void main() {
     });
     await controller.loadHistory(reconcileLocal: true);
     final all = [...controller.history, ...controller.sent];
-    expect(all.where((m) => m.role == 'you' && (m.uncertain || m.failed)), isEmpty);
-    expect(all.where((m) => m.role == 'you' && m.text == 'hello'), hasLength(1));
-  });
+    expect(all.where((m) => m.role == 'you' && (m.uncertain || m.failed)), isEmpty,
+      );
+    expect(all.where((m) => m.role == 'you' && m.text == 'hello'), hasLength(1),
+      );
+  },
+  );
 
   test('uncertain turns failed only after the window and then offers retry', () async {
     backend.networkDown = true;
@@ -849,7 +1027,8 @@ void main() {
     final failed = controller.sent.singleWhere((m) => m.role == 'you');
     expect(failed.failed, isTrue);
     expect(failed.uncertain, isFalse);
-  });
+  },
+  );
 
   test('a failure never falls back to marking the latest other message', () async {
     backend.offline = false;
@@ -862,7 +1041,8 @@ void main() {
     expect(users.firstWhere((m) => m.text == 'first').uncertain, isFalse);
     expect(users.firstWhere((m) => m.text == 'first').failed, isFalse);
     expect(users.firstWhere((m) => m.text == 'second').uncertain, isTrue);
-  });
+  },
+  );
 
   test('an HTTP error status is a definite failure with retry', () async {
     backend.offline = true; // harness answers HTTP 500
@@ -882,6 +1062,7 @@ void main() {
     final me = controller.sent.singleWhere((m) => m.role == 'you');
     expect(me.failed, isFalse);
     expect(me.uncertain, isFalse);
-    expect(controller.sent.where((m) => m.role == 'reasoning' && m.failed), isEmpty);
+    expect(controller.sent.where((m) => m.role == 'reasoning' && m.failed), isEmpty,
+    );
   });
 }

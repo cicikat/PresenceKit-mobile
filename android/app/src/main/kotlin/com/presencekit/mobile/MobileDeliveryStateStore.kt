@@ -20,6 +20,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
         val seq: Long? = null,
         val timestamp: Double? = null,
         val turnId: String? = null,
+        val requestId: String? = null,
         val origin: String? = null,
         val owner: String? = null,
         val charId: String? = null,
@@ -32,6 +33,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
             "seq" to seq,
             "timestamp" to timestamp,
             "turn_id" to turnId,
+            "request_id" to requestId,
             "origin" to origin,
             "owner" to owner,
             "char_id" to charId,
@@ -47,6 +49,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
             seq?.let { put("seq", it) }
             timestamp?.let { put("timestamp", it) }
             turnId?.let { put("turn_id", it) }
+            requestId?.let { put("request_id", it) }
             origin?.let { put("origin", it) }
             owner?.let { put("owner", it) }
             charId?.let { put("char_id", it) }
@@ -282,6 +285,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
                 seq = seq,
                 timestamp = timestamp,
                 turnId = turnId,
+                requestId = item.optString("request_id").trim().ifEmpty { null },
                 origin = scopedOrigin,
                 owner = scopedOwner,
                 charId = charId,
@@ -309,6 +313,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
                 seq = seq,
                 timestamp = timestamp,
                 turnId = turnId,
+                requestId = raw.optString("request_id").trim().ifEmpty { null },
                 origin = raw.optString("origin").trim().ifEmpty { null },
                 owner = raw.optString("owner").trim().ifEmpty { null },
                 charId = raw.optString("char_id").trim().ifEmpty { null },

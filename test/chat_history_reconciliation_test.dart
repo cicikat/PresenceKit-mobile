@@ -19,6 +19,50 @@ ChatMessage message(
 );
 
 void main() {
+  test('a partial log cannot swallow the second identical paragraph of a turn', () {
+    final prior = [
+      for (var i = 0; i < 2; i++) ChatMessage(
+        role: 'him', text: 'again', time: '12:00', turnId: 't', retainOnRefresh: true,
+      ),
+    ];
+    final remote = [ChatMessage(role: 'him', text: 'again', time: '12:00', turnId: 't')];
+    final result = reconcileChatHistory(remote, prior, [], []);
+    expect(result.map((m) => m.text), ['again', 'again']);
+    final refreshed = reconcileChatHistory(remote, result, [], []);
+    expect(refreshed.map((m) => m.id), result.map((m) => m.id));
+  });
+  test(
+    'partial same-turn history cannot duplicate or overwrite styled paragraphs',
+    () {
+      final first = ChatMessage(
+        role: 'him',
+        text: 'first',
+        displayText: '<hl>first</hl>',
+        time: '12:00',
+        turnId: 't',
+      );
+      final second = ChatMessage(
+        role: 'him',
+        text: 'second',
+        displayText: '<big>second</big>',
+        time: '12:00',
+        turnId: 't',
+      );
+      final remote = [
+        ChatMessage(role: 'him', text: 'second', time: '12:00', turnId: 't'),
+      ];
+      final sent = [first, second];
+      final merged = reconcileChatHistory(remote, [], List.of(sent), sent);
+      expect(merged.map((m) => m.text), ['first', 'second']);
+      expect(merged.map((m) => m.displayText), [
+        '<hl>first</hl>',
+        '<big>second</big>',
+      ]);
+      expect(sent, isEmpty);
+      final refreshed = reconcileChatHistory(remote, merged, [], sent);
+      expect(refreshed.map((m) => m.text), ['first', 'second']);
+    },
+  );
   test(
     'canonical turns reconcile clock drift and anchors without reordering repeated text',
     () {
@@ -109,7 +153,8 @@ void main() {
       dateKey: '2026-09-13',
       turnId: 'turn-img',
       attachments: [
-        PickedUploadFile(name: 'photo.jpg', bytes: Uint8List.fromList([1, 2, 3])),
+        PickedUploadFile(name: 'photo.jpg', bytes: Uint8List.fromList([1, 2, 3]),
+        ),
       ],
     );
     final sent = [localImage];
@@ -144,7 +189,8 @@ void main() {
       dateKey: '2026-09-13',
       turnId: 'turn-img',
       attachments: [
-        PickedUploadFile(name: 'photo.jpg', bytes: Uint8List.fromList([1, 2, 3])),
+        PickedUploadFile(name: 'photo.jpg', bytes: Uint8List.fromList([1, 2, 3]),
+        ),
       ],
     );
     final sent = [localImage];
@@ -452,7 +498,8 @@ void main() {
       history = refresh(remote, history);
       expect(history, hasLength(1));
       expect(history.single.sticker, payload);
-      expect(history.single.text, '', reason: 'local payload wins over log text');
+      expect(history.single.text, '', reason: 'local payload wins over log text',
+      );
     });
 
     test('reply quote and inline display survive a matched refresh', () {
@@ -526,10 +573,12 @@ void main() {
           dateKey: '2026-09-13',
           turnId: 'turn-proj',
         ),
-      ], [inline]);
+      ], [inline],
+        );
       expect(result.single.displayText, 'sure');
       expect(result.single.text, '(smiles) sure');
-    });
+    },
+    );
 
     test('an ambiguous file bubble is kept instead of collapsed to a log row', () {
       final upload = ChatMessage(
@@ -556,7 +605,8 @@ void main() {
         hasLength(1),
         reason: 'the local bubble keeps its attachment rather than vanishing',
       );
-    });
+    },
+    );
   });
 
   test('legacy unmatched text still uses clock fallback without inventing ids', () {
@@ -571,5 +621,6 @@ void main() {
     expect(sent, isEmpty);
     expect(result.single.id, local.id);
     expect(result.single.turnId, isNull);
-  });
+  },
+  );
 }

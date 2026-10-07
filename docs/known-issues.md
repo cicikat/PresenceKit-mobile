@@ -1,3 +1,7 @@
+## 聊天完整性修复与剩余边界（2026-10-07，observe/open）
+
+工单 26 / 后端 267 修复引用重试、并发会话重绑、分段/富文本错配、native seen 误丢 pending 与工具分钟级排序；证据见 [完整性审计](mobile/chat-integrity-2026-10-07.md)。observe：真实手机弱网、长工具回复、前后台/Doze/杀进程；open：legacy 工具缺关联无法追溯，native consume 后呈现前崩溃无事务确认，后台 artifacts/sticker 字段仍不完整。后端进程内 request receipt 到期/重启不承诺 exactly-once；建议另做持久 receipt + claim/ack handoff 工单，不自动重新执行未知工具结果。
+
 # 已知问题与技术债
 
 ## 9.18 补扫复核（2026-09-17，open/observe）

@@ -1,3 +1,7 @@
+## 聊天恢复补全（2026-10-07）
+
+既有 native pending envelope 增加可选 request_id，Android toJson/toMap 与 Dart 解析同步；它只用来确认原逻辑发送，不作为 msg_id/turn_id。seen 表示通知投递，不证明页面已显示；启动、恢复、通知点击按页面身份回放 pending。chat-log entries 的可选 ts/user_ts 提供精确排序；tool_activity 可带 turn_id/request_id。POST/mobile/chat、poll/ack/TTL、SharedPreferences 与 MethodChannel ABI 不变。请求 ID 改为 req_ 加 32 位随机 hex，仍符合原 opaque 字符串校验。同作用域 grant 重绑不重开 receipt 执行空间。
+
 # Mobile Channel 协议现状
 
 ## Brief 253.6：转写语调关联

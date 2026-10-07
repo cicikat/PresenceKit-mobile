@@ -152,6 +152,17 @@ class _DisallowedSettingsStore extends AppSettingsStore {
 }
 
 void main() {
+  test(
+    'rapid request identities do not depend on platform clock resolution',
+    () {
+      final ids = List.generate(10000, (_) => mintRequestId());
+      expect(ids.toSet(), hasLength(ids.length));
+      expect(
+        ids.every((id) => RegExp(r'^req_[0-9a-f]{32}$').hasMatch(id)),
+        isTrue,
+      );
+    },
+  );
   const baseUrl = 'http://127.0.0.1:8080';
   late _FakeHttpClient fakeClient;
   late BackendClient backend;
@@ -505,8 +516,10 @@ void main() {
             fakeClient.lastRequestHeaders['X-Presence-Session'],
         'pss_fixture',
       );
-      expect(jsonDecode(fakeClient.lastRequestBody)['request_id'], 'req_fixture');
-      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('char_id'), isFalse);
+      expect(jsonDecode(fakeClient.lastRequestBody)['request_id'], 'req_fixture',
+      );
+      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('char_id'), isFalse,
+      );
     });
 
     test('chat without a session does not mint request_id', () async {
@@ -521,7 +534,8 @@ void main() {
             .contains('x-presence-session'),
         isFalse,
       );
-      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('request_id'), isFalse);
+      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('request_id'), isFalse,
+      );
     });
 
     test('in-flight chat is an error, not a success reply', () async {
@@ -557,7 +571,8 @@ void main() {
             fakeClient.lastRequestHeaders['X-Presence-Session'],
         'pss_fixture',
       );
-    });
+    },
+    );
   });
 
   group('正常 JSON 解析', () {

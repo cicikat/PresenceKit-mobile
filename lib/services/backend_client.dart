@@ -2,6 +2,7 @@ import '../models/conversation_calendar.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
@@ -50,8 +51,8 @@ import 'app_settings_store.dart';
 const _presenceSessionHeader = 'X-Presence-Session';
 
 String mintRequestId() {
-  final stamp = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
-  return 'req_$stamp';
+  final random = Random.secure();
+  return 'req_${List.generate(16, (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0')).join()}';
 }
 
 class BackendClient {
@@ -117,7 +118,8 @@ class BackendClient {
     Duration timeout = const Duration(seconds: 60),
     int maxBytes = 2 * 1024 * 1024,
   }) async {
-    if (!RegExp(r'^/chat/artifacts/[0-9a-fA-F]{32}(/preview)?$').hasMatch(path)) {
+    if (!RegExp(r'^/chat/artifacts/[0-9a-fA-F]{32}(/preview)?$',
+    ).hasMatch(path)) {
       throw const BackendException('文件地址不合法');
     }
     final client = _httpClientFactory()
@@ -838,7 +840,8 @@ class BackendClient {
       final response = await request.close().timeout(
         const Duration(seconds: 180),
       );
-      final body = await response.transform(utf8.decoder).join();
+      final body = await response.transform(utf8.decoder).join()
+          .timeout(const Duration(seconds: 180));
       if (response.statusCode == 202 ||
           response.statusCode < 200 ||
           response.statusCode >= 300) {

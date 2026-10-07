@@ -1,3 +1,7 @@
+## Pending 回放关联（2026-10-07）
+
+MobileDeliveryStateStore.PendingEnvelope 保留可选 request_id 到本机 JSON 和 MethodChannel map；Flutter 据此确认原发送。native seen 仍用于通知防重，页面回放按展示身份独立对账。无新增权限、服务或设置，legacy 无字段兼容。消费后杀进程的原子交接、产物与表情完整恢复仍 open，见 [完整性修复](../mobile/chat-integrity-2026-10-07.md)。
+
 # Android 原生能力
 
 梦境描写底色（2026-09-13）：getAppearancePrefs/setAppearancePrefs 新增本机 `dreamDescriptionOpacity`，Float，0–1，默认 0.65。YxPrefs、AppSettingsStore、PlatformSettingsChannel 与 MainActivity 同步；无权限、服务或通知变更。

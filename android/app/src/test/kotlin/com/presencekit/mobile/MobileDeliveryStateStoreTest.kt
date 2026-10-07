@@ -45,6 +45,17 @@ class MobileDeliveryStateStoreTest {
         .apply { if (turnId != null) put("turn_id", turnId) }
 
     @Test
+    fun `pending preserves request correlator through storage and channel projection`() {
+        val envelope = MobileDeliveryStateStore.envelopeFromQueueItem(
+            item("message", "reply").put("request_id", "req_fixture"),
+            "http://backend", "owner",
+        )
+        val restored = MobileDeliveryStateStore.envelopeFromStored(envelope.toJson())
+        assertEquals("req_fixture", restored.requestId)
+        assertEquals("req_fixture", restored.toMap()["request_id"])
+    }
+
+    @Test
     fun `mergeSeen unions and keeps insertion order with cap`() {
         store.mergeSeen(listOf("a", "b", "a", "c"))
         assertEquals(listOf("a", "b", "c"), store.loadSeen())

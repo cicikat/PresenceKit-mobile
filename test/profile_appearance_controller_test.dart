@@ -203,6 +203,23 @@ void main() {
   tearDown(() => controller.dispose());
 
   test(
+    'concurrent history and send binding share one grant even on forced refresh',
+    () async {
+      final results = await Future.wait([
+        controller.ensurePresenceSession(charId: 'char-a'),
+        controller.ensurePresenceSession(charId: 'char-a', force: true),
+        controller.ensurePresenceSession(charId: 'char-a'),
+      ]);
+      expect(backend.sessionBinds, 1);
+      expect(
+        results.every((grant) => grant?.sessionId == 'sess-char-a'),
+        isTrue,
+      );
+      expect(controller.bindingPresenceSession, isFalse);
+    },
+  );
+
+  test(
     'session character restore waits until origin and owner are known',
     () async {
       store.sessionCharacters['http://node-a|owner-a'] = 'char-b';
@@ -409,7 +426,8 @@ void main() {
     expect(controller.presenceGrant?.charId, 'char-a');
     expect(controller.sessionBindError, isNull);
     expect(backend.sessionBinds, 1);
-  });
+  },
+  );
 
   test('missing session_scope capability is fail-loud and does not bind', () async {
     backend.sessionScopeSupported = false;
@@ -418,7 +436,8 @@ void main() {
     expect(controller.presenceGrant, isNull);
     expect(controller.sessionBindError, 'session_scope_unsupported');
     expect(backend.sessionBinds, 0);
-  });
+  },
+  );
 
   test('selectSessionCharacter rebinds and keeps server active unchanged', () async {
     await controller.loadPromptAssets();
@@ -428,7 +447,8 @@ void main() {
     expect(controller.presenceGrant?.charId, 'char-b');
     expect(backend.lastBoundCharId, 'char-b');
     expect(backend.updates, 0);
-  });
+  },
+  );
 
   test('character bind errors stay fail-loud', () async {
     backend.sessionBindError = const BackendException(

@@ -66,6 +66,8 @@ List<ChatMessage> reconcileChatHistory(
         uploadNote: item.uploadNote,
         quotedText: item.quotedText,
         quotedLabel: item.quotedLabel,
+        retryReplyTo: item.retryReplyTo,
+        requestId: remote[found].requestId ?? item.requestId,
         mediaRefs: remote[found].mediaRefs.isNotEmpty
             ? remote[found].mediaRefs
             : item.mediaRefs,
@@ -82,7 +84,8 @@ List<ChatMessage> reconcileChatHistory(
   return [for (var i = 0; i <= result.length; i++) ...[
     ...?insertions[i],
     if (i < result.length) result[i],
-  ]];
+  ],
+  ];
 }
 
 /// True when the server transcript demonstrably already carries this row, so
@@ -99,13 +102,25 @@ bool _remoteAlreadyOwns(
       ? item.turnId
       : (item.requestId?.isNotEmpty == true ? item.requestId : null);
   if (identity == null) return false;
+  bool sameIdentity(ChatMessage row) =>
+      row.role == item.role &&
+      (row.turnId == identity || row.requestId == identity);
+  final occurrence = source.take(index + 1).where(
+    (row) => sameIdentity(row) && row.text == item.text,
+  ).length;
+  var represented = 0;
   for (final candidate in remote) {
     if (candidate.role != item.role) continue;
     if (candidate.turnId != identity && candidate.requestId != identity) {
       continue;
     }
-    if (candidate.text == item.text) return true;
-    if (item.attachments.isNotEmpty && _imagePlaceholder(candidate)) return true;
+    if (candidate.text == item.text) {
+      represented++;
+      if (represented >= occurrence) return true;
+    }
+    if (item.attachments.isNotEmpty && _imagePlaceholder(candidate)) {
+      return true;
+    }
   }
   return false;
 }
@@ -144,7 +159,10 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
       final candidate = remote[j];
       if (used.contains(j) || candidate.role != item.role) continue;
       final remoteTurn = _turn(remote, j);
-      if (turn != null && remoteTurn != null && turn != remoteTurn) continue;
+      if (item.role != 'tool' &&
+          turn != null && remoteTurn != null && turn != remoteTurn) {
+        continue;
+      }
       if (item.role == 'tool') {
         if (item.toolActivity?.eventId == candidate.toolActivity?.eventId) { candidates.add(j); }
       } else if (item.role == 'reasoning') {
@@ -153,7 +171,22 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
           item.requestId == candidate.requestId) {
         candidates.add(j);
       } else if (turn != null && turn == remoteTurn) {
-        candidates.add(j);
+        // A turn contains multiple paragraphs: identity bounds the search,
+        // but must not overwrite an unrelated paragraph with local styling.
+        final unique =
+            source
+                    .where((m) => m.role == item.role && m.turnId == turn)
+                    .length ==
+                1 &&
+            remote
+                    .where((m) => m.role == item.role && m.turnId == turn)
+                    .length ==
+                1;
+        if (item.text == candidate.text ||
+            item.attachments.isNotEmpty ||
+            unique) {
+          candidates.add(j);
+        }
       } else if (j >= cursor &&
           (item.text == candidate.text ||
               (item.role == 'you' &&
@@ -186,11 +219,14 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
 String? _turn(List<ChatMessage> messages, int index) {
   final item = messages[index];
   if (item.turnId?.isNotEmpty == true) return item.turnId;
+  if (item.role == 'tool' || item.role == 'narration') return null;
   if (item.role == 'reasoning') return item.text.isEmpty ? null : item.text;
   final direction = item.role == 'you' ? 1 : -1;
   for (var j = index + direction; j >= 0 && j < messages.length; j += direction) {
     final neighbour = messages[j];
-    if (neighbour.role == 'reasoning') return neighbour.text.isEmpty ? null : neighbour.text;
+    if (neighbour.role == 'reasoning') {
+      return neighbour.text.isEmpty ? null : neighbour.text;
+    }
     if (neighbour.role != item.role) break;
   }
   return null;

@@ -1,3 +1,7 @@
+## 聊天恢复与工具时序（2026-10-07）
+
+chat-log entries 可返回 ts（assistant/tool epoch）和 user_ts；缺失保留 legacy 分钟级顺序。request_id 从同 owner/char completed receipt 或已绑定工具 trace 投影，仍受原有保留期限制。tool_activity 增加可选 turn_id/request_id，真实执行上下文关联，不猜相邻消息。后端重绑同 token/owner/char/domain 的 grant 继续复用逻辑请求回执；原端点、鉴权、ack/TTL 不变。详情见 [完整性修复](../mobile/chat-integrity-2026-10-07.md)。
+
 # 后端集成
 
 ## 本机会话 scope（2026-09-18，consumer current）

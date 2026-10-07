@@ -53,6 +53,8 @@ class ProfileAppearanceController extends ChangeNotifier {
   String? sessionBindError;
   bool bindingPresenceSession = false;
   int _sessionBindGeneration = 0;
+  Future<PresenceSessionGrant?>? _sessionBind;
+  String? _sessionBindKey;
 
   @override
   void notifyListeners() {
@@ -399,6 +401,25 @@ class ProfileAppearanceController extends ChangeNotifier {
   Future<PresenceSessionGrant?> ensurePresenceSession({
     String? charId,
     bool force = false,
+  }) {
+    final requested = SessionScope.normalize(charId) ?? currentCharacterId;
+    final key = '$_currentOrigin|$_currentOwner|$_accessToken|$requested';
+    if (_sessionBind != null && _sessionBindKey == key) return _sessionBind!;
+    _sessionBindKey = key;
+    final work = _bindPresenceSession(charId: requested, force: force);
+    _sessionBind = work;
+    work.whenComplete(() {
+      if (identical(_sessionBind, work)) {
+        _sessionBind = null;
+        _sessionBindKey = null;
+      }
+    });
+    return work;
+  }
+
+  Future<PresenceSessionGrant?> _bindPresenceSession({
+    String? charId,
+    bool force = false,
   }) async {
     final token = _accessToken;
     final requested = SessionScope.normalize(charId) ?? currentCharacterId;
@@ -461,10 +482,11 @@ class ProfileAppearanceController extends ChangeNotifier {
   /// Drops in-flight prompt/session work after a token, owner, or node change.
   /// Theme, fonts, and local user profile are not owned here and stay put.
   Future<void> invalidateForIdentityChange({
-    required bool realmChanged,
-  }) async {
+    required bool realmChanged}) async {
     _assetsGeneration++;
     _sessionBindGeneration++;
+    _sessionBind = null;
+    _sessionBindKey = null;
     presenceGrant = null;
     sessionBindError = null;
     promptAssetsError = null;
