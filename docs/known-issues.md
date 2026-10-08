@@ -1,3 +1,6 @@
+## 2026-10-08 聊天复查（current / observe / open）
+
+current：工单 27 已修历史显示正文分叉、刷新失败状态丢失、前台 pending 不交接、HTTP 迟到错误覆盖成功、固定通知冷却和 pending 20 条静默淘汰；后端 271 修复安全失败不可重试及并发兄弟任务残留。证据与完整边界见 [根因复查](mobile/chat-handoff-2026-10-08.md)。observe：无手机连接，长回复/弱网/通知/Doze/杀进程仍 not-run。open：后台无信号依旧依赖 15 分钟系统补偿；consume 到呈现崩溃窗口、artifacts/sticker 补全；未知工具副作用不盲重跑；旧 failed 回执无阶段证据仍保守 unknown。native handoff 满载返回错误、保留后端队列，能力检查可看数量/上限及 lastBackgroundError。
 ## 聊天完整性修复与剩余边界（2026-10-07，observe/open）
 
 工单 26 / 后端 267 修复引用重试、并发会话重绑、分段/富文本错配、native seen 误丢 pending 与工具分钟级排序；证据见 [完整性审计](mobile/chat-integrity-2026-10-07.md)。observe：真实手机弱网、长工具回复、前后台/Doze/杀进程；open：legacy 工具缺关联无法追溯，native consume 后呈现前崩溃无事务确认，后台 artifacts/sticker 字段仍不完整。后端进程内 request receipt 到期/重启不承诺 exactly-once；建议另做持久 receipt + claim/ack handoff 工单，不自动重新执行未知工具结果。

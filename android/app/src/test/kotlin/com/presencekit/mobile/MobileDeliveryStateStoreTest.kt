@@ -195,4 +195,24 @@ class MobileDeliveryStateStoreTest {
         assertNull(envelope.turnId)
         assertFalse(envelope.replayable)
     }
+    @Test
+    fun `handoff retains backlog beyond twenty and overflow never marks incoming seen`() {
+        val origin = "http://127.0.0.1:8080"
+        for (i in 1..MobileDeliveryStateStore.PENDING_CAP) {
+            assertTrue(store.acceptIncoming(item("backlog-$i", "reply $i", i.toLong()), origin, "owner"))
+        }
+        assertEquals(MobileDeliveryStateStore.PENDING_CAP, store.pendingCount())
+        // Seen has a smaller bound; the retained handoff still deduplicates it.
+        assertFalse(store.acceptIncoming(item("backlog-1", "reply 1"), origin, "owner"))
+        try {
+            store.acceptIncoming(item("overflow", "keep on backend"), origin, "owner")
+            fail("full pending must reject before ack")
+        } catch (_: java.io.IOException) { }
+        assertFalse(store.loadSeen().contains("overflow"))
+        val rows = store.consumePending(origin, "owner", "char-a").envelopes
+        assertEquals(MobileDeliveryStateStore.PENDING_CAP, rows.size)
+        assertEquals("backlog-1", rows.first().id)
+        assertEquals("backlog-500", rows.last().id)
+        assertTrue(store.acceptIncoming(item("overflow", "retry succeeds after consume"), origin, "owner"))
+    }
 }

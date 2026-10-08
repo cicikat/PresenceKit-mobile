@@ -676,7 +676,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsBackgroundNotificationsSubtitle =>
-      'Live relay · Long-disconnect fallback · Quiet hours/cooldown';
+      'Live relay · Disconnect fallback · New message alerts';
 
   @override
   String get settingsNotificationTestTitle =>
@@ -1972,7 +1972,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get capabilityRelayTitle => 'Relay connection';
 
   @override
-  String get capabilityGateTitle => 'Notification cooldown';
+  String capabilityPendingDelivery(int count, int limit) {
+    return 'Messages awaiting display: $count/$limit';
+  }
+
+  @override
+  String get capabilityNotificationDeliveryPolicy =>
+      'Notify for each new message without a fixed cooldown';
+
+  @override
+  String get capabilityGateTitle => 'Notification delivery';
 
   @override
   String get testingStatus => 'Testing';

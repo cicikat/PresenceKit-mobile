@@ -1,3 +1,6 @@
+## 聊天交接复查验收（2026-10-08）
+
+工单 27 / 后端 271：flutter gen-l10n 成功；flutter test --no-pub 全量 327 passed；flutter analyze --no-pub 0 issues；Android :app:testDevDebugUnitTest 指定 MobileDeliveryStateStoreTest（12）、SettingsChannelDeliveryTest（4）、MobileNotificationDeliveryTest（1）共 17 passed。flutter build apk --debug --flavor dev --no-pub 成功，产物 build/app/outputs/flutter-apk/app-dev-debug.apk。没有连接手机、没有安装或正式发布，长回复/弱网/Doze/杀进程/真实模型仍 not-run。后端相关 73 passed；既有 desktop trusted_user_text mock 不匹配的测试单独记录、未改且从定向通过集合排除。详情见 [复查审计](../mobile/chat-handoff-2026-10-08.md)。
 # 测试与开发
 
 ## 聊天恢复、分段对账与工具时序（2026-10-07）

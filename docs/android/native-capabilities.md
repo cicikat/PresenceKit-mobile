@@ -1,3 +1,6 @@
+## 聊天交接根因修复（2026-10-08）
+
+工单 27 / 后端 271：历史 plain/display 与 HTTP/poll 使用同份 ledger 显示正文；刷新保留失败状态及原请求，assistant 成功证据优先于迟到 HTTP 错误；前台周期交接 native pending 并补偿 poll。Android 去掉固定 30 分钟冷却，重连立即补拉、有界分页排空；pending 500 条且满载拒绝 ack，不静默淘汰。既有 getBackgroundPollStatus 新增可选 pendingCount/pendingLimit，能力检查只读展示；AppSettingsStore、PlatformSettingsChannel 和 MainActivity 同步。旧测试模式方法/偏好仅兼容。详见 [根因复查](../mobile/chat-handoff-2026-10-08.md)。真机/Doze/真实模型仍 observe，consume 崩溃窗口与后台产物元数据仍 open。
 ## Pending 回放关联（2026-10-07）
 
 MobileDeliveryStateStore.PendingEnvelope 保留可选 request_id 到本机 JSON 和 MethodChannel map；Flutter 据此确认原发送。native seen 仍用于通知防重，页面回放按展示身份独立对账。无新增权限、服务或设置，legacy 无字段兼容。消费后杀进程的原子交接、产物与表情完整恢复仍 open，见 [完整性修复](../mobile/chat-integrity-2026-10-07.md)。

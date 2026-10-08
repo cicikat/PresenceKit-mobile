@@ -1877,7 +1877,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get capabilityRelayTitle => '中继连接状态';
 
   @override
-  String get capabilityGateTitle => '提醒冷却状态';
+  String capabilityPendingDelivery(int count, int limit) {
+    return '待显示消息：$count/$limit';
+  }
+
+  @override
+  String get capabilityNotificationDeliveryPolicy => '每条新消息正常提醒，不设固定冷却';
+
+  @override
+  String get capabilityGateTitle => '通知投递状态';
 
   @override
   String get testingStatus => '测试中';

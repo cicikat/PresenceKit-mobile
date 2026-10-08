@@ -808,6 +808,7 @@ class AppSettingsStore {
     }
   }
 
+  // Additive pendingCount/pendingLimit are parsed by BackgroundPollStatus.
   Future<BackgroundPollStatus> loadBackgroundPollStatus() async {
     if (!_channelAvailable) return const BackgroundPollStatus();
     try {

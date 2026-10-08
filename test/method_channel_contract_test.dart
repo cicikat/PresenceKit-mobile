@@ -312,6 +312,8 @@ void main() {
       reply({
         'lastBackgroundPollAt': 1781280000000,
         'lastBackgroundError': ' boom ',
+          'pendingCount': 27,
+          'pendingLimit': 500,
       });
       final status = await store.loadBackgroundPollStatus();
       expect(calls.single.method, 'getBackgroundPollStatus');

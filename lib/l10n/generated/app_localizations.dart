@@ -3565,10 +3565,22 @@ abstract class AppLocalizations {
   /// **'中继连接状态'**
   String get capabilityRelayTitle;
 
+  /// No description provided for @capabilityPendingDelivery.
+  ///
+  /// In zh, this message translates to:
+  /// **'待显示消息：{count}/{limit}'**
+  String capabilityPendingDelivery(int count, int limit);
+
+  /// No description provided for @capabilityNotificationDeliveryPolicy.
+  ///
+  /// In zh, this message translates to:
+  /// **'每条新消息正常提醒，不设固定冷却'**
+  String get capabilityNotificationDeliveryPolicy;
+
   /// No description provided for @capabilityGateTitle.
   ///
   /// In zh, this message translates to:
-  /// **'提醒冷却状态'**
+  /// **'通知投递状态'**
   String get capabilityGateTitle;
 
   /// No description provided for @testingStatus.

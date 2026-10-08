@@ -297,23 +297,6 @@ class SettingsPage extends StatelessWidget {
                     onTap: onOpenSystemControls,
                   ),
                   ScreenObservationSettings(c: c),
-                  ExpansionTile(
-                    title: Text(
-                      l10n.settingsNotificationTestTitle,
-                      style: _settingsSectionTitleStyle(c),
-                    ),
-                    children: [
-                      SettingsRow(
-                        c: c,
-                        title: l10n.settingsNotificationTestTitle,
-                        subtitle: l10n.settingsNotificationTestSubtitle,
-                        child: Switch(
-                          value: notificationTestMode,
-                          onChanged: onNotificationTestMode,
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
               _SettingsModule(

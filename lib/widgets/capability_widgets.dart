@@ -352,13 +352,18 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     actionLabel: status.activityRecognitionEnabled
                         ? context.l10n.enabledStatus
                         : context.l10n.authorizeAction,
-                    onPressed: !widget.controlsOnly ||
+                    onPressed:
+                        !widget.controlsOnly ||
                             status.activityRecognitionEnabled
                         ? null
                         : () => _run(widget.onRequestActivityRecognition),
                   ),
                   if (!widget.controlsOnly)
-                    ScreenObservationSettings(c: c, accessibilityEnabled: status.accessibilityEnabled, readOnly: true),
+                    ScreenObservationSettings(
+                      c: c,
+                      accessibilityEnabled: status.accessibilityEnabled,
+                      readOnly: true,
+                    ),
                   CapabilityRow(
                     c: c,
                     icon: Icons.visibility_outlined,
@@ -585,20 +590,14 @@ class _CapabilitySheetState extends State<CapabilitySheet>
     final service = status.backgroundServiceRunning
         ? context.l10n.capabilityNativeRelayRunning
         : context.l10n.capabilityNativeRelayStopped;
-    return '$service。\n$heartbeat / $error';
+    final pending = poll.pendingCount == null || poll.pendingLimit == null
+        ? ''
+        : '\n${context.l10n.capabilityPendingDelivery(poll.pendingCount!, poll.pendingLimit!)}';
+    return '$service。\n$heartbeat / $error$pending';
   }
 
   String _notificationGateSubtitle(CapabilityStatus status) {
-    final gate = status.notificationGateStatus;
-    final mode = gate.testModeEnabled
-        ? context.l10n.capabilityGateTestOn
-        : context.l10n.capabilityGateTestOff;
-    final reason = gate.lastSuppressReason ?? context.l10n.noneStatus;
-    return context.l10n.capabilityGateSummary(
-      mode,
-      gate.suppressedCount,
-      reason,
-    );
+    return context.l10n.capabilityNotificationDeliveryPolicy;
   }
 
   String _overlaySubtitle(CapabilityStatus status) {

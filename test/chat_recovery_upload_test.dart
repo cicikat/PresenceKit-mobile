@@ -14,9 +14,10 @@ class _Settings extends AppSettingsStore {
   List<String> seen = const [];
   Object? pendingError;
   int consumeCalls = 0;
+  bool backgroundRunning = false;
 
   @override
-  Future<bool> isBackgroundNotificationServiceRunning() async => false;
+  Future<bool> isBackgroundNotificationServiceRunning() async => backgroundRunning;
   @override
   Future<List<String>> loadSeenMobileMessageIds() async => seen;
 
@@ -235,6 +236,12 @@ void main() {
   });
   tearDown(() => controller.dispose());
 
+  Future<void> settle() async {
+    for (var i = 0; i < 20 && controller.sending; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+
   test('old epoch poll failure cannot clear a new successful poll state', () async {
     backend.pollGate = Completer<void>();
     final oldGate = backend.pollGate!;
@@ -264,12 +271,76 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(controller.sent.singleWhere((m) => m.role == 'you').failed, isTrue);
   });
-  Future<void> settle() async {
-    for (var i = 0; i < 20 && controller.sending; i++) {
-      await Future<void>.delayed(Duration.zero);
-    }
-  }
-
+  test(
+    'running native service hands pending to foreground without notification tap',
+    () async {
+      settings.backgroundRunning = true;
+      settings.pending = [
+        const PendingMobileEnvelope(
+          content: 'arrived while open',
+          id: 'native-live',
+          turnId: 'native-live',
+          replayable: true,
+          origin: 'http://127.0.0.1:8080',
+          owner: 'owner',
+          charId: 'char-a',
+        ),
+      ];
+      await controller.pollIfBackgroundUnavailable();
+      await controller.pollIfBackgroundUnavailable();
+      expect(controller.sent.where((m) => m.role == 'him').map((m) => m.text), [
+        'arrived while open',
+      ]);
+      expect(settings.consumeCalls, 2);
+      expect(backend.wait, 5);
+    },
+  );
+  test('delivered poll receipt wins over a later HTTP timeout', () async {
+    backend.offline = false;
+    backend.networkDown = true;
+    backend.sendGate = Completer<void>();
+    controller.send('accepted before timeout');
+    await Future<void>.delayed(Duration.zero);
+    final request = backend.sentRequestIds.single!;
+    backend.pollMessages = [MobilePollMessage.fromJson({
+      'id': 'accepted', 'turn_id': 'accepted', 'request_id': request,
+      'content': 'delivered reply', 'char_id': 'char-a', 'seq': 1,
+    })];
+    await controller.pollMobile(animate: false);
+    backend.sendGate!.complete();
+    await settle();
+    final user = [...controller.sent, ...controller.history]
+        .singleWhere((m) => m.role == 'you');
+    expect(user.failed, isFalse);
+    expect(user.uncertain, isFalse);
+  });
+  test('HTTP failure finds its user bubble after refresh moved it to history', () async {
+    backend.offline = false;
+    backend.sendGate = Completer<void>();
+    controller.send('in flight during refresh');
+    await Future<void>.delayed(Duration.zero);
+    final request = backend.sentRequestIds.single!;
+    backend.day = ChatLogDay.fromJson({
+      'date': '2026-10-08', 'entries': [
+        {'time': '12:00', 'user': 'in flight during refresh',
+         'assistant': '', 'request_id': request},
+      ],
+    });
+    await controller.loadHistory(reconcileLocal: true);
+    expect(controller.history.singleWhere((m) => m.role == 'you').requestId, request);
+    backend.offline = true;
+    backend.sendGate!.complete();
+    await settle();
+    final user = [...controller.sent, ...controller.history]
+        .singleWhere((m) => m.role == 'you');
+    expect(user.failed, isTrue);
+    backend.offline = false;
+    backend.sendGate = null;
+    controller.retryMessage(user);
+    await settle();
+    expect(backend.sentRequestIds.last, request);
+    expect(backend.chats, 2);
+  });
   test(
     'native seen notification still replays its pending paragraphs exactly once',
     () async {

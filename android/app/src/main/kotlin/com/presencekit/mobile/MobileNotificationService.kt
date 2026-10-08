@@ -39,7 +39,6 @@ class MobileNotificationService : Service() {
     private val serviceChannelId = NotificationChannels.SERVICE_ID
     private val messageChannelId = NotificationChannels.MESSAGE_ID
     private val foregroundId = 10434
-    private val messageCooldownMs = 30 * 60 * 1000L
     private val initialRetryDelayMs = 1000L
     private val maximumRetryDelayMs = 60_000L
     private val relayFallbackThresholdMs = 60_000L
@@ -256,6 +255,7 @@ class MobileNotificationService : Service() {
         scheduleSupplementalPoll(supplementalPollIntervalMs)
         recordRelayStatus("connected", null)
         recordRelayHeartbeat()
+        runConnectedSafetyPoll()
         recordBackgroundError(notificationPermissionError())
         updateForegroundNotification("\u4e2d\u7ee7\u5df2\u8fde\u63a5")
         Log.d(tag, "relay connected; poll generation=$generation")
@@ -567,53 +567,58 @@ class MobileNotificationService : Service() {
                 Log.d(tag, "poll generation changed before fallback poll request")
                 return true
             }
-            // signal 即时回源与周期补偿都只做一次非阻塞拉取，不在后台维持长轮询。
+            // signal 和补偿均非阻塞拉取，有界分页排空，不维持长轮询。
             val store = MobileDeliveryStateStore.of(prefs)
             store.bindCursorScope(
                 BackendSecurityPolicy.originFor(baseUrl),
                 BackendSecurityPolicy.ownerUserId(prefs).ifBlank { null },
             )
-            val lastAckedSeq = store.lastAckedSeq()
-            val afterQuery = if (lastAckedSeq == null) "" else "&after=$lastAckedSeq"
-            val body = pollJson("$baseUrl/mobile/poll?limit=20$afterQuery", token)
-            val decoded = JSONObject(body)
-            if (!decoded.optBoolean("ok") || !decoded.optBoolean("active")) {
-                throw IOException(decoded.optString("error", "mobile channel is not active"))
-            }
-            val messages = decoded.optJSONArray("messages") ?: throw JSONException("messages missing")
-            Log.d(tag, "received ${messages.length()} messages")
-            if (pollGeneration.get() != gen) {
-                // onDestroy() 已调用，此轮结果属于僵尸轮次，丢弃避免前台串台。
-                Log.d(tag, "poll generation stale (gen=$gen), discarding ${messages.length()} messages")
-                return true
-            }
-            var batchMaxSeq: Long? = null
-            for (i in 0 until messages.length()) {
-                if (pollGeneration.get() != gen ||
-                    !allowRelayConnected && consumerSource == ConsumerSource.RELAY
-                ) {
-                    Log.d(tag, "stopping stale poll delivery at message index=$i")
-                    break
+            // Drain up to the queue bound (500), so one wake cannot strand
+            // newer messages behind the first page until the next alarm.
+            for (batch in 0 until 10) {
+                val lastAckedSeq = store.lastAckedSeq()
+                val afterQuery = if (lastAckedSeq == null) "" else "&after=$lastAckedSeq"
+                val body = pollJson("$baseUrl/mobile/poll?limit=50$afterQuery", token)
+                val decoded = JSONObject(body)
+                if (!decoded.optBoolean("ok") || !decoded.optBoolean("active")) {
+                    throw IOException(decoded.optString("error", "mobile channel is not active"))
                 }
-                val item = messages.optJSONObject(i) ?: continue
-                consumeMobileMessage(item, "poll")
-                if (item.has("seq") && !item.isNull("seq")) {
-                    val seq = item.optLong("seq", Long.MIN_VALUE)
-                    if (seq != Long.MIN_VALUE && (batchMaxSeq == null || seq > batchMaxSeq!!)) {
-                        batchMaxSeq = seq
+                val messages = decoded.optJSONArray("messages") ?: throw JSONException("messages missing")
+                Log.d(tag, "received ${messages.length()} messages")
+                if (pollGeneration.get() != gen) {
+                    // onDestroy() 已调用，此轮结果属于僵尸轮次，丢弃避免前台串台。
+                    Log.d(tag, "poll generation stale (gen=$gen), discarding ${messages.length()} messages")
+                    return true
+                }
+                var batchMaxSeq: Long? = null
+                for (i in 0 until messages.length()) {
+                    if (pollGeneration.get() != gen ||
+                        !allowRelayConnected && consumerSource == ConsumerSource.RELAY
+                    ) {
+                        Log.d(tag, "stopping stale poll delivery at message index=$i")
+                        break
+                    }
+                    val item = messages.optJSONObject(i) ?: continue
+                    consumeMobileMessage(item, "poll")
+                    if (item.has("seq") && !item.isNull("seq")) {
+                        val seq = item.optLong("seq", Long.MIN_VALUE)
+                        if (seq != Long.MIN_VALUE && (batchMaxSeq == null || seq > batchMaxSeq!!)) {
+                            batchMaxSeq = seq
+                        }
                     }
                 }
-            }
-            if (batchMaxSeq != null) {
-                val ack = JSONObject(postJson(
-                    "$baseUrl/mobile/ack",
-                    JSONObject().put("ack_seq", batchMaxSeq).toString(),
-                    token,
-                ))
-                if (!ack.optBoolean("ok")) {
-                    throw IOException(ack.optString("error", "mobile acknowledgement failed"))
+                if (batchMaxSeq != null) {
+                    val ack = JSONObject(postJson(
+                        "$baseUrl/mobile/ack",
+                        JSONObject().put("ack_seq", batchMaxSeq).toString(),
+                        token,
+                    ))
+                    if (!ack.optBoolean("ok")) {
+                        throw IOException(ack.optString("error", "mobile acknowledgement failed"))
+                    }
+                    store.advanceAck(batchMaxSeq)
                 }
-                store.advanceAck(batchMaxSeq)
+                if (messages.length() < 50 || pollGeneration.get() != gen) break
             }
             if (!timeoutTriggered) {
                 recordBackgroundError(notificationPermissionError())
@@ -925,11 +930,6 @@ class MobileNotificationService : Service() {
 
     private fun handleIncomingMessage(content: String, charId: String?) {
         val now = System.currentTimeMillis()
-        val blockReason = notificationBlockReason(now)
-        if (blockReason != null) {
-            recordSuppressedMessage(blockReason)
-            return
-        }
         showMessageNotification(content, charId)
         servicePrefs()
             .edit()
@@ -1049,32 +1049,6 @@ class MobileNotificationService : Service() {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)
     }
 
-    private fun notificationBlockReason(now: Long): String? {
-        if (servicePrefs().getBoolean("notificationTestMode", false)) {
-            return null
-        }
-        val lastShown = servicePrefs().getLong("lastMessageNotificationAt", 0L)
-        if (lastShown > 0 && now - lastShown < messageCooldownMs) {
-            return "30 \u5206\u949f\u51b7\u5374\u4e2d"
-        }
-        return null
-    }
-
-    private fun recordSuppressedMessage(reason: String) {
-        val count = suppressedCount() + 1
-        servicePrefs()
-            .edit()
-            .putInt("suppressedMessageNotifications", count)
-            .putString("lastNotificationSuppressReason", reason)
-            .apply()
-        updateForegroundNotification("\u5df2\u9759\u9ed8\u6536\u53d6 $count \u6761\u00b7$reason")
-        Log.d(tag, "message notification suppressed: $reason")
-    }
-
-    private fun suppressedCount(): Int {
-        return servicePrefs().getInt("suppressedMessageNotifications", 0)
-    }
-
     private fun updateForegroundNotification(text: String) {
         if (!foregroundStarted) return
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -1140,8 +1114,6 @@ class MobileNotificationService : Service() {
         }
     }
 
-    // 已静默收取的条数不再拼进弹窗正文（会顶掉两行预算）；能力检查页和常驻前台
-    // 状态栏（recordSuppressedMessage → updateForegroundNotification）已经展示这个计数。
     private fun showMessageNotification(content: String, charId: String?) {
         val id = 20000 + (notificationIndex.getAndIncrement() % 1000)
         val preview = notificationPreviewText(content)

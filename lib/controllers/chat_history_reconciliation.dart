@@ -23,23 +23,32 @@ List<ChatMessage> reconcileChatHistory(
         // has not caught up with it — dropping it there is what swallowed
         // delivered replies. A live row that has not matched yet simply stays
         // in `sent`, still on screen and still reachable by retry.
-        if (!(live ? i < lastMatch : item.retainOnRefresh)) continue;
         if (retainedIds.contains(item.id)) continue;
         if (_remoteAlreadyOwns(remote, source, i)) {
           if (live) sent.removeWhere((m) => m.id == item.id);
           continue;
         }
+        if (!(live ? i < lastMatch : item.retainOnRefresh)) continue;
         retainedIds.add(item.id);
         int? next;
         int? preceding;
         for (var j = i + 1; j < source.length; j++) {
-          if (matches.containsKey(j)) { next = matches[j]; break; }
+          if (matches.containsKey(j)) {
+            next = matches[j];
+            break;
+          }
         }
         for (var j = i - 1; j >= 0; j--) {
-          if (matches.containsKey(j)) { preceding = matches[j]; break; }
+          if (matches.containsKey(j)) {
+            preceding = matches[j];
+            break;
+          }
         }
-        final slot = next ?? (preceding == null ? remote.length : preceding + 1);
-        insertions.putIfAbsent(slot, () => []).add(item.settled().copyWith(retainOnRefresh: true));
+        final slot =
+            next ?? (preceding == null ? remote.length : preceding + 1);
+        insertions
+            .putIfAbsent(slot, () => [])
+            .add(item.settled().copyWith(retainOnRefresh: true));
         if (live) sent.removeWhere((m) => m.id == item.id);
         continue;
       }
@@ -67,6 +76,8 @@ List<ChatMessage> reconcileChatHistory(
         quotedText: item.quotedText,
         quotedLabel: item.quotedLabel,
         retryReplyTo: item.retryReplyTo,
+        failed: item.failed,
+        uncertainSince: item.uncertainSince,
         requestId: remote[found].requestId ?? item.requestId,
         mediaRefs: remote[found].mediaRefs.isNotEmpty
             ? remote[found].mediaRefs
@@ -81,10 +92,11 @@ List<ChatMessage> reconcileChatHistory(
       }
     }
   }
-  return [for (var i = 0; i <= result.length; i++) ...[
-    ...?insertions[i],
-    if (i < result.length) result[i],
-  ],
+  return [
+    for (var i = 0; i <= result.length; i++) ...[
+      ...?insertions[i],
+      if (i < result.length) result[i],
+    ],
   ];
 }
 
@@ -105,9 +117,39 @@ bool _remoteAlreadyOwns(
   bool sameIdentity(ChatMessage row) =>
       row.role == item.role &&
       (row.turnId == identity || row.requestId == identity);
-  final occurrence = source.take(index + 1).where(
-    (row) => sameIdentity(row) && row.text == item.text,
-  ).length;
+  // A historical memory line can flatten the visible paragraph boundaries.
+  // Compare the whole canonical turn, never a substring or global fingerprint.
+  if (item.role == 'him' &&
+      item.turnId != null &&
+      item.text.isNotEmpty &&
+      item.artifacts.isEmpty) {
+    final localRows = source
+        .where(
+          (row) =>
+              row.role == 'him' &&
+              row.turnId == item.turnId &&
+              row.text.isNotEmpty,
+        )
+        .toList();
+    final remoteRows = remote
+        .where(
+          (row) =>
+              row.role == 'him' &&
+              row.turnId == item.turnId &&
+              row.text.isNotEmpty,
+        )
+        .toList();
+    String content(List<ChatMessage> rows) =>
+        rows.map((row) => row.text).join().replaceAll(RegExp(r'\s+'), '');
+    if (remoteRows.length > localRows.length &&
+        content(remoteRows) == content(localRows)) {
+      return true;
+    }
+  }
+  final occurrence = source
+      .take(index + 1)
+      .where((row) => sameIdentity(row) && row.text == item.text)
+      .length;
   var represented = 0;
   for (final candidate in remote) {
     if (candidate.role != item.role) continue;
@@ -159,16 +201,28 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
       final candidate = remote[j];
       if (used.contains(j) || candidate.role != item.role) continue;
       final remoteTurn = _turn(remote, j);
+      if (item.requestId != null &&
+          candidate.requestId != null &&
+          item.requestId != candidate.requestId) {
+        continue;
+      }
       if (item.role != 'tool' &&
-          turn != null && remoteTurn != null && turn != remoteTurn) {
+          turn != null &&
+          remoteTurn != null &&
+          turn != remoteTurn) {
         continue;
       }
       if (item.role == 'tool') {
-        if (item.toolActivity?.eventId == candidate.toolActivity?.eventId) { candidates.add(j); }
+        if (item.toolActivity?.eventId == candidate.toolActivity?.eventId) {
+          candidates.add(j);
+        }
       } else if (item.role == 'reasoning') {
-        if (item.text.isNotEmpty && item.text == candidate.text) { candidates.add(j); }
+        if (item.text.isNotEmpty && item.text == candidate.text) {
+          candidates.add(j);
+        }
       } else if (item.requestId != null &&
-          item.requestId == candidate.requestId) {
+          item.requestId == candidate.requestId &&
+          (item.role == 'you' || item.text == candidate.text)) {
         candidates.add(j);
       } else if (turn != null && turn == remoteTurn) {
         // A turn contains multiple paragraphs: identity bounds the search,
@@ -222,7 +276,11 @@ String? _turn(List<ChatMessage> messages, int index) {
   if (item.role == 'tool' || item.role == 'narration') return null;
   if (item.role == 'reasoning') return item.text.isEmpty ? null : item.text;
   final direction = item.role == 'you' ? 1 : -1;
-  for (var j = index + direction; j >= 0 && j < messages.length; j += direction) {
+  for (
+    var j = index + direction;
+    j >= 0 && j < messages.length;
+    j += direction
+  ) {
     final neighbour = messages[j];
     if (neighbour.role == 'reasoning') {
       return neighbour.text.isEmpty ? null : neighbour.text;

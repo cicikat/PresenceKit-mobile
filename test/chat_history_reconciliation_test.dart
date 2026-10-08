@@ -623,4 +623,98 @@ void main() {
     expect(result.single.turnId, isNull);
   },
   );
+  test('user history alone preserves failed retry and frozen request', () {
+    final failed = ChatMessage(
+      role: 'you',
+      text: 'retry me',
+      time: '12:00',
+      dateKey: '2026-09-13',
+      requestId: 'req-failed',
+      failed: true,
+      retainOnRefresh: true,
+    );
+    final sent = [failed];
+    final result = reconcileChatHistory(
+      [
+        ChatMessage(
+          role: 'you',
+          text: 'retry me',
+          time: '12:00',
+          dateKey: '2026-09-13',
+          requestId: 'req-failed',
+        ),
+      ],
+      [],
+      [failed],
+      sent,
+    );
+    expect(result.single.failed, isTrue);
+    expect(result.single.requestId, 'req-failed');
+    expect(result.single.id, failed.id);
+  });
+
+  test('same text and clock cannot merge two different logical requests', () {
+    final failed = ChatMessage(
+      role: 'you',
+      text: 'same',
+      time: '12:00',
+      dateKey: '2026-09-13',
+      requestId: 'req-one',
+      failed: true,
+    );
+    final sent = [failed];
+    final result = reconcileChatHistory(
+      [
+        ChatMessage(
+          role: 'you',
+          text: 'same',
+          time: '12:00',
+          dateKey: '2026-09-13',
+          requestId: 'req-two',
+        ),
+      ],
+      [],
+      [failed],
+      sent,
+    );
+    expect(result.single.requestId, 'req-two');
+    expect(sent.single.requestId, 'req-one');
+    expect(sent.single.failed, isTrue);
+  });
+  test(
+    'canonical split history replaces obsolete full live and parked copies',
+    () {
+      for (final live in [false, true]) {
+        final full = ChatMessage(
+          role: 'him',
+          text: 'firstsecond',
+          time: '12:00',
+          turnId: 'segmented',
+          retainOnRefresh: true,
+        );
+        final sent = live ? [full] : <ChatMessage>[];
+        final result = reconcileChatHistory(
+          [
+            ChatMessage(
+              role: 'him',
+              text: 'first',
+              time: '12:00',
+              turnId: 'segmented',
+            ),
+            ChatMessage(
+              role: 'him',
+              text: 'second',
+              time: '12:00',
+              turnId: 'segmented',
+            ),
+          ],
+          live ? [] : [full],
+          live ? [full] : [],
+          sent,
+        );
+        expect(result.map((m) => m.text), ['first', 'second']);
+        expect(sent, isEmpty);
+      }
+    },
+  );
 }

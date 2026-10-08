@@ -1,3 +1,6 @@
+## 聊天交接根因修复（2026-10-08）
+
+工单 27 / 后端 271：历史 plain/display 与 HTTP/poll 使用同份 ledger 显示正文；刷新保留失败状态及原请求，assistant 成功证据优先于迟到 HTTP 错误；前台周期交接 native pending 并补偿 poll。Android 去掉固定 30 分钟冷却，重连立即补拉、有界分页排空；pending 500 条且满载拒绝 ack，不静默淘汰。既有 getBackgroundPollStatus 新增可选 pendingCount/pendingLimit，能力检查只读展示；AppSettingsStore、PlatformSettingsChannel 和 MainActivity 同步。旧测试模式方法/偏好仅兼容。详见 [根因复查](../mobile/chat-handoff-2026-10-08.md)。真机/Doze/真实模型仍 observe，consume 崩溃窗口与后台产物元数据仍 open。
 ## 引用精确锚点（F6）
 
 桌面/手机 reply_to 新增可选 message_id，由已绑定 turn_id 与 user/assistant 作者组成。后端核验作者、原文和完整带时区时间；旧 text+ts 标为未经核验，不能精确展开。角色工具 read_message_context 可查上/下最多10条保留现实消息；遗忘、跨角色或不存在的锚点不可用。分段气泡引用整条原始消息。构建/回归不代表真实设备或模型验收。

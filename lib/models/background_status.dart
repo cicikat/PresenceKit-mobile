@@ -1,5 +1,10 @@
 class BackgroundPollStatus {
-  const BackgroundPollStatus({this.lastPollAt, this.lastError});
+  const BackgroundPollStatus({
+    this.lastPollAt,
+    this.lastError,
+    this.pendingCount,
+    this.pendingLimit,
+  });
 
   factory BackgroundPollStatus.fromPlatform(Map<dynamic, dynamic>? raw) {
     final timestamp = raw?['lastBackgroundPollAt'];
@@ -9,11 +14,19 @@ class BackgroundPollStatus {
           ? DateTime.fromMillisecondsSinceEpoch(timestamp)
           : null,
       lastError: error == null || error.isEmpty ? null : error,
+      pendingCount: raw?['pendingCount'] is int
+          ? raw!['pendingCount'] as int
+          : null,
+      pendingLimit: raw?['pendingLimit'] is int
+          ? raw!['pendingLimit'] as int
+          : null,
     );
   }
 
   final DateTime? lastPollAt;
   final String? lastError;
+  final int? pendingCount;
+  final int? pendingLimit;
 }
 
 /// 中继连接的单一展示状态机；左右两处 UI 必须都从这里派生，不得各自判断。

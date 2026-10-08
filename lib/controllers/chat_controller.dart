@@ -89,6 +89,7 @@ class ChatController extends ChangeNotifier {
   final List<String> _loadedDates = [];
   final List<String> _seenIds = [];
   final Set<String> _syncReplyIds = {};
+  final Set<String> _acceptedRequestIds = {};
   final Map<String, DateTime> _recentReplies = {};
   final Map<String, String> _recentIdsByFingerprint = {};
   final List<({String text, ReplyTarget? replyTo})> _pendingSends = [];
@@ -205,7 +206,9 @@ class ChatController extends ChangeNotifier {
         if (envelope.identity != null && !replayed.add(envelope.identity!)) {
           continue;
         }
-        if (envelope.requestId != null) _settleSend(requestId: envelope.requestId);
+        if (envelope.requestId != null) {
+          _settleSend(requestId: envelope.requestId);
+        }
         if (!_shouldReplayPending(envelope)) continue;
         fresh.add(envelope);
         final identity = envelope.identity;
@@ -276,6 +279,8 @@ class ChatController extends ChangeNotifier {
     _session.beginEpoch();
     _session.initialSync = null;
     _session.refresh = null;
+    _foregroundDelivery = null;
+    _acceptedRequestIds.clear();
     _uncertainTimer?.cancel();
     _messageQueue.clear();
     _pendingSends.clear();
@@ -356,7 +361,10 @@ class ChatController extends ChangeNotifier {
       );
       return;
     }
-    sent[index] = message.copyWith(failed: false, clearUncertain: true, time: _nowLabel(),
+    sent[index] = message.copyWith(
+      failed: false,
+      clearUncertain: true,
+      time: _nowLabel(),
     );
     sending = true;
     himTyping = true;
@@ -404,11 +412,11 @@ class ChatController extends ChangeNotifier {
   }
 
   SessionScope _captureScope(int generation) => SessionScope(
-        origin: _deliveryOrigin(),
-        owner: _deliveryOwner(),
-        charId: _deliveryCharId(),
-        generation: generation,
-      );
+    origin: _deliveryOrigin(),
+    owner: _deliveryOwner(),
+    charId: _deliveryCharId(),
+    generation: generation,
+  );
 
   Future<Uint8List?> loadCanonicalMedia(ChatMediaRef ref) {
     final digest = (ref.sha256 ?? '').trim().toLowerCase();
@@ -489,7 +497,7 @@ class ChatController extends ChangeNotifier {
   void _bindUserTurn(int id, String? turnId) {
     for (final list in [sent, history]) {
       final index = list.indexWhere((m) => m.id == id);
-    if (index >= 0) list[index] = list[index].copyWith(turnId: turnId);
+      if (index >= 0) list[index] = list[index].copyWith(turnId: turnId);
     }
   }
 
@@ -503,7 +511,8 @@ class ChatController extends ChangeNotifier {
         );
   }
 
-  Future<PresenceSessionGrant> _requirePresenceGrant({bool force = false,
+  Future<PresenceSessionGrant> _requirePresenceGrant({
+    bool force = false,
   }) async {
     final charId = SessionScope.normalize(_deliveryCharId());
     if (charId == null) {
@@ -567,10 +576,7 @@ class ChatController extends ChangeNotifier {
     required Future<BackendChatResponse> Function(PresenceSessionGrant grant)
     call,
   }) {
-    return _withLiveGrant(
-      scope: scope,
-      generation: generation,
-      call: call);
+    return _withLiveGrant(scope: scope, generation: generation, call: call);
   }
 
   Future<void> _applyChatResponse({
@@ -734,11 +740,14 @@ class ChatController extends ChangeNotifier {
   /// turn. Only the exact message is touched; there is no "latest message"
   /// fallback.
   void _markSendFailed(int userId, {bool uncertain = false}) {
-    final index = sent.indexWhere((item) => item.id == userId);
-    if (index < 0) return;
-    sent[index] = uncertain
-        ? sent[index].copyWith(uncertainSince: clock())
-        : sent[index].copyWith(failed: true, clearUncertain: true);
+    for (final store in [sent, history]) {
+      final index = store.indexWhere((item) => item.id == userId);
+      if (index < 0) continue;
+      if (_acceptedRequestIds.contains(store[index].requestId)) return;
+      store[index] = uncertain
+          ? store[index].copyWith(uncertainSince: clock())
+          : store[index].copyWith(failed: true, clearUncertain: true);
+    }
     _scheduleUncertainExpiry();
   }
 
@@ -770,6 +779,18 @@ class ChatController extends ChangeNotifier {
   /// Clears failed/uncertain state on a delivered message, by local id or by
   /// the request_id the server echoed. Returns true if anything changed.
   bool _settleSend({int? userId, String? requestId}) {
+    final accepted =
+        requestId ??
+        [
+          ...sent,
+          ...history,
+        ].where((m) => m.id == userId).firstOrNull?.requestId;
+    if (accepted != null && accepted.isNotEmpty) {
+      _acceptedRequestIds.add(accepted);
+      while (_acceptedRequestIds.length > 200) {
+        _acceptedRequestIds.remove(_acceptedRequestIds.first);
+      }
+    }
     var changed = false;
     bool matches(ChatMessage m) =>
         m.role == 'you' &&
@@ -922,7 +943,9 @@ class ChatController extends ChangeNotifier {
       // Only server evidence can settle a send. Reconciliation also returns
       // retained local failures, whose request_id is not a receipt.
       for (final m in messages) {
-        if (m.requestId != null) _settleSend(requestId: m.requestId);
+        if (m.role == 'him' && m.requestId != null) {
+          _settleSend(requestId: m.requestId);
+        }
       }
       if (reconcileLocal) {
         // A row with no dateKey is local content the server has not dated yet
@@ -934,7 +957,7 @@ class ChatController extends ChangeNotifier {
           history
               .where((m) => m.dateKey == null || loaded.contains(m.dateKey))
               .toList(),
-          localSnapshot,
+          List<ChatMessage>.of(sent),
           sent,
         );
       }
@@ -1113,11 +1136,28 @@ class ChatController extends ChangeNotifier {
     }
   }
 
+  Future<void>? _foregroundDelivery;
+
   Future<void> pollIfBackgroundUnavailable({
     ChatDeliverySource source = ChatDeliverySource.live,
   }) async {
-    if (await _relay.isBackgroundServiceRunning()) return;
-    await pollMobile(source: source);
+    final existing = _foregroundDelivery;
+    if (existing != null) return existing;
+    final generation = _session.generation;
+    late final Future<void> work;
+    work =
+        (() async {
+          // Native ack and Flutter presentation are separate stages.
+          await _replayPendingEnvelopes();
+          if (_session.isStale(generation)) return;
+          final backgroundRunning = await _relay.isBackgroundServiceRunning();
+          if (_session.isStale(generation)) return;
+          await pollMobile(source: source, animate: !backgroundRunning);
+        })().whenComplete(() {
+          if (identical(_foregroundDelivery, work)) _foregroundDelivery = null;
+        });
+    _foregroundDelivery = work;
+    await work;
   }
 
   Future<void> pollMobile({
@@ -1422,7 +1462,10 @@ class ChatController extends ChangeNotifier {
     himTyping = true;
     backendError = null;
     final outgoing =
-        retryOf?.copyWith(failed: false, clearUncertain: true, time: _nowLabel(),
+        retryOf?.copyWith(
+          failed: false,
+          clearUncertain: true,
+          time: _nowLabel(),
         ) ??
         ChatMessage(
           role: 'you',
@@ -1615,7 +1658,7 @@ class ChatController extends ChangeNotifier {
     } finally {
       if (_session.isCurrent(generation)) {
         himTyping = false;
-      _session.playingSegments = false;
+        _session.playingSegments = false;
         notifyListeners();
         _flushHistoryRefresh();
       }
@@ -1777,7 +1820,8 @@ class ChatController extends ChangeNotifier {
     );
     final key = _fingerprint(text);
     if (!_recentReplies.containsKey(key)) return false;
-    return msgId == null || !_recentIdsByFingerprint.containsKey(key) ||
+    return msgId == null ||
+        !_recentIdsByFingerprint.containsKey(key) ||
         _recentIdsByFingerprint[key] == msgId;
   }
 
@@ -1871,6 +1915,7 @@ class ChatController extends ChangeNotifier {
           ChatMessage(
             role: entry.entryKind == 'narration' ? 'narration' : 'him',
             text: part.value,
+            requestId: entry.requestId,
             timestamp: entry.timestamp,
             turnId: entry.turnId,
             displayText: inlineDisplayParts(

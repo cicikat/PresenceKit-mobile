@@ -102,8 +102,9 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
         val envelope = envelopeFromQueueItem(item, origin, owner)
         locked {
             val pending = readPendingLocked()
+            if (containsPending(pending, envelope)) return@locked
+            if (pending.length() >= PENDING_CAP) throw IOException("pending mobile handoff full; refusing acknowledgement")
             pending.put(envelope.toJson())
-            while (pending.length() > PENDING_CAP) pending.remove(0)
             persistPendingLocked(pending)
         }
         return true
@@ -116,24 +117,38 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
         val envelope = envelopeFromQueueItem(item, origin, owner)
         return locked {
             val seen = readSeenLocked()
-            if (id.isNotEmpty() && !seen.add(id)) return@locked false
+            val pending = readPendingLocked()
+            if (id.isNotEmpty() && (seen.contains(id) || containsPending(pending, envelope))) return@locked false
+            if (pending.length() >= PENDING_CAP) throw IOException("pending mobile handoff full; refusing acknowledgement")
             if (id.isNotEmpty()) {
+                seen.add(id)
                 while (seen.size > SEEN_CAP) {
                     val iterator = seen.iterator()
-                    if (!iterator.hasNext()) break
                     iterator.next()
                     iterator.remove()
                 }
-                persistSeenLocked(seen)
             }
-            val pending = readPendingLocked()
             pending.put(envelope.toJson())
-            while (pending.length() > PENDING_CAP) pending.remove(0)
-            persistPendingLocked(pending)
+            // Receipt and handoff commit together; seen alone must never eat a retry.
+            if (!prefs.edit()
+                    .putString(SEEN_KEY, JSONArray(seen.toList()).toString())
+                    .putString(PENDING_KEY, pending.toString()).commit()) {
+                throw IOException("could not persist mobile receipt and handoff")
+            }
             true
         }
     }
 
+    fun pendingCount(): Int = locked { readPendingLocked().length() }
+
+    private fun containsPending(pending: JSONArray, envelope: PendingEnvelope): Boolean {
+        if (envelope.id == null) return false
+        for (i in 0 until pending.length()) {
+            val row = pending.optJSONObject(i)?.let(::envelopeFromStored) ?: continue
+            if (row.id == envelope.id && row.origin == envelope.origin && row.owner == envelope.owner) return true
+        }
+        return false
+    }
     fun consumePending(origin: String?, owner: String?, charId: String?): ConsumeResult = locked {
         migrateLegacyContentsLocked()
         val pending = readPendingLocked()
@@ -252,7 +267,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
         const val CURSOR_ORIGIN_KEY = "deliveryCursorOrigin"
         const val CURSOR_OWNER_KEY = "deliveryCursorOwner"
         const val SEEN_CAP = 200
-        const val PENDING_CAP = 20
+        const val PENDING_CAP = 500
         const val ENVELOPE_VERSION = 1
 
         private val LOCK = Any()

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 /// legacy global slot, present id uses per-character prefs and avatar files.
 /// Chat appearance bytes/nightBytes hold independent day/night images; null clears that slot.
 /// Shared transport for the stable Android settings channel.
+/// getBackgroundPollStatus includes optional pendingCount/pendingLimit observations.
 /// Appearance get/set includes local showToolActivity (default true).
 /// Appearance get/set includes independent Dream sizes (12-28), ARGB colors,
 /// showReasoning, expandReasoning and reasoningOpacity (0-1, default .85).
