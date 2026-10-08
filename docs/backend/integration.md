@@ -1,5 +1,7 @@
 ## 聊天交接根因修复（2026-10-08）
 
+280 长文档：现有 `/upload/ingest`、Bearer/chat scope 和 media_refs 不变。后端保存 TXT/MD/DOCX 完整解析正文，角色可分页回读并用分块概要/进度接续。422 的既有 `{code,message}` 新增 `document_text_too_large`（解析正文超过50万字符）与 `document_archive_failed`；不把保存失败当成功。旧 DOC 请转换为 DOCX。手机无新设置/权限/通知或poll/ack字段，真实上传与模型效果仍 observe。
+
 工单 27 / 后端 271：历史 plain/display 与 HTTP/poll 使用同份 ledger 显示正文；刷新保留失败状态及原请求，assistant 成功证据优先于迟到 HTTP 错误；前台周期交接 native pending 并补偿 poll。Android 去掉固定 30 分钟冷却，重连立即补拉、有界分页排空；pending 500 条且满载拒绝 ack，不静默淘汰。既有 getBackgroundPollStatus 新增可选 pendingCount/pendingLimit，能力检查只读展示；AppSettingsStore、PlatformSettingsChannel 和 MainActivity 同步。旧测试模式方法/偏好仅兼容。详见 [根因复查](../mobile/chat-handoff-2026-10-08.md)。真机/Doze/真实模型仍 observe，consume 崩溃窗口与后台产物元数据仍 open。
 ## 引用精确锚点（F6）
 
