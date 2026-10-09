@@ -236,20 +236,24 @@ class DreamSegmentedMessage extends StatelessWidget {
     );
   }
 
-  Widget _description({required Widget child, bool moonlit = false}) =>
-      Container(
-        width: double.infinity,
-        margin: EdgeInsets.symmetric(horizontal: moonlit ? 8 : 22, vertical: 7),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        decoration: BoxDecoration(
-          color: c.surfaceSoft.withValues(
-            alpha: prefs.dreamDescriptionOpacity * (moonlit ? .45 : 1),
+  Widget _description({
+    required Widget child,
+    bool moonlit = false,
+  }) => Container(
+    width: double.infinity,
+    margin: EdgeInsets.symmetric(horizontal: moonlit ? 8 : 22, vertical: 7),
+    padding: EdgeInsets.symmetric(horizontal: moonlit ? 0 : 14, vertical: 11),
+    decoration: moonlit
+        ? null
+        : BoxDecoration(
+            color: c.surfaceSoft.withValues(
+              alpha: prefs.dreamDescriptionOpacity * (moonlit ? .45 : 1),
+            ),
+            border: Border.all(color: c.ink3.withValues(alpha: .3), width: .7),
+            borderRadius: BorderRadius.circular(6),
           ),
-          border: Border.all(color: c.ink3.withValues(alpha: .3), width: .7),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: child,
-      );
+    child: child,
+  );
 
   Widget _buildSegment(NarrativeSegment segment, bool moonlit) {
     switch (segment.type) {
@@ -270,15 +274,21 @@ class DreamSegmentedMessage extends StatelessWidget {
               Expanded(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 300),
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
-                  decoration: BoxDecoration(
-                    color: c.surfaceSoft.withValues(alpha: moonlit ? .55 : 1),
-                    border: Border.all(color: c.surfaceEdge),
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(6),
-                      bottomRight: Radius.circular(6),
-                    ),
-                  ),
+                  padding: moonlit
+                      ? const EdgeInsets.symmetric(vertical: 10)
+                      : const EdgeInsets.fromLTRB(14, 10, 14, 11),
+                  decoration: moonlit
+                      ? null
+                      : BoxDecoration(
+                          color: c.surfaceSoft.withValues(
+                            alpha: moonlit ? .55 : 1,
+                          ),
+                          border: Border.all(color: c.surfaceEdge),
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(6),
+                            bottomRight: Radius.circular(6),
+                          ),
+                        ),
                   child: Container(
                     padding: EdgeInsets.only(left: moonlit ? 0 : 10),
                     decoration: moonlit
@@ -393,8 +403,12 @@ class _DreamComposerState extends State<DreamComposer> {
   @override
   Widget build(BuildContext context) {
     final c = widget.c;
+    final moonlit =
+        ConversationPresentation.dreamOf(context) == DreamLayout.moonlit;
     return Container(
-      color: c.surfaceSoft.withValues(alpha: widget.prefs.chatBubbleOpacity),
+      color: moonlit
+          ? c.surface.withValues(alpha: .35)
+          : c.surfaceSoft.withValues(alpha: widget.prefs.chatBubbleOpacity),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -404,11 +418,13 @@ class _DreamComposerState extends State<DreamComposer> {
               constraints: const BoxConstraints(minHeight: 38, maxHeight: 92),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
-                color: c.surface.withValues(
-                  alpha: widget.prefs.chatBubbleOpacity,
-                ),
+                color: moonlit
+                    ? c.ink1.withValues(alpha: .06)
+                    : c.surface.withValues(
+                        alpha: widget.prefs.chatBubbleOpacity,
+                      ),
                 border: Border.all(color: c.surfaceEdge),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(moonlit ? 24 : 4),
               ),
               child: TextField(
                 controller: _controller,
@@ -418,7 +434,9 @@ class _DreamComposerState extends State<DreamComposer> {
                 onChanged: (_) => setState(() {}),
                 style: contentSerif(c, widget.prefs.dreamChatSize),
                 decoration: InputDecoration.collapsed(
-                  hintText: widget.enabled
+                  hintText: moonlit
+                      ? null
+                      : widget.enabled
                       ? context.l10n.dreamComposerHint
                       : context.l10n.dreamWaitingBehindDoor,
                   hintStyle: serif(

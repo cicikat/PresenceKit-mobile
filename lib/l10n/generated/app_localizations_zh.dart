@@ -2669,4 +2669,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get referenceGardenVase => '花瓶';
+
+  @override
+  String get referenceMoonlitTitle => '世界安静下来，\n只剩下我们。';
+
+  @override
+  String get referenceMoonlitSubtitle => '向下走进今晚的故事';
 }

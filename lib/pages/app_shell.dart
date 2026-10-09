@@ -1417,6 +1417,7 @@ class _CompanionAppState extends State<CompanionApp>
       case AppRoute.dream:
         return DreamPage(
           key: const ValueKey('dream'),
+          onRoute: _pickRoute,
           layout: _themeController.dreamLayout,
           c: c,
           prefs: _prefs,

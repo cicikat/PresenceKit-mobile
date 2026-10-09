@@ -5022,6 +5022,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'花瓶'**
   String get referenceGardenVase;
+
+  /// No description provided for @referenceMoonlitTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'世界安静下来，\n只剩下我们。'**
+  String get referenceMoonlitTitle;
+
+  /// No description provided for @referenceMoonlitSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'向下走进今晚的故事'**
+  String get referenceMoonlitSubtitle;
 }
 
 class _AppLocalizationsDelegate

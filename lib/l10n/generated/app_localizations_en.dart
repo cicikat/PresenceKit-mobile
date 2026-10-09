@@ -2793,4 +2793,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referenceGardenVase => 'In vases';
+
+  @override
+  String get referenceMoonlitTitle => 'The world grows quiet.\nOnly us remain.';
+
+  @override
+  String get referenceMoonlitSubtitle => 'Step into tonight’s story.';
 }
