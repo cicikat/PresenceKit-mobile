@@ -1230,7 +1230,7 @@ class _CompanionAppState extends State<CompanionApp>
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: _themeController.isDark
+        statusBarIconBrightness: c.surface.computeLuminance() < .2
             ? Brightness.light
             : Brightness.dark,
         systemNavigationBarColor: conversation ? Colors.black : c.surface,
@@ -1343,6 +1343,8 @@ class _CompanionAppState extends State<CompanionApp>
         return ChatScene(
           key: const ValueKey('chat'),
           layout: _themeController.dailyLayout,
+          userName: _personalization.name,
+          userAvatar: _personalization.avatar,
           onRoute: _pickRoute,
           c: c,
           dark: _themeController.isDark,

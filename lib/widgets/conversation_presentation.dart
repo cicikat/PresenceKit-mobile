@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import '../models/app_models.dart';
 import '../models/ui_layout.dart';
@@ -10,9 +11,15 @@ class ConversationPresentation extends InheritedWidget {
     required super.child,
     this.daily = DailyLayout.classic,
     this.dream = DreamLayout.classic,
+    this.userName = '',
+    this.userAvatar,
   });
+  final String userName;
+  final Uint8List? userAvatar;
   final DailyLayout daily;
   final DreamLayout dream;
+  static ConversationPresentation? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ConversationPresentation>();
   static DailyLayout dailyOf(BuildContext context) =>
       context
           .dependOnInheritedWidgetOfExactType<ConversationPresentation>()
@@ -25,7 +32,10 @@ class ConversationPresentation extends InheritedWidget {
       DreamLayout.classic;
   @override
   bool updateShouldNotify(ConversationPresentation oldWidget) =>
-      daily != oldWidget.daily || dream != oldWidget.dream;
+      daily != oldWidget.daily ||
+      dream != oldWidget.dream ||
+      userName != oldWidget.userName ||
+      userAvatar != oldWidget.userAvatar;
 }
 
 YxPalette dailyLayoutPalette(DailyLayout layout, YxPalette base) {
@@ -86,6 +96,24 @@ YxPalette dailyLayoutPalette(DailyLayout layout, YxPalette base) {
       userBubbleText: const Color(0xFF574652),
     );
   }
+  if (layout == DailyLayout.messenger) {
+    final dark = base.surface.computeLuminance() < .2;
+    return base.copyWith(
+      surface: Color(dark ? 0xFF111111 : 0xFFEDEDED),
+      surfaceSoft: Color(dark ? 0xFF252525 : 0xFFFFFFFF),
+      surfaceDeep: Color(dark ? 0xFF191919 : 0xFFE7E7E7),
+      surfaceEdge: Color(dark ? 0xFF383838 : 0xFFDADADA),
+      ink1: Color(dark ? 0xFFEDEDED : 0xFF191919),
+      ink2: Color(dark ? 0xFFBBBBBB : 0xFF555555),
+      ink3: Color(dark ? 0xFF999999 : 0xFF767676),
+      character: const Color(0xFF278B47),
+      send: const Color(0xFF278B47),
+      characterDeep: Color(dark ? 0xFF252525 : 0xFFEDEDED),
+      characterOn: Color(dark ? 0xFFEDEDED : 0xFF191919),
+      userBubble: Color(dark ? 0xFF65AA49 : 0xFF95EC69),
+      userBubbleText: const Color(0xFF13210D),
+    );
+  }
   return base;
 }
 
@@ -109,6 +137,7 @@ class ConversationHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final messenger = layout == DailyLayout.messenger;
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
     return SafeArea(
       bottom: false,
@@ -122,7 +151,11 @@ class ConversationHeader extends StatelessWidget {
                 IconButton(
                   onPressed: onMenu,
                   icon: Icon(
-                    window ? Icons.auto_awesome_outlined : Icons.menu_rounded,
+                    messenger
+                        ? Icons.chevron_left
+                        : window
+                        ? Icons.auto_awesome_outlined
+                        : Icons.menu_rounded,
                     color: c.character,
                   ),
                   tooltip: l.drawerTooltip,
@@ -130,8 +163,17 @@ class ConversationHeader extends StatelessWidget {
                 Expanded(
                   child: Text(
                     name,
-                    style: serif(c, window ? 28 : 24, weight: FontWeight.w500)
-                        .copyWith(
+                    textAlign: messenger ? TextAlign.center : TextAlign.start,
+                    style:
+                        serif(
+                          c,
+                          messenger
+                              ? 18
+                              : window
+                              ? 28
+                              : 24,
+                          weight: FontWeight.w500,
+                        ).copyWith(
                           fontStyle: window
                               ? FontStyle.italic
                               : FontStyle.normal,
@@ -141,14 +183,17 @@ class ConversationHeader extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: onSettings,
-                  icon: Icon(Icons.tune_rounded, color: c.ink2),
+                  onPressed: messenger ? onMenu : onSettings,
+                  icon: Icon(
+                    messenger ? Icons.more_horiz : Icons.tune_rounded,
+                    color: c.ink2,
+                  ),
                   tooltip: l.drawerSettingsTitle,
                 ),
               ],
             ),
           ),
-          if (onRoute != null)
+          if (onRoute != null && !messenger)
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),

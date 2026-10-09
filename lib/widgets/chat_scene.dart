@@ -21,6 +21,8 @@ class ChatScene extends StatelessWidget {
     required this.c,
     this.layout = DailyLayout.classic,
     this.onRoute,
+    this.userName = '',
+    this.userAvatar,
     required this.dark,
     required this.prefs,
     required this.profileDisplayName,
@@ -40,6 +42,8 @@ class ChatScene extends StatelessWidget {
     required this.onVoiceRecordCancel,
   });
 
+  final String userName;
+  final Uint8List? userAvatar;
   final DailyLayout layout;
   final ValueChanged<AppRoute>? onRoute;
   final YxPalette c;
@@ -65,6 +69,8 @@ class ChatScene extends StatelessWidget {
   Widget build(BuildContext context) {
     return ConversationPresentation(
       daily: layout,
+      userName: userName,
+      userAvatar: userAvatar,
       child: AnimatedBuilder(
         animation: controller,
         builder: (context, _) => _build(context),
@@ -238,7 +244,9 @@ class ChatScene extends StatelessWidget {
                     final showDateDivider =
                         m.dateKey != null && m.dateKey != previous?.dateKey;
                     if (m.role == 'tool') {
-                      if (!prefs.showToolActivity || m.toolActivity == null) {
+                      if (!classic ||
+                          !prefs.showToolActivity ||
+                          m.toolActivity == null) {
                         return const SizedBox.shrink();
                       }
                       final nextIndex = globalMessageIndex + 1;
@@ -260,7 +268,7 @@ class ChatScene extends StatelessWidget {
                       );
                     }
                     if (m.role == 'narration') {
-                      return prefs.showToolActivity
+                      return classic && prefs.showToolActivity
                           ? Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 30,

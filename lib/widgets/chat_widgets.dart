@@ -596,6 +596,7 @@ class _HimMessageState extends State<HimMessage> {
   Widget build(BuildContext context) {
     final c = widget.c;
     final layout = ConversationPresentation.dailyOf(context);
+    final messenger = layout == DailyLayout.messenger;
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
     final letter =
         ConversationPresentation.dailyOf(context) == DailyLayout.letter;
@@ -609,10 +610,11 @@ class _HimMessageState extends State<HimMessage> {
           children: [
             if (!letter && !window)
               Padding(
-                padding: const EdgeInsets.only(top: 18),
+                padding: EdgeInsets.only(top: messenger ? 4 : 18),
                 child: YxAvatar(
                   c: c,
-                  size: 28,
+                  size: messenger ? 36 : 28,
+                  cornerRadius: messenger ? 5 : null,
                   imageBytes: widget.profileAvatarBytes,
                   text: widget.profileDisplayName.characters.first,
                 ),
@@ -628,29 +630,33 @@ class _HimMessageState extends State<HimMessage> {
                       dateKey: widget.dateKey!,
                       role: context.l10n.chatRoleHim,
                     ),
-                  Row(
-                    children: [
-                      Text(
-                        widget.prefs.showChatTime
-                            ? '${letter || window ? widget.profileDisplayName : context.l10n.chatRoleHim}  ${widget.time}'
-                            : letter || window
-                            ? widget.profileDisplayName
-                            : context.l10n.chatRoleHim,
-                        style: mono(c, 9.5, color: c.ink3),
-                      ),
-                      if (widget.tag != null) ...[
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: YxTag(
-                            c: c,
-                            text: widget.tag!,
-                            variant: widget.tagVariant,
-                          ),
+                  if (!messenger || widget.prefs.showChatTime)
+                    Row(
+                      children: [
+                        Text(
+                          messenger
+                              ? widget.time
+                              : widget.prefs.showChatTime
+                              ? '${letter || window ? widget.profileDisplayName : context.l10n.chatRoleHim}  ${widget.time}'
+                              : letter || window
+                              ? widget.profileDisplayName
+                              : context.l10n.chatRoleHim,
+                          style: mono(c, 9.5, color: c.ink3),
                         ),
+                        if (widget.tag != null) ...[
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: YxTag(
+                              c: c,
+                              text: widget.tag!,
+                              variant: widget.tagVariant,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
+                    ),
+                  if (!messenger || widget.prefs.showChatTime)
+                    const SizedBox(height: 4),
                   GestureDetector(
                     onLongPressStart: widget.sticker == null
                         ? (details) => unawaited(
@@ -676,16 +682,18 @@ class _HimMessageState extends State<HimMessage> {
                                     : c.surfaceEdge,
                                 width: widget.highlight ? 2 : 1,
                               ),
-                              borderRadius: const BorderRadius.only(
-                                topRight: Radius.circular(6),
-                                bottomRight: Radius.circular(6),
-                                bottomLeft: Radius.circular(0),
-                                topLeft: Radius.circular(0),
-                              ),
+                              borderRadius: messenger
+                                  ? BorderRadius.circular(4)
+                                  : const BorderRadius.only(
+                                      topRight: Radius.circular(6),
+                                      bottomRight: Radius.circular(6),
+                                      bottomLeft: Radius.circular(0),
+                                      topLeft: Radius.circular(0),
+                                    ),
                             ),
                       child: Container(
                         padding: EdgeInsets.only(
-                          left: letter || window ? 0 : 10,
+                          left: letter || window || messenger ? 0 : 10,
                         ),
                         decoration: letter || window
                             ? null
@@ -1137,6 +1145,8 @@ class _YouMessageState extends State<YouMessage> {
 
   @override
   Widget build(BuildContext context) {
+    final presentation = ConversationPresentation.of(context);
+    final messenger = presentation?.daily == DailyLayout.messenger;
     final c = widget.c;
     final letter =
         ConversationPresentation.dailyOf(context) == DailyLayout.letter;
@@ -1170,14 +1180,17 @@ class _YouMessageState extends State<YouMessage> {
                     dateKey: widget.dateKey!,
                     role: context.l10n.chatRoleYou,
                   ),
-                if (widget.showHeader)
+                if (widget.showHeader && (!messenger || prefs.showChatTime))
                   Text(
-                    widget.prefs.showChatTime
+                    messenger
+                        ? widget.time
+                        : widget.prefs.showChatTime
                         ? '${context.l10n.chatRoleYou}  ${widget.time}'
                         : context.l10n.chatRoleYou,
                     style: mono(c, 9.5, color: c.ink3),
                   ),
-                if (widget.showHeader) const SizedBox(height: 4),
+                if (widget.showHeader && (!messenger || prefs.showChatTime))
+                  const SizedBox(height: 4),
                 GestureDetector(
                   onLongPressStart: attachment == null
                       ? (details) =>
@@ -1295,14 +1308,24 @@ class _YouMessageState extends State<YouMessage> {
               ],
             ),
           ),
-          if (prefs.showYouAvatar) ...[
+          if (prefs.showYouAvatar || messenger) ...[
             const SizedBox(width: 8),
             Padding(
-              padding: EdgeInsets.only(top: widget.showHeader ? 18 : 0),
+              padding: EdgeInsets.only(
+                top: messenger
+                    ? 4
+                    : widget.showHeader
+                    ? 18
+                    : 0,
+              ),
               child: YxAvatar(
                 c: c,
-                text: context.l10n.chatRoleYou.characters.first,
-                size: 28,
+                text: messenger && presentation!.userName.isNotEmpty
+                    ? presentation.userName.characters.first
+                    : context.l10n.chatRoleYou.characters.first,
+                imageBytes: messenger ? presentation?.userAvatar : null,
+                size: messenger ? 36 : 28,
+                cornerRadius: messenger ? 5 : null,
               ),
             ),
           ],
@@ -1565,9 +1588,20 @@ class _ComposerState extends State<Composer> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final placeholder = l10n.composerPlaceholder;
+    final layout = ConversationPresentation.dailyOf(context);
+    final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
+    final placeholder = layout == DailyLayout.classic
+        ? l10n.composerPlaceholder
+        : null;
     return Container(
-      color: widget.c.surfaceSoft.withValues(alpha: widget.bubbleOpacity),
+      margin: window
+          ? const EdgeInsets.fromLTRB(12, 0, 12, 10)
+          : EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: widget.c.surfaceSoft.withValues(alpha: widget.bubbleOpacity),
+        border: window ? Border.all(color: widget.c.surfaceEdge) : null,
+        borderRadius: window ? BorderRadius.circular(8) : null,
+      ),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1693,7 +1727,8 @@ class _ComposerState extends State<Composer> {
           ],
           ValueListenableBuilder<String>(
             valueListenable: _draft,
-            builder: (context, draft, _) => draft.isEmpty
+            builder: (context, draft, _) =>
+                draft.isEmpty || layout == DailyLayout.messenger
                 ? const SizedBox.shrink()
                 : Padding(
                     padding: const EdgeInsets.only(top: 6),

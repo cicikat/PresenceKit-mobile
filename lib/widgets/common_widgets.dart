@@ -36,8 +36,12 @@ class AppTypography {
   static double scale = 1;
 }
 
-TextStyle contentSerif(YxPalette c, double size, {Color? color, FontWeight? weight}) =>
-    serif(c, size, color: color, weight: weight).copyWith(fontSize: size);
+TextStyle contentSerif(
+  YxPalette c,
+  double size, {
+  Color? color,
+  FontWeight? weight,
+}) => serif(c, size, color: color, weight: weight).copyWith(fontSize: size);
 
 TextStyle serif(YxPalette c, double size, {Color? color, FontWeight? weight}) {
   return TextStyle(
@@ -200,6 +204,7 @@ class YxAvatar extends StatelessWidget {
     this.imageBytes,
     this.size = 28,
     this.onDark = false,
+    this.cornerRadius,
   });
 
   final YxPalette c;
@@ -207,6 +212,7 @@ class YxAvatar extends StatelessWidget {
   final Uint8List? imageBytes;
   final double size;
   final bool onDark;
+  final double? cornerRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +222,10 @@ class YxAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        shape: cornerRadius == null ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: cornerRadius == null
+            ? null
+            : BorderRadius.circular(cornerRadius!),
         color: onDark ? Colors.transparent : c.characterSoft,
         border: Border.all(color: fg),
       ),
@@ -229,7 +238,8 @@ class YxAvatar extends StatelessWidget {
                 color: fg,
               ).copyWith(fontStyle: FontStyle.italic),
             )
-          : ClipOval(
+          : ClipRRect(
+              borderRadius: BorderRadius.circular(cornerRadius ?? size / 2),
               child: Image.memory(
                 imageBytes!,
                 width: size,
