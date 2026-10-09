@@ -55,7 +55,7 @@ class MoonlitHeader extends StatelessWidget {
               _button(
                 context,
                 Icons.menu_rounded,
-                context.l10n.drawerTooltip,
+                context.l10n.layoutMenu,
                 onMenu,
               ),
               const SizedBox(height: 8),

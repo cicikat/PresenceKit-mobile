@@ -1,4 +1,5 @@
 import '../models/ui_layout.dart';
+import '../widgets/layout_settings.dart';
 import '../widgets/moonlit_scene.dart';
 import '../widgets/conversation_presentation.dart';
 import '../widgets/conversation_calendar_widgets.dart';
@@ -98,11 +99,11 @@ class _CompanionAppState extends State<CompanionApp>
   String get _ownerUserId => _connectionController.ownerUserId;
   YxPalette get c {
     final custom = _themeController.activePalette;
-    if (custom != null) return custom;
     if (_route == AppRoute.dream &&
         _themeController.dreamLayout == DreamLayout.moonlit) {
       return moonlitPalette(YxPalette.dark);
     }
+    if (custom != null) return custom;
     final base = _themeController.isDark ? YxPalette.dark : YxPalette.light;
     return dailyLayoutPalette(_themeController.dailyLayout, base);
   }
@@ -986,8 +987,22 @@ class _CompanionAppState extends State<CompanionApp>
                 c: c,
                 language: _localeController.language,
                 dark: _themeController.isDark,
-                lightThemePresetName: _themeController.lightThemePreset?.name,
-                darkThemePresetName: _themeController.darkThemePreset?.name,
+                lightThemePresetName:
+                    _themeController.lightThemePreset?.name ??
+                    (_themeController.dailyLayout == DailyLayout.classic
+                        ? null
+                        : dailyLayoutLabel(
+                            context.l10n,
+                            _themeController.dailyLayout,
+                          )),
+                darkThemePresetName:
+                    _themeController.darkThemePreset?.name ??
+                    (_themeController.dailyLayout == DailyLayout.classic
+                        ? null
+                        : dailyLayoutLabel(
+                            context.l10n,
+                            _themeController.dailyLayout,
+                          )),
                 dailyLayout: _themeController.dailyLayout,
                 dreamLayout: _themeController.dreamLayout,
                 onDailyLayout: (v) =>

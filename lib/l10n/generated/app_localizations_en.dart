@@ -2736,4 +2736,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get layoutMoonlit => 'Moonlit theatre';
+
+  @override
+  String get layoutMenu => 'More';
 }

@@ -95,6 +95,7 @@ class ThemePresetSnapshot {
     required this.darkThemePresetId,
     required this.themeMode,
     required this.presets,
+    this.layoutPresetIds = const {},
     this.dailyLayout = DailyLayout.classic,
     this.dreamLayout = DreamLayout.classic,
   });
@@ -103,6 +104,7 @@ class ThemePresetSnapshot {
   final String? darkThemePresetId;
   final String themeMode;
   final List<ThemeColorPreset> presets;
+  final Map<String, String> layoutPresetIds;
   final DailyLayout dailyLayout;
   final DreamLayout dreamLayout;
 
@@ -112,6 +114,7 @@ class ThemePresetSnapshot {
     'lightThemePresetId': lightThemePresetId,
     'darkThemePresetId': darkThemePresetId,
     'themeMode': themeMode,
+    'layoutPresetIds': layoutPresetIds,
     'dailyLayout': dailyLayout.name,
     'dreamLayout': dreamLayout.name,
     'presets': presets.map((preset) => preset.toModJson()).toList(),
@@ -141,6 +144,19 @@ class ThemePresetSnapshot {
             ? mode!
             : 'system',
         presets: presets,
+        layoutPresetIds: json['layoutPresetIds'] is Map
+            ? {
+                for (final entry in (json['layoutPresetIds'] as Map).entries)
+                  if (entry.key is String &&
+                      entry.value is String &&
+                      DailyLayout.values.any(
+                        (v) =>
+                            entry.key == '${v.name}.light' ||
+                            entry.key == '${v.name}.dark',
+                      ))
+                    entry.key as String: entry.value as String,
+              }
+            : const {},
         dailyLayout: decodeLayout(
           json['dailyLayout'],
           DailyLayout.values,

@@ -1434,5 +1434,6 @@
   "layoutReverie": "Pink reverie",
   "layoutNoir": "Noir reverie",
   "layoutMessenger": "Messenger",
-  "layoutMoonlit": "Moonlit theatre"
+  "layoutMoonlit": "Moonlit theatre",
+  "layoutMenu":"More"
 }

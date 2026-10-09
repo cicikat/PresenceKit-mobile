@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/ui_layout.dart';
+import 'layout_settings.dart';
 
 import '../controllers/theme_controller.dart';
 import '../models/app_models.dart';
@@ -66,7 +68,9 @@ class ThemePresetManagerSheet extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.settings_backup_restore),
-                title: Text((selectingDark ?? controller.isDark) ? l10n.themeNight : l10n.themePaper),
+                title: Text(controller.dailyLayout == DailyLayout.classic
+                    ? ((selectingDark ?? controller.isDark) ? l10n.themeNight : l10n.themePaper)
+                    : dailyLayoutLabel(l10n, controller.dailyLayout)),
                 trailing: (selectingDark == true ? controller.darkThemePresetId : controller.lightThemePresetId) == null ? const Icon(Icons.check) : null,
                 onTap: () => controller.select(null, dark: selectingDark),
               ),

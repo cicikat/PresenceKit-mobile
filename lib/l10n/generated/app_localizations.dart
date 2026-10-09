@@ -4914,6 +4914,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'月夜剧场'**
   String get layoutMoonlit;
+
+  /// No description provided for @layoutMenu.
+  ///
+  /// In zh, this message translates to:
+  /// **'更多'**
+  String get layoutMenu;
 }
 
 class _AppLocalizationsDelegate

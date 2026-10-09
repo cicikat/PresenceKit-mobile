@@ -2615,4 +2615,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get layoutMoonlit => '月夜剧场';
+
+  @override
+  String get layoutMenu => '更多';
 }

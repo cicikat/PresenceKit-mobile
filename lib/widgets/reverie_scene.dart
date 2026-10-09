@@ -79,7 +79,7 @@ class ReveriePainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            c.character.withValues(alpha: dark ? .1 : .25),
+            dark ? const Color(0xFF171A24) : const Color(0xFFE2D3E8),
             c.surfaceSoft,
           ],
         ).createShader(rect),
@@ -93,8 +93,9 @@ class ReveriePainter extends CustomPainter {
     const unit = 18.0;
     for (var row = 0; row < 3; row++) {
       for (var col = 0; col < size.width / unit; col++) {
-        floor.color = ((col + row).isEven ? c.character : c.surfaceEdge)
-            .withValues(alpha: .22);
+        floor.color =
+            ((col + row).isEven ? (dark ? c.ink4 : c.character) : c.surfaceEdge)
+                .withValues(alpha: .22);
         canvas.drawRect(
           Rect.fromLTWH(col * unit, size.height - 36 + row * 12, unit, 12),
           floor,

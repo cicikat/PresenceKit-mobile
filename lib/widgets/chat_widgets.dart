@@ -633,15 +633,19 @@ class _HimMessageState extends State<HimMessage> {
                   if (!messenger || widget.prefs.showChatTime)
                     Row(
                       children: [
-                        Text(
-                          messenger
-                              ? widget.time
-                              : widget.prefs.showChatTime
-                              ? '${letter || window ? widget.profileDisplayName : context.l10n.chatRoleHim}  ${widget.time}'
-                              : letter || window
-                              ? widget.profileDisplayName
-                              : context.l10n.chatRoleHim,
-                          style: mono(c, 9.5, color: c.ink3),
+                        Flexible(
+                          child: Text(
+                            messenger
+                                ? widget.time
+                                : widget.prefs.showChatTime
+                                ? '${letter || window ? widget.profileDisplayName : context.l10n.chatRoleHim}  ${widget.time}'
+                                : letter || window
+                                ? widget.profileDisplayName
+                                : context.l10n.chatRoleHim,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: mono(c, 9.5, color: c.ink3),
+                          ),
                         ),
                         if (widget.tag != null) ...[
                           const SizedBox(width: 6),
@@ -695,7 +699,7 @@ class _HimMessageState extends State<HimMessage> {
                         padding: EdgeInsets.only(
                           left: letter || window || messenger ? 0 : 10,
                         ),
-                        decoration: letter || window
+                        decoration: letter || window || messenger
                             ? null
                             : BoxDecoration(
                                 border: Border(

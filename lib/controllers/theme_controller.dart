@@ -46,6 +46,7 @@ class ThemeController extends ChangeNotifier {
   final List<ThemeColorPreset> _bundledPresets = [];
   String? _lightThemePresetId;
   String? _darkThemePresetId;
+  final Map<String, String> _layoutPresetIds = {};
   DailyLayout _dailyLayout = DailyLayout.classic;
   DreamLayout _dreamLayout = DreamLayout.classic;
   DailyLayout get dailyLayout => _dailyLayout;
@@ -75,12 +76,15 @@ class ThemeController extends ChangeNotifier {
       _themeMode == AppThemeMode.dark ||
       (_themeMode == AppThemeMode.system &&
           _systemBrightness() == Brightness.dark);
-  String? get lightThemePresetId => _lightThemePresetId;
-  String? get darkThemePresetId => _darkThemePresetId;
-  String? get activeId => isDark ? _darkThemePresetId : _lightThemePresetId;
+  String? _selectedId(bool dark) => dailyLayout == DailyLayout.classic
+      ? (dark ? _darkThemePresetId : _lightThemePresetId)
+      : _layoutPresetIds['${dailyLayout.name}.${dark ? 'dark' : 'light'}'];
+  String? get lightThemePresetId => _selectedId(false);
+  String? get darkThemePresetId => _selectedId(true);
+  String? get activeId => _selectedId(isDark);
   ThemeColorPreset? get activePreset => _find(activeId);
-  ThemeColorPreset? get lightThemePreset => _find(_lightThemePresetId);
-  ThemeColorPreset? get darkThemePreset => _find(_darkThemePresetId);
+  ThemeColorPreset? get lightThemePreset => _find(lightThemePresetId);
+  ThemeColorPreset? get darkThemePreset => _find(darkThemePresetId);
   YxPalette? get activePalette => activePreset?.palette;
 
   Future<void> restore() async {
@@ -94,6 +98,9 @@ class ThemeController extends ChangeNotifier {
       _lightThemePresetId = snapshot.lightThemePresetId;
       _darkThemePresetId = snapshot.darkThemePresetId;
       _themeMode = AppThemeMode.values.byName(snapshot.themeMode);
+      _layoutPresetIds
+        ..clear()
+        ..addAll(snapshot.layoutPresetIds);
       _dailyLayout = snapshot.dailyLayout;
       _dreamLayout = snapshot.dreamLayout;
       // Rewrites legacy activeId snapshots into the dual-preset representation.
@@ -115,6 +122,7 @@ class ThemeController extends ChangeNotifier {
     }
     if (_find(_lightThemePresetId) == null) _lightThemePresetId = null;
     if (_find(_darkThemePresetId) == null) _darkThemePresetId = null;
+    _layoutPresetIds.removeWhere((key, value) => _find(value) == null);
     notifyListeners();
   }
 
@@ -181,6 +189,7 @@ class ThemeController extends ChangeNotifier {
     _userPresets.removeWhere((preset) => preset.id == id);
     if (_lightThemePresetId == id) _lightThemePresetId = null;
     if (_darkThemePresetId == id) _darkThemePresetId = null;
+    _layoutPresetIds.removeWhere((key, value) => value == id);
     await _changed();
   }
 
@@ -239,6 +248,15 @@ class ThemeController extends ChangeNotifier {
   }
 
   void _setSelected(String? id, {required bool dark}) {
+    if (dailyLayout != DailyLayout.classic) {
+      final key = '${dailyLayout.name}.${dark ? 'dark' : 'light'}';
+      if (id == null) {
+        _layoutPresetIds.remove(key);
+      } else {
+        _layoutPresetIds[key] = id;
+      }
+      return;
+    }
     if (dark) {
       _darkThemePresetId = id;
     } else {
@@ -265,6 +283,7 @@ class ThemeController extends ChangeNotifier {
       darkThemePresetId: _darkThemePresetId,
       themeMode: _themeMode.name,
       presets: _userPresets,
+      layoutPresetIds: _layoutPresetIds,
       dailyLayout: _dailyLayout,
       dreamLayout: _dreamLayout,
     ).toJsonString();
