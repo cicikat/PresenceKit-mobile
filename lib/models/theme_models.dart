@@ -1,3 +1,4 @@
+import 'ui_layout.dart';
 import 'dart:convert';
 
 import 'app_models.dart';
@@ -94,12 +95,16 @@ class ThemePresetSnapshot {
     required this.darkThemePresetId,
     required this.themeMode,
     required this.presets,
+    this.dailyLayout = DailyLayout.classic,
+    this.dreamLayout = DreamLayout.classic,
   });
 
   final String? lightThemePresetId;
   final String? darkThemePresetId;
   final String themeMode;
   final List<ThemeColorPreset> presets;
+  final DailyLayout dailyLayout;
+  final DreamLayout dreamLayout;
 
   String toJsonString() => jsonEncode({
     'schema': mobileColorPresetStoreSchema,
@@ -107,6 +112,8 @@ class ThemePresetSnapshot {
     'lightThemePresetId': lightThemePresetId,
     'darkThemePresetId': darkThemePresetId,
     'themeMode': themeMode,
+    'dailyLayout': dailyLayout.name,
+    'dreamLayout': dreamLayout.name,
     'presets': presets.map((preset) => preset.toModJson()).toList(),
   });
 
@@ -134,6 +141,16 @@ class ThemePresetSnapshot {
             ? mode!
             : 'system',
         presets: presets,
+        dailyLayout: decodeLayout(
+          json['dailyLayout'],
+          DailyLayout.values,
+          DailyLayout.classic,
+        ),
+        dreamLayout: decodeLayout(
+          json['dreamLayout'],
+          DreamLayout.values,
+          DreamLayout.classic,
+        ),
       );
     } catch (_) {
       return null;

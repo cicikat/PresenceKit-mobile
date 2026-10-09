@@ -980,6 +980,12 @@ class _CompanionAppState extends State<CompanionApp>
                 dark: _themeController.isDark,
                 lightThemePresetName: _themeController.lightThemePreset?.name,
                 darkThemePresetName: _themeController.darkThemePreset?.name,
+                dailyLayout: _themeController.dailyLayout,
+                dreamLayout: _themeController.dreamLayout,
+                onDailyLayout: (v) =>
+                    unawaited(_themeController.setDailyLayout(v)),
+                onDreamLayout: (v) =>
+                    unawaited(_themeController.setDreamLayout(v)),
                 themePresetCount: _themeController.presets.length,
                 prefs: _prefs,
                 profileDisplayName: _profileDisplayName,
@@ -1318,7 +1324,9 @@ class _CompanionAppState extends State<CompanionApp>
           palette: _prefs.calendarPalette,
           name: _profileDisplayName,
           characterId: _currentCharacterId,
-          sessionId: _profileAppearance.grantFor(_currentCharacterId)?.sessionId,
+          sessionId: _profileAppearance
+              .grantFor(_currentCharacterId)
+              ?.sessionId,
           backend: _backend,
           token: _adminToken,
           onBack: () => setState(() => _route = AppRoute.chat),

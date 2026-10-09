@@ -1426,5 +1426,13 @@
   "toolActivityUnknown": "Result unknown",
   "toolActivityPending": "Awaiting confirmation",
   "toolActivityRunning": "Running",
-  "dreamTransitionFailed": "Dream exit or resume was not confirmed. Your dream is preserved; please retry."
+  "dreamTransitionFailed": "Dream exit or resume was not confirmed. Your dream is preserved; please retry.",
+  "dailyInterface": "Daily interface",
+  "dreamInterface": "Dream interface",
+  "layoutClassic": "Classic",
+  "layoutLetter": "Letters",
+  "layoutReverie": "Pink reverie",
+  "layoutNoir": "Noir reverie",
+  "layoutMessenger": "Messenger",
+  "layoutMoonlit": "Moonlit theatre"
 }

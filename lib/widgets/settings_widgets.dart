@@ -1,3 +1,5 @@
+import '../models/ui_layout.dart';
+import 'layout_settings.dart';
 import 'conversation_calendar_widgets.dart';
 import '../controllers/personalization_controller.dart';
 import 'personalization_widgets.dart';
@@ -19,6 +21,10 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
     this.personalization,
+    this.dailyLayout = DailyLayout.classic,
+    this.dreamLayout = DreamLayout.classic,
+    this.onDailyLayout,
+    this.onDreamLayout,
     this.profileContent,
     required this.c,
     required this.language,
@@ -75,6 +81,10 @@ class SettingsPage extends StatelessWidget {
     required this.onAutoPlayVoiceChanged,
   });
 
+  final DailyLayout dailyLayout;
+  final DreamLayout dreamLayout;
+  final ValueChanged<DailyLayout>? onDailyLayout;
+  final ValueChanged<DreamLayout>? onDreamLayout;
   final Widget? profileContent;
   final PersonalizationController? personalization;
   final YxPalette c;
@@ -357,6 +367,14 @@ class SettingsPage extends StatelessWidget {
                 title: l10n.settingsAppearanceSection,
                 icon: Icons.palette_outlined,
                 children: [
+                  if (onDailyLayout != null && onDreamLayout != null)
+                    LayoutSettings(
+                      c: c,
+                      daily: dailyLayout,
+                      dream: dreamLayout,
+                      onDaily: onDailyLayout!,
+                      onDream: onDreamLayout!,
+                    ),
                   CalendarPaletteSetting(
                     c: c,
                     value: prefs.calendarPalette,

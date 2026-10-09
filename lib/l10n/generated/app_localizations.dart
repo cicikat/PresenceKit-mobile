@@ -4866,6 +4866,54 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'梦境退出或恢复尚未确认成功，请重试。'**
   String get dreamTransitionFailed;
+
+  /// No description provided for @dailyInterface.
+  ///
+  /// In zh, this message translates to:
+  /// **'日常界面'**
+  String get dailyInterface;
+
+  /// No description provided for @dreamInterface.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境界面'**
+  String get dreamInterface;
+
+  /// No description provided for @layoutClassic.
+  ///
+  /// In zh, this message translates to:
+  /// **'经典版'**
+  String get layoutClassic;
+
+  /// No description provided for @layoutLetter.
+  ///
+  /// In zh, this message translates to:
+  /// **'书信阅读'**
+  String get layoutLetter;
+
+  /// No description provided for @layoutReverie.
+  ///
+  /// In zh, this message translates to:
+  /// **'粉色梦核'**
+  String get layoutReverie;
+
+  /// No description provided for @layoutNoir.
+  ///
+  /// In zh, this message translates to:
+  /// **'黑粉夜航'**
+  String get layoutNoir;
+
+  /// No description provided for @layoutMessenger.
+  ///
+  /// In zh, this message translates to:
+  /// **'微信风格'**
+  String get layoutMessenger;
+
+  /// No description provided for @layoutMoonlit.
+  ///
+  /// In zh, this message translates to:
+  /// **'月夜剧场'**
+  String get layoutMoonlit;
 }
 
 class _AppLocalizationsDelegate

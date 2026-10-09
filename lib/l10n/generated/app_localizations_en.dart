@@ -2712,4 +2712,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dreamTransitionFailed =>
       'Dream exit or resume was not confirmed. Your dream is preserved; please retry.';
+
+  @override
+  String get dailyInterface => 'Daily interface';
+
+  @override
+  String get dreamInterface => 'Dream interface';
+
+  @override
+  String get layoutClassic => 'Classic';
+
+  @override
+  String get layoutLetter => 'Letters';
+
+  @override
+  String get layoutReverie => 'Pink reverie';
+
+  @override
+  String get layoutNoir => 'Noir reverie';
+
+  @override
+  String get layoutMessenger => 'Messenger';
+
+  @override
+  String get layoutMoonlit => 'Moonlit theatre';
 }

@@ -2591,4 +2591,28 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dreamTransitionFailed => '梦境退出或恢复尚未确认成功，请重试。';
+
+  @override
+  String get dailyInterface => '日常界面';
+
+  @override
+  String get dreamInterface => '梦境界面';
+
+  @override
+  String get layoutClassic => '经典版';
+
+  @override
+  String get layoutLetter => '书信阅读';
+
+  @override
+  String get layoutReverie => '粉色梦核';
+
+  @override
+  String get layoutNoir => '黑粉夜航';
+
+  @override
+  String get layoutMessenger => '微信风格';
+
+  @override
+  String get layoutMoonlit => '月夜剧场';
 }

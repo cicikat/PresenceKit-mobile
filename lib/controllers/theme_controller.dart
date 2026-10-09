@@ -1,3 +1,4 @@
+import '../models/ui_layout.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -21,14 +22,22 @@ class ThemeController extends ChangeNotifier {
     Brightness Function()? systemBrightness,
   }) : _loadPersisted = loadPersisted,
        _savePersisted = savePersisted,
-       _systemBrightness = systemBrightness ??
-           (() => WidgetsBinding.instance.platformDispatcher.platformBrightness);
+       _systemBrightness =
+           systemBrightness ??
+           (() =>
+               WidgetsBinding.instance.platformDispatcher.platformBrightness);
 
   bool _disposed = false;
   @override
-  void notifyListeners() { if (!_disposed) super.notifyListeners(); }
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
+
   @override
-  void dispose() { _disposed = true; super.dispose(); }
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 
   final LoadThemeData _loadPersisted;
   final SaveThemeData _savePersisted;
@@ -37,6 +46,21 @@ class ThemeController extends ChangeNotifier {
   final List<ThemeColorPreset> _bundledPresets = [];
   String? _lightThemePresetId;
   String? _darkThemePresetId;
+  DailyLayout _dailyLayout = DailyLayout.classic;
+  DreamLayout _dreamLayout = DreamLayout.classic;
+  DailyLayout get dailyLayout => _dailyLayout;
+  DreamLayout get dreamLayout => _dreamLayout;
+
+  Future<void> setDailyLayout(DailyLayout value) async {
+    _dailyLayout = value;
+    await _changed();
+  }
+
+  Future<void> setDreamLayout(DreamLayout value) async {
+    _dreamLayout = value;
+    await _changed();
+  }
+
   AppThemeMode _themeMode = AppThemeMode.system;
 
   List<ThemeColorPreset> get presets => List.unmodifiable([
@@ -47,8 +71,10 @@ class ThemeController extends ChangeNotifier {
   ]);
   int get userPresetCount => _userPresets.length;
   AppThemeMode get themeMode => _themeMode;
-  bool get isDark => _themeMode == AppThemeMode.dark ||
-      (_themeMode == AppThemeMode.system && _systemBrightness() == Brightness.dark);
+  bool get isDark =>
+      _themeMode == AppThemeMode.dark ||
+      (_themeMode == AppThemeMode.system &&
+          _systemBrightness() == Brightness.dark);
   String? get lightThemePresetId => _lightThemePresetId;
   String? get darkThemePresetId => _darkThemePresetId;
   String? get activeId => isDark ? _darkThemePresetId : _lightThemePresetId;
@@ -68,6 +94,8 @@ class ThemeController extends ChangeNotifier {
       _lightThemePresetId = snapshot.lightThemePresetId;
       _darkThemePresetId = snapshot.darkThemePresetId;
       _themeMode = AppThemeMode.values.byName(snapshot.themeMode);
+      _dailyLayout = snapshot.dailyLayout;
+      _dreamLayout = snapshot.dreamLayout;
       // Rewrites legacy activeId snapshots into the dual-preset representation.
       if (raw != null && !raw.contains('lightThemePresetId')) await _persist();
     } else {
@@ -95,15 +123,21 @@ class ThemeController extends ChangeNotifier {
     await _changed();
   }
 
-  Future<void> toggleMode() => setMode(isDark ? AppThemeMode.light : AppThemeMode.dark);
+  Future<void> toggleMode() =>
+      setMode(isDark ? AppThemeMode.light : AppThemeMode.dark);
 
   void updateSystemBrightness() {
     if (_themeMode == AppThemeMode.system) notifyListeners();
   }
 
-  Future<ThemeColorPreset> create({required String name, required String base}) async {
+  Future<ThemeColorPreset> create({
+    required String name,
+    required String base,
+  }) async {
     final preset = ThemeColorPreset(
-      id: _newId('user'), name: _cleanName(name), base: base,
+      id: _newId('user'),
+      name: _cleanName(name),
+      base: base,
       palette: base == 'dark' ? YxPalette.dark : YxPalette.light,
     );
     _userPresets.add(preset);
@@ -115,8 +149,10 @@ class ThemeController extends ChangeNotifier {
 
   Future<ThemeColorPreset> duplicate(ThemeColorPreset source) async {
     final copy = ThemeColorPreset(
-      id: _newId('user'), name: _cleanName('${source.name} copy'),
-      base: source.base, palette: source.palette,
+      id: _newId('user'),
+      name: _cleanName('${source.name} copy'),
+      base: source.base,
+      palette: source.palette,
     );
     _userPresets.add(copy);
     _setSelected(copy.id, dark: isDark);
@@ -127,7 +163,10 @@ class ThemeController extends ChangeNotifier {
   Future<void> savePreset(ThemeColorPreset preset) async {
     final index = _userPresets.indexWhere((item) => item.id == preset.id);
     if (index < 0) return;
-    _userPresets[index] = preset.copyWith(name: _cleanName(preset.name), bundled: false);
+    _userPresets[index] = preset.copyWith(
+      name: _cleanName(preset.name),
+      bundled: false,
+    );
     _setSelected(preset.id, dark: isDark);
     await _changed();
   }
@@ -159,7 +198,12 @@ class ThemeController extends ChangeNotifier {
   Future<bool> exportPreset(String id) async {
     final preset = _find(id);
     if (preset == null) return false;
-    if (!kIsWeb) return const AppSettingsStore().exportThemeJson('${_safeFilename(preset.name)}.mobile-theme.json', preset.toModJsonString());
+    if (!kIsWeb) {
+      return const AppSettingsStore().exportThemeJson(
+        '${_safeFilename(preset.name)}.mobile-theme.json',
+        preset.toModJsonString(),
+      );
+    }
     return exportThemeModFile(
       '${_safeFilename(preset.name)}.mobile-theme.json',
       preset.toModJsonString(),
@@ -169,7 +213,11 @@ class ThemeController extends ChangeNotifier {
   Future<bool> importJson(String raw, {bool? dark}) async {
     if (raw.length > 256 * 1024) return false;
     ThemeColorPreset? imported;
-    try { imported = ThemeColorPreset.fromModJson(jsonDecode(raw)); } catch (_) { return false; }
+    try {
+      imported = ThemeColorPreset.fromModJson(jsonDecode(raw));
+    } catch (_) {
+      return false;
+    }
     if (imported == null) return false;
     // Import is additive, including when a bundled or user ID already exists.
     final preset = imported.copyWith(id: _newId('import'), bundled: false);
@@ -183,7 +231,11 @@ class ThemeController extends ChangeNotifier {
     final file = await const AppSettingsStore().pickUploadFile();
     if (file == null) return true;
     if (file.bytes.length > 256 * 1024) return false;
-    try { return await importJson(utf8.decode(file.bytes), dark: dark); } catch (_) { return false; }
+    try {
+      return await importJson(utf8.decode(file.bytes), dark: dark);
+    } catch (_) {
+      return false;
+    }
   }
 
   void _setSelected(String? id, {required bool dark}) {
@@ -196,11 +248,16 @@ class ThemeController extends ChangeNotifier {
 
   ThemeColorPreset? _find(String? id) {
     if (id == null) return null;
-    for (final preset in presets) { if (preset.id == id) return preset; }
+    for (final preset in presets) {
+      if (preset.id == id) return preset;
+    }
     return null;
   }
 
-  Future<void> _changed() async { notifyListeners(); await _persist(); }
+  Future<void> _changed() async {
+    notifyListeners();
+    await _persist();
+  }
 
   Future<void> _persist() async {
     final value = ThemePresetSnapshot(
@@ -208,28 +265,44 @@ class ThemeController extends ChangeNotifier {
       darkThemePresetId: _darkThemePresetId,
       themeMode: _themeMode.name,
       presets: _userPresets,
+      dailyLayout: _dailyLayout,
+      dreamLayout: _dreamLayout,
     ).toJsonString();
-    if (kIsWeb) { await saveWebThemePresets(value); } else { await _savePersisted(value); }
+    if (kIsWeb) {
+      await saveWebThemePresets(value);
+    } else {
+      await _savePersisted(value);
+    }
   }
 
   Future<void> _loadBundledMods() async {
     try {
       final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-      for (final path in manifest.listAssets().where((path) => path.startsWith('mods/') && path.endsWith('.json'))) {
+      for (final path in manifest.listAssets().where(
+        (path) => path.startsWith('mods/') && path.endsWith('.json'),
+      )) {
         try {
-          final preset = ThemeColorPreset.fromModJson(jsonDecode(await rootBundle.loadString(path)), bundled: true);
-          if (preset != null && !_bundledPresets.any((item) => item.id == preset.id)) _bundledPresets.add(preset);
+          final preset = ThemeColorPreset.fromModJson(
+            jsonDecode(await rootBundle.loadString(path)),
+            bundled: true,
+          );
+          if (preset != null &&
+              !_bundledPresets.any((item) => item.id == preset.id)) {
+            _bundledPresets.add(preset);
+          }
         } catch (_) {}
       }
     } catch (_) {}
   }
 
-  static String _newId(String prefix) => '$prefix-${DateTime.now().microsecondsSinceEpoch}';
+  static String _newId(String prefix) =>
+      '$prefix-${DateTime.now().microsecondsSinceEpoch}';
   static String _cleanName(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return 'Untitled theme';
     return trimmed.length <= 40 ? trimmed : trimmed.substring(0, 40);
   }
+
   static String _safeFilename(String value) {
     final safe = value.replaceAll(RegExp(r'[^a-zA-Z0-9\u4e00-\u9fff_-]'), '_');
     return safe.isEmpty ? 'theme' : safe;

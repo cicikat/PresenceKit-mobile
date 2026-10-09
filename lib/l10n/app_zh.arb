@@ -1426,5 +1426,13 @@
   "toolActivityUnknown": "结果未知",
   "toolActivityPending": "等待确认",
   "toolActivityRunning": "调用中",
-  "dreamTransitionFailed": "梦境退出或恢复尚未确认成功，请重试。"
+  "dreamTransitionFailed": "梦境退出或恢复尚未确认成功，请重试。",
+  "dailyInterface": "日常界面",
+  "dreamInterface": "梦境界面",
+  "layoutClassic": "经典版",
+  "layoutLetter": "书信阅读",
+  "layoutReverie": "粉色梦核",
+  "layoutNoir": "黑粉夜航",
+  "layoutMessenger": "微信风格",
+  "layoutMoonlit": "月夜剧场"
 }
