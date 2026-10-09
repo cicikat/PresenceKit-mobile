@@ -4,3 +4,13 @@
 @media(max-width:600px){body{background:#eef0f5}.studio{display:block;padding:0}.device{width:100%;height:100svh;min-height:660px;border-radius:0;box-shadow:none}.controls{position:fixed;right:14px;top:145px;z-index:8;width:auto;display:flex;gap:6px}.control-label,.hint,#renderStatus{display:none}.control-button{font-size:9px;width:auto;padding:7px 10px;margin:0;border-radius:20px;background:#faf9fc9c;backdrop-filter:blur(10px);gap:8px}.conversation{padding-top:17px}.background-caption{top:205px}.composer-wrap{padding-bottom:env(safe-area-inset-bottom,0px)}}
 @media(max-height:760px) and (max-width:600px){.chapter{margin:17px 0 18px}.message{margin-bottom:16px}.bubble{padding-top:12px;padding-bottom:12px}.dream-card{margin-top:20px;padding:13px 16px}.quiet{margin-top:16px}.nav{height:65px}.statusbar{height:48px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}button.pressed{transform:none}}
+/* The panels ARE the glass bubbles. Only the continuous light field is behind. */
+.glass{background:linear-gradient(125deg,rgba(255,255,255,.22),rgba(250,249,252,.06) 65%,rgba(237,236,247,.10));backdrop-filter:blur(5px) saturate(112%);-webkit-backdrop-filter:blur(5px) saturate(112%);border-color:rgba(255,255,255,.46);box-shadow:inset 0 1px 1px #ffffff85,inset 0 -1px 1px #a69db010,0 5px 13px #6d688d08}
+.rose{background:linear-gradient(130deg,#fff8f530,#e8c9c518 75%,#e9dcd324)}
+.dream-card{background:linear-gradient(140deg,#ffffff30,#f4f2fa0d 60%,#d4cde420)}
+.send{background:linear-gradient(140deg,#ffffff30,#c9bfdc35)}
+.rare-event .dream-card{background:rgba(56,45,76,.05);border-color:#fff6;color:#fff;backdrop-filter:blur(3px) saturate(125%);-webkit-backdrop-filter:blur(3px) saturate(125%)}
+.rare-event .card-copy small,.rare-event .card-copy>span,.rare-event .card-mark{color:#faf3ffda}
+.rare-event .card-moon{color:#fff;background:#ffffff14;box-shadow:inset 0 1px 1px #ffffff70}
+.fallback{background:linear-gradient(115deg,#eef0f5 3%,#d9d2e7 32%,#f8f3fa 49%,#e8c9c570 62%,#eef0f5 88%)}
+@media(max-width:600px){.controls{gap:4px}.control-button{font-size:8px;padding:7px 8px;gap:5px}}

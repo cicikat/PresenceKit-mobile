@@ -1,4 +1,9 @@
 {
+  "rareEvent": {
+    "enabled": "true",
+    "title": "梦境交汇",
+    "opticalFramesDiffer": true
+  },
   "errors": [],
   "externalRequests": [],
   "background": {
@@ -39,5 +44,5 @@
       "input": 233
     }
   ],
-  "render": "实时曲面折射 / 24 秒循环"
+  "render": "全幅光流 · UI 玻璃折射 / 24 秒循环"
 }

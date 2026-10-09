@@ -10,3 +10,8 @@
 ## 参考图修订：流动光玻璃
 - [x] 去除厚重环状实体，改为透明薄曲面和流动光带；保留冷白配色。证据：g-moonlight.js 新 surface/lightField 与 background 截图。原始三维 SDF 实现已被本修订替代。
 - [x] 重拍并目视检查背景和聊天截图，重验交互后独立提交。证据：5 张截图已更新，validation.json 全部检查再次通过；真机性能仍 not-run。
+
+## 气泡作为 UI 本体修订
+- [x] 移除背景装饰气泡；扩大连续光流，玻璃折射仅落在真实 UI 栏目范围。证据：g-moonlight.js panels/radii、lightField；background 截图仅有全幅光流。
+- [x] 添加一个手动预览的稀有事件框；同一底层光流经过时产生不同的彩虹光学响应，普通栏目不变色。证据：eventActive 默认 false，特殊材质仅限 dream-card；event 截图和 rareEvent 验收。
+- [x] 更新实际截图与交互验收、说明，独立提交。证据：六张截图、validation.json、moonlight-README.md；真机性能仍 not-run。无跨端影响。
