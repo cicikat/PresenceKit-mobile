@@ -9,6 +9,7 @@ import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
 import 'package:presencekit_mobile/widgets/chat_scene.dart';
+import 'package:presencekit_mobile/widgets/conversation_presentation.dart';
 
 void main() {
   testWidgets('layout changes preserve a focused draft and real navigation', (tester) async {
@@ -25,7 +26,7 @@ void main() {
       locale:const Locale('en'),
       localizationsDelegates:AppLocalizations.localizationsDelegates,
       supportedLocales:AppLocalizations.supportedLocales,
-      home:Scaffold(body:ChatScene(c:YxPalette.light, layout:layout,
+      home:Scaffold(body:ChatScene(c:dailyLayoutPalette(layout, YxPalette.light), layout:layout,
         dark:false,prefs:const YxPrefs(),profileDisplayName:'Nova',profileAvatarBytes:null,
         controller:controller,onOpenDrawer:(){},onOpenSettings:(){},
         onRoute:(v){routed=v;},onOpenAttach:(){},onToggleTheme:(){},
@@ -44,6 +45,13 @@ void main() {
     expect(tester.takeException(),isNull);
     await tester.pumpWidget(page(DailyLayout.classic));
     expect(find.text('keep this draft'), findsOneWidget);
+    for (final layout in [DailyLayout.reverie, DailyLayout.noir]) {
+      await tester.pumpWidget(page(layout));
+      expect(find.text('keep this draft'), findsOneWidget);
+      await tester.tap(find.text('Enter dream'));
+      expect(routed, AppRoute.dream);
+      expect(tester.takeException(), isNull);
+    }
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
   });

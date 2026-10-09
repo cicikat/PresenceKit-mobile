@@ -98,9 +98,7 @@ class _CompanionAppState extends State<CompanionApp>
     final custom = _themeController.activePalette;
     if (custom != null) return custom;
     final base = _themeController.isDark ? YxPalette.dark : YxPalette.light;
-    return _themeController.isDark
-        ? base
-        : dailyLayoutPalette(_themeController.dailyLayout, base);
+    return dailyLayoutPalette(_themeController.dailyLayout, base);
   }
 
   bool get _hasAdminToken => _adminToken.trim().isNotEmpty;

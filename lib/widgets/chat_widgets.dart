@@ -1,3 +1,4 @@
+import 'reverie_scene.dart';
 import '../models/ui_layout.dart';
 import 'conversation_presentation.dart';
 import 'dart:math' as math;
@@ -594,120 +595,137 @@ class _HimMessageState extends State<HimMessage> {
   @override
   Widget build(BuildContext context) {
     final c = widget.c;
+    final layout = ConversationPresentation.dailyOf(context);
+    final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
     final letter =
         ConversationPresentation.dailyOf(context) == DailyLayout.letter;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!letter)
-            Padding(
-              padding: const EdgeInsets.only(top: 18),
-              child: YxAvatar(
-                c: c,
-                size: 28,
-                imageBytes: widget.profileAvatarBytes,
-                text: widget.profileDisplayName.characters.first,
-              ),
-            ),
-          if (!letter) const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (widget.showDateDivider && widget.dateKey != null)
-                  _ChatDateDivider(
-                    c: c,
-                    dateKey: widget.dateKey!,
-                    role: context.l10n.chatRoleHim,
-                  ),
-                Row(
-                  children: [
-                    Text(
-                      widget.prefs.showChatTime
-                          ? '${letter ? widget.profileDisplayName : context.l10n.chatRoleHim}  ${widget.time}'
-                          : letter
-                          ? widget.profileDisplayName
-                          : context.l10n.chatRoleHim,
-                      style: mono(c, 9.5, color: c.ink3),
-                    ),
-                    if (widget.tag != null) ...[
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: YxTag(
-                          c: c,
-                          text: widget.tag!,
-                          variant: widget.tagVariant,
-                        ),
-                      ),
-                    ],
-                  ],
+      child: MessageWindow(
+        enabled: window,
+        c: c,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!letter && !window)
+              Padding(
+                padding: const EdgeInsets.only(top: 18),
+                child: YxAvatar(
+                  c: c,
+                  size: 28,
+                  imageBytes: widget.profileAvatarBytes,
+                  text: widget.profileDisplayName.characters.first,
                 ),
-                const SizedBox(height: 4),
-                GestureDetector(
-                  onLongPressStart: widget.sticker == null
-                      ? (details) =>
-                            unawaited(_handleLongPress(details.globalPosition))
-                      : null,
-                  child: Container(
-                    constraints: BoxConstraints(
-                      maxWidth: letter ? double.infinity : 300,
+              ),
+            if (!letter && !window) const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.showDateDivider && widget.dateKey != null)
+                    _ChatDateDivider(
+                      c: c,
+                      dateKey: widget.dateKey!,
+                      role: context.l10n.chatRoleHim,
                     ),
-                    padding: letter
-                        ? const EdgeInsets.symmetric(vertical: 14)
-                        : const EdgeInsets.fromLTRB(14, 10, 14, 11),
-                    decoration: letter
-                        ? null
-                        : BoxDecoration(
-                            color: c.surfaceSoft.withValues(
-                              alpha: widget.prefs.chatBubbleOpacity,
-                            ),
-                            border: Border.all(
-                              color: widget.highlight ? c.warn : c.surfaceEdge,
-                              width: widget.highlight ? 2 : 1,
-                            ),
-                            borderRadius: const BorderRadius.only(
-                              topRight: Radius.circular(6),
-                              bottomRight: Radius.circular(6),
-                              bottomLeft: Radius.circular(0),
-                              topLeft: Radius.circular(0),
-                            ),
+                  Row(
+                    children: [
+                      Text(
+                        widget.prefs.showChatTime
+                            ? '${letter || window ? widget.profileDisplayName : context.l10n.chatRoleHim}  ${widget.time}'
+                            : letter || window
+                            ? widget.profileDisplayName
+                            : context.l10n.chatRoleHim,
+                        style: mono(c, 9.5, color: c.ink3),
+                      ),
+                      if (widget.tag != null) ...[
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: YxTag(
+                            c: c,
+                            text: widget.tag!,
+                            variant: widget.tagVariant,
                           ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onLongPressStart: widget.sticker == null
+                        ? (details) => unawaited(
+                            _handleLongPress(details.globalPosition),
+                          )
+                        : null,
                     child: Container(
-                      padding: EdgeInsets.only(left: letter ? 0 : 10),
-                      decoration: letter
+                      constraints: BoxConstraints(
+                        maxWidth: letter || window ? double.infinity : 300,
+                      ),
+                      padding: letter
+                          ? const EdgeInsets.symmetric(vertical: 14)
+                          : const EdgeInsets.fromLTRB(14, 10, 14, 11),
+                      decoration: letter || window
                           ? null
                           : BoxDecoration(
-                              border: Border(
-                                left: BorderSide(color: c.character, width: 3),
+                              color: c.surfaceSoft.withValues(
+                                alpha: widget.prefs.chatBubbleOpacity,
+                              ),
+                              border: Border.all(
+                                color: widget.highlight
+                                    ? c.warn
+                                    : c.surfaceEdge,
+                                width: widget.highlight ? 2 : 1,
+                              ),
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(6),
+                                bottomRight: Radius.circular(6),
+                                bottomLeft: Radius.circular(0),
+                                topLeft: Radius.circular(0),
                               ),
                             ),
-                      child: widget.sticker != null
-                          ? StickerImage(sticker: widget.sticker!)
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (widget.quotedText != null)
-                                  _QuoteBar(c: c, text: widget.quotedText!),
-                                AnimatedRevealText(
-                                  text: widget.text,
-                                  displayText: widget.displayText,
-                                  accent: c.danger,
-                                  animate: widget.animate,
-                                  style: contentSerif(c, widget.prefs.fontSize),
-                                  onRevealStarted: widget.onRevealStarted,
-                                  onRevealSkipped: widget.onRevealSkipped,
+                      child: Container(
+                        padding: EdgeInsets.only(
+                          left: letter || window ? 0 : 10,
+                        ),
+                        decoration: letter || window
+                            ? null
+                            : BoxDecoration(
+                                border: Border(
+                                  left: BorderSide(
+                                    color: c.character,
+                                    width: 3,
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                        child: widget.sticker != null
+                            ? StickerImage(sticker: widget.sticker!)
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (widget.quotedText != null)
+                                    _QuoteBar(c: c, text: widget.quotedText!),
+                                  AnimatedRevealText(
+                                    text: widget.text,
+                                    displayText: widget.displayText,
+                                    accent: c.danger,
+                                    animate: widget.animate,
+                                    style: contentSerif(
+                                      c,
+                                      widget.prefs.fontSize,
+                                    ),
+                                    onRevealStarted: widget.onRevealStarted,
+                                    onRevealSkipped: widget.onRevealSkipped,
+                                  ),
+                                ],
+                              ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

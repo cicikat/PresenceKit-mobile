@@ -1,3 +1,4 @@
+import 'reverie_scene.dart';
 import '../models/ui_layout.dart';
 import 'conversation_presentation.dart';
 import 'dart:math' as math;
@@ -102,7 +103,10 @@ class ChatScene extends StatelessWidget {
     );
     final topInset = MediaQuery.paddingOf(context).top;
     final classic = layout == DailyLayout.classic;
+    final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
     final metaItems = <Widget>[
+      if (window && onRoute != null)
+        ReveriePortal(c: c, onOpen: () => onRoute!(AppRoute.dream)),
       if (loadingMoreHistory) MetaLine(c: c, text: l10n.chatLoadingOlder),
       if (hiddenMessageCount > 0)
         MetaLine(c: c, text: l10n.chatHiddenOlder(hiddenMessageCount)),
@@ -192,9 +196,17 @@ class ChatScene extends StatelessWidget {
                   controller: scrollController,
                   cacheExtent: 720,
                   padding: EdgeInsets.fromLTRB(
-                    classic ? 12 : 24,
+                    classic
+                        ? 12
+                        : window
+                        ? 18
+                        : 24,
                     !classic || prefs.infoStrip ? 14 : topInset + 58,
-                    classic ? 12 : 24,
+                    classic
+                        ? 12
+                        : window
+                        ? 18
+                        : 24,
                     92,
                   ),
                   itemCount: itemCount,

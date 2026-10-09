@@ -28,25 +28,66 @@ class ConversationPresentation extends InheritedWidget {
       daily != oldWidget.daily || dream != oldWidget.dream;
 }
 
-YxPalette dailyLayoutPalette(DailyLayout layout, YxPalette base) =>
-    layout == DailyLayout.letter
-    ? base.copyWith(
-        surface: const Color(0xFFF7F4EB),
-        surfaceSoft: const Color(0xFFFCF9F0),
-        surfaceDeep: const Color(0xFFECE7D9),
-        surfaceEdge: const Color(0xFFD7D8C8),
-        ink1: const Color(0xFF343D30),
-        ink2: const Color(0xFF5C6653),
-        ink3: const Color(0xFF737F66),
-        ink4: const Color(0xFF9AA38D),
-        character: const Color(0xFF64734D),
-        characterDeep: const Color(0xFF46543A),
-        characterOn: const Color(0xFFFCFAF3),
-        send: const Color(0xFF64734D),
-        userBubble: const Color(0xFFE7E9D9),
-        userBubbleText: const Color(0xFF343D30),
-      )
-    : base;
+YxPalette dailyLayoutPalette(DailyLayout layout, YxPalette base) {
+  if (layout == DailyLayout.letter && base.surface.computeLuminance() > .2) {
+    return base.copyWith(
+      surface: const Color(0xFFF7F4EB),
+      surfaceSoft: const Color(0xFFFCF9F0),
+      surfaceDeep: const Color(0xFFECE7D9),
+      surfaceEdge: const Color(0xFFD7D8C8),
+      ink1: const Color(0xFF343D30),
+      ink2: const Color(0xFF5C6653),
+      ink3: const Color(0xFF737F66),
+      ink4: const Color(0xFF9AA38D),
+      character: const Color(0xFF64734D),
+      characterDeep: const Color(0xFF46543A),
+      characterOn: const Color(0xFFFCFAF3),
+      send: const Color(0xFF64734D),
+      userBubble: const Color(0xFFE7E9D9),
+      userBubbleText: const Color(0xFF343D30),
+    );
+  }
+  if (layout == DailyLayout.noir ||
+      (layout == DailyLayout.reverie && base.surface.computeLuminance() < .2)) {
+    return base.copyWith(
+      surface: const Color(0xFF101116),
+      surfaceSoft: const Color(0xFF202128),
+      surfaceDeep: const Color(0xFF18191F),
+      surfaceEdge: const Color(0xFF3D3542),
+      ink1: const Color(0xFFE7E7EE),
+      ink2: const Color(0xFFCCCCD6),
+      ink3: const Color(0xFFA7A4B5),
+      ink4: const Color(0xFF797685),
+      character: const Color(0xFFFF4F9B),
+      characterDeep: const Color(0xFF34212D),
+      characterSoft: const Color(0xFF352731),
+      characterOn: const Color(0xFFE7E7EE),
+      send: const Color(0xFFFF4F9B),
+      userBubble: const Color(0xFF392837),
+      userBubbleText: const Color(0xFFE7E7EE),
+    );
+  }
+  if (layout == DailyLayout.reverie) {
+    return base.copyWith(
+      surface: const Color(0xFFFBF0F5),
+      surfaceSoft: const Color(0xFFFFFAFD),
+      surfaceDeep: const Color(0xFFF1E2EC),
+      surfaceEdge: const Color(0xFFDECBD9),
+      ink1: const Color(0xFF574652),
+      ink2: const Color(0xFF796270),
+      ink3: const Color(0xFF92788B),
+      ink4: const Color(0xFFAE94A4),
+      character: const Color(0xFFAD658C),
+      characterDeep: const Color(0xFF85516F),
+      characterSoft: const Color(0xFFEBDCE7),
+      characterOn: const Color(0xFFFFFAFD),
+      send: const Color(0xFFAD658C),
+      userBubble: const Color(0xFFEEDDE9),
+      userBubbleText: const Color(0xFF574652),
+    );
+  }
+  return base;
+}
 
 class ConversationHeader extends StatelessWidget {
   const ConversationHeader({
@@ -68,6 +109,7 @@ class ConversationHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
     return SafeArea(
       bottom: false,
       child: Column(
@@ -79,13 +121,21 @@ class ConversationHeader extends StatelessWidget {
               children: [
                 IconButton(
                   onPressed: onMenu,
-                  icon: Icon(Icons.menu_rounded, color: c.ink2),
+                  icon: Icon(
+                    window ? Icons.auto_awesome_outlined : Icons.menu_rounded,
+                    color: c.character,
+                  ),
                   tooltip: l.drawerTooltip,
                 ),
                 Expanded(
                   child: Text(
                     name,
-                    style: serif(c, 24, weight: FontWeight.w500),
+                    style: serif(c, window ? 28 : 24, weight: FontWeight.w500)
+                        .copyWith(
+                          fontStyle: window
+                              ? FontStyle.italic
+                              : FontStyle.normal,
+                        ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
