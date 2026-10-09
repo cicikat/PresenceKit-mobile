@@ -288,3 +288,7 @@ Flutter analyze --no-pub passed with zero issues. Focused widget/controller/prot
 ## 工单 30 · 整套界面切换
 
 148 项任务相关 Flutter 回归通过；静态分析零问题；13 张逐页渲染图已检查，窄屏/大字号/键盘与真实导航、筛选由 widget 测试覆盖。Dev debug APK 构建成功；adb 无设备，未安装或发布，真实后端/前后台/OEM 字体/重启恢复 not-run。工单与复现入口见 cc-tasks/30-mobile-layout-switching.md；图像导出运行 layout_render_test.dart 并传入 LAYOUT_REVIEW=true。
+
+## 工单 31 · 参考字体与排版
+
+117 项相关回归通过，静态分析零问题；额外运行 LAYOUT_REVIEW=true 的 14 项渲染回归并检查 13 张逐页图。ReferenceSong/ReferenceLatin 从实际 bundle 加载，审核 UI 字体仅用于导出，未覆盖衬线体。Unicode 环绕测试覆盖中文、emoji、组合字符、换行和富文本样式。Dev debug APK 构建成功，三份字体与源资产逐字节一致，OFL 许可在包内。工单、字体来源与校验记录见 cc-tasks/31-reference-typography-and-spacing.md 和 assets/fonts/README.md；adb 无设备，未安装或发布，真机/OEM/真实后端 not-run。

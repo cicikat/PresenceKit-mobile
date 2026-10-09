@@ -210,3 +210,7 @@ LifeRecordsController 的保存/连接/手动同步在 busy 期间合并为后�
 设置继续使用连接优先的折叠卡片。所有布局保留原鉴权、历史/轮询、附件、引用、重试、梦境退出与通知协议；无后端或桌面接口影响。测试参考数据仅在 test/ 中，不写入正式页面。
 
 验收边界与逐项证据见 [工单 30](../../cc-tasks/30-mobile-layout-switching.md) 和 [详细界面工单](ui-layout-work-order.md)。
+
+## 参考排版（工单 31）
+
+`reference_typography` 将 A/E/C 的中文衬线体固定到内置 Noto Serif CJK SC，E/F 英文刊头使用 Libre Baskerville；F 主标题与信窗正文保持参考的无衬线体。来源、固定提交、校验值与 OFL 见 assets/fonts/README.md；自选字体继续优先。`LetterFlowText` 以真实首段富文本行边界环绕 96×105 插画，后续文本恢复全宽；逐字展示仍由原 AnimatedRevealText 管理。字号、行高、留白和气泡分别按各套 CSS，设置保留原折叠卡。无后端、协议与原生接口影响。
