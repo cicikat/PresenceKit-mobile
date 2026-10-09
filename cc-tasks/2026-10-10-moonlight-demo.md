@@ -7,3 +7,6 @@
 - [x] 完成纯背景、点击、输入焦点与减少动态。证据：focus.png、validation.json 的 inert、card、send、reducedFramesEqual=true。验收：浏览器操作、系统 reduce 模拟。
 - [x] 检查响应式、离线与浏览器错误。证据：validation.json errors=[]、externalRequests=[]；320/360/390/430 无横向溢出；截图已目视检查。验收：窄屏、桌面、file 打开，无外部请求。
 - [x] 提供说明和截图。证据：moonlight-README.md、5 张实际浏览器截图及 g-moonlight-validation.json；独立提交见本文件 git log。真机性能/原生验收 not-run；本任务为视觉参考。
+## 参考图修订：流动光玻璃
+- [x] 去除厚重环状实体，改为透明薄曲面和流动光带；保留冷白配色。证据：g-moonlight.js 新 surface/lightField 与 background 截图。原始三维 SDF 实现已被本修订替代。
+- [x] 重拍并目视检查背景和聊天截图，重验交互后独立提交。证据：5 张截图已更新，validation.json 全部检查再次通过；真机性能仍 not-run。

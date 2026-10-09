@@ -10,85 +10,58 @@ const fragment=`
 precision highp float;
 uniform vec2 resolution;
 uniform float phase;
-const float PI=3.14159265359;
-mat2 rotate(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
-// A sculpted, uneven toroidal sheet. The opening and folded rim provide
-// recognizable glass curvature rather than a set of blurred colour blobs.
-float field(vec3 p){
- p.y+=.52;
- p.xy=rotate(-.30+.06*sin(phase))*p.xy;
- p.y/=1.38;
- p.x+=.10*sin(p.y*3.+phase);
- float a=atan(p.y,p.x);
- float ring=.72+.12*sin(a*3.+.4+ .22*sin(phase))+.065*cos(a*2.-.3);
- float thick=.235+.065*sin(a*2.+1.+.3*cos(phase));
- float z=p.z+.16*sin(a*2.+.7)+.07*cos(a*3.+phase);
- return (length(vec2(length(p.xy)-ring,z*.84))-thick)*.72;
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+float sheet(vec2 p,vec2 center,vec2 size,float angle){
+ p=rot(angle)* (p-center);
+ p.x+=.065*sin(p.y*2.8+phase)*sin(p.y*1.4+.6);
+ return (length(p/size)-1.)*min(size.x,size.y);
 }
-vec3 normalAt(vec3 p){vec2 e=vec2(.002,0.);return normalize(vec3(field(p+e.xyy)-field(p-e.xyy),field(p+e.yxy)-field(p-e.yxy),field(p+e.yyx)-field(p-e.yyx)));}
-vec3 backdrop(vec2 p){
- vec3 c=vec3(.936,.941,.962);
- float violet=exp(-dot((p-vec2(.45,-.5))*vec2(.7,.55),(p-vec2(.45,-.5))*vec2(.7,.55)));
- c=mix(c,vec3(.84,.82,.90),violet*.48);
- float pearl=exp(-dot(p-vec2(-.55,1.1),p-vec2(-.55,1.1))*1.4);
- c=mix(c,vec3(.989,.982,.991),pearl*.75);
- float gold=exp(-dot((p-vec2(-.7,-1.3))*vec2(2.,1.),(p-vec2(-.7,-1.3))*vec2(2.,1.)));
- c=mix(c,vec3(.925,.849,.828),gold*.27);
- return c;
+float surface(vec2 p){
+ float a=sheet(p,vec2(-.50,-.46),vec2(.30,1.04),-.13+.025*sin(phase));
+ float b=sheet(p,vec2(.37,-.30),vec2(.46,.87),.18+.03*cos(phase));
+ float c=sheet(p,vec2(-.20,-1.49),vec2(.44,.60),-.32+.025*cos(phase));
+ return min(a,min(b,c));
 }
-// Procedural studio illumination: broad pearl panels, a narrow silver strip,
-// and a small rose/champagne panel; all reflected on the curved surface.
-vec3 environment(vec3 r){
- float a=atan(r.z,r.x),h=r.y;
- vec3 c=mix(vec3(.51,.54,.65),vec3(.98,.976,.99),smoothstep(-.7,.7,h));
- float strip=pow(.5+.5*cos(a*3.+h*2.+.09*sin(phase)),18.);
- c=mix(c,vec3(1.),strip*.85);
- float dark=pow(.5+.5*cos(a*2.-h*3.+1.),10.);
- c=mix(c,vec3(.40,.42,.53),dark*.46);
- float rose=exp(-pow((a+.9)*2.2,2.)-pow((h+.35)*2.,2.));
- c=mix(c,vec3(.92,.76,.72),rose*.80);
- float lavender=exp(-pow((a-1.8)*1.4,2.)-pow(h*1.7,2.));
- c=mix(c,vec3(.76,.71,.85),lavender*.60);
+vec3 lightField(vec2 p){
+ vec3 c=vec3(.946,.951,.969);
+ float path=.20+.29*sin(p.y*1.65+.23*sin(phase))+.08*cos(p.y*3.3-.17*cos(phase));
+ float d=p.x-path;
+ float violet=exp(-pow((d+.16)*4.1,2.));
+ float silver=exp(-pow((d-.04)*10.,2.));
+ float rose=exp(-pow((d-.11)*6.5,2.))*exp(-pow((p.y+.65)*.85,2.));
+ c=mix(c,vec3(.77,.71,.87),violet*.48);
+ c=mix(c,vec3(.98,.967,.983),silver*.61);
+ c=mix(c,vec3(.94,.78,.77),rose*.36);
+ float left=-.66+.14*sin(p.y*2.1+.20*cos(phase));
+ float fold=exp(-pow((p.x-left)*7.,2.))*exp(-pow((p.y+1.)*.7,2.));
+ c=mix(c,vec3(.80,.85,.94),fold*.36);
  return c;
 }
 void main(){
- vec2 uv=(gl_FragCoord.xy*2.-resolution.xy)/resolution.y;
- uv*=2.15;
- vec3 color=backdrop(uv);
- vec3 origin=vec3(uv,3.6),direction=vec3(0.,0.,-1.);
- float travel=0.;bool hit=false;
- for(int i=0;i<64;i++){vec3 p=origin+direction*travel;float d=field(p);if(d<.0015){hit=true;break;}travel+=d*.9;if(travel>6.)break;}
- if(hit){
-  vec3 p=origin+direction*travel,n=normalAt(p);
-  float facing=clamp(dot(n,-direction),0.,1.);
-  float fresnel=.045+.955*pow(1.-facing,3.6);
-  vec3 refracted=refract(direction,n,1./1.46);
-  float thickness=.32+.30*facing;
-  vec2 lens=uv+refracted.xy*(.65+thickness)+n.xy*.10;
-  vec3 transmission=backdrop(lens);
-  // Rear-surface reflection and a softly distorted pearl ribbon inside glass.
-  vec3 inside=environment(normalize(vec3(refracted.xy*.7,-refracted.z)));
-  transmission=mix(transmission,inside,.23);
-  float ribbon=exp(-pow((lens.x*.85+lens.y*.52+.37+.025*sin(phase))*8.,2.));
-  transmission=mix(transmission,vec3(.93,.80,.77),ribbon*.32);
-  float innerSilver=pow(.5+.5*sin(lens.y*4.+lens.x*2.),12.);
-  transmission+=vec3(.045,.045,.06)*innerSilver;
-  vec3 reflected=environment(reflect(direction,n));
-  color=mix(transmission,reflected,.16+fresnel*.66);
-  float rim=pow(1.-facing,8.);
-  float innerEdge=exp(-pow((facing-.32)*18.,2.));
-  color=mix(color,vec3(.71,.70,.79),innerEdge*.20);
-  float seam=exp(-pow((facing-.48)*24.,2.));
-  color+=vec3(.055,.049,.045)*seam;
-  color=mix(color,vec3(.99,.985,1.),rim*.72);
-  vec3 light=normalize(vec3(-.65,.85,1.4));
-  float spec=pow(max(dot(reflect(direction,n),light),0.),90.);
-  color+=vec3(.17)*spec;
-  float contour=pow(1.-facing,2.);
-  color-=vec3(.15,.14,.13)*contour*(1.-rim);
- }
- // Subtle vignette for spatial depth, without a full-screen blur overlay.
- color-=.018*pow(length(uv)*.32,2.);
+ vec2 p=(gl_FragCoord.xy*2.-resolution.xy)/resolution.y*2.15;
+ vec3 color=lightField(p);
+ float d=surface(p);
+ vec2 e=vec2(.003,0.);
+ vec2 grad=normalize(vec2(surface(p+e.xy)-surface(p-e.xy),surface(p+e.yx)-surface(p-e.yx)));
+ float cover=1.-smoothstep(-.002,.005,d);
+ // Thin optical skin: essentially clear centres, stronger refraction only
+ // at the curved edges. There is no opaque mass or thick toroidal body.
+ float bend=exp(-max(-d,0.)*9.);
+ vec2 lens=p+grad*(.025+.115*bend)+vec2(.018*sin(p.y*3.+phase),0.);
+ vec3 through=lightField(lens);
+ color=mix(color,through,cover*.82);
+ float innerGlow=exp(-pow((d+.045)*34.,2.));
+ float edge=exp(-pow(d*185.,2.));
+ float shade=exp(-pow((d-.011)*100.,2.));
+ float illumination=.5+.5*dot(grad,normalize(vec2(-.6,.8)));
+ color-=vec3(.08,.078,.09)*shade*.34;
+ color=mix(color,vec3(1.,.995,1.),edge*(.40+.48*illumination));
+ color+=vec3(.036,.029,.04)*innerGlow*cover*illumination;
+ // A refracted ribbon of light inside each transparent sheet.
+ float streak=exp(-pow((lens.x-.23-.27*sin(lens.y*1.65+.23*sin(phase)))*15.,2.));
+ color+=vec3(.034,.02,.027)*streak*cover;
+ float top=smoothstep(.4,1.9,p.y);
+ color=mix(color,vec3(.967,.970,.981),top*.8);
  gl_FragColor=vec4(clamp(color,0.,1.),1.);
 }`;
 function shader(type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
