@@ -1,8 +1,8 @@
+import 'reference_typography.dart';
 import 'reference_art.dart';
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
-import 'common_widgets.dart';
 
 YxPalette moonlitPalette(YxPalette base) => base.copyWith(
   surface: const Color(0xFF141D31),
@@ -34,12 +34,12 @@ class MoonlitTitle extends StatelessWidget {
       children: [
         Text(
           context.l10n.referenceMoonlitTitle,
-          style: serif(c, 26).copyWith(height: 1.7, letterSpacing: 1),
+          style: referenceSerif(c, 26).copyWith(height: 1.7, letterSpacing: 1),
         ),
         const SizedBox(height: 14),
         Text(
           context.l10n.referenceMoonlitSubtitle,
-          style: serif(c, 9, color: c.ink3).copyWith(letterSpacing: 2),
+          style: referenceSerif(c, 9, color: c.ink3).copyWith(letterSpacing: 2),
         ),
       ],
     ),
@@ -119,7 +119,7 @@ class MoonlitHeader extends StatelessWidget {
               label,
               maxLines: 2,
               textAlign: TextAlign.center,
-              style: serif(c, 8, color: action == null ? c.ink4 : c.ink2),
+              style: referenceSerif(c, 8, color: action == null ? c.ink4 : c.ink2),
             ),
           ],
         ),

@@ -1,3 +1,4 @@
+import 'reference_typography.dart';
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
@@ -121,7 +122,7 @@ class ReferenceHeader extends StatelessWidget {
                             ? 'after.you'
                             : 'dear.you',
                         style:
-                            serif(
+                            referenceSerif(
                               c,
                               25,
                               color: paper
@@ -130,7 +131,7 @@ class ReferenceHeader extends StatelessWidget {
                                   ? c.ink1
                                   : c.character,
                             ).copyWith(
-                              fontFamily: AppTypography.family ?? 'serif',
+                              fontFamily: AppTypography.family ?? (paper ? referenceSerifFamily : referenceLatinFamily),
                               fontStyle: paper
                                   ? FontStyle.normal
                                   : FontStyle.italic,
@@ -142,7 +143,7 @@ class ReferenceHeader extends StatelessWidget {
                         paper
                             ? l.referencePaperSubtitle
                             : l.referenceWindowSubtitle,
-                        style: serif(
+                        style: referenceSerif(
                           c,
                           paper ? 11 : 8,
                           color: c.ink3,
@@ -250,7 +251,7 @@ class ReferenceHeader extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: serif(
+                style: referenceSerif(
                   c,
                   paper ? 11 : 10,
                   color: selected ? c.character : c.ink2,

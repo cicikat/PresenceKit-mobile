@@ -66,6 +66,21 @@ flutter:
 
   assets:
     - mods/
+    - assets/fonts/NotoSerifCJK-LICENSE.txt
+    - assets/fonts/LibreBaskerville-OFL.txt
+
+  fonts:
+    - family: ReferenceSong
+      fonts:
+        - asset: assets/fonts/NotoSerifCJKsc-Regular.otf
+          weight: 400
+    - family: ReferenceLatin
+      fonts:
+        - asset: assets/fonts/LibreBaskerville-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/LibreBaskerville-Italic.ttf
+          weight: 400
+          style: italic
 
   # To add assets to your application, add an assets section, like this:
   # assets:

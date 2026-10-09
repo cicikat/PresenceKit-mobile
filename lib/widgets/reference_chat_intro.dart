@@ -1,8 +1,8 @@
+import 'reference_typography.dart';
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 import '../models/ui_layout.dart';
-import 'common_widgets.dart';
 import 'reference_art.dart';
 
 class ReferenceChatIntro extends StatelessWidget {
@@ -33,7 +33,7 @@ class ReferenceChatIntro extends StatelessWidget {
           if (paper) ...[
             Text(
               MaterialLocalizations.of(context).formatFullDate(DateTime.now()),
-              style: serif(c, 10, color: c.ink3),
+              style: referenceSerif(c, 10, color: c.ink3),
             ),
             const SizedBox(height: 17),
           ],
@@ -48,7 +48,7 @@ class ReferenceChatIntro extends StatelessWidget {
               ),
               child: Text(
                 lines[i],
-                style: serif(
+                style: referenceSerif(
                   c,
                   paper ? 40 : 29,
                   color: !paper && i == 1 ? c.character : c.ink1,
@@ -65,7 +65,7 @@ class ReferenceChatIntro extends StatelessWidget {
                   horizontal: BorderSide(color: c.surfaceEdge),
                 ),
               ),
-              child: Text(name, style: serif(c, 11, color: c.ink2)),
+              child: Text(name, style: referenceSerif(c, 11, color: c.ink2)),
             ),
             const SizedBox(height: 24),
             Row(
@@ -74,7 +74,7 @@ class ReferenceChatIntro extends StatelessWidget {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 15),
-                    child: Text(l.referenceSalutation, style: serif(c, 15)),
+                    child: Text(l.referenceSalutation, style: referenceSerif(c, 15)),
                   ),
                 ),
                 SizedBox(

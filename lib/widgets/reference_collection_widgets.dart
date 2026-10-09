@@ -1,9 +1,9 @@
+import 'reference_typography.dart';
 import 'reverie_scene.dart';
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 import '../models/ui_layout.dart';
-import 'common_widgets.dart';
 import 'reference_art.dart';
 
 class ReferenceCollectionTitle extends StatelessWidget {
@@ -25,7 +25,7 @@ class ReferenceCollectionTitle extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: serif(c, 29).copyWith(height: 1.6, letterSpacing: 1.5),
+            style: referenceSerif(c, 29).copyWith(height: 1.6, letterSpacing: 1.5),
           ),
         ),
         if (action != null) action!,
@@ -86,11 +86,11 @@ class _ReferenceDiaryCardState extends State<ReferenceDiaryCard> {
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!paper) Text(entry.date, style: serif(c, 10, color: c.ink3)),
+        if (!paper) Text(entry.date, style: referenceSerif(c, 10, color: c.ink3)),
         const SizedBox(height: 8),
         Text(
           entry.title,
-          style: serif(c, paper ? 17 : 19).copyWith(height: 1.8),
+          style: referenceSerif(c, paper ? 17 : 19).copyWith(height: 1.8),
         ),
         FutureBuilder<DiaryDetail>(
           future: _detail,
@@ -103,14 +103,14 @@ class _ReferenceDiaryCardState extends State<ReferenceDiaryCard> {
                 body,
                 maxLines: paper ? 3 : 5,
                 overflow: TextOverflow.ellipsis,
-                style: serif(c, 12, color: c.ink2).copyWith(height: 2),
+                style: referenceSerif(c, 12, color: c.ink2).copyWith(height: 2),
               ),
             );
           },
         ),
         if (entry.emotion?.isNotEmpty == true) ...[
           const SizedBox(height: 14),
-          Text(entry.emotion!, style: serif(c, 11, color: c.character)),
+          Text(entry.emotion!, style: referenceSerif(c, 11, color: c.character)),
         ],
         if (!paper)
           Align(
@@ -167,12 +167,12 @@ class _ReferenceDiaryCardState extends State<ReferenceDiaryCard> {
                                 date == null
                                     ? entry.date
                                     : date.day.toString().padLeft(2, '0'),
-                                style: serif(c, 32, color: c.character),
+                                style: referenceSerif(c, 32, color: c.character),
                               ),
                               if (date != null)
                                 Text(
                                   '${date.month}/${date.year}',
-                                  style: serif(c, 9, color: c.ink3),
+                                  style: referenceSerif(c, 9, color: c.ink3),
                                 ),
                             ],
                           ),
@@ -276,14 +276,14 @@ class ReferenceGardenBody extends StatelessWidget {
           if (error != null)
             Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(error!, style: serif(c, 12, color: c.danger)),
+              child: Text(error!, style: referenceSerif(c, 12, color: c.danger)),
             ),
           if (loading)
             Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
                 l.gardenSyncingMessage,
-                style: serif(c, 12, color: c.ink3),
+                style: referenceSerif(c, 12, color: c.ink3),
               ),
             ),
           if (state != null)
@@ -300,7 +300,7 @@ class ReferenceGardenBody extends StatelessWidget {
           if (slots.isEmpty && !loading)
             Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(l.gardenEmpty, style: serif(c, 14, color: c.ink3)),
+              child: Text(l.gardenEmpty, style: referenceSerif(c, 14, color: c.ink3)),
             ),
           for (final slot in slots)
             Container(
@@ -315,7 +315,7 @@ class ReferenceGardenBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (slot.name.isNotEmpty)
-                    Text(slot.name, style: serif(c, 20)),
+                    Text(slot.name, style: referenceSerif(c, 20)),
                   const SizedBox(height: 12),
                   LinearProgressIndicator(
                     value: slot.stageProgress.clamp(0, 1),
@@ -326,7 +326,7 @@ class ReferenceGardenBody extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     '${(slot.stageProgress.clamp(0, 1) * 100).round()}%',
-                    style: serif(c, 11, color: c.ink3),
+                    style: referenceSerif(c, 11, color: c.ink3),
                   ),
                 ],
               ),
@@ -339,9 +339,9 @@ class ReferenceGardenBody extends StatelessWidget {
   Widget _stat(String label, int value) => Expanded(
     child: Column(
       children: [
-        Text('$value', style: serif(c, 24, color: c.character)),
+        Text('$value', style: referenceSerif(c, 24, color: c.character)),
         const SizedBox(height: 5),
-        Text(label, style: serif(c, 10, color: c.ink3)),
+        Text(label, style: referenceSerif(c, 10, color: c.ink3)),
       ],
     ),
   );
