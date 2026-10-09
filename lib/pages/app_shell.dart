@@ -1,3 +1,5 @@
+import '../models/ui_layout.dart';
+import '../widgets/moonlit_scene.dart';
 import '../widgets/conversation_presentation.dart';
 import '../widgets/conversation_calendar_widgets.dart';
 import 'dart:async';
@@ -97,6 +99,10 @@ class _CompanionAppState extends State<CompanionApp>
   YxPalette get c {
     final custom = _themeController.activePalette;
     if (custom != null) return custom;
+    if (_route == AppRoute.dream &&
+        _themeController.dreamLayout == DreamLayout.moonlit) {
+      return moonlitPalette(YxPalette.dark);
+    }
     final base = _themeController.isDark ? YxPalette.dark : YxPalette.light;
     return dailyLayoutPalette(_themeController.dailyLayout, base);
   }
@@ -1250,36 +1256,43 @@ class _CompanionAppState extends State<CompanionApp>
         color: c.surface,
         blur: _route == AppRoute.chat ? _prefs.chatBackgroundBlur : 0,
         darken: _route == AppRoute.dream,
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          key: _scaffoldKey,
-          drawer: YxDrawer(
-            personalization: _personalization,
-            c: c,
-            route: _route,
-            profileDisplayName: _profileDisplayName,
-            profileAvatarBytes: _profileAppearance.profileAvatarBytes,
-            onRoute: _pickRoute,
-            onOpenSettings: _openSettings,
-          ),
-          body: AnimatedContainer(
-            duration: const Duration(milliseconds: 240),
-            color: Colors.transparent,
-            child: SafeArea(
-              top: false,
-              bottom: false,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: _buildRoute(),
+        child: LayoutBackdrop(
+          c: c,
+          moonlit:
+              _route == AppRoute.dream &&
+              _themeController.dreamLayout == DreamLayout.moonlit &&
+              _prefs.dreamBackground == null,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            key: _scaffoldKey,
+            drawer: YxDrawer(
+              personalization: _personalization,
+              c: c,
+              route: _route,
+              profileDisplayName: _profileDisplayName,
+              profileAvatarBytes: _profileAppearance.profileAvatarBytes,
+              onRoute: _pickRoute,
+              onOpenSettings: _openSettings,
+            ),
+            body: AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              color: Colors.transparent,
+              child: SafeArea(
+                top: false,
+                bottom: false,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        child: _buildRoute(),
+                      ),
                     ),
-                  ),
-                  BottomSystemInset(
-                    color: conversation ? Colors.black : c.surface,
-                  ),
-                ],
+                    BottomSystemInset(
+                      color: conversation ? Colors.black : c.surface,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1372,6 +1385,7 @@ class _CompanionAppState extends State<CompanionApp>
       case AppRoute.dream:
         return DreamPage(
           key: const ValueKey('dream'),
+          layout: _themeController.dreamLayout,
           c: c,
           prefs: _prefs,
           profileDisplayName: _profileDisplayName,

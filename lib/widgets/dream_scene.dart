@@ -1,3 +1,6 @@
+import '../models/ui_layout.dart';
+import 'conversation_presentation.dart';
+import 'moonlit_scene.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/dream_controller.dart';
@@ -6,10 +9,12 @@ import '../l10n/l10n.dart';
 import 'chat_widgets.dart';
 import 'dream_widgets.dart';
 import 'common_widgets.dart';
+
 class DreamPage extends StatelessWidget {
   const DreamPage({
     super.key,
     required this.c,
+    this.layout = DreamLayout.classic,
     required this.prefs,
     required this.profileDisplayName,
     required this.profileAvatarBytes,
@@ -18,6 +23,7 @@ class DreamPage extends StatelessWidget {
     required this.onWake,
   });
 
+  final DreamLayout layout;
   final YxPalette c;
   final YxPrefs prefs;
   final String profileDisplayName;
@@ -28,13 +34,17 @@ class DreamPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) => _build(context),
+    return ConversationPresentation(
+      dream: layout,
+      child: AnimatedBuilder(
+        animation: controller,
+        builder: (context, _) => _build(context),
+      ),
     );
   }
 
   Widget _build(BuildContext context) {
+    final moonlit = layout == DreamLayout.moonlit;
     final state = controller.state;
     final stats = controller.stats;
     final loadingState = controller.loadingState;
@@ -46,83 +56,94 @@ class DreamPage extends StatelessWidget {
     final active = state?.isActive == true;
     return Column(
       children: [
-        Container(
-          color: c.characterDeep,
-          padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
-          child: Row(
-            children: [
-              YxIconButton(
-                c: c,
-                icon: Icons.menu_rounded,
-                onPressed: onOpenDrawer,
-                onDark: true,
-                tooltip: context.l10n.drawerTooltip,
-              ),
-              const SizedBox(width: 8),
-              YxAvatar(
-                c: c,
-                onDark: true,
-                size: 34,
-                imageBytes: profileAvatarBytes,
-                text: profileDisplayName.characters.first,
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.dreamHeaderTitle(profileDisplayName),
-                      style: serif(
-                        c,
-                        18,
-                        color: c.characterOn,
-                        weight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        LiveDot(color: active ? c.ok : c.ink4),
-                        const SizedBox(width: 6),
-                        Text(
-                          active
-                              ? context.l10n.dreamInProgress
-                              : context.l10n.dreamReady,
-                          style: mono(
-                            c,
-                            9.5,
-                            color: c.characterOn.withValues(alpha: 0.72),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+        if (moonlit)
+          MoonlitHeader(
+            c: c,
+            name: profileDisplayName,
+            onMenu: onOpenDrawer,
+            onWake: controller.transitioning || entering ? null : onWake,
+          )
+        else
+          Container(
+            color: c.characterDeep,
+            padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
+            child: Row(
+              children: [
+                YxIconButton(
+                  c: c,
+                  icon: Icons.menu_rounded,
+                  onPressed: onOpenDrawer,
+                  onDark: true,
+                  tooltip: context.l10n.drawerTooltip,
                 ),
-              ),
-              OutlinedButton.icon(
-                onPressed: controller.transitioning || entering ? null : onWake,
-                icon: const Icon(Icons.wb_sunny_outlined, size: 15),
-                label: Text(context.l10n.dreamWakeAction),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: c.characterOn,
-                  side: BorderSide(
-                    color: c.characterOn.withValues(alpha: 0.35),
+                const SizedBox(width: 8),
+                YxAvatar(
+                  c: c,
+                  onDark: true,
+                  size: 34,
+                  imageBytes: profileAvatarBytes,
+                  text: profileDisplayName.characters.first,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.l10n.dreamHeaderTitle(profileDisplayName),
+                        style: serif(
+                          c,
+                          18,
+                          color: c.characterOn,
+                          weight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          LiveDot(color: active ? c.ok : c.ink4),
+                          const SizedBox(width: 6),
+                          Text(
+                            active
+                                ? context.l10n.dreamInProgress
+                                : context.l10n.dreamReady,
+                            style: mono(
+                              c,
+                              9.5,
+                              color: c.characterOn.withValues(alpha: 0.72),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                OutlinedButton.icon(
+                  onPressed: controller.transitioning || entering
+                      ? null
+                      : onWake,
+                  icon: const Icon(Icons.wb_sunny_outlined, size: 15),
+                  label: Text(context.l10n.dreamWakeAction),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: c.characterOn,
+                    side: BorderSide(
+                      color: c.characterOn.withValues(alpha: 0.35),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
         if (controller.transitionFailed)
           MetaLine(c: c, text: context.l10n.dreamTransitionFailed),
         Expanded(
+          key: const ValueKey('dream-timeline'),
           child: active
               ? ListView(
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(12, 14, 12, 22),
                   children: [
-                    DreamStateStrip(c: c, state: state!),
+                    if (!moonlit) DreamStateStrip(c: c, state: state!),
                     if (error != null)
                       MetaLine(
                         c: c,
@@ -202,6 +223,7 @@ class DreamPage extends StatelessWidget {
                 ),
         ),
         DreamComposer(
+          key: const ValueKey('dream-composer'),
           c: c,
           sending: sending,
           prefs: prefs,
@@ -212,4 +234,3 @@ class DreamPage extends StatelessWidget {
     );
   }
 }
-

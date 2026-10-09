@@ -1,3 +1,5 @@
+import '../models/ui_layout.dart';
+import 'conversation_presentation.dart';
 export 'dream_scene.dart';
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
@@ -223,24 +225,33 @@ class DreamSegmentedMessage extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [for (final segment in segments) _buildSegment(segment)],
+        children: [
+          for (final segment in segments)
+            _buildSegment(
+              segment,
+              ConversationPresentation.dreamOf(context) == DreamLayout.moonlit,
+            ),
+        ],
       ),
     );
   }
 
-  Widget _description({required Widget child}) => Container(
-    width: double.infinity,
-    margin: const EdgeInsets.symmetric(horizontal: 22, vertical: 7),
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-    decoration: BoxDecoration(
-      color: c.surfaceSoft.withValues(alpha: prefs.dreamDescriptionOpacity),
-      border: Border.all(color: c.ink3.withValues(alpha: .3), width: .7),
-      borderRadius: BorderRadius.circular(6),
-    ),
-    child: child,
-  );
+  Widget _description({required Widget child, bool moonlit = false}) =>
+      Container(
+        width: double.infinity,
+        margin: EdgeInsets.symmetric(horizontal: moonlit ? 8 : 22, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: c.surfaceSoft.withValues(
+            alpha: prefs.dreamDescriptionOpacity * (moonlit ? .45 : 1),
+          ),
+          border: Border.all(color: c.ink3.withValues(alpha: .3), width: .7),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: child,
+      );
 
-  Widget _buildSegment(NarrativeSegment segment) {
+  Widget _buildSegment(NarrativeSegment segment, bool moonlit) {
     switch (segment.type) {
       case 'say':
         return Padding(
@@ -248,19 +259,20 @@ class DreamSegmentedMessage extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              YxAvatar(
-                c: c,
-                size: 28,
-                imageBytes: profileAvatarBytes,
-                text: profileDisplayName.characters.first,
-              ),
-              const SizedBox(width: 8),
+              if (!moonlit)
+                YxAvatar(
+                  c: c,
+                  size: 28,
+                  imageBytes: profileAvatarBytes,
+                  text: profileDisplayName.characters.first,
+                ),
+              if (!moonlit) const SizedBox(width: 8),
               Expanded(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 300),
                   padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
                   decoration: BoxDecoration(
-                    color: c.surfaceSoft,
+                    color: c.surfaceSoft.withValues(alpha: moonlit ? .55 : 1),
                     border: Border.all(color: c.surfaceEdge),
                     borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(6),
@@ -268,12 +280,14 @@ class DreamSegmentedMessage extends StatelessWidget {
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.only(left: 10),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: c.character, width: 3),
-                      ),
-                    ),
+                    padding: EdgeInsets.only(left: moonlit ? 0 : 10),
+                    decoration: moonlit
+                        ? null
+                        : BoxDecoration(
+                            border: Border(
+                              left: BorderSide(color: c.character, width: 3),
+                            ),
+                          ),
                     child: AnimatedRevealText(
                       text: segment.text,
                       animate: animate,
@@ -297,6 +311,7 @@ class DreamSegmentedMessage extends StatelessWidget {
       case 'feel':
         final weak = segment.type == 'feel';
         return _description(
+          moonlit: moonlit,
           child: AnimatedRevealText(
             text: segment.text,
             animate: animate,
@@ -319,6 +334,7 @@ class DreamSegmentedMessage extends StatelessWidget {
       case 'narration':
       default:
         return _description(
+          moonlit: moonlit,
           child: AnimatedRevealText(
             text: segment.text,
             animate: animate,

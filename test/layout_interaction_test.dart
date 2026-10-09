@@ -10,8 +10,59 @@ import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
 import 'package:presencekit_mobile/widgets/chat_scene.dart';
 import 'package:presencekit_mobile/widgets/conversation_presentation.dart';
+import 'package:presencekit_mobile/controllers/dream_controller.dart';
+import 'package:presencekit_mobile/widgets/dream_scene.dart';
+import 'package:presencekit_mobile/widgets/moonlit_scene.dart';
 
 void main() {
+  testWidgets('dream layout changes keep the active session and draft', (
+    tester,
+  ) async {
+    const store = AppSettingsStore();
+    final backend = BackendClient(
+      baseUrl: 'http://127.0.0.1:8080',
+      settingsStore: store,
+    );
+    final controller = DreamController(
+      backend: () => backend,
+      token: () => null,
+    )..state = DreamState.fromJson({'status': 'DREAM_ACTIVE'});
+    var wakes = 0;
+    Widget page(DreamLayout layout) => MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: DreamPage(
+          layout: layout,
+          c: moonlitPalette(YxPalette.dark),
+          prefs: const YxPrefs(),
+          profileDisplayName: 'Nova',
+          profileAvatarBytes: null,
+          controller: controller,
+          onOpenDrawer: () {},
+          onWake: () {
+            wakes++;
+          },
+        ),
+      ),
+    );
+    await tester.pumpWidget(page(DreamLayout.classic));
+    await tester.enterText(find.byType(TextField), 'dream draft');
+    await tester.pumpWidget(page(DreamLayout.moonlit));
+    expect(find.text('dream draft'), findsOneWidget);
+    expect(controller.state!.isActive, isTrue);
+    expect(controller.entering, isFalse);
+    expect(controller.transitioning, isFalse);
+    expect(wakes, 0);
+    await tester.tap(find.text('Wake up'));
+    expect(wakes, 1);
+    await tester.pumpWidget(page(DreamLayout.classic));
+    expect(find.text('dream draft'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
   testWidgets('layout changes preserve a focused draft and real navigation', (
     tester,
   ) async {
