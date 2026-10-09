@@ -1,3 +1,4 @@
+import 'reference_art.dart';
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
@@ -105,14 +106,22 @@ class LayoutBackdrop extends StatelessWidget {
     super.key,
     required this.c,
     required this.moonlit,
+    this.window = false,
     required this.child,
   });
   final YxPalette c;
+  final bool window;
   final bool moonlit;
   final Widget child;
   @override
   Widget build(BuildContext context) => Stack(
     children: [
+      if (window)
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(painter: ReferenceGridPainter(c)),
+          ),
+        ),
       if (moonlit)
         Positioned.fill(
           child: IgnorePointer(child: CustomPaint(painter: MoonlitPainter(c))),

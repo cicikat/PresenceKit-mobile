@@ -43,7 +43,7 @@ class ReveriePortal extends StatelessWidget {
                 ),
               ),
               SizedBox(
-                height: 150,
+                height: c.surface.computeLuminance() < .2 ? 174 : 162,
                 width: double.infinity,
                 child: CustomPaint(painter: ReveriePainter(c: c)),
               ),
@@ -152,26 +152,63 @@ class MessageWindow extends StatelessWidget {
     required this.enabled,
     required this.c,
     required this.child,
+    this.label,
+    this.time,
   });
   final bool enabled;
   final YxPalette c;
   final Widget child;
+  final String? label;
+  final String? time;
   @override
   Widget build(BuildContext context) => Container(
-    padding: enabled ? const EdgeInsets.all(12) : EdgeInsets.zero,
+    clipBehavior: enabled ? Clip.antiAlias : Clip.none,
     decoration: enabled
         ? BoxDecoration(
             color: c.surfaceSoft,
             border: Border.all(color: c.surfaceEdge),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(4),
             boxShadow: [
               BoxShadow(
-                color: c.ink1.withValues(alpha: .05),
-                offset: const Offset(3, 4),
+                color: c.ink1.withValues(alpha: .08),
+                offset: const Offset(3, 3),
               ),
             ],
           )
         : null,
-    child: child,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (enabled)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: c.character.withValues(alpha: .1),
+              border: Border(bottom: BorderSide(color: c.surfaceEdge)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: serif(c, 10, color: c.ink2),
+                  ),
+                ),
+                if (time != null)
+                  Text(time!, style: serif(c, 9, color: c.ink3)),
+              ],
+            ),
+          ),
+        Padding(
+          padding: enabled
+              ? const EdgeInsets.symmetric(horizontal: 1, vertical: 4)
+              : EdgeInsets.zero,
+          child: child,
+        ),
+      ],
+    ),
   );
 }

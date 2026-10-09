@@ -605,6 +605,8 @@ class _HimMessageState extends State<HimMessage> {
       child: MessageWindow(
         enabled: window,
         c: c,
+        label: widget.profileDisplayName,
+        time: widget.prefs.showChatTime ? widget.time : null,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -630,7 +632,9 @@ class _HimMessageState extends State<HimMessage> {
                       dateKey: widget.dateKey!,
                       role: context.l10n.chatRoleHim,
                     ),
-                  if (!messenger || widget.prefs.showChatTime)
+                  if (!letter &&
+                      !window &&
+                      (!messenger || widget.prefs.showChatTime))
                     Row(
                       children: [
                         Flexible(
@@ -659,7 +663,9 @@ class _HimMessageState extends State<HimMessage> {
                         ],
                       ],
                     ),
-                  if (!messenger || widget.prefs.showChatTime)
+                  if (!letter &&
+                      !window &&
+                      (!messenger || widget.prefs.showChatTime))
                     const SizedBox(height: 4),
                   GestureDetector(
                     onLongPressStart: widget.sticker == null
@@ -1594,16 +1600,21 @@ class _ComposerState extends State<Composer> {
     final l10n = context.l10n;
     final layout = ConversationPresentation.dailyOf(context);
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
+    final reference = window || layout == DailyLayout.letter;
     final placeholder = layout == DailyLayout.classic
         ? l10n.composerPlaceholder
         : null;
     return Container(
       margin: window
-          ? const EdgeInsets.fromLTRB(12, 0, 12, 10)
+          ? const EdgeInsets.fromLTRB(14, 0, 14, 7)
           : EdgeInsets.zero,
       decoration: BoxDecoration(
         color: widget.c.surfaceSoft.withValues(alpha: widget.bubbleOpacity),
-        border: window ? Border.all(color: widget.c.surfaceEdge) : null,
+        border: window
+            ? Border.all(color: widget.c.surfaceEdge)
+            : reference
+            ? Border(top: BorderSide(color: widget.c.surfaceEdge))
+            : null,
         borderRadius: window ? BorderRadius.circular(8) : null,
       ),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -1617,6 +1628,7 @@ class _ComposerState extends State<Composer> {
               YxIconButton(
                 c: widget.c,
                 icon: Icons.add_rounded,
+                borderless: reference,
                 size: 38,
                 onPressed: widget.onOpenAttach,
                 tooltip: l10n.attachmentTooltip,
@@ -1633,10 +1645,14 @@ class _ComposerState extends State<Composer> {
                     vertical: 7,
                   ),
                   decoration: BoxDecoration(
-                    color: widget.c.surface.withValues(
-                      alpha: widget.bubbleOpacity,
-                    ),
-                    border: Border.all(color: widget.c.surfaceEdge),
+                    color: reference
+                        ? Colors.transparent
+                        : widget.c.surface.withValues(
+                            alpha: widget.bubbleOpacity,
+                          ),
+                    border: reference
+                        ? null
+                        : Border.all(color: widget.c.surfaceEdge),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: TextField(

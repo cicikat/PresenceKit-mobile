@@ -1,3 +1,4 @@
+import '../widgets/reference_layout_shell.dart';
 import '../models/ui_layout.dart';
 import '../widgets/layout_settings.dart';
 import '../widgets/moonlit_scene.dart';
@@ -1273,6 +1274,10 @@ class _CompanionAppState extends State<CompanionApp>
         darken: _route == AppRoute.dream,
         child: LayoutBackdrop(
           c: c,
+          window:
+              _route != AppRoute.dream &&
+              (_themeController.dailyLayout == DailyLayout.reverie ||
+                  _themeController.dailyLayout == DailyLayout.noir),
           moonlit:
               _route == AppRoute.dream &&
               _themeController.dreamLayout == DreamLayout.moonlit &&
@@ -1346,7 +1351,18 @@ class _CompanionAppState extends State<CompanionApp>
     );
   }
 
-  Widget _buildRoute() {
+  Widget _buildRoute() => ReferenceLayoutShell(
+    layout: _themeController.dailyLayout,
+    route: _route,
+    c: c,
+    name: _profileDisplayName,
+    onRoute: _pickRoute,
+    onSettings: _openSettings,
+    onMenu: () => _scaffoldKey.currentState?.openDrawer(),
+    child: _buildRouteContent(),
+  );
+
+  Widget _buildRouteContent() {
     switch (_route) {
       case AppRoute.conversationCalendar:
         return ConversationCalendarPage(
@@ -1370,6 +1386,7 @@ class _CompanionAppState extends State<CompanionApp>
       case AppRoute.chat:
         return ChatScene(
           key: const ValueKey('chat'),
+          externalHeader: true,
           layout: _themeController.dailyLayout,
           userName: _personalization.name,
           userAvatar: _personalization.avatar,

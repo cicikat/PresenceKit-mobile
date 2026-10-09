@@ -119,7 +119,7 @@ void main() {
     await tester.pumpWidget(page(DailyLayout.letter));
     await tester.pump();
     expect(find.text('keep this draft'), findsOneWidget);
-    await tester.tap(find.text("Nova's diary"));
+    await tester.tap(find.text('Diary'));
     expect(routed, AppRoute.diary);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(page(DailyLayout.classic));
@@ -127,6 +127,9 @@ void main() {
     for (final layout in [DailyLayout.reverie, DailyLayout.noir]) {
       await tester.pumpWidget(page(layout));
       expect(find.text('keep this draft'), findsOneWidget);
+      await tester.ensureVisible(find.text('Enter dream'));
+      await tester.drag(find.byType(ListView), const Offset(0, -180));
+      await tester.pump();
       await tester.tap(find.text('Enter dream'));
       expect(routed, AppRoute.dream);
       expect(tester.takeException(), isNull);

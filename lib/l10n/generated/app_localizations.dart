@@ -4920,6 +4920,90 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'更多'**
   String get layoutMenu;
+
+  /// No description provided for @referenceChatTab.
+  ///
+  /// In zh, this message translates to:
+  /// **'来信'**
+  String get referenceChatTab;
+
+  /// No description provided for @referenceDiaryTab.
+  ///
+  /// In zh, this message translates to:
+  /// **'碎片'**
+  String get referenceDiaryTab;
+
+  /// No description provided for @referenceGardenTab.
+  ///
+  /// In zh, this message translates to:
+  /// **'花园'**
+  String get referenceGardenTab;
+
+  /// No description provided for @referencePaperBrand.
+  ///
+  /// In zh, this message translates to:
+  /// **'我们之间'**
+  String get referencePaperBrand;
+
+  /// No description provided for @referencePaperSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'把陪伴，写进日常。'**
+  String get referencePaperSubtitle;
+
+  /// No description provided for @referenceWindowSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'隔着一层玻璃，也想再靠近一点。'**
+  String get referenceWindowSubtitle;
+
+  /// No description provided for @referenceLetterTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'把日常，\n慢慢说。'**
+  String get referenceLetterTitle;
+
+  /// No description provided for @referenceReverieTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'如果你读到这里，\n我就在想你。'**
+  String get referenceReverieTitle;
+
+  /// No description provided for @referenceNoirTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'世界熄灯，\n我只向你亮起。'**
+  String get referenceNoirTitle;
+
+  /// No description provided for @referenceSalutation.
+  ///
+  /// In zh, this message translates to:
+  /// **'亲爱的你，'**
+  String get referenceSalutation;
+
+  /// No description provided for @referenceDiaryTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'把平凡，留住。'**
+  String get referenceDiaryTitle;
+
+  /// No description provided for @referenceFragmentsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'那些没有说出口的，\n都变成了星星。'**
+  String get referenceFragmentsTitle;
+
+  /// No description provided for @referenceGardenTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'一起慢慢长大。'**
+  String get referenceGardenTitle;
+
+  /// No description provided for @referenceWindowGardenTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'在世界的缝隙里，\n种一朵想念。'**
+  String get referenceWindowGardenTitle;
 }
 
 class _AppLocalizationsDelegate

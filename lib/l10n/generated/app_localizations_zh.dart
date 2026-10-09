@@ -2618,4 +2618,46 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get layoutMenu => '更多';
+
+  @override
+  String get referenceChatTab => '来信';
+
+  @override
+  String get referenceDiaryTab => '碎片';
+
+  @override
+  String get referenceGardenTab => '花园';
+
+  @override
+  String get referencePaperBrand => '我们之间';
+
+  @override
+  String get referencePaperSubtitle => '把陪伴，写进日常。';
+
+  @override
+  String get referenceWindowSubtitle => '隔着一层玻璃，也想再靠近一点。';
+
+  @override
+  String get referenceLetterTitle => '把日常，\n慢慢说。';
+
+  @override
+  String get referenceReverieTitle => '如果你读到这里，\n我就在想你。';
+
+  @override
+  String get referenceNoirTitle => '世界熄灯，\n我只向你亮起。';
+
+  @override
+  String get referenceSalutation => '亲爱的你，';
+
+  @override
+  String get referenceDiaryTitle => '把平凡，留住。';
+
+  @override
+  String get referenceFragmentsTitle => '那些没有说出口的，\n都变成了星星。';
+
+  @override
+  String get referenceGardenTitle => '一起慢慢长大。';
+
+  @override
+  String get referenceWindowGardenTitle => '在世界的缝隙里，\n种一朵想念。';
 }

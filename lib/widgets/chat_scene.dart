@@ -1,3 +1,5 @@
+import 'reference_layout_shell.dart';
+import 'reference_chat_intro.dart';
 import 'reverie_scene.dart';
 import '../models/ui_layout.dart';
 import 'conversation_presentation.dart';
@@ -23,6 +25,7 @@ class ChatScene extends StatelessWidget {
     this.onRoute,
     this.userName = '',
     this.userAvatar,
+    this.externalHeader = false,
     required this.dark,
     required this.prefs,
     required this.profileDisplayName,
@@ -42,6 +45,7 @@ class ChatScene extends StatelessWidget {
     required this.onVoiceRecordCancel,
   });
 
+  final bool externalHeader;
   final String userName;
   final Uint8List? userAvatar;
   final DailyLayout layout;
@@ -111,6 +115,8 @@ class ChatScene extends StatelessWidget {
     final classic = layout == DailyLayout.classic;
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
     final metaItems = <Widget>[
+      if (hasReferenceShell(layout))
+        ReferenceChatIntro(c: c, layout: layout, name: profileDisplayName),
       if (window && onRoute != null)
         ReveriePortal(c: c, onOpen: () => onRoute!(AppRoute.dream)),
       if (loadingMoreHistory) MetaLine(c: c, text: l10n.chatLoadingOlder),
@@ -149,7 +155,17 @@ class ChatScene extends StatelessWidget {
       children: [
         Column(
           children: [
-            if (!classic)
+            if (hasReferenceShell(layout) && !externalHeader)
+              ReferenceHeader(
+                c: c,
+                layout: layout,
+                route: AppRoute.chat,
+                name: profileDisplayName,
+                onRoute: onRoute ?? (_) {},
+                onMenu: onOpenDrawer,
+                onSettings: onOpenSettings,
+              )
+            else if (!classic && !hasReferenceShell(layout))
               ConversationHeader(
                 c: c,
                 name: profileDisplayName,
@@ -158,7 +174,7 @@ class ChatScene extends StatelessWidget {
                 onSettings: onOpenSettings,
                 onRoute: onRoute,
               )
-            else if (prefs.infoStrip)
+            else if (classic && prefs.infoStrip)
               ChatTopBar(
                 c: dark
                     ? c.copyWith(

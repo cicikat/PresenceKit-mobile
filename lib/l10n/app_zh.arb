@@ -1435,5 +1435,19 @@
   "layoutNoir": "黑粉夜航",
   "layoutMessenger": "微信风格",
   "layoutMoonlit": "月夜剧场",
-  "layoutMenu":"更多"
+  "layoutMenu":"更多",
+  "referenceChatTab": "来信",
+  "referenceDiaryTab": "碎片",
+  "referenceGardenTab": "花园",
+  "referencePaperBrand": "我们之间",
+  "referencePaperSubtitle": "把陪伴，写进日常。",
+  "referenceWindowSubtitle": "隔着一层玻璃，也想再靠近一点。",
+  "referenceLetterTitle": "把日常，\n慢慢说。",
+  "referenceReverieTitle": "如果你读到这里，\n我就在想你。",
+  "referenceNoirTitle": "世界熄灯，\n我只向你亮起。",
+  "referenceSalutation": "亲爱的你，",
+  "referenceDiaryTitle": "把平凡，留住。",
+  "referenceFragmentsTitle": "那些没有说出口的，\n都变成了星星。",
+  "referenceGardenTitle": "一起慢慢长大。",
+  "referenceWindowGardenTitle": "在世界的缝隙里，\n种一朵想念。"
 }

@@ -1435,5 +1435,19 @@
   "layoutNoir": "Noir reverie",
   "layoutMessenger": "Messenger",
   "layoutMoonlit": "Moonlit theatre",
-  "layoutMenu":"More"
+  "layoutMenu":"More",
+  "referenceChatTab": "Letters",
+  "referenceDiaryTab": "Fragments",
+  "referenceGardenTab": "Garden",
+  "referencePaperBrand": "Between us",
+  "referencePaperSubtitle": "Companionship, day by day.",
+  "referenceWindowSubtitle": "A little closer, through the glass.",
+  "referenceLetterTitle": "Tell me about\nyour day.",
+  "referenceReverieTitle": "If you are reading this,\nI am thinking of you.",
+  "referenceNoirTitle": "When the world goes dark,\nI shine for you.",
+  "referenceSalutation": "Dear you,",
+  "referenceDiaryTitle": "Keep the ordinary.",
+  "referenceFragmentsTitle": "The words left unsaid\nbecame stars.",
+  "referenceGardenTitle": "Growing together.",
+  "referenceWindowGardenTitle": "In a quiet corner,\nplant a little longing."
 }

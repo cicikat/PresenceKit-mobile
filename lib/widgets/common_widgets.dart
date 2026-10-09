@@ -266,6 +266,7 @@ class YxIconButton extends StatelessWidget {
     this.onDark = false,
     this.tooltip,
     this.size = 32,
+    this.borderless = false,
   });
 
   final YxPalette c;
@@ -274,6 +275,7 @@ class YxIconButton extends StatelessWidget {
   final bool onDark;
   final String? tooltip;
   final double size;
+  final bool borderless;
 
   @override
   Widget build(BuildContext context) {
@@ -289,7 +291,9 @@ class YxIconButton extends StatelessWidget {
           color: fg,
           style: IconButton.styleFrom(
             shape: RoundedRectangleBorder(
-              side: BorderSide(color: fg.withValues(alpha: 0.38)),
+              side: borderless
+                  ? BorderSide.none
+                  : BorderSide(color: fg.withValues(alpha: 0.38)),
               borderRadius: BorderRadius.circular(1),
             ),
           ),

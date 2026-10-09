@@ -2739,4 +2739,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get layoutMenu => 'More';
+
+  @override
+  String get referenceChatTab => 'Letters';
+
+  @override
+  String get referenceDiaryTab => 'Fragments';
+
+  @override
+  String get referenceGardenTab => 'Garden';
+
+  @override
+  String get referencePaperBrand => 'Between us';
+
+  @override
+  String get referencePaperSubtitle => 'Companionship, day by day.';
+
+  @override
+  String get referenceWindowSubtitle => 'A little closer, through the glass.';
+
+  @override
+  String get referenceLetterTitle => 'Tell me about\nyour day.';
+
+  @override
+  String get referenceReverieTitle =>
+      'If you are reading this,\nI am thinking of you.';
+
+  @override
+  String get referenceNoirTitle =>
+      'When the world goes dark,\nI shine for you.';
+
+  @override
+  String get referenceSalutation => 'Dear you,';
+
+  @override
+  String get referenceDiaryTitle => 'Keep the ordinary.';
+
+  @override
+  String get referenceFragmentsTitle => 'The words left unsaid\nbecame stars.';
+
+  @override
+  String get referenceGardenTitle => 'Growing together.';
+
+  @override
+  String get referenceWindowGardenTitle =>
+      'In a quiet corner,\nplant a little longing.';
 }
