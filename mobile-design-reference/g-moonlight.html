@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EEF0F5"><title>叶瑄 · 冷白月光</title>
+<link rel="stylesheet" href="g-moonlight.css">
+</head>
+<body>
+<svg class="symbols" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+<symbol id="moon" viewBox="0 0 24 24"><path d="M19.6 14.4A8 8 0 0 1 9.6 4.4 8 8 0 1 0 19.6 14.4Z"/></symbol>
+<symbol id="spark" viewBox="0 0 24 24"><path d="m12 3 2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2Z"/></symbol>
+<symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="send" viewBox="0 0 24 24"><path d="m7 12 5-5 5 5M12 7v11"/></symbol>
+<symbol id="sound" viewBox="0 0 24 24"><path d="M4 10v4m4-7v10m4-13v16m4-13v10m4-7v4"/></symbol>
+</defs></svg>
+<main class="studio">
+<aside class="editorial"><p class="eyebrow">YEXUAN / REVERIE</p><h1>冷白月光<span>Liquid Glass</span></h1><p class="intro">将月光，留在掌心。<br>一场轻盈、安静的梦境。</p><div class="palette" aria-label="月光银白、浅雾紫、冷灰蓝、玫瑰金"><i></i><i></i><i></i><i></i></div><p class="edition">VISUAL STUDY &nbsp; / &nbsp; 07<br>独立视觉概念 · 无真实连接</p></aside>
+<section class="device" aria-label="叶瑄梦境聊天视觉样机">
+<canvas id="liquid" aria-label="缓慢流动的冷白月光玻璃背景"></canvas>
+<div class="fallback" aria-hidden="true"><svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".32" stop-color="#cfc7de" stop-opacity=".45"/><stop offset=".52" stop-color="#faf9fc"/><stop offset=".72" stop-color="#e8c9c5" stop-opacity=".6"/><stop offset="1" stop-color="#bac8d9"/></linearGradient></defs><path d="M230 236C393 214 418 367 352 456C296 522 366 615 283 730C213 822 21 739 33 615C44 519 147 554 98 429C65 333 129 235 230 236Z" fill="url(#body)" stroke="#fff" stroke-width="2"/><path d="M241 251C368 256 394 364 323 456C272 520 328 641 260 717" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="8"/></svg></div>
+<div class="ambient" aria-hidden="true"></div>
+<div class="phone-ui" id="phoneUI">
+<div class="statusbar"><span>9:41</span><div><svg viewBox="0 0 18 12" class="signal" aria-hidden="true"><path d="M1 9v2h2V9zm4-3v5h2V6zm4-3v8h2V3zm4-3v11h2V0z" fill="currentColor" stroke="none"/></svg><svg viewBox="0 0 18 14" aria-hidden="true"><path d="M2 5a11 11 0 0 1 14 0M5 8a6 6 0 0 1 8 0M8 11h2"/></svg><span class="battery"></span></div></div>
+<header class="nav glass"><button class="icon" aria-label="返回（视觉演示）" data-demo="你正置身于月光梦境"><svg><use href="#arrow"/></svg></button><div class="identity"><h2>叶瑄</h2><p><i></i> 此刻，在你的梦里</p></div><button class="icon" aria-label="梦境信息（视觉演示）" data-demo="今晚的梦境 · 月下庭院"><svg><use href="#moon"/></svg></button></header>
+<div class="conversation">
+<div class="chapter"><span></span> 今夜 · 月下庭院 <span></span></div>
+<div class="message from"><div class="byline">叶瑄 <span>21:06</span></div><button class="bubble glass" data-demo="月光正在缓慢流动">今晚的月色很好。<br>要不要一起，去梦里走走？</button></div>
+<div class="message to"><button class="bubble glass rose" data-demo="这里只是一场视觉梦境">好。想去一个安静的地方。</button><div class="byline">21:07 <span class="read">已读</span></div></div>
+<div class="message from second"><div class="byline">叶瑄</div><button class="bubble glass" data-demo="不用着急，我在这里">那就跟着我。<br>这里的时间，可以慢一些。</button></div>
+<button class="dream-card glass" aria-label="月下庭院梦境卡片，点击展开视觉状态" aria-expanded="false"><span class="card-moon"><svg><use href="#moon"/></svg></span><span class="card-copy"><small>OUR LITTLE REVERIE</small><strong>月下庭院</strong><span id="cardStatus">月光很轻，你也不必匆忙。</span></span><span class="card-mark">✧</span></button>
+<div class="quiet"><span class="tiny-star">✦</span><span>在梦里，陪你多停留一会儿</span></div>
+</div>
+<footer class="composer-wrap"><div class="composer"><button class="round glass" aria-label="更多（视觉演示）" data-demo="将这一刻，留在梦里"><svg><use href="#plus"/></svg></button><div class="input-glass glass"><input type="text" aria-label="梦境输入框" placeholder="轻轻说，我在听…" autocomplete="off"><button class="sound" aria-label="语音（视觉演示）" data-demo="静静听见你的声音"><svg><use href="#sound"/></svg></button></div><button class="round send glass" aria-label="发送（仅视觉反馈，不发送消息）" data-demo="心意已留在这场视觉梦境中"><svg><use href="#send"/></svg></button></div><p class="dream-note"><svg><use href="#spark"/></svg> 梦境中的话，只属于此刻</p><div class="home-indicator"></div></footer>
+</div>
+<div class="background-caption" aria-hidden="true"><small>MOONLIT / LIQUID STUDY</small><p>月光的形状</p><span>银白 · 雾紫 · 粉金折射</span></div>
+<div class="toast" role="status" aria-live="polite"></div>
+</section>
+<aside class="controls"><span class="control-label">PREVIEW</span><button id="backgroundToggle" class="control-button" aria-pressed="false">纯背景预览 <span>↗</span></button><button id="motionToggle" class="control-button" aria-pressed="false">暂停流动 <span>Ⅱ</span></button><p id="renderStatus">实时曲面折射 / 24 秒循环</p><p class="hint">点击气泡，感受轻微回弹。<br>点入输入框，查看玻璃边缘。<br>支持系统「减少动态效果」。</p></aside>
+</main>
+<script src="g-moonlight.js"></script>
+</body></html>

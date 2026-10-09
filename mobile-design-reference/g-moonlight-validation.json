@@ -1,0 +1,43 @@
+{
+  "errors": [],
+  "externalRequests": [],
+  "background": {
+    "inert": true,
+    "hidden": "true"
+  },
+  "card": "梦境很安静 · 叶瑄在你身边",
+  "send": "心意已留在这场视觉梦境中",
+  "reduced": {
+    "disabled": true,
+    "text": "系统已减少动态 ○"
+  },
+  "reducedFramesEqual": true,
+  "animatedFramesDiffer": true,
+  "widths": [
+    {
+      "width": 390,
+      "scroll": 390,
+      "device": 390,
+      "input": 193
+    },
+    {
+      "width": 360,
+      "scroll": 360,
+      "device": 360,
+      "input": 163
+    },
+    {
+      "width": 320,
+      "scroll": 320,
+      "device": 320,
+      "input": 123
+    },
+    {
+      "width": 430,
+      "scroll": 430,
+      "device": 430,
+      "input": 233
+    }
+  ],
+  "render": "实时曲面折射 / 24 秒循环"
+}
