@@ -1358,6 +1358,8 @@ class _CompanionAppState extends State<CompanionApp>
     name: _profileDisplayName,
     onRoute: _pickRoute,
     onSettings: _openSettings,
+    onToggleTheme: () => unawaited(_themeController.toggleMode()),
+    dark: _themeController.isDark,
     onMenu: () => _scaffoldKey.currentState?.openDrawer(),
     child: _buildRouteContent(),
   );

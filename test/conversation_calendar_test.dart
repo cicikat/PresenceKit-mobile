@@ -12,6 +12,9 @@ import 'package:presencekit_mobile/models/conversation_calendar.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/widgets/conversation_calendar_widgets.dart';
+import 'package:presencekit_mobile/widgets/conversation_presentation.dart';
+import 'package:presencekit_mobile/models/ui_layout.dart';
+import 'package:presencekit_mobile/widgets/letter_usage_summary.dart';
 
 class CalendarBackend extends BackendClient {
   CalendarBackend()
@@ -106,6 +109,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
     if (Platform.environment['CALENDAR_SCREENSHOTS'] != '1') return;
+    await (FontLoader('ReferenceSong')..addFont(rootBundle.load('assets/fonts/NotoSerifCJKsc-Regular.otf'))).load();
+    await (FontLoader('MaterialIcons')..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
     final path = File('C:/Windows/Fonts/msyh.ttc');
     if (!path.existsSync()) return;
     final bytes = await path.readAsBytes();
@@ -176,6 +181,40 @@ void main() {
     },
   );
 
+  testWidgets('letter usage uses paper summary and real calendar data', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final c = dailyLayoutPalette(DailyLayout.letter, YxPalette.light);
+    final boundary = GlobalKey();
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('zh'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: RepaintBoundary(key: boundary, child: Scaffold(
+        backgroundColor: c.surface,
+        body: ConversationPresentation(daily: DailyLayout.letter,
+          child: ConversationCalendarPage(c: c, palette: 'jade', name: 'Nova',
+            backend: CalendarBackend(), token: 'test', onBack: () {})),
+      )),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byType(LetterUsageSummary), findsOneWidget);
+    expect(find.text('时光，有迹可循。'), findsOneWidget);
+    expect(find.byWidgetPredicate((w) => w is Tooltip && w.message == '2026-09-10 · 30'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    if (Platform.environment['CALENDAR_SCREENSHOTS'] == '1') {
+      await tester.runAsync(() async {
+      final render = boundary.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final picture = await render.toImage(pixelRatio: 2);
+      final bytes = await picture.toByteData(format: ui.ImageByteFormat.png);
+      await File('build/letter-usage.png').writeAsBytes(bytes!.buffer.asUint8List());
+      picture.dispose();
+      });
+    }
+    await tester.binding.setSurfaceSize(const Size(320, 720));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
   for (final dark in [false, true]) {
     testWidgets(
       'calendar ${dark ? 'night' : 'day'}: narrow layout, periods and day details',

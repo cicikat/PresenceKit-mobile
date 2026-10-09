@@ -4894,13 +4894,13 @@ abstract class AppLocalizations {
   /// No description provided for @layoutReverie.
   ///
   /// In zh, this message translates to:
-  /// **'粉色梦核'**
+  /// **'黑粉梦核'**
   String get layoutReverie;
 
   /// No description provided for @layoutNoir.
   ///
   /// In zh, this message translates to:
-  /// **'黑粉夜航'**
+  /// **'黑粉梦核'**
   String get layoutNoir;
 
   /// No description provided for @layoutMessenger.
@@ -4926,6 +4926,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'来信'**
   String get referenceChatTab;
+
+  /// No description provided for @referenceUsageTab.
+  ///
+  /// In zh, this message translates to:
+  /// **'使用情况'**
+  String get referenceUsageTab;
+
+  /// No description provided for @referenceUsageTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'时光，有迹可循。'**
+  String get referenceUsageTitle;
 
   /// No description provided for @referenceDiaryTab.
   ///

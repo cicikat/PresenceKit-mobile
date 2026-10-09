@@ -9,6 +9,8 @@ Android SQLite outbox 与 JobScheduler。前后台共享 `LifeRecordsSync`，复
 
 `Emerald-mobile` 是陪伴系统的 Android 优先移动客户端。它连接 Emerald-presence（旧名 qq-st-bot）后端，提供手机聊天、后台主动消息、屏幕上下文上报、悬浮提醒和用户确认后的本机动作。
 
+主题显示（2026-10-10）：日夜偏好仍唯一归属 ThemeController；黑粉梦核合并旧日夜皮肤。引用信封恢复及 HTML 文本样式仅属 Flutter 显示层，书信使用情况复用 ConversationCalendarController，不新增后端状态或接口。
+
 ## 系统边界
 
 ```text

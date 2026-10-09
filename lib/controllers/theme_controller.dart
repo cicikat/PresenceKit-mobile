@@ -53,7 +53,7 @@ class ThemeController extends ChangeNotifier {
   DreamLayout get dreamLayout => _dreamLayout;
 
   Future<void> setDailyLayout(DailyLayout value) async {
-    _dailyLayout = value;
+    _dailyLayout = canonicalDailyLayout(value);
     await _changed();
   }
 
@@ -101,10 +101,23 @@ class ThemeController extends ChangeNotifier {
       _layoutPresetIds
         ..clear()
         ..addAll(snapshot.layoutPresetIds);
-      _dailyLayout = snapshot.dailyLayout;
+      _dailyLayout = canonicalDailyLayout(snapshot.dailyLayout);
       _dreamLayout = snapshot.dreamLayout;
+      final legacyNoir = snapshot.dailyLayout == DailyLayout.noir;
+      final hadNoirSlots = _layoutPresetIds.keys.any((key) => key.startsWith('noir.'));
+      final oldActive = _layoutPresetIds['noir.${isDark ? 'dark' : 'light'}'];
+      for (final mode in ['light', 'dark']) {
+        final old = _layoutPresetIds['noir.$mode'];
+        if (old != null) _layoutPresetIds.putIfAbsent('reverie.$mode', () => old);
+      }
+      if (legacyNoir) {
+        // The old noir skin was always dark, even with global light mode.
+        _themeMode = AppThemeMode.dark;
+        if (oldActive != null) _layoutPresetIds['reverie.dark'] = oldActive;
+      }
+      _layoutPresetIds.removeWhere((key, _) => key.startsWith('noir.'));
       // Rewrites legacy activeId snapshots into the dual-preset representation.
-      if (raw != null && !raw.contains('lightThemePresetId')) await _persist();
+      if (legacyNoir || hadNoirSlots || raw != null && !raw.contains('lightThemePresetId')) await _persist();
     } else {
       final legacy = YxPalette.fromJsonString(raw);
       if (legacy != null) {

@@ -125,6 +125,8 @@ class ConversationHeader extends StatelessWidget {
     required this.layout,
     required this.onMenu,
     required this.onSettings,
+    required this.onToggleTheme,
+    required this.dark,
     this.onRoute,
   });
   final YxPalette c;
@@ -132,6 +134,8 @@ class ConversationHeader extends StatelessWidget {
   final DailyLayout layout;
   final VoidCallback onMenu;
   final VoidCallback onSettings;
+  final VoidCallback onToggleTheme;
+  final bool dark;
   final ValueChanged<AppRoute>? onRoute;
 
   @override
@@ -183,12 +187,12 @@ class ConversationHeader extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: messenger ? onMenu : onSettings,
+                  onPressed: messenger ? onToggleTheme : onSettings,
                   icon: Icon(
                     messenger ? Icons.more_horiz : Icons.tune_rounded,
                     color: c.ink2,
                   ),
-                  tooltip: l.drawerSettingsTitle,
+                  tooltip: messenger ? (dark ? l.switchToLightTooltip : l.switchToDarkTooltip) : l.drawerSettingsTitle,
                 ),
               ],
             ),

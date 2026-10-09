@@ -71,7 +71,7 @@ class YxDrawer extends StatelessWidget {
                     ),
                     DrawerItem(
                       c: c,
-                      icon: Icons.bedtime_outlined,
+                      icon: Icons.cloud_outlined,
                       title: l10n.drawerDreamTitle,
                       subtitle: l10n.drawerDreamSubtitle,
                       active: route == AppRoute.dream,

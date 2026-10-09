@@ -6,6 +6,10 @@ import '../models/app_models.dart';
 import '../models/conversation_calendar.dart';
 import '../services/backend_client.dart';
 import 'common_widgets.dart';
+import 'conversation_presentation.dart';
+import '../models/ui_layout.dart';
+import 'letter_usage_summary.dart';
+import 'reference_typography.dart';
 
 const calendarColors = <String, Color>{
   'jade': Color(0xFF368568),
@@ -119,7 +123,8 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
   @override
   Widget build(BuildContext context) {
     final c = widget.c;
-    final accent = calendarColors[widget.palette] ?? calendarColors['jade']!;
+    final paper = ConversationPresentation.dailyOf(context) == DailyLayout.letter;
+    final accent = paper ? c.character : calendarColors[widget.palette] ?? calendarColors['jade']!;
     final dark = c.surface.computeLuminance() < .4;
     final scheme = ColorScheme.fromSeed(
       seedColor: accent,
@@ -128,7 +133,11 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
       onSurface: c.ink1,
     );
     return Theme(
-      data: ThemeData(useMaterial3: true, colorScheme: scheme),
+      data: ThemeData(useMaterial3: true, colorScheme: scheme,
+        fontFamily: paper ? referenceSerifFamily : null,
+        segmentedButtonTheme: paper ? SegmentedButtonThemeData(style: ButtonStyle(
+          shape: WidgetStateProperty.all(const RoundedRectangleBorder()),
+        )) : null),
       child: ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
@@ -142,7 +151,7 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
           ];
           return Column(
             children: [
-              PageHeader(
+              if (!paper) PageHeader(
                 c: c,
                 title: l.calendarTitle,
                 trailing: '',
@@ -156,7 +165,9 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(20),
                     children: [
-                      Container(
+                      if (paper) LetterUsageSummary(c: c, name: widget.name,
+                        streak: controller.streak, lowerBound: controller.streakLowerBound)
+                      else Container(
                         padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
@@ -368,7 +379,7 @@ class _ConversationCalendarPageState extends State<ConversationCalendarPage> {
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: c.surfaceSoft,
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(paper ? 0 : 16),
                               border: Border.all(
                                 color: accent.withValues(alpha: .4),
                               ),
@@ -446,6 +457,7 @@ class _Metrics extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final paper = ConversationPresentation.dailyOf(context) == DailyLayout.letter;
     final labels = {
       'chat_rounds': l.calendarRounds,
       'total_tokens': l.calendarTokens,
@@ -466,12 +478,16 @@ class _Metrics extends StatelessWidget {
           for (final entry in labels.entries)
             SizedBox(
               width: (constraints.maxWidth - 12) / 2,
-              child: Column(
+              child: Container(
+                padding: paper ? const EdgeInsets.all(12) : EdgeInsets.zero,
+                decoration: paper ? BoxDecoration(color: c.surfaceSoft,
+                  border: Border(bottom: BorderSide(color: c.surfaceEdge))) : null,
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     value(entry.key)?.toString() ?? '—',
-                    style: TextStyle(
+                    style: paper ? referenceSerif(c, 27, color: accent) : TextStyle(
                       color: accent,
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
@@ -482,6 +498,7 @@ class _Metrics extends StatelessWidget {
                     style: TextStyle(color: c.ink2, fontSize: 12),
                   ),
                 ],
+                ),
               ),
             ),
         ],

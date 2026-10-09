@@ -7,6 +7,18 @@ import 'package:presencekit_mobile/widgets/chat_widgets.dart';
 import 'package:presencekit_mobile/l10n/l10n.dart';
 
 void main() {
+  test('nested HTML, entities and blocks share live and historical rendering', () {
+    const html = '<div><span style="color:#ff0000;font-size:120%"><b>A &amp; B</b></span><br><em>next</em></div><p>end</p>';
+    expect(inlinePlainText(html), 'A & B\nnext\nend');
+    final live = inlineDisplaySpan(text: html, style: const TextStyle(fontSize: 20), accent: Colors.red);
+    final history = inlineDisplaySpan(text: 'A & B\nnext\nend', displayText: html, style: const TextStyle(fontSize: 20), accent: Colors.red);
+    expect(live.toPlainText(), history.toPlainText());
+    final first = live.children!.first as TextSpan;
+    expect(first.style!.color, const Color(0xffff0000));
+    expect(first.style!.fontWeight, FontWeight.bold);
+    expect(first.style!.fontSize, 24);
+    expect(inlineDisplayParts('A & B\nnext\nend', html, ['A & B', 'next', 'end']).map((part) => inlinePlainText(part!)), ['A & B', 'next', 'end']);
+  });
   testWidgets(
     'chat bubble renders red emphasis and preserves it during selection',
     (tester) async {
@@ -96,7 +108,7 @@ void main() {
       validatedInlineDisplay('canonical', '<hl>other</hl>').single.text,
       'canonical',
     );
-    expect(inlinePlainText('<hl>${'x' * 201}</hl>'), '<hl>${'x' * 201}</hl>');
+    expect(inlinePlainText('<hl>${'x' * 201}</hl>'), 'x' * 201);
   });
 
   test('HTTP and poll keep canonical text and optional styling', () {

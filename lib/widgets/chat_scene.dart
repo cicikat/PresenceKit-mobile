@@ -174,6 +174,8 @@ class ChatScene extends StatelessWidget {
                 onRoute: onRoute ?? (_) {},
                 onMenu: onOpenDrawer,
                 onSettings: onOpenSettings,
+                onToggleTheme: onToggleTheme,
+                dark: dark,
               )
             else if (!classic && !hasReferenceShell(layout))
               ConversationHeader(
@@ -182,6 +184,8 @@ class ChatScene extends StatelessWidget {
                 layout: layout,
                 onMenu: onOpenDrawer,
                 onSettings: onOpenSettings,
+                onToggleTheme: onToggleTheme,
+                dark: dark,
                 onRoute: onRoute,
               )
             else if (classic && prefs.infoStrip)

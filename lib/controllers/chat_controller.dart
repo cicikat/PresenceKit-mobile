@@ -14,6 +14,7 @@ import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/device_services.dart';
 import 'chat_history_reconciliation.dart';
+import '../models/chat_history_display.dart';
 import 'chat_session_coordinator.dart';
 
 enum ChatDeliverySource { initialSync, catchUp, live }
@@ -1018,6 +1019,8 @@ class ChatController extends ChangeNotifier {
           left.role != right.role ||
           left.text != right.text ||
           left.displayText != right.displayText ||
+          left.quotedText != right.quotedText ||
+          left.quotedLabel != right.quotedLabel ||
           left.time != right.time ||
           left.dateKey != right.dateKey ||
           left.failed != right.failed ||
@@ -1674,6 +1677,8 @@ class ChatController extends ChangeNotifier {
   List<String> _splitSegments(String text) {
     final value = text.trim();
     if (value.isEmpty) return const ['……'];
+    // Keep a markup tree intact across newlines in live, poll and replay paths.
+    if (hasDisplayMarkup(value)) return [value];
     final parts = value
         .split(RegExp(r'\r?\n+'))
         .map((e) => e.trim())
@@ -1888,10 +1893,12 @@ class ChatController extends ChangeNotifier {
             toolActivity: entry.toolActivity,
             timestamp: entry.timestamp,
           ),
-        for (final part in _splitHistory(entry.user))
+        if (entry.user.trim().isNotEmpty)
           ChatMessage(
             role: 'you',
-            text: part,
+            text: historyUserDisplay(entry.user).text,
+            quotedText: historyUserDisplay(entry.user).quote,
+            quotedLabel: historyUserDisplay(entry.user).quote == null ? null : 'reply',
             time: entry.time,
             dateKey: day.date,
             turnId: entry.turnId,

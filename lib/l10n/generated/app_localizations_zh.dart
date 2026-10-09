@@ -2605,10 +2605,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get layoutLetter => '书信阅读';
 
   @override
-  String get layoutReverie => '粉色梦核';
+  String get layoutReverie => '黑粉梦核';
 
   @override
-  String get layoutNoir => '黑粉夜航';
+  String get layoutNoir => '黑粉梦核';
 
   @override
   String get layoutMessenger => '微信风格';
@@ -2621,6 +2621,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get referenceChatTab => '来信';
+
+  @override
+  String get referenceUsageTab => '使用情况';
+
+  @override
+  String get referenceUsageTitle => '时光，有迹可循。';
 
   @override
   String get referenceDiaryTab => '碎片';

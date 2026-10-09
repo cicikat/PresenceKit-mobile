@@ -1,3 +1,7 @@
+## 2026-10-10 主题与刷新呈现（current / observe）
+
+current：规范引用恢复、用户多行历史、常见 HTML 文本样式与非经典主题引用隔离已补齐；日夜入口及黑粉梦核旧设置迁移、书信使用情况复用现有统计。observe：真实手机安装、真实模型/后端往返未验收；浏览器与离屏图仅证明组件呈现，控制器夹具证明冷启动和重复刷新。HTML 支持文本格式而非任意网页或脚本。详见 [施工单](../cc-tasks/2026-10-10-chat-theme-history-render.md)。
+
 ## 2026-10-08 聊天复查（current / observe / open）
 
 current：工单 27 已修历史显示正文分叉、刷新失败状态丢失、前台 pending 不交接、HTTP 迟到错误覆盖成功、固定通知冷却和 pending 20 条静默淘汰；后端 271 修复安全失败不可重试及并发兄弟任务残留。证据与完整边界见 [根因复查](mobile/chat-handoff-2026-10-08.md)。observe：无手机连接，长回复/弱网/通知/Doze/杀进程仍 not-run。open：后台无信号依旧依赖 15 分钟系统补偿；consume 到呈现崩溃窗口、artifacts/sticker 补全；未知工具副作用不盲重跑；旧 failed 回执无阶段证据仍保守 unknown。native handoff 满载返回错误、保留后端队列，能力检查可看数量/上限及 lastBackgroundError。

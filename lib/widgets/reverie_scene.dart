@@ -32,7 +32,7 @@ class ReveriePortal extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.bedtime_outlined, size: 14, color: c.character),
+                    Icon(Icons.cloud_outlined, size: 14, color: c.character),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

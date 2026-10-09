@@ -9,7 +9,7 @@ String dailyLayoutLabel(AppLocalizations l, DailyLayout value) =>
       DailyLayout.classic => l.layoutClassic,
       DailyLayout.letter => l.layoutLetter,
       DailyLayout.reverie => l.layoutReverie,
-      DailyLayout.noir => l.layoutNoir,
+      DailyLayout.noir => l.layoutReverie,
       DailyLayout.messenger => l.layoutMessenger,
     };
 String dreamLayoutLabel(AppLocalizations l, DreamLayout value) =>
@@ -38,11 +38,11 @@ class LayoutSettings extends StatelessWidget {
         ListTile(
           title: Text(l.dailyInterface, style: serif(c, 16)),
           trailing: DropdownButton<DailyLayout>(
-            value: daily,
+            value: canonicalDailyLayout(daily),
             dropdownColor: c.surfaceSoft,
             style: serif(c, 14),
             underline: const SizedBox.shrink(),
-            items: DailyLayout.values
+            items: selectableDailyLayouts
                 .map(
                   (v) => DropdownMenuItem(
                     value: v,

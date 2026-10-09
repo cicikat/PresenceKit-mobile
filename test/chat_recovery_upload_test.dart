@@ -242,6 +242,29 @@ void main() {
     }
   }
 
+  test('cold history and repeated refresh keep user lines and restore reply UI', () async {
+    backend.offline = false;
+    backend.day = ChatLogDay.fromJson({
+      'date': '2026-10-10', 'entries': [
+        {'time': '12:00', 'turn_id': 'reply-turn',
+         'user': '用户引用回复：作者=角色，时间=2026-10-10T11:00:00+08:00，message_id=earlier:assistant，原文「<b>quoted</b>」：first\n\nsecond',
+         'assistant': '<div><strong>answer</strong>\n<br>next</div>'},
+        {'time': '12:01', 'turn_id': 'plain-turn',
+         'user': 'line one\n\nline two\nline three', 'assistant': 'ok'},
+      ],
+    });
+    await controller.loadHistory();
+    for (var i = 0; i < 2; i++) {
+      final users = controller.history.where((m) => m.role == 'you').toList();
+      expect(users.length, 2);
+      expect(users.first.text, 'first\n\nsecond');
+      expect(users.first.quotedText, '<b>quoted</b>');
+      expect(users.last.text, 'line one\n\nline two\nline three');
+      expect(controller.history.where((m) => m.role == 'him').length, 2);
+      await controller.loadHistory(reconcileLocal: true);
+    }
+  });
+
   test('old epoch poll failure cannot clear a new successful poll state', () async {
     backend.pollGate = Completer<void>();
     final oldGate = backend.pollGate!;

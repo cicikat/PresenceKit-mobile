@@ -18,6 +18,7 @@ import '../services/character_naming.dart';
 import '../widgets/common_widgets.dart';
 import 'chat_image.dart';
 import 'inline_display_text.dart';
+import '../models/inline_display.dart';
 import '../models/screen_context.dart';
 
 class JumpToLatestButton extends StatelessWidget {
@@ -364,8 +365,9 @@ Future<void> showChatTextSelection(
   String? displayText,
   Color accent = Colors.red,
 }) async {
-  final controller = _ChatSelectionController(text, displayText, accent)
-    ..selection = TextSelection(baseOffset: 0, extentOffset: text.length);
+  final visible = validatedInlineDisplay(text, displayText).map((run) => run.text).join();
+  final controller = _ChatSelectionController(visible, displayText ?? text, accent)
+    ..selection = TextSelection(baseOffset: 0, extentOffset: visible.length);
   try {
     await showDialog<void>(
       context: context,
@@ -420,14 +422,17 @@ class ReplyPreviewBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final classic = ConversationPresentation.dailyOf(context) == DailyLayout.classic &&
+        ConversationPresentation.dreamOf(context) == DreamLayout.classic;
     return Container(
       color: c.surfaceSoft,
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 0),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: c.surface,
-          border: Border(left: BorderSide(color: c.character, width: 3)),
+          color: classic ? c.surface : null,
+          border: classic ? Border(left: BorderSide(color: c.character, width: 3)) :
+              Border(bottom: BorderSide(color: c.surfaceEdge)),
         ),
         child: Row(
           children: [
@@ -436,11 +441,10 @@ class ReplyPreviewBar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label, style: mono(c, 9.5, color: c.character)),
-                  Text(
-                    text,
+                  Text.rich(
+                    inlineDisplaySpan(text: text, style: mono(c, 11, color: c.ink3), accent: c.character),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: mono(c, 11, color: c.ink3),
                   ),
                 ],
               ),
@@ -466,24 +470,27 @@ class _QuoteBar extends StatelessWidget {
   final bool dark;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final classic = ConversationPresentation.dailyOf(context) == DailyLayout.classic &&
+        ConversationPresentation.dreamOf(context) == DreamLayout.classic;
+    return Container(
     constraints: const BoxConstraints(maxWidth: 272),
     margin: const EdgeInsets.fromLTRB(6, 9, 6, 10),
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: BoxDecoration(
+    decoration: classic ? BoxDecoration(
       color: Colors.grey.withValues(alpha: .18),
       borderRadius: BorderRadius.circular(4),
       border: Border(
         left: BorderSide(color: dark ? c.characterOn : c.character, width: 2),
       ),
-    ),
-    child: Text(
-      text,
+    ) : null,
+    child: Text.rich(
+      inlineDisplaySpan(text: text, style: mono(c, 10, color: c.ink2), accent: c.character),
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
-      style: mono(c, 10, color: c.ink2),
     ),
-  );
+    );
+  }
 }
 
 class _ChatDateDivider extends StatelessWidget {
@@ -580,7 +587,7 @@ class _HimMessageState extends State<HimMessage> {
     if (!mounted || action == null) return;
     switch (action) {
       case ChatBubbleAction.copy:
-        await Clipboard.setData(ClipboardData(text: widget.text));
+        await Clipboard.setData(ClipboardData(text: validatedInlineDisplay(widget.text, widget.displayText).map((run) => run.text).join()));
         break;
       case ChatBubbleAction.selectAll:
         await showChatTextSelection(
@@ -864,7 +871,7 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
     _animate = widget.animate;
     if (_animate) {
       _controller.duration = Duration(
-        milliseconds: (widget.text.characters.length / _revealCps * 1000)
+        milliseconds: (inlinePlainText(widget.text).characters.length / _revealCps * 1000)
             .round()
             .clamp(1, 60000),
       );
@@ -893,7 +900,7 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
     child: AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        final count = (_controller.value * widget.text.characters.length)
+        final count = (_controller.value * inlinePlainText(widget.text).characters.length)
             .floor();
         final cursor = _animate && !_skipped && _controller.value < 1
             ? '▍'
@@ -932,6 +939,24 @@ class TypingHimMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = ConversationPresentation.dailyOf(context);
+    if (layout != DailyLayout.classic) {
+      final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: MessageWindow(
+          enabled: window, c: c, label: profileDisplayName,
+          time: prefs.showChatTime ? time : null,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: JumpingDots(c: c, size: prefs.fontSize),
+            ),
+          ),
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(

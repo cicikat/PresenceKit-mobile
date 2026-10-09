@@ -128,14 +128,15 @@ void main() {
           text: '今天过得怎么样？\n如果有想说的，我在这里听。',
           time: '20:16',
         ),
-        ChatMessage(role: 'you', text: '想和你一起，慢慢说说今天。', time: '20:18'),
+        ChatMessage(role: 'you', text: '想和你一起，慢慢说说今天。\n这仍是一条消息。', time: '20:18', quotedText: '<b>今天过得怎么样？</b>'),
         ChatMessage(
           role: 'him',
-          text: '好，我们不着急。',
+          text: '<span style="color:#b65a78"><b>好，我们不着急。</b></span>',
           time: '20:19',
           quotedText: '慢慢说说今天',
         ),
       ]);
+      controller.replyTarget = controller.history.first;
       final c = dailyLayoutPalette(layout, YxPalette.light);
       var profileName = '测试角色';
       Widget scene() => LayoutBackdrop(
@@ -299,6 +300,8 @@ void main() {
             onRoute: (_) {},
             onMenu: () {},
             onSettings: () {},
+            onToggleTheme: () {},
+            dark: false,
             child: route == AppRoute.diary
                 ? DiaryPage(
                     c: c,

@@ -115,7 +115,7 @@ class DreamEntrance extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bedtime_outlined, size: 42, color: c.character),
+            Icon(Icons.cloud_outlined, size: 42, color: c.character),
             const SizedBox(height: 16),
             Text(
               loading
@@ -149,7 +149,7 @@ class DreamEntrance extends StatelessWidget {
             FilledButton.icon(
               onPressed: loading || entering ? null : onEnter,
               icon: Icon(
-                entering ? Icons.hourglass_top_rounded : Icons.bedtime_rounded,
+                entering ? Icons.hourglass_top_rounded : Icons.cloud_outlined,
                 size: 17,
               ),
               label: Text(

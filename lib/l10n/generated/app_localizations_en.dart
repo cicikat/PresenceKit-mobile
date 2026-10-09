@@ -2726,10 +2726,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get layoutLetter => 'Letters';
 
   @override
-  String get layoutReverie => 'Pink reverie';
+  String get layoutReverie => 'Black & pink dreamcore';
 
   @override
-  String get layoutNoir => 'Noir reverie';
+  String get layoutNoir => 'Black & pink dreamcore';
 
   @override
   String get layoutMessenger => 'Messenger';
@@ -2742,6 +2742,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referenceChatTab => 'Letters';
+
+  @override
+  String get referenceUsageTab => 'Usage';
+
+  @override
+  String get referenceUsageTitle => 'A record of our days.';
 
   @override
   String get referenceDiaryTab => 'Fragments';

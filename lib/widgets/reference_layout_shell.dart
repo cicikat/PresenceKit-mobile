@@ -21,6 +21,8 @@ class ReferenceLayoutShell extends StatelessWidget {
     required this.onRoute,
     required this.onMenu,
     required this.onSettings,
+    required this.onToggleTheme,
+    required this.dark,
     required this.child,
   });
   final DailyLayout layout;
@@ -30,6 +32,8 @@ class ReferenceLayoutShell extends StatelessWidget {
   final ValueChanged<AppRoute> onRoute;
   final VoidCallback onMenu;
   final VoidCallback onSettings;
+  final VoidCallback onToggleTheme;
+  final bool dark;
   final Widget child;
   @override
   Widget build(BuildContext context) => ConversationPresentation(
@@ -45,6 +49,8 @@ class ReferenceLayoutShell extends StatelessWidget {
             onRoute: onRoute,
             onMenu: onMenu,
             onSettings: onSettings,
+            onToggleTheme: onToggleTheme,
+            dark: dark,
           ),
         Expanded(child: child),
       ],
@@ -62,6 +68,8 @@ class ReferenceHeader extends StatelessWidget {
     required this.onRoute,
     required this.onMenu,
     required this.onSettings,
+    required this.onToggleTheme,
+    required this.dark,
   });
   final YxPalette c;
   final DailyLayout layout;
@@ -70,6 +78,8 @@ class ReferenceHeader extends StatelessWidget {
   final ValueChanged<AppRoute> onRoute;
   final VoidCallback onMenu;
   final VoidCallback onSettings;
+  final VoidCallback onToggleTheme;
+  final bool dark;
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -167,10 +177,10 @@ class ReferenceHeader extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => onRoute(AppRoute.dream),
-                  tooltip: l.drawerDreamTitle,
+                  onPressed: onToggleTheme,
+                  tooltip: dark ? l.switchToLightTooltip : l.switchToDarkTooltip,
                   icon: Icon(
-                    paper ? Icons.bedtime_outlined : Icons.favorite,
+                    paper ? (dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded) : Icons.favorite,
                     color: c.character,
                     size: paper ? 22 : 17,
                   ),
@@ -207,10 +217,10 @@ class ReferenceHeader extends StatelessWidget {
                     Expanded(
                       child: _tab(
                         context,
-                        l.drawerSettingsTitle,
-                        Icons.tune,
-                        false,
-                        onSettings,
+                        l.referenceUsageTab,
+                        Icons.analytics_outlined,
+                        route == AppRoute.conversationCalendar,
+                        () => onRoute(AppRoute.conversationCalendar),
                         true,
                       ),
                     ),

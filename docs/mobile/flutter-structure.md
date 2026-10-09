@@ -1,3 +1,10 @@
+## 主题、引用与使用情况（2026-10-10）
+
+`chat_history_display.dart` 仅在显示层恢复既有规范引用信封；用户历史正文不再经助手分段器。`inline_display.dart` 与 `InlineDisplayText` 统一即时/历史、引用、逐字显示和复制选择的常见 HTML 文本样式及实体，不执行脚本或外部资源。非经典布局的引用、预览与等待状态使用自身外观，不继承经典灰底竖线。
+
+`ThemeController` 将旧 noir 本机偏好及配色槽迁入 reverie 日夜槽，主题选择只显示「黑粉梦核」。月亮/太阳、微信省略号及梦核爱心共用既有日夜切换；梦境入口改用云图标。书信第四栏进入现有 conversation calendar，`LetterUsageSummary` 提供信纸页眉、邮票与真实连续天数，统计和覆盖语义仍由现有 calendar controller 拥有。
+
+本次无后端协议、权限或桌面影响；验收与设备边界见 [施工单](../../cc-tasks/2026-10-10-chat-theme-history-render.md)。
 ## 聊天完整性（2026-10-07）
 
 请求、绑定、交接、分段合并与工具历史责任边界见 [聊天完整性修复](chat-integrity-2026-10-07.md)。组合根未增加领域状态；未引入新持久状态库、开关或权限。

@@ -581,7 +581,7 @@ class SettingsPage extends StatelessWidget {
               _SettingsModule(
                 c: c,
                 title: l10n.settingsDreamModule,
-                icon: Icons.nightlight_outlined,
+                icon: Icons.cloud_outlined,
                 children: [
                   _SettingsModule(
                     c: c,
