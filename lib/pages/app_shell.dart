@@ -1,3 +1,4 @@
+import '../widgets/conversation_presentation.dart';
 import '../widgets/conversation_calendar_widgets.dart';
 import 'dart:async';
 
@@ -96,7 +97,10 @@ class _CompanionAppState extends State<CompanionApp>
   YxPalette get c {
     final custom = _themeController.activePalette;
     if (custom != null) return custom;
-    return _themeController.isDark ? YxPalette.dark : YxPalette.light;
+    final base = _themeController.isDark ? YxPalette.dark : YxPalette.light;
+    return _themeController.isDark
+        ? base
+        : dailyLayoutPalette(_themeController.dailyLayout, base);
   }
 
   bool get _hasAdminToken => _adminToken.trim().isNotEmpty;
@@ -1340,6 +1344,8 @@ class _CompanionAppState extends State<CompanionApp>
       case AppRoute.chat:
         return ChatScene(
           key: const ValueKey('chat'),
+          layout: _themeController.dailyLayout,
+          onRoute: _pickRoute,
           c: c,
           dark: _themeController.isDark,
           prefs: _prefs,

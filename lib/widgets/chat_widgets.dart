@@ -1,3 +1,5 @@
+import '../models/ui_layout.dart';
+import 'conversation_presentation.dart';
 import 'dart:math' as math;
 export 'chat_scene.dart';
 import 'dart:async';
@@ -592,21 +594,24 @@ class _HimMessageState extends State<HimMessage> {
   @override
   Widget build(BuildContext context) {
     final c = widget.c;
+    final letter =
+        ConversationPresentation.dailyOf(context) == DailyLayout.letter;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 18),
-            child: YxAvatar(
-              c: c,
-              size: 28,
-              imageBytes: widget.profileAvatarBytes,
-              text: widget.profileDisplayName.characters.first,
+          if (!letter)
+            Padding(
+              padding: const EdgeInsets.only(top: 18),
+              child: YxAvatar(
+                c: c,
+                size: 28,
+                imageBytes: widget.profileAvatarBytes,
+                text: widget.profileDisplayName.characters.first,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
+          if (!letter) const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -621,7 +626,9 @@ class _HimMessageState extends State<HimMessage> {
                   children: [
                     Text(
                       widget.prefs.showChatTime
-                          ? '${context.l10n.chatRoleHim}  ${widget.time}'
+                          ? '${letter ? widget.profileDisplayName : context.l10n.chatRoleHim}  ${widget.time}'
+                          : letter
+                          ? widget.profileDisplayName
                           : context.l10n.chatRoleHim,
                       style: mono(c, 9.5, color: c.ink3),
                     ),
@@ -644,30 +651,38 @@ class _HimMessageState extends State<HimMessage> {
                             unawaited(_handleLongPress(details.globalPosition))
                       : null,
                   child: Container(
-                    constraints: const BoxConstraints(maxWidth: 300),
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
-                    decoration: BoxDecoration(
-                      color: c.surfaceSoft.withValues(
-                        alpha: widget.prefs.chatBubbleOpacity,
-                      ),
-                      border: Border.all(
-                        color: widget.highlight ? c.warn : c.surfaceEdge,
-                        width: widget.highlight ? 2 : 1,
-                      ),
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(6),
-                        bottomRight: Radius.circular(6),
-                        bottomLeft: Radius.circular(0),
-                        topLeft: Radius.circular(0),
-                      ),
+                    constraints: BoxConstraints(
+                      maxWidth: letter ? double.infinity : 300,
                     ),
+                    padding: letter
+                        ? const EdgeInsets.symmetric(vertical: 14)
+                        : const EdgeInsets.fromLTRB(14, 10, 14, 11),
+                    decoration: letter
+                        ? null
+                        : BoxDecoration(
+                            color: c.surfaceSoft.withValues(
+                              alpha: widget.prefs.chatBubbleOpacity,
+                            ),
+                            border: Border.all(
+                              color: widget.highlight ? c.warn : c.surfaceEdge,
+                              width: widget.highlight ? 2 : 1,
+                            ),
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(6),
+                              bottomRight: Radius.circular(6),
+                              bottomLeft: Radius.circular(0),
+                              topLeft: Radius.circular(0),
+                            ),
+                          ),
                     child: Container(
-                      padding: const EdgeInsets.only(left: 10),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          left: BorderSide(color: c.character, width: 3),
-                        ),
-                      ),
+                      padding: EdgeInsets.only(left: letter ? 0 : 10),
+                      decoration: letter
+                          ? null
+                          : BoxDecoration(
+                              border: Border(
+                                left: BorderSide(color: c.character, width: 3),
+                              ),
+                            ),
                       child: widget.sticker != null
                           ? StickerImage(sticker: widget.sticker!)
                           : Column(
@@ -1105,6 +1120,8 @@ class _YouMessageState extends State<YouMessage> {
   @override
   Widget build(BuildContext context) {
     final c = widget.c;
+    final letter =
+        ConversationPresentation.dailyOf(context) == DailyLayout.letter;
     final text = widget.text;
     final prefs = widget.prefs;
     final attachment = AttachmentPlaceholder.parse(text);
@@ -1119,11 +1136,15 @@ class _YouMessageState extends State<YouMessage> {
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: letter
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.end,
         children: [
           Flexible(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: letter
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.end,
               children: [
                 if (widget.showDateDivider && widget.dateKey != null)
                   _ChatDateDivider(
@@ -1145,22 +1166,25 @@ class _YouMessageState extends State<YouMessage> {
                             unawaited(_handleLongPress(details.globalPosition))
                       : null,
                   child: Container(
-                    constraints: const BoxConstraints(maxWidth: 280),
+                    constraints: BoxConstraints(
+                      maxWidth: letter ? double.infinity : 280,
+                    ),
                     padding: hasImages
                         ? EdgeInsets.zero
                         : const EdgeInsets.fromLTRB(14, 10, 14, 11),
                     decoration: hasImages
                         ? null
                         : BoxDecoration(
-                            color: c.userBubble.withValues(
-                              alpha: prefs.chatBubbleOpacity,
-                            ),
+                            color: (letter ? c.surfaceSoft : c.userBubble)
+                                .withValues(alpha: prefs.chatBubbleOpacity),
                             borderRadius: BorderRadius.circular(6),
                           ),
                     child: widget.attachments.isNotEmpty
                         ? Column(
                             mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                            crossAxisAlignment: letter
+                                ? CrossAxisAlignment.start
+                                : CrossAxisAlignment.end,
                             children: [
                               for (final file in widget.attachments)
                                 Padding(
@@ -1190,7 +1214,9 @@ class _YouMessageState extends State<YouMessage> {
                                         style: contentSerif(
                                           c,
                                           prefs.fontSize,
-                                          color: c.userBubbleText,
+                                          color: letter
+                                              ? c.ink1
+                                              : c.userBubbleText,
                                         ),
                                       ),
                             ],
@@ -1198,7 +1224,9 @@ class _YouMessageState extends State<YouMessage> {
                         : canonicalImages.isNotEmpty
                         ? Column(
                             mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                            crossAxisAlignment: letter
+                                ? CrossAxisAlignment.start
+                                : CrossAxisAlignment.end,
                             children: [
                               for (final ref in canonicalImages)
                                 Padding(
@@ -1222,7 +1250,7 @@ class _YouMessageState extends State<YouMessage> {
                             style: contentSerif(
                               c,
                               prefs.fontSize,
-                              color: c.userBubbleText,
+                              color: letter ? c.ink1 : c.userBubbleText,
                             ),
                           ),
                   ),
@@ -1234,7 +1262,10 @@ class _YouMessageState extends State<YouMessage> {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       context.l10n.chatConfirming,
-                      style: TextStyle(fontSize: 12, color: c.userBubbleText.withValues(alpha: 0.6)),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: c.userBubbleText.withValues(alpha: 0.6),
+                      ),
                     ),
                   ),
                 if (widget.failed)

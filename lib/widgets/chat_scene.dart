@@ -1,3 +1,5 @@
+import '../models/ui_layout.dart';
+import 'conversation_presentation.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,10 +13,13 @@ import 'edge_refresh.dart';
 import 'reasoning_widgets.dart';
 import 'tool_activity_widgets.dart';
 import 'chat_artifact_widgets.dart';
+
 class ChatScene extends StatelessWidget {
   const ChatScene({
     super.key,
     required this.c,
+    this.layout = DailyLayout.classic,
+    this.onRoute,
     required this.dark,
     required this.prefs,
     required this.profileDisplayName,
@@ -34,6 +39,8 @@ class ChatScene extends StatelessWidget {
     required this.onVoiceRecordCancel,
   });
 
+  final DailyLayout layout;
+  final ValueChanged<AppRoute>? onRoute;
   final YxPalette c;
   final bool dark;
   final YxPrefs prefs;
@@ -55,9 +62,12 @@ class ChatScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) => _build(context),
+    return ConversationPresentation(
+      daily: layout,
+      child: AnimatedBuilder(
+        animation: controller,
+        builder: (context, _) => _build(context),
+      ),
     );
   }
 
@@ -91,11 +101,12 @@ class ChatScene extends StatelessWidget {
       TimeOfDay.fromDateTime(now).format(context),
     );
     final topInset = MediaQuery.paddingOf(context).top;
+    final classic = layout == DailyLayout.classic;
     final metaItems = <Widget>[
       if (loadingMoreHistory) MetaLine(c: c, text: l10n.chatLoadingOlder),
       if (hiddenMessageCount > 0)
         MetaLine(c: c, text: l10n.chatHiddenOlder(hiddenMessageCount)),
-      MetaLine(c: c, text: todayLine),
+      if (classic) MetaLine(c: c, text: todayLine),
       if (loadingHistory) MetaLine(c: c, text: l10n.chatLoadingHistory),
       if (historyLoaded && historyMessages.isEmpty)
         MetaLine(c: c, text: l10n.chatEmptyHistory),
@@ -110,13 +121,15 @@ class ChatScene extends StatelessWidget {
       if (backendError != null)
         MetaLine(
           c: c,
-          text: l10n.chatBackendError(localizeSessionScopeError(l10n, backendError)),
+          text: l10n.chatBackendError(
+            localizeSessionScopeError(l10n, backendError),
+          ),
         ),
       if (controller.mobileError != null)
         MetaLine(c: c, text: l10n.chatBackendError(controller.mobileError!)),
-      if (lastBackendReply != null && backendError == null)
+      if (classic && lastBackendReply != null && backendError == null)
         MetaLine(c: c, text: l10n.chatBackendStatus(lastBackendReply.emotion)),
-      if (mobileReceivedCount > 0)
+      if (classic && mobileReceivedCount > 0)
         MetaLine(c: c, text: l10n.chatMobileReceived(mobileReceivedCount)),
       const SizedBox(height: 14),
     ];
@@ -126,7 +139,16 @@ class ChatScene extends StatelessWidget {
       children: [
         Column(
           children: [
-            if (prefs.infoStrip)
+            if (!classic)
+              ConversationHeader(
+                c: c,
+                name: profileDisplayName,
+                layout: layout,
+                onMenu: onOpenDrawer,
+                onSettings: onOpenSettings,
+                onRoute: onRoute,
+              )
+            else if (prefs.infoStrip)
               ChatTopBar(
                 c: dark
                     ? c.copyWith(
@@ -144,6 +166,7 @@ class ChatScene extends StatelessWidget {
                 onOpenSettings: onOpenSettings,
               ),
             Expanded(
+              key: const ValueKey('daily-timeline'),
               child: EdgeRefresh(
                 onRefresh: () async {
                   await controller.refreshConnection();
@@ -169,9 +192,9 @@ class ChatScene extends StatelessWidget {
                   controller: scrollController,
                   cacheExtent: 720,
                   padding: EdgeInsets.fromLTRB(
-                    12,
-                    prefs.infoStrip ? 14 : topInset + 58,
-                    12,
+                    classic ? 12 : 24,
+                    !classic || prefs.infoStrip ? 14 : topInset + 58,
+                    classic ? 12 : 24,
                     92,
                   ),
                   itemCount: itemCount,
@@ -322,6 +345,7 @@ class ChatScene extends StatelessWidget {
                 onCancel: controller.clearReplyTarget,
               ),
             Composer(
+              key: const ValueKey('daily-composer'),
               c: c,
               bubbleOpacity: prefs.chatBubbleOpacity,
               fontSize: prefs.fontSize,
@@ -334,7 +358,7 @@ class ChatScene extends StatelessWidget {
             ),
           ],
         ),
-        if (!prefs.infoStrip)
+        if (classic && !prefs.infoStrip)
           Positioned(
             top: topInset + 10,
             left: 12,
@@ -357,4 +381,3 @@ class ChatScene extends StatelessWidget {
     );
   }
 }
-
