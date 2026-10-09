@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
@@ -66,12 +67,29 @@ class ReveriePortal extends StatelessWidget {
 }
 
 class ReveriePainter extends CustomPainter {
-  ReveriePainter({required this.c});
+  ReveriePainter({
+    required this.c,
+    this.garden = false,
+    this.progress = 1,
+    this.live = true,
+  });
   final YxPalette c;
+  final bool garden;
+  final double progress;
+  final bool live;
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
+    final scale = math.max(size.width / 360, size.height / 190);
+    canvas.translate(
+      (size.width - 360 * scale) / 2,
+      (size.height - 190 * scale) / 2,
+    );
+    canvas.scale(scale);
     final dark = c.surface.computeLuminance() < .2;
+    Color tone(int light, int night) => Color(dark ? night : light);
+    const rect = Rect.fromLTWH(0, 0, 360, 190);
     canvas.drawRect(
       rect,
       Paint()
@@ -79,71 +97,195 @@ class ReveriePainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            dark ? const Color(0xFF171A24) : const Color(0xFFE2D3E8),
-            c.surfaceSoft,
+            tone(0xFFC9B5DF, 0xFF080B12),
+            tone(0xFFEDD0E4, 0xFF151C29),
+            tone(0xFFFAE6ED, 0xFF25303E),
           ],
+          stops: const [0, .57, 1],
         ).createShader(rect),
     );
+    final cloud = Paint()
+      ..color = tone(0xFFFFF5F8, 0xFF708294).withValues(alpha: .8)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
+    for (final oval in [
+      const Rect.fromLTWH(-31, 65, 162, 40),
+      const Rect.fromLTWH(239, 26, 176, 38),
+      const Rect.fromLTWH(211, 111, 192, 46),
+      const Rect.fromLTWH(15, 110, 182, 38),
+    ]) {
+      canvas.drawOval(oval, cloud);
+    }
     canvas.drawCircle(
-      Offset(size.width * .19, size.height * .24),
-      16,
-      Paint()..color = c.character.withValues(alpha: .35),
+      const Offset(72, 41),
+      17,
+      Paint()..color = tone(0xFFFFF8F3, 0xFFFF4F9B).withValues(alpha: .65),
     );
-    final floor = Paint();
-    const unit = 18.0;
-    for (var row = 0; row < 3; row++) {
-      for (var col = 0; col < size.width / unit; col++) {
-        floor.color =
-            ((col + row).isEven ? (dark ? c.ink4 : c.character) : c.surfaceEdge)
-                .withValues(alpha: .22);
-        canvas.drawRect(
-          Rect.fromLTWH(col * unit, size.height - 36 + row * 12, unit, 12),
-          floor,
-        );
+    canvas.save();
+    canvas.clipPath(
+      Path()
+        ..moveTo(0, 162)
+        ..lineTo(180, 133)
+        ..lineTo(360, 162)
+        ..lineTo(360, 190)
+        ..lineTo(0, 190)
+        ..close(),
+    );
+    canvas.drawRect(
+      rect,
+      Paint()..color = tone(0xFFF3E3ED, 0xFF26303B).withValues(alpha: .8),
+    );
+    final tile = Paint()
+      ..color = tone(0xFFD3B8D1, 0xFF10141D).withValues(alpha: .8);
+    for (var y = 0; y < 18; y++) {
+      for (var x = 0; x < 18; x++) {
+        if ((x + y).isEven) {
+          canvas.drawRect(Rect.fromLTWH(x * 20, y * 11, 20, 11), tile);
+        }
       }
     }
-    final x = size.width * .62, y = size.height * .17;
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(x + 15, y + 92), width: 90, height: 12),
-      Paint()..color = c.ink1.withValues(alpha: .08),
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(x - 4, y - 4, 48, 86),
-      Paint()..color = c.character.withValues(alpha: .65),
-    );
-    final door = Rect.fromLTWH(x, y, 36, 78);
-    canvas.drawRect(
-      door,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            dark ? const Color(0xFFFFF2DB) : Colors.white,
-            c.character.withValues(alpha: .4),
-          ],
-        ).createShader(door),
-    );
-    final step = Paint()..color = c.ink3.withValues(alpha: .35);
-    for (var i = 0; i < 4; i++) {
+    canvas.restore();
+    if (!garden) {
+      canvas.drawOval(
+        const Rect.fromLTWH(178, 109, 80, 14),
+        Paint()..color = tone(0xFFC49FBE, 0xFF080B12).withValues(alpha: .4),
+      );
       canvas.drawRect(
-        Rect.fromLTWH(x - 8 - i * 12, y + 80 + i * 8, 52 - i * 3, 6),
-        step,
+        const Rect.fromLTWH(187, 36, 47, 76),
+        Paint()..color = tone(0xFFBB96BF, 0xFFFF4F9B),
+      );
+      const door = Rect.fromLTWH(193, 42, 35, 70);
+      canvas.drawRect(
+        door,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              tone(0xFFFFF9F3, 0xFFFFF3D9),
+              tone(0xFFF7DEEF, 0xFFFF4F9B),
+            ],
+          ).createShader(door),
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(228, 42)
+          ..lineTo(242, 32)
+          ..lineTo(242, 114)
+          ..lineTo(228, 112)
+          ..close(),
+        Paint()..color = tone(0xFFE7C2D8, 0xFFD91A6F),
+      );
+      canvas.drawCircle(
+        const Offset(236, 77),
+        1.4,
+        Paint()..color = const Color(0xFFAB77A0),
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(192, 111)
+          ..lineTo(230, 111)
+          ..lineTo(230, 121)
+          ..lineTo(183, 121)
+          ..lineTo(183, 132)
+          ..lineTo(174, 132)
+          ..lineTo(174, 143)
+          ..lineTo(165, 143)
+          ..lineTo(165, 154)
+          ..lineTo(156, 154)
+          ..lineTo(156, 165)
+          ..lineTo(117, 165)
+          ..lineTo(117, 154)
+          ..lineTo(126, 154)
+          ..lineTo(126, 143)
+          ..lineTo(135, 143)
+          ..lineTo(135, 132)
+          ..lineTo(144, 132)
+          ..lineTo(144, 121)
+          ..lineTo(192, 121)
+          ..close(),
+        Paint()..color = tone(0xFFF8EAF2, 0xFFB9C4CC),
+      );
+      final edge = Paint()
+        ..color = tone(0xFFCEAECB, 0xFF53636E)
+        ..strokeWidth = 2;
+      for (var i = 0; i < 4; i++) {
+        canvas.drawLine(
+          Offset(183 - i * 9, 121 + i * 11),
+          Offset(230 - i * 9, 121 + i * 11),
+          edge,
+        );
+      }
+    } else if (live) {
+      final stem = Paint()
+        ..color = tone(0xFF9B8AA8, 0xFF739989)
+        ..strokeWidth = 4;
+      final height = 35 + progress * 45;
+      canvas.drawLine(const Offset(186, 143), Offset(186, 143 - height), stem);
+      canvas.drawPath(
+        Path()
+          ..moveTo(185, 110)
+          ..quadraticBezierTo(151, 114, 153, 84)
+          ..quadraticBezierTo(183, 82, 185, 110)
+          ..moveTo(186, 99)
+          ..quadraticBezierTo(218, 100, 218, 70)
+          ..quadraticBezierTo(188, 70, 186, 99),
+        Paint()..color = tone(0xFFB1A3B9, 0xFF719989),
+      );
+      if (progress > .4) {
+        final top = 143 - height - 18;
+        final petal = Paint()..color = tone(0xFFD187AE, 0xFFFF4F9B);
+        canvas.drawRect(Rect.fromLTWH(174, top, 24, 48), petal);
+        canvas.drawRect(Rect.fromLTWH(162, top + 12, 48, 24), petal);
+        canvas.drawRect(
+          Rect.fromLTWH(177, top + 15, 18, 18),
+          Paint()..color = const Color(0xFFFFF0D5),
+        );
+      }
+      canvas.drawPath(
+        Path()
+          ..moveTo(161, 140)
+          ..lineTo(211, 140)
+          ..lineTo(202, 175)
+          ..lineTo(170, 175)
+          ..close(),
+        Paint()..color = tone(0xFFD3A6C1, 0xFF283641),
+      );
+      canvas.drawLine(
+        const Offset(157, 140),
+        const Offset(215, 140),
+        Paint()
+          ..color = tone(0xFFF9EEF5, 0xFFB7C9C2)
+          ..strokeWidth = 5,
       );
     }
-    final star = Paint()..color = dark ? const Color(0xFFBDE6D7) : c.character;
-    for (final p in [
-      Offset(size.width * .32, 20),
-      Offset(size.width * .84, 64),
-      Offset(size.width * .12, 115),
-    ]) {
-      canvas.drawRect(Rect.fromCenter(center: p, width: 3, height: 13), star);
-      canvas.drawRect(Rect.fromCenter(center: p, width: 13, height: 3), star);
+    final star = Paint()..color = tone(0xFFFFF5FB, 0xFFC2F3DF);
+    for (final point in [const Offset(304, 71), const Offset(116, 29)]) {
+      canvas.drawRect(
+        Rect.fromCenter(center: point, width: 4, height: 18),
+        star,
+      );
+      canvas.drawRect(
+        Rect.fromCenter(center: point, width: 18, height: 4),
+        star,
+      );
     }
+    for (final point in [const Offset(59, 112), const Offset(283, 110)]) {
+      canvas.drawRect(Rect.fromLTWH(point.dx, point.dy, 3, 3), star);
+    }
+    final accent = Paint()..color = tone(0xFFB581B1, 0xFFFF4F9B);
+    canvas.drawRect(const Rect.fromLTWH(270, 28, 3, 3), accent);
+    canvas.drawRect(const Rect.fromLTWH(91, 85, 3, 3), accent);
+    canvas.drawRect(const Rect.fromLTWH(42, 135, 4, 12), accent);
+    canvas.drawRect(const Rect.fromLTWH(38, 139, 12, 4), accent);
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(ReveriePainter oldDelegate) => c != oldDelegate.c;
+  bool shouldRepaint(ReveriePainter old) =>
+      c != old.c ||
+      garden != old.garden ||
+      progress != old.progress ||
+      live != old.live;
 }
 
 class MessageWindow extends StatelessWidget {

@@ -284,3 +284,7 @@ Flutter analyze --no-pub passed with zero issues. Focused widget/controller/prot
 管理面提供全局开关、effective state 与 `/perception/screen/status` 无正文观测；电脑视觉观察页、手机系统配置页各有独立本地授权，默认关闭。全局开启时自主工具继承启用，显式工具禁用优先；角色消息继续走原通知/免打扰链路。桌面 IPC 新增可选 onDemandEnabled；手机使用专用 screen_observation 通道与无障碍 worker，不改 mobile poll/ack/relay。
 
 实现及构建/定向测试通过，真实双设备、锁屏、OEM 后台及 VLM/消息联合验收保持 open。管理面既有国际化测试 3 项失败保持 open，详见施工记录，不能将静态检查作为真实设备验收。
+
+## 工单 30 · 整套界面切换
+
+148 项任务相关 Flutter 回归通过；静态分析零问题；13 张逐页渲染图已检查，窄屏/大字号/键盘与真实导航、筛选由 widget 测试覆盖。Dev debug APK 构建成功；adb 无设备，未安装或发布，真实后端/前后台/OEM 字体/重启恢复 not-run。工单与复现入口见 cc-tasks/30-mobile-layout-switching.md；图像导出运行 layout_render_test.dart 并传入 LAYOUT_REVIEW=true。

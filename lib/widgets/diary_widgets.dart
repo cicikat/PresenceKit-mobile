@@ -186,33 +186,39 @@ class _DiaryPageState extends State<DiaryPage> {
     return RefreshIndicator(
       color: widget.c.character,
       onRefresh: widget.onRefresh,
-      child: ListView(
+      child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          if (widget.error != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+        cacheExtent: 200,
+        itemCount: filtered.length + (widget.error == null ? 0 : 1),
+        itemBuilder: (context, index) {
+          if (widget.error != null && index == 0) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 context.l10n.diaryRecentRefreshError(widget.error!),
                 style: mono(widget.c, 10.5, color: widget.c.danger),
               ),
-            ),
-          for (var i = 0; i < filtered.length; i++)
-            if (hasReferenceShell(ConversationPresentation.dailyOf(context)))
-              ReferenceDiaryCard(
-                c: widget.c,
-                entry: filtered[i],
-                index: i,
-                layout: ConversationPresentation.dailyOf(context),
-                onTap: () => _openEntry(filtered[i]),
-              )
-            else
-              DiaryCard(
-                c: widget.c,
-                entry: filtered[i],
-                onTap: () => _openEntry(filtered[i]),
-              ),
-        ],
+            );
+          }
+          final i = index - (widget.error == null ? 0 : 1);
+          final entry = filtered[i];
+          if (hasReferenceShell(ConversationPresentation.dailyOf(context))) {
+            return ReferenceDiaryCard(
+              key: ValueKey(entry.date),
+              c: widget.c,
+              entry: entry,
+              index: i,
+              layout: ConversationPresentation.dailyOf(context),
+              loadDetail: widget.onLoadEntry,
+              onTap: () => _openEntry(entry),
+            );
+          }
+          return DiaryCard(
+            c: widget.c,
+            entry: entry,
+            onTap: () => _openEntry(entry),
+          );
+        },
       ),
     );
   }

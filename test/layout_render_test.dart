@@ -116,28 +116,33 @@ void main() {
       ]);
       final c = dailyLayoutPalette(layout, YxPalette.light);
       var profileName = '测试角色';
-      Widget scene() => ChatScene(
+      Widget scene() => LayoutBackdrop(
         c: c,
-        layout: layout,
-        dark: false,
-        prefs: const YxPrefs(),
-        profileDisplayName: profileName,
-        profileAvatarBytes: null,
-        userName: '测试用户',
-        controller: controller,
-        onOpenDrawer: () {},
-        onOpenSettings: () {},
-        onRoute: (_) {},
-        onOpenAttach: () {},
-        onToggleTheme: () {},
-        onLockNow: () {},
-        onOpenOrderAccessibility: () {},
-        onOpenMeituan: () {},
-        onOpenTaobao: () {},
-        onShowOrderBubble: () {},
-        onVoiceRecordStart: () async => null,
-        onVoiceRecordStop: () async => const VoiceInputResult(),
-        onVoiceRecordCancel: () {},
+        moonlit: false,
+        window: layout == DailyLayout.reverie || layout == DailyLayout.noir,
+        child: ChatScene(
+          c: c,
+          layout: layout,
+          dark: false,
+          prefs: const YxPrefs(),
+          profileDisplayName: profileName,
+          profileAvatarBytes: null,
+          userName: '测试用户',
+          controller: controller,
+          onOpenDrawer: () {},
+          onOpenSettings: () {},
+          onRoute: (_) {},
+          onOpenAttach: () {},
+          onToggleTheme: () {},
+          onLockNow: () {},
+          onOpenOrderAccessibility: () {},
+          onOpenMeituan: () {},
+          onOpenTaobao: () {},
+          onShowOrderBubble: () {},
+          onVoiceRecordStart: () async => null,
+          onVoiceRecordStop: () async => const VoiceInputResult(),
+          onVoiceRecordCancel: () {},
+        ),
       );
       await tester.pumpWidget(app(scene(), c));
       await tester.pump(const Duration(milliseconds: 300));
@@ -236,8 +241,10 @@ void main() {
           baseUrl: 'http://127.0.0.1:8080',
           settingsStore: const AppSettingsStore(),
         );
-        final diary = DiaryController(backend: () => backend, token: () => null)
-          ..loaded = true;
+        final diary = _ReviewDiaryController(
+          backend: () => backend,
+          token: () => null,
+        )..loaded = true;
         diary.entries.addAll([
           const DiaryListItem(
             date: '2026-10-09',
@@ -258,27 +265,32 @@ void main() {
           'vase_count': 2,
         });
         final c = dailyLayoutPalette(layout, YxPalette.light);
-        Widget scene() => ReferenceLayoutShell(
+        Widget scene() => LayoutBackdrop(
           c: c,
-          layout: layout,
-          route: route,
-          name: '测试角色',
-          onRoute: (_) {},
-          onMenu: () {},
-          onSettings: () {},
-          child: route == AppRoute.diary
-              ? DiaryPage(
-                  c: c,
-                  profileDisplayName: '测试角色',
-                  controller: diary,
-                  onBack: () {},
-                )
-              : GardenPage(
-                  c: c,
-                  profileDisplayName: '测试角色',
-                  controller: garden,
-                  onBack: () {},
-                ),
+          moonlit: false,
+          window: layout != DailyLayout.letter,
+          child: ReferenceLayoutShell(
+            c: c,
+            layout: layout,
+            route: route,
+            name: '测试角色',
+            onRoute: (_) {},
+            onMenu: () {},
+            onSettings: () {},
+            child: route == AppRoute.diary
+                ? DiaryPage(
+                    c: c,
+                    profileDisplayName: '测试角色',
+                    controller: diary,
+                    onBack: () {},
+                  )
+                : GardenPage(
+                    c: c,
+                    profileDisplayName: '测试角色',
+                    controller: garden,
+                    onBack: () {},
+                  ),
+          ),
         );
         await tester.pumpWidget(app(scene(), c));
         await tester.pump();
@@ -338,4 +350,17 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('微信风格'), findsOneWidget);
   });
+}
+
+class _ReviewDiaryController extends DiaryController {
+  _ReviewDiaryController({required super.backend, required super.token});
+  @override
+  Future<DiaryDetail> loadEntry(String date) async => DiaryDetail(
+    date: date,
+    title: '',
+    emotion: null,
+    body: date.endsWith('09')
+        ? '今天的傍晚，我们聊了很久。那些平凡的小事，也值得记下来。'
+        : '雨停之后，窗外的树叶被洗得很干净。',
+  );
 }

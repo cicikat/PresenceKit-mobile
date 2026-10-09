@@ -199,3 +199,14 @@ LifeRecordsController 的保存/连接/手动同步在 busy 期间合并为后�
 手机按需截图开关移到 SettingsPage 的系统配置分组，复用 SettingsRow + Switch；能力权限页仅显示 CapabilityRow 状态标记，不再显示灰色禁用开关。系统配置中的权限操作子页不重复放置截图开关。桌面按需截图使用与“允许视觉观察”一致的左侧标题/说明、右侧滑动开关布局。两端 AGENTS.md 已写入复用周围 UI 风格约定，手机额外明确设置与权限观测边界。
 
 三面检查：后端管理开关、effective state、观测端点、截图请求/TTL/去重和原生授权闸门不变。本次仅移动本机设置入口和统一控件；手机可先保存本地授权，实际截图仍须 Android 11+、无障碍及未锁屏。真实手机更新安装后的交互验收仍 open。
+
+
+## 整套日常与梦境界面（工单 30）
+
+`DailyLayout` 提供经典、书信、粉色梦核、黑粉夜航与微信风格；`DreamLayout` 独立提供经典/月夜剧场。布局选择在真实设置的外观折叠卡中，升级默认经典。`ThemeController` 通过既有主题 JSON 保存布局与每套日夜颜色，旧主题格式兼容；颜色导入仍只导入颜色资产。
+
+`ReferenceLayoutShell` 负责 A/E/F 持续导航，`ChatScene`/`DreamPage` 只组装既有控制器。`ConversationPresentation` 提供组件样式上下文。`reference_art`/`reverie_scene`/`moonlit_scene` 实现插画与场景；`reference_collection_widgets` 接入日记和花园的真实数据。日记列表按可见条目读取正文预览，完整详情仍按原入口打开；不批量预读整个日记库。
+
+设置继续使用连接优先的折叠卡片。所有布局保留原鉴权、历史/轮询、附件、引用、重试、梦境退出与通知协议；无后端或桌面接口影响。测试参考数据仅在 test/ 中，不写入正式页面。
+
+验收边界与逐项证据见 [工单 30](../../cc-tasks/30-mobile-layout-switching.md) 和 [详细界面工单](ui-layout-work-order.md)。

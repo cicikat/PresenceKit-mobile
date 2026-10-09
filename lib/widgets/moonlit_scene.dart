@@ -176,27 +176,6 @@ class MoonlitPainter extends CustomPainter {
           stops: [0, .5, .85],
         ).createShader(rect),
     );
-    const moon = Offset(261, 280);
-    canvas.drawCircle(
-      moon,
-      70,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            c.character.withValues(alpha: .12),
-            c.character.withValues(alpha: 0),
-          ],
-        ).createShader(Rect.fromCircle(center: moon, radius: 70)),
-    );
-    canvas.drawCircle(
-      moon,
-      35,
-      Paint()
-        ..shader = const RadialGradient(
-          center: Alignment(-.5, -.5),
-          colors: [Color(0xFFEEE9D8), Color(0xFFB8C3CA)],
-        ).createShader(Rect.fromCircle(center: moon, radius: 35)),
-    );
     final stars = Paint()..color = c.character.withValues(alpha: .45);
     for (var i = 0; i < 18; i++) {
       final x = ((i * 73 + 29) % 997) / 997 * 390;
@@ -232,6 +211,27 @@ class MoonlitPainter extends CustomPainter {
       const Rect.fromLTWH(-31, 365, 585, 270),
       .384,
       const Color(0xFF253E50),
+    );
+    const moon = Offset(261, 280);
+    canvas.drawCircle(
+      moon,
+      70,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            c.character.withValues(alpha: .12),
+            c.character.withValues(alpha: 0),
+          ],
+        ).createShader(Rect.fromCircle(center: moon, radius: 70)),
+    );
+    canvas.drawCircle(
+      moon,
+      35,
+      Paint()
+        ..shader = const RadialGradient(
+          center: Alignment(-.5, -.5),
+          colors: [Color(0xFFEEE9D8), Color(0xFFB8C3CA)],
+        ).createShader(Rect.fromCircle(center: moon, radius: 35)),
     );
     const water = Rect.fromLTWH(0, 480, 390, 364);
     canvas.drawRect(

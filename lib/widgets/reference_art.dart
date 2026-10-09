@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/app_models.dart';
 
@@ -27,7 +28,13 @@ class ReferenceLandscapePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
-    canvas.scale(size.width / 400, size.height / 180);
+    canvas.clipRect(Offset.zero & size);
+    final scale = math.max(size.width / 400, size.height / 180);
+    canvas.translate(
+      (size.width - 400 * scale) / 2,
+      (size.height - 180 * scale) / 2,
+    );
+    canvas.scale(scale);
     final dark = c.surface.computeLuminance() < .2;
     final colors = dark
         ? [

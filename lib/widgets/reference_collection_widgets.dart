@@ -1,3 +1,4 @@
+import 'reverie_scene.dart';
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
@@ -33,7 +34,7 @@ class ReferenceCollectionTitle extends StatelessWidget {
   );
 }
 
-class ReferenceDiaryCard extends StatelessWidget {
+class ReferenceDiaryCard extends StatefulWidget {
   const ReferenceDiaryCard({
     super.key,
     required this.c,
@@ -41,14 +42,45 @@ class ReferenceDiaryCard extends StatelessWidget {
     required this.layout,
     required this.onTap,
     required this.index,
+    required this.loadDetail,
   });
   final YxPalette c;
   final DiaryListItem entry;
   final DailyLayout layout;
   final VoidCallback onTap;
   final int index;
+  final Future<DiaryDetail> Function(String date) loadDetail;
+  @override
+  State<ReferenceDiaryCard> createState() => _ReferenceDiaryCardState();
+}
+
+class _ReferenceDiaryCardState extends State<ReferenceDiaryCard> {
+  late Future<DiaryDetail> _detail;
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  void _load() {
+    _detail = Future.sync(() => widget.loadDetail(widget.entry.date));
+  }
+
+  @override
+  void didUpdateWidget(ReferenceDiaryCard old) {
+    super.didUpdateWidget(old);
+    if (old.entry != widget.entry) {
+      _load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final c = widget.c;
+    final layout = widget.layout;
+    final entry = widget.entry;
+    final index = widget.index;
+    final onTap = widget.onTap;
     final paper = layout == DailyLayout.letter;
     final date = DateTime.tryParse(entry.date);
     final content = Column(
@@ -59,6 +91,22 @@ class ReferenceDiaryCard extends StatelessWidget {
         Text(
           entry.title,
           style: serif(c, paper ? 17 : 19).copyWith(height: 1.8),
+        ),
+        FutureBuilder<DiaryDetail>(
+          future: _detail,
+          builder: (context, snapshot) {
+            final body = snapshot.data?.body.trim() ?? '';
+            if (body.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                body,
+                maxLines: paper ? 3 : 5,
+                overflow: TextOverflow.ellipsis,
+                style: serif(c, 12, color: c.ink2).copyWith(height: 2),
+              ),
+            );
+          },
         ),
         if (entry.emotion?.isNotEmpty == true) ...[
           const SizedBox(height: 14),
@@ -214,10 +262,12 @@ class ReferenceGardenBody extends StatelessWidget {
                   : SizedBox(
                       height: 250,
                       child: CustomPaint(
-                        painter: ReferencePixelFlower(
-                          c,
-                          lead?.stageProgress.clamp(0, 1).toDouble() ?? 0,
-                          lead != null,
+                        painter: ReveriePainter(
+                          c: c,
+                          garden: true,
+                          progress:
+                              lead?.stageProgress.clamp(0, 1).toDouble() ?? 0,
+                          live: lead != null,
                         ),
                       ),
                     ),
@@ -295,51 +345,4 @@ class ReferenceGardenBody extends StatelessWidget {
       ],
     ),
   );
-}
-
-class ReferencePixelFlower extends CustomPainter {
-  ReferencePixelFlower(this.c, this.progress, this.live);
-  final YxPalette c;
-  final double progress;
-  final bool live;
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = c.surfaceSoft);
-    final ground = Paint()..color = c.character.withValues(alpha: .12);
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height * .82, size.width, size.height * .18),
-      ground,
-    );
-    if (!live) return;
-    canvas.save();
-    canvas.translate(size.width / 2, size.height * .78);
-    canvas.scale(6);
-    final stem = Paint()..color = c.ok;
-    final height = 8 + progress * 14;
-    canvas.drawRect(Rect.fromLTWH(-1, -height, 2, height), stem);
-    canvas.drawRect(Rect.fromLTWH(-6, -height * .55, 5, 2), stem);
-    canvas.drawRect(Rect.fromLTWH(1, -height * .7, 5, 2), stem);
-    if (progress > .4) {
-      final petal = Paint()..color = c.character;
-      canvas.drawRect(Rect.fromLTWH(-4, -height - 4, 8, 6), petal);
-      canvas.drawRect(Rect.fromLTWH(-6, -height - 2, 12, 2), petal);
-      canvas.drawRect(
-        Rect.fromLTWH(-1, -height - 2, 2, 2),
-        Paint()..color = c.warn,
-      );
-    }
-    canvas.drawRect(
-      const Rect.fromLTWH(-5, 0, 10, 2),
-      Paint()..color = c.character,
-    );
-    canvas.drawRect(
-      const Rect.fromLTWH(-4, 2, 8, 5),
-      Paint()..color = c.characterDeep,
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(ReferencePixelFlower old) =>
-      c != old.c || progress != old.progress || live != old.live;
 }

@@ -435,3 +435,8 @@ current: backend accepts prose/partial fields, routes food/cart to vision and bi
 ## 聊天产物（253.3）
 
 后端 mobile/chat 与 mobile/poll 可附带 artifacts[]（id、filename、mime、size、download_url、previewable、可选 preview_url），不含正文与绝对路径；既有 ack/TTL 不变。下载与预览为 chat scope，路径 /chat/artifacts/{id} 与 /chat/artifacts/{id}/preview。手机已解析 artifacts 并显示文件卡片（工单 M2，current）：预览为应用内文本查看，下载经系统「另存为」（复用 exportThemeJson 通道，文本上限 256KB 字符串；后端产物当前只允许文本扩展名），失败（404/过期、无网）有提示，下载带进度条；历史 `/chat-log/{date}` 的 entry 带 artifacts，刷新后卡片仍在。`observe`：原生 MobileDeliveryStateStore 的 pending envelope 尚未携带 artifacts/sticker，应用后台时收到的消息在回到前台刷新历史后才出现卡片；二进制类型（图片/pdf）一旦后端放开需要新增字节保存通道。
+
+
+## 整套界面切换真机验收（工单 30，observe）
+
+A/E/F、微信风格和独立梦境 C 的布局切换已接入；自动回归和 Flutter 渲染图不等同于手机验收。当前无连接设备，真实键盘/触摸、OEM 字体、前后台、真实后端与安装后重启恢复仍 not-run。微信风格改变页面呈现；系统通知、服务通知和最近任务维持现有行为。

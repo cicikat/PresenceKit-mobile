@@ -1216,9 +1216,9 @@ class _YouMessageState extends State<YouMessage> {
                     decoration: hasImages
                         ? null
                         : BoxDecoration(
-                            color: (letter ? c.surfaceSoft : c.userBubble)
+                            color: (letter ? c.surfaceDeep : c.userBubble)
                                 .withValues(alpha: prefs.chatBubbleOpacity),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(letter ? 0 : 6),
                           ),
                     child: widget.attachments.isNotEmpty
                         ? Column(
@@ -1699,6 +1699,7 @@ class _ComposerState extends State<Composer> {
                       onLongPressCancel: _handleRecordCancel,
                       child: YxIconButton(
                         c: widget.c,
+                        borderless: reference,
                         icon: _recording
                             ? Icons.mic_rounded
                             : Icons.mic_none_rounded,
