@@ -2799,4 +2799,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referenceMoonlitSubtitle => 'Step into tonight’s story.';
+
+  @override
+  String get referenceYourReply => 'Your reply';
 }

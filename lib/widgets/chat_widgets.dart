@@ -1,3 +1,5 @@
+import 'letter_flow_text.dart';
+import 'reference_typography.dart';
 import 'reverie_scene.dart';
 import '../models/ui_layout.dart';
 import 'conversation_presentation.dart';
@@ -525,6 +527,7 @@ class HimMessage extends StatefulWidget {
     required this.time,
     required this.text,
     this.displayText,
+    this.letterIllustration = false,
     required this.prefs,
     this.sticker,
     this.profileDisplayName = kFallbackCharacterDisplayName,
@@ -545,6 +548,7 @@ class HimMessage extends StatefulWidget {
   final String time;
   final String text;
   final String? displayText;
+  final bool letterIllustration;
   final StickerPayload? sticker;
   final String? tag;
   final String tagVariant;
@@ -601,7 +605,13 @@ class _HimMessageState extends State<HimMessage> {
     final letter =
         ConversationPresentation.dailyOf(context) == DailyLayout.letter;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.only(
+        bottom: letter
+            ? 18
+            : window
+            ? 17
+            : 14,
+      ),
       child: MessageWindow(
         enabled: window,
         c: c,
@@ -678,7 +688,12 @@ class _HimMessageState extends State<HimMessage> {
                         maxWidth: letter || window ? double.infinity : 300,
                       ),
                       padding: letter
-                          ? const EdgeInsets.symmetric(vertical: 14)
+                          ? EdgeInsets.zero
+                          : window
+                          ? const EdgeInsets.symmetric(
+                              horizontal: 15,
+                              vertical: 14,
+                            )
                           : const EdgeInsets.fromLTRB(14, 10, 14, 11),
                       decoration: letter || window
                           ? null
@@ -727,10 +742,33 @@ class _HimMessageState extends State<HimMessage> {
                                     displayText: widget.displayText,
                                     accent: c.danger,
                                     animate: widget.animate,
-                                    style: contentSerif(
-                                      c,
-                                      widget.prefs.fontSize,
-                                    ),
+                                    style: letter
+                                        ? referenceSerif(
+                                            c,
+                                            14 * widget.prefs.fontSize / 16,
+                                            height: 2.2,
+                                          ).copyWith(
+                                            fontSize:
+                                                14 * widget.prefs.fontSize / 16,
+                                          )
+                                        : window
+                                        ? referenceUiText(
+                                            c,
+                                            12 * widget.prefs.fontSize / 16,
+                                            height: 2,
+                                          ).copyWith(
+                                            fontSize:
+                                                12 * widget.prefs.fontSize / 16,
+                                          )
+                                        : contentSerif(
+                                            c,
+                                            widget.prefs.fontSize,
+                                          ),
+                                    spanBuilder:
+                                        letter && widget.letterIllustration
+                                        ? (span) =>
+                                              LetterFlowText(span: span, c: c)
+                                        : null,
                                     onRevealStarted: widget.onRevealStarted,
                                     onRevealSkipped: widget.onRevealSkipped,
                                   ),
@@ -794,8 +832,10 @@ class AnimatedRevealText extends StatefulWidget {
     required this.style,
     this.onRevealStarted,
     this.onRevealSkipped,
+    this.spanBuilder,
   });
 
+  final Widget Function(TextSpan)? spanBuilder;
   final String text;
   final String? displayText;
   final Color? accent;
@@ -858,16 +898,15 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
         final cursor = _animate && !_skipped && _controller.value < 1
             ? '▍'
             : '';
-        return Text.rich(
-          inlineDisplaySpan(
-            text: widget.text,
-            displayText: widget.displayText,
-            style: widget.style,
-            accent: widget.accent ?? Theme.of(context).colorScheme.primary,
-            visibleCharacters: _skipped || !_animate ? null : count,
-            cursor: cursor,
-          ),
+        final span = inlineDisplaySpan(
+          text: widget.text,
+          displayText: widget.displayText,
+          style: widget.style,
+          accent: widget.accent ?? Theme.of(context).colorScheme.primary,
+          visibleCharacters: _skipped || !_animate ? null : count,
+          cursor: cursor,
         );
+        return widget.spanBuilder?.call(span) ?? Text.rich(span);
       },
     ),
   );
@@ -1157,11 +1196,37 @@ class _YouMessageState extends State<YouMessage> {
   Widget build(BuildContext context) {
     final presentation = ConversationPresentation.of(context);
     final messenger = presentation?.daily == DailyLayout.messenger;
+    final window =
+        presentation?.daily == DailyLayout.reverie ||
+        presentation?.daily == DailyLayout.noir;
+
     final c = widget.c;
+    final moonlit = presentation?.dream == DreamLayout.moonlit;
     final letter =
         ConversationPresentation.dailyOf(context) == DailyLayout.letter;
     final text = widget.text;
     final prefs = widget.prefs;
+    final messageStyle = letter
+        ? referenceSerif(
+            c,
+            14 * prefs.fontSize / 16,
+            height: 2.2,
+          ).copyWith(fontSize: 14 * prefs.fontSize / 16)
+        : window
+        ? referenceUiText(
+            c,
+            12 * prefs.fontSize / 16,
+            height: 1.9,
+            color: c.userBubbleText,
+          ).copyWith(fontSize: 12 * prefs.fontSize / 16)
+        : moonlit
+        ? referenceSerif(
+            c,
+            13 * prefs.fontSize / 16,
+            height: 1.95,
+            color: c.ink1,
+          ).copyWith(fontSize: 13 * prefs.fontSize / 16)
+        : contentSerif(c, prefs.fontSize, color: c.userBubbleText);
     final attachment = AttachmentPlaceholder.parse(text);
     final canonicalImages = widget.mediaRefs
         .where((ref) => ref.isImage)
@@ -1171,7 +1236,18 @@ class _YouMessageState extends State<YouMessage> {
         attachment?.isImage == true ||
         (widget.attachments.isEmpty && canonicalImages.isNotEmpty);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.only(
+        top: letter
+            ? 4
+            : window
+            ? 14
+            : 0,
+        bottom: letter
+            ? 22
+            : window
+            ? 18
+            : 14,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: letter
@@ -1190,16 +1266,24 @@ class _YouMessageState extends State<YouMessage> {
                     dateKey: widget.dateKey!,
                     role: context.l10n.chatRoleYou,
                   ),
-                if (widget.showHeader && (!messenger || prefs.showChatTime))
+                if (widget.showHeader &&
+                    !letter &&
+                    !window &&
+                    (!messenger || prefs.showChatTime))
                   Text(
-                    messenger
+                    letter
+                        ? context.l10n.referenceYourReply
+                        : messenger
                         ? widget.time
                         : widget.prefs.showChatTime
                         ? '${context.l10n.chatRoleYou}  ${widget.time}'
                         : context.l10n.chatRoleYou,
                     style: mono(c, 9.5, color: c.ink3),
                   ),
-                if (widget.showHeader && (!messenger || prefs.showChatTime))
+                if (widget.showHeader &&
+                    !letter &&
+                    !window &&
+                    (!messenger || prefs.showChatTime))
                   const SizedBox(height: 4),
                 GestureDetector(
                   onLongPressStart: attachment == null
@@ -1207,93 +1291,130 @@ class _YouMessageState extends State<YouMessage> {
                             unawaited(_handleLongPress(details.globalPosition))
                       : null,
                   child: Container(
+                    margin: window
+                        ? const EdgeInsets.only(left: 37)
+                        : EdgeInsets.zero,
+                    width: letter || window ? double.infinity : null,
                     constraints: BoxConstraints(
-                      maxWidth: letter ? double.infinity : 280,
+                      maxWidth: letter || window ? double.infinity : 280,
                     ),
                     padding: hasImages
                         ? EdgeInsets.zero
-                        : const EdgeInsets.fromLTRB(14, 10, 14, 11),
+                        : const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                     decoration: hasImages
                         ? null
                         : BoxDecoration(
                             color: (letter ? c.surfaceDeep : c.userBubble)
-                                .withValues(alpha: prefs.chatBubbleOpacity),
-                            borderRadius: BorderRadius.circular(letter ? 0 : 6),
+                                .withValues(
+                                  alpha: moonlit
+                                      ? .32
+                                      : prefs.chatBubbleOpacity,
+                                ),
+                            border: window
+                                ? Border.all(color: c.surfaceEdge)
+                                : null,
+                            borderRadius: window
+                                ? const BorderRadius.only(
+                                    topLeft: Radius.circular(13),
+                                    topRight: Radius.circular(13),
+                                    bottomLeft: Radius.circular(13),
+                                    bottomRight: Radius.circular(2),
+                                  )
+                                : BorderRadius.circular(letter ? 0 : 6),
                           ),
-                    child: widget.attachments.isNotEmpty
-                        ? Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: letter
-                                ? CrossAxisAlignment.start
-                                : CrossAxisAlignment.end,
-                            children: [
-                              for (final file in widget.attachments)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
-                                  child: file.isImage
-                                      ? ChatImage(bytes: file.bytes)
-                                      : UserAttachmentCard(
-                                          c: c,
-                                          attachment: AttachmentPlaceholder(
-                                            filename: file.name,
-                                            note: '',
-                                            kind: 'file',
-                                          ),
-                                          fontSize: prefs.fontSize,
-                                        ),
-                                ),
-                              if (widget.uploadNote.isNotEmpty)
-                                hasImages
-                                    ? _ImageCaptionBubble(
-                                        c: c,
-                                        text: widget.uploadNote,
-                                        fontSize: prefs.fontSize,
-                                        opacity: prefs.chatBubbleOpacity,
-                                      )
-                                    : Text(
-                                        widget.uploadNote,
-                                        style: contentSerif(
-                                          c,
-                                          prefs.fontSize,
-                                          color: letter
-                                              ? c.ink1
-                                              : c.userBubbleText,
-                                        ),
-                                      ),
-                            ],
-                          )
-                        : canonicalImages.isNotEmpty
-                        ? Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: letter
-                                ? CrossAxisAlignment.start
-                                : CrossAxisAlignment.end,
-                            children: [
-                              for (final ref in canonicalImages)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
-                                  child: CanonicalChatImage(
-                                    ref: ref,
-                                    load: widget.loadCanonicalMedia,
-                                  ),
-                                ),
-                            ],
-                          )
-                        : attachment != null
-                        ? UserAttachmentCard(
-                            c: c,
-                            attachment: attachment,
-                            fontSize: prefs.fontSize,
-                            bubbleOpacity: prefs.chatBubbleOpacity,
-                          )
-                        : Text(
-                            text,
-                            style: contentSerif(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: letter
+                          ? CrossAxisAlignment.start
+                          : CrossAxisAlignment.end,
+                      children: [
+                        if (letter && widget.showHeader) ...[
+                          Text(
+                            context.l10n.referenceYourReply,
+                            style: referenceUiText(
                               c,
-                              prefs.fontSize,
-                              color: letter ? c.ink1 : c.userBubbleText,
+                              9,
+                              color: c.ink3,
+                              spacing: 1,
                             ),
                           ),
+                          const SizedBox(height: 5),
+                        ],
+                        widget.attachments.isNotEmpty
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: letter
+                                    ? CrossAxisAlignment.start
+                                    : CrossAxisAlignment.end,
+                                children: [
+                                  for (final file in widget.attachments)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 6),
+                                      child: file.isImage
+                                          ? ChatImage(bytes: file.bytes)
+                                          : UserAttachmentCard(
+                                              c: c,
+                                              attachment: AttachmentPlaceholder(
+                                                filename: file.name,
+                                                note: '',
+                                                kind: 'file',
+                                              ),
+                                              fontSize: prefs.fontSize,
+                                            ),
+                                    ),
+                                  if (widget.uploadNote.isNotEmpty)
+                                    hasImages
+                                        ? _ImageCaptionBubble(
+                                            c: c,
+                                            text: widget.uploadNote,
+                                            fontSize: prefs.fontSize,
+                                            opacity: prefs.chatBubbleOpacity,
+                                          )
+                                        : Text(
+                                            widget.uploadNote,
+                                            style: messageStyle,
+                                          ),
+                                ],
+                              )
+                            : canonicalImages.isNotEmpty
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: letter
+                                    ? CrossAxisAlignment.start
+                                    : CrossAxisAlignment.end,
+                                children: [
+                                  for (final ref in canonicalImages)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 6),
+                                      child: CanonicalChatImage(
+                                        ref: ref,
+                                        load: widget.loadCanonicalMedia,
+                                      ),
+                                    ),
+                                ],
+                              )
+                            : attachment != null
+                            ? UserAttachmentCard(
+                                c: c,
+                                attachment: attachment,
+                                fontSize: prefs.fontSize,
+                                bubbleOpacity: prefs.chatBubbleOpacity,
+                              )
+                            : Text(text, style: messageStyle),
+                        if (window &&
+                            widget.showHeader &&
+                            prefs.showChatTime) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.time,
+                            style: referenceUiText(c, 8, color: c.ink3),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
                 if (widget.quotedText != null)
@@ -1318,7 +1439,8 @@ class _YouMessageState extends State<YouMessage> {
               ],
             ),
           ),
-          if (prefs.showYouAvatar || messenger) ...[
+          if ((!letter && !window && !moonlit && prefs.showYouAvatar) ||
+              messenger) ...[
             const SizedBox(width: 8),
             Padding(
               padding: EdgeInsets.only(
@@ -1601,6 +1723,12 @@ class _ComposerState extends State<Composer> {
     final layout = ConversationPresentation.dailyOf(context);
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
     final reference = window || layout == DailyLayout.letter;
+    final inputStyle = reference
+        ? referenceUiText(
+            widget.c,
+            (window ? 11 : 12) * widget.fontSize / 16,
+          ).copyWith(fontSize: (window ? 11 : 12) * widget.fontSize / 16)
+        : contentSerif(widget.c, widget.fontSize);
     final placeholder = layout == DailyLayout.classic
         ? l10n.composerPlaceholder
         : null;
@@ -1617,11 +1745,28 @@ class _ComposerState extends State<Composer> {
             : null,
         borderRadius: window ? BorderRadius.circular(8) : null,
       ),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      padding: window
+          ? const EdgeInsets.fromLTRB(6, 8, 6, 6)
+          : reference
+          ? const EdgeInsets.fromLTRB(17, 9, 17, 9)
+          : const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (window)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(6, 0, 6, 3),
+              child: Text(
+                l10n.referenceChatTab,
+                style: referenceUiText(
+                  widget.c,
+                  7,
+                  color: widget.c.ink3,
+                  spacing: 1,
+                ),
+              ),
+            ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -1659,7 +1804,7 @@ class _ComposerState extends State<Composer> {
                     controller: _controller,
                     minLines: 1,
                     maxLines: 3,
-                    style: contentSerif(widget.c, widget.fontSize),
+                    style: inputStyle,
                     decoration: InputDecoration.collapsed(
                       hintText: placeholder,
                       hintStyle: serif(
@@ -1712,6 +1857,31 @@ class _ComposerState extends State<Composer> {
                       ),
                     );
                   }
+                  if (reference) {
+                    return SizedBox(
+                      width: window ? 35 : 36,
+                      height: window ? 35 : 36,
+                      child: IconButton.filled(
+                        tooltip: l10n.sendAction,
+                        style: IconButton.styleFrom(
+                          backgroundColor: widget.c.send,
+                          foregroundColor: widget.c.surface,
+                          shape: window
+                              ? RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5),
+                                )
+                              : const CircleBorder(),
+                          padding: EdgeInsets.zero,
+                        ),
+                        onPressed: () {
+                          widget.onSend(_controller.text);
+                          _controller.clear();
+                          _draft.value = '';
+                        },
+                        icon: const Icon(Icons.send_rounded, size: 19),
+                      ),
+                    );
+                  }
                   return SizedBox(
                     height: 38,
                     child: FilledButton.icon(
@@ -1749,7 +1919,7 @@ class _ComposerState extends State<Composer> {
           ValueListenableBuilder<String>(
             valueListenable: _draft,
             builder: (context, draft, _) =>
-                draft.isEmpty || layout == DailyLayout.messenger
+                draft.isEmpty || layout == DailyLayout.messenger || reference
                 ? const SizedBox.shrink()
                 : Padding(
                     padding: const EdgeInsets.only(top: 6),

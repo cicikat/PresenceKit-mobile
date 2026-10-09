@@ -26,10 +26,27 @@ import 'package:presencekit_mobile/widgets/layout_settings.dart';
 import 'package:presencekit_mobile/widgets/moonlit_scene.dart';
 
 const exportReview = bool.fromEnvironment('LAYOUT_REVIEW');
+String? reviewUiFamily;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
+    for (final family in ['ReferenceSong', 'ReferenceLatin']) {
+      final loader = FontLoader(family);
+      if (family == 'ReferenceSong') {
+        loader.addFont(
+          rootBundle.load('assets/fonts/NotoSerifCJKsc-Regular.otf'),
+        );
+      } else {
+        loader.addFont(
+          rootBundle.load('assets/fonts/LibreBaskerville-Regular.ttf'),
+        );
+        loader.addFont(
+          rootBundle.load('assets/fonts/LibreBaskerville-Italic.ttf'),
+        );
+      }
+      await loader.load();
+    }
     if (!exportReview) return;
     final icons = FontLoader('MaterialIcons')
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
@@ -41,7 +58,12 @@ void main() {
       final loader = FontLoader('LayoutReview')
         ..addFont(Future.value(ByteData.sublistView(font.readAsBytesSync())));
       await loader.load();
-      AppTypography.family = 'LayoutReview';
+      reviewUiFamily = 'LayoutReview';
+      for (final family in ['serif', 'monospace']) {
+        final fallback = FontLoader(family)
+          ..addFont(Future.value(ByteData.sublistView(font.readAsBytesSync())));
+        await fallback.load();
+      }
     }
   });
   tearDown(() {
@@ -49,7 +71,7 @@ void main() {
   });
 
   Widget app(Widget body, YxPalette c, {double keyboard = 0}) => MaterialApp(
-    theme: ThemeData(fontFamily: AppTypography.family),
+    theme: ThemeData(fontFamily: reviewUiFamily),
     locale: const Locale('zh'),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,

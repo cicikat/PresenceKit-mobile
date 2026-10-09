@@ -124,30 +124,44 @@ class ReferenceHeader extends StatelessWidget {
                         style:
                             referenceSerif(
                               c,
-                              25,
+                              layout == DailyLayout.noir ? 27 : 25,
                               color: paper
                                   ? c.ink1
                                   : layout == DailyLayout.noir
                                   ? c.ink1
                                   : c.character,
                             ).copyWith(
-                              fontFamily: AppTypography.family ?? (paper ? referenceSerifFamily : referenceLatinFamily),
+                              fontFamily:
+                                  AppTypography.family ??
+                                  (paper
+                                      ? referenceSerifFamily
+                                      : referenceLatinFamily),
                               fontStyle: paper
                                   ? FontStyle.normal
                                   : FontStyle.italic,
                               letterSpacing: paper ? 3 : -1,
                             ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(
                         paper
                             ? l.referencePaperSubtitle
                             : l.referenceWindowSubtitle,
-                        style: referenceSerif(
-                          c,
-                          paper ? 11 : 8,
-                          color: c.ink3,
-                        ).copyWith(letterSpacing: paper ? 1 : 1.5),
+                        style: paper
+                            ? referenceSerif(
+                                c,
+                                11,
+                                color: c.ink3,
+                                spacing: 1,
+                                latin: true,
+                                italic: true,
+                              )
+                            : referenceUiText(
+                                c,
+                                7,
+                                color: c.ink3,
+                                spacing: 1.5,
+                              ),
                       ),
                     ],
                   ),
@@ -237,7 +251,9 @@ class ReferenceHeader extends StatelessWidget {
                     width: 2,
                   ),
                 )
-              : Border.all(color: selected ? c.surfaceEdge : Colors.transparent),
+              : Border.all(
+                  color: selected ? c.surfaceEdge : Colors.transparent,
+                ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -251,7 +267,7 @@ class ReferenceHeader extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: referenceSerif(
+                style: referenceUiText(
                   c,
                   paper ? 11 : 10,
                   color: selected ? c.character : c.ink2,

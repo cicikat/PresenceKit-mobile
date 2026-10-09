@@ -1,3 +1,4 @@
+import 'reference_typography.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
@@ -336,20 +337,15 @@ class MessageWindow extends StatelessWidget {
                     label ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: serif(c, 10, color: c.ink2),
+                    style: referenceUiText(c, 8, color: c.ink2, spacing: .7),
                   ),
                 ),
                 if (time != null)
-                  Text(time!, style: serif(c, 9, color: c.ink3)),
+                  Text(time!, style: referenceUiText(c, 8, color: c.ink3)),
               ],
             ),
           ),
-        Padding(
-          padding: enabled
-              ? const EdgeInsets.symmetric(horizontal: 1, vertical: 4)
-              : EdgeInsets.zero,
-          child: child,
-        ),
+        Padding(padding: EdgeInsets.zero, child: child),
       ],
     ),
   );

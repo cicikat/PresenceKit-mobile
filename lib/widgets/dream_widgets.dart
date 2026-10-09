@@ -1,3 +1,4 @@
+import 'reference_typography.dart';
 import '../models/ui_layout.dart';
 import 'conversation_presentation.dart';
 export 'dream_scene.dart';
@@ -236,24 +237,33 @@ class DreamSegmentedMessage extends StatelessWidget {
     );
   }
 
-  Widget _description({
-    required Widget child,
-    bool moonlit = false,
-  }) => Container(
-    width: double.infinity,
-    margin: EdgeInsets.symmetric(horizontal: moonlit ? 8 : 22, vertical: 7),
-    padding: EdgeInsets.symmetric(horizontal: moonlit ? 0 : 14, vertical: 11),
-    decoration: moonlit
-        ? null
-        : BoxDecoration(
-            color: c.surfaceSoft.withValues(
-              alpha: prefs.dreamDescriptionOpacity * (moonlit ? .45 : 1),
-            ),
-            border: Border.all(color: c.ink3.withValues(alpha: .3), width: .7),
-            borderRadius: BorderRadius.circular(6),
-          ),
-    child: child,
-  );
+  Widget _description({required Widget child, bool moonlit = false}) =>
+      Container(
+        width: double.infinity,
+        margin: EdgeInsets.symmetric(
+          horizontal: moonlit ? 0 : 22,
+          vertical: moonlit ? 0 : 7,
+        ),
+        padding: EdgeInsets.fromLTRB(
+          moonlit ? 0 : 14,
+          moonlit ? 4 : 11,
+          moonlit ? 0 : 14,
+          moonlit ? 25 : 11,
+        ),
+        decoration: moonlit
+            ? null
+            : BoxDecoration(
+                color: c.surfaceSoft.withValues(
+                  alpha: prefs.dreamDescriptionOpacity * (moonlit ? .45 : 1),
+                ),
+                border: Border.all(
+                  color: c.ink3.withValues(alpha: .3),
+                  width: .7,
+                ),
+                borderRadius: BorderRadius.circular(6),
+              ),
+        child: child,
+      );
 
   Widget _buildSegment(NarrativeSegment segment, bool moonlit) {
     switch (segment.type) {
@@ -275,7 +285,7 @@ class DreamSegmentedMessage extends StatelessWidget {
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 300),
                   padding: moonlit
-                      ? const EdgeInsets.symmetric(vertical: 10)
+                      ? EdgeInsets.zero
                       : const EdgeInsets.fromLTRB(14, 10, 14, 11),
                   decoration: moonlit
                       ? null
@@ -303,13 +313,21 @@ class DreamSegmentedMessage extends StatelessWidget {
                       animate: animate,
                       onRevealStarted: onRevealStarted,
                       onRevealSkipped: onRevealSkipped,
-                      style: contentSerif(
-                        c,
-                        prefs.dreamChatSize,
-                        color: prefs.dreamChatColor == null
-                            ? c.ink1
-                            : Color(prefs.dreamChatColor!),
-                      ),
+                      style:
+                          (moonlit
+                                  ? referenceSerif(
+                                      c,
+                                      15 * prefs.dreamChatSize / 16,
+                                      height: 1.95,
+                                    ).copyWith(
+                                      fontSize: 15 * prefs.dreamChatSize / 16,
+                                    )
+                                  : contentSerif(c, prefs.dreamChatSize))
+                              .copyWith(
+                                color: prefs.dreamChatColor == null
+                                    ? c.ink1
+                                    : Color(prefs.dreamChatColor!),
+                              ),
                     ),
                   ),
                 ),
@@ -328,16 +346,23 @@ class DreamSegmentedMessage extends StatelessWidget {
             onRevealStarted: onRevealStarted,
             onRevealSkipped: onRevealSkipped,
             style:
-                contentSerif(
-                  c,
-                  prefs.dreamActionSize,
-                  color: prefs.dreamActionColor == null
-                      ? c.ink2
-                      : Color(prefs.dreamActionColor!),
-                ).copyWith(
-                  fontStyle: FontStyle.normal,
-                  letterSpacing: weak ? 0.4 : null,
-                ),
+                (moonlit
+                        ? referenceSerif(
+                            c,
+                            11 * prefs.dreamActionSize / 16,
+                            height: 2.1,
+                            spacing: 1,
+                          ).copyWith(fontSize: 11 * prefs.dreamActionSize / 16)
+                        : contentSerif(c, prefs.dreamActionSize))
+                    .copyWith(
+                      color: prefs.dreamActionColor == null
+                          ? c.ink2
+                          : Color(prefs.dreamActionColor!),
+                    )
+                    .copyWith(
+                      fontStyle: FontStyle.normal,
+                      letterSpacing: weak ? 0.4 : null,
+                    ),
           ),
         );
       case 'env':
@@ -350,13 +375,22 @@ class DreamSegmentedMessage extends StatelessWidget {
             animate: animate,
             onRevealStarted: onRevealStarted,
             onRevealSkipped: onRevealSkipped,
-            style: contentSerif(
-              c,
-              prefs.dreamNarrationSize,
-              color: prefs.dreamNarrationColor == null
-                  ? c.ink3
-                  : Color(prefs.dreamNarrationColor!),
-            ),
+            style:
+                (moonlit
+                        ? referenceSerif(
+                            c,
+                            11 * prefs.dreamNarrationSize / 16,
+                            height: 2.1,
+                            spacing: 1,
+                          ).copyWith(
+                            fontSize: 11 * prefs.dreamNarrationSize / 16,
+                          )
+                        : contentSerif(c, prefs.dreamNarrationSize))
+                    .copyWith(
+                      color: prefs.dreamNarrationColor == null
+                          ? c.ink3
+                          : Color(prefs.dreamNarrationColor!),
+                    ),
           ),
         );
     }
@@ -432,7 +466,12 @@ class _DreamComposerState extends State<DreamComposer> {
                 minLines: 1,
                 maxLines: 3,
                 onChanged: (_) => setState(() {}),
-                style: contentSerif(c, widget.prefs.dreamChatSize),
+                style: moonlit
+                    ? referenceUiText(
+                        c,
+                        12 * widget.prefs.dreamChatSize / 16,
+                      ).copyWith(fontSize: 12 * widget.prefs.dreamChatSize / 16)
+                    : contentSerif(c, widget.prefs.dreamChatSize),
                 decoration: InputDecoration.collapsed(
                   hintText: moonlit
                       ? null

@@ -5034,6 +5034,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'向下走进今晚的故事'**
   String get referenceMoonlitSubtitle;
+
+  /// No description provided for @referenceYourReply.
+  ///
+  /// In zh, this message translates to:
+  /// **'你的回信'**
+  String get referenceYourReply;
 }
 
 class _AppLocalizationsDelegate

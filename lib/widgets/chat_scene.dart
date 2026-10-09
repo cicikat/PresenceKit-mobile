@@ -114,6 +114,16 @@ class ChatScene extends StatelessWidget {
     final topInset = MediaQuery.paddingOf(context).top;
     final classic = layout == DailyLayout.classic;
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
+    int? letterLeadId;
+    for (final message
+        in historyMessages.followedBy(sentMessages).skip(hiddenMessageCount)) {
+      if (message.role == 'him' &&
+          message.text.isNotEmpty &&
+          message.sticker == null) {
+        letterLeadId = message.id;
+        break;
+      }
+    }
     final metaItems = <Widget>[
       if (hasReferenceShell(layout))
         ReferenceChatIntro(c: c, layout: layout, name: profileDisplayName),
@@ -147,7 +157,7 @@ class ChatScene extends StatelessWidget {
         MetaLine(c: c, text: l10n.chatBackendStatus(lastBackendReply.emotion)),
       if (classic && mobileReceivedCount > 0)
         MetaLine(c: c, text: l10n.chatMobileReceived(mobileReceivedCount)),
-      const SizedBox(height: 14),
+      SizedBox(height: hasReferenceShell(layout) ? 0 : 14),
     ];
     final itemCount =
         metaItems.length + visibleMessageCount + (himTyping ? 1 : 0);
@@ -221,14 +231,18 @@ class ChatScene extends StatelessWidget {
                     classic
                         ? 12
                         : window
-                        ? 18
-                        : 24,
-                    !classic || prefs.infoStrip ? 14 : topInset + 58,
+                        ? 22
+                        : 25,
+                    hasReferenceShell(layout)
+                        ? 0
+                        : !classic || prefs.infoStrip
+                        ? 14
+                        : topInset + 58,
                     classic
                         ? 12
                         : window
-                        ? 18
-                        : 24,
+                        ? 22
+                        : 25,
                     92,
                   ),
                   itemCount: itemCount,
@@ -350,6 +364,7 @@ class ChatScene extends StatelessWidget {
                               profileDisplayName: profileDisplayName,
                               profileAvatarBytes: profileAvatarBytes,
                               text: m.text,
+                              letterIllustration: m.id == letterLeadId,
                               displayText: m.displayText,
                               quotedText: m.quotedText,
                               showDateDivider: showDateDivider,

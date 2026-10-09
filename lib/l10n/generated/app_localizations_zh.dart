@@ -2675,4 +2675,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get referenceMoonlitSubtitle => '向下走进今晚的故事';
+
+  @override
+  String get referenceYourReply => '你的回信';
 }
