@@ -2660,4 +2660,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get referenceWindowGardenTitle => '在世界的缝隙里，\n种一朵想念。';
+
+  @override
+  String get referenceGardenGrowing => '花槽';
+
+  @override
+  String get referenceGardenHarvest => '已采收';
+
+  @override
+  String get referenceGardenVase => '花瓶';
 }

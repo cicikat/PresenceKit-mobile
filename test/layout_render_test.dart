@@ -1,3 +1,8 @@
+import 'package:presencekit_mobile/controllers/diary_controller.dart';
+import 'package:presencekit_mobile/controllers/garden_controller.dart';
+import 'package:presencekit_mobile/widgets/diary_widgets.dart';
+import 'package:presencekit_mobile/widgets/garden_widgets.dart';
+import 'package:presencekit_mobile/widgets/reference_layout_shell.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -213,6 +218,94 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       controller.dispose();
     });
+  }
+  for (final layout in [
+    DailyLayout.letter,
+    DailyLayout.reverie,
+    DailyLayout.noir,
+  ]) {
+    for (final route in [AppRoute.diary, AppRoute.garden]) {
+      testWidgets('${layout.name} ${route.name} renders real collection data', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final backend = BackendClient(
+          baseUrl: 'http://127.0.0.1:8080',
+          settingsStore: const AppSettingsStore(),
+        );
+        final diary = DiaryController(backend: () => backend, token: () => null)
+          ..loaded = true;
+        diary.entries.addAll([
+          const DiaryListItem(
+            date: '2026-10-09',
+            title: '一束花，和一个普通的傍晚',
+            emotion: '平静',
+          ),
+          const DiaryListItem(date: '2026-10-08', title: '雨停之后', emotion: null),
+        ]);
+        final garden = GardenController(
+          backend: () => backend,
+          token: () => null,
+        );
+        garden.state = GardenState.fromJson({
+          'slots': [
+            {'name': '洋桔梗', 'stage_progress': .67},
+          ],
+          'harvest_count': 7,
+          'vase_count': 2,
+        });
+        final c = dailyLayoutPalette(layout, YxPalette.light);
+        Widget scene() => ReferenceLayoutShell(
+          c: c,
+          layout: layout,
+          route: route,
+          name: '测试角色',
+          onRoute: (_) {},
+          onMenu: () {},
+          onSettings: () {},
+          child: route == AppRoute.diary
+              ? DiaryPage(
+                  c: c,
+                  profileDisplayName: '测试角色',
+                  controller: diary,
+                  onBack: () {},
+                )
+              : GardenPage(
+                  c: c,
+                  profileDisplayName: '测试角色',
+                  controller: garden,
+                  onBack: () {},
+                ),
+        );
+        await tester.pumpWidget(app(scene(), c));
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        expect(
+          find.text(route == AppRoute.diary ? '一束花，和一个普通的傍晚' : '洋桔梗'),
+          findsOneWidget,
+        );
+        await capture(tester, '${layout.name}-${route.name}');
+        tester.view.physicalSize = const Size(320, 700);
+        AppTypography.scale = 1.4;
+        await tester.pumpWidget(app(scene(), c));
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        if (route == AppRoute.diary) {
+          await tester.tap(find.byIcon(Icons.search));
+          await tester.pump();
+          await tester.enterText(find.byType(TextField), '雨停');
+          await tester.pump();
+          expect(find.text('一束花，和一个普通的傍晚'), findsNothing);
+          expect(find.text('雨停之后'), findsOneWidget);
+        }
+        await tester.pumpWidget(const SizedBox());
+        diary.dispose();
+        garden.dispose();
+      });
+    }
   }
   testWidgets('layout selectors fit a narrow expanded settings card', (
     tester,

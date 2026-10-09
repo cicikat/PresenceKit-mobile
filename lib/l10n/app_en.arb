@@ -1449,5 +1449,8 @@
   "referenceDiaryTitle": "Keep the ordinary.",
   "referenceFragmentsTitle": "The words left unsaid\nbecame stars.",
   "referenceGardenTitle": "Growing together.",
-  "referenceWindowGardenTitle": "In a quiet corner,\nplant a little longing."
+  "referenceWindowGardenTitle": "In a quiet corner,\nplant a little longing.",
+  "referenceGardenGrowing": "Growing",
+  "referenceGardenHarvest": "Harvested",
+  "referenceGardenVase": "In vases"
 }

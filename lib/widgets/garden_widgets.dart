@@ -1,3 +1,6 @@
+import 'reference_layout_shell.dart';
+import 'reference_collection_widgets.dart';
+import 'conversation_presentation.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -35,6 +38,17 @@ class GardenPage extends StatelessWidget {
 
   Widget _build(BuildContext context) {
     final l10n = context.l10n;
+    final layout = ConversationPresentation.dailyOf(context);
+    if (hasReferenceShell(layout)) {
+      return ReferenceGardenBody(
+        c: c,
+        layout: layout,
+        state: gardenState,
+        loading: loading,
+        error: error,
+        onRefresh: () => onRefresh(),
+      );
+    }
     final realPlants = gardenState?.slots
         .map((slot) => Plant.fromSlot(slot, c))
         .toList(growable: false);

@@ -1,3 +1,7 @@
+import 'reference_layout_shell.dart';
+import 'reference_collection_widgets.dart';
+import 'conversation_presentation.dart';
+import '../models/ui_layout.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -33,6 +37,7 @@ class DiaryPage extends StatefulWidget {
 }
 
 class _DiaryPageState extends State<DiaryPage> {
+  bool _showTools = false;
   String _query = '';
   String _filter = '全部';
 
@@ -54,6 +59,8 @@ class _DiaryPageState extends State<DiaryPage> {
 
   Widget _build(BuildContext context) {
     final l10n = context.l10n;
+    final layout = ConversationPresentation.dailyOf(context);
+    final reference = hasReferenceShell(layout);
     final emotions = [
       '全部',
       ...{
@@ -72,64 +79,79 @@ class _DiaryPageState extends State<DiaryPage> {
     }).toList();
     return Column(
       children: [
-        PageHeader(
-          c: widget.c,
-          title: l10n.diaryTitle,
-          eyebrow: l10n.diaryEyebrow(widget.profileDisplayName),
-          onBack: widget.onBack,
-          trailing: widget.loading
-              ? l10n.syncingStatus
-              : widget.loaded
-              ? '${filtered.length}/${widget.entries.length}'
-              : l10n.diaryTitle,
-        ),
-        Container(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-          color: widget.c.surfaceSoft,
-          child: TextField(
-            onChanged: (value) => setState(() => _query = value),
-            style: mono(widget.c, 12),
-            decoration: InputDecoration(
-              isDense: true,
-              prefixIcon: Icon(Icons.search_rounded, color: widget.c.ink3),
-              hintText: l10n.diarySearchHint,
-              hintStyle: mono(widget.c, 12, color: widget.c.ink3),
-              border: InputBorder.none,
+        if (reference)
+          ReferenceCollectionTitle(
+            c: widget.c,
+            title: layout == DailyLayout.letter
+                ? l10n.referenceDiaryTitle
+                : l10n.referenceFragmentsTitle,
+            action: IconButton(
+              onPressed: () => setState(() => _showTools = !_showTools),
+              tooltip: l10n.diarySearchHint,
+              icon: Icon(Icons.search, color: widget.c.ink3),
+            ),
+          )
+        else
+          PageHeader(
+            c: widget.c,
+            title: l10n.diaryTitle,
+            eyebrow: l10n.diaryEyebrow(widget.profileDisplayName),
+            onBack: widget.onBack,
+            trailing: widget.loading
+                ? l10n.syncingStatus
+                : widget.loaded
+                ? '${filtered.length}/${widget.entries.length}'
+                : l10n.diaryTitle,
+          ),
+        if (!reference || _showTools)
+          Container(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+            color: widget.c.surfaceSoft,
+            child: TextField(
+              onChanged: (value) => setState(() => _query = value),
+              style: mono(widget.c, 12),
+              decoration: InputDecoration(
+                isDense: true,
+                prefixIcon: Icon(Icons.search_rounded, color: widget.c.ink3),
+                hintText: reference ? null : l10n.diarySearchHint,
+                hintStyle: mono(widget.c, 12, color: widget.c.ink3),
+                border: InputBorder.none,
+              ),
             ),
           ),
-        ),
-        Container(
-          padding: const EdgeInsets.all(10),
-          width: double.infinity,
-          child: Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              for (final mood in emotions)
-                ChoiceChip(
-                  label: Text(mood == '全部' ? l10n.diaryAllFilter : mood),
-                  selected: _filter == mood,
-                  onSelected: (_) => setState(() => _filter = mood),
+        if (!reference || _showTools)
+          Container(
+            padding: const EdgeInsets.all(10),
+            width: double.infinity,
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final mood in emotions)
+                  ChoiceChip(
+                    label: Text(mood == '全部' ? l10n.diaryAllFilter : mood),
+                    selected: _filter == mood,
+                    onSelected: (_) => setState(() => _filter = mood),
+                  ),
+                ActionChip(
+                  avatar: widget.loading
+                      ? SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: widget.c.character,
+                          ),
+                        )
+                      : const Icon(Icons.refresh_rounded, size: 16),
+                  label: Text(l10n.refreshAction),
+                  onPressed: widget.loading
+                      ? null
+                      : () => unawaited(widget.onRefresh()),
                 ),
-              ActionChip(
-                avatar: widget.loading
-                    ? SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: widget.c.character,
-                        ),
-                      )
-                    : const Icon(Icons.refresh_rounded, size: 16),
-                label: Text(l10n.refreshAction),
-                onPressed: widget.loading
-                    ? null
-                    : () => unawaited(widget.onRefresh()),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         Expanded(child: _buildBody(filtered)),
       ],
     );
@@ -175,13 +197,21 @@ class _DiaryPageState extends State<DiaryPage> {
                 style: mono(widget.c, 10.5, color: widget.c.danger),
               ),
             ),
-          for (final entry in filtered)
-            DiaryCard(
-              c: widget.c,
-              entry: entry,
-              onTap: () => _openEntry(entry),
-            ),
-
+          for (var i = 0; i < filtered.length; i++)
+            if (hasReferenceShell(ConversationPresentation.dailyOf(context)))
+              ReferenceDiaryCard(
+                c: widget.c,
+                entry: filtered[i],
+                index: i,
+                layout: ConversationPresentation.dailyOf(context),
+                onTap: () => _openEntry(filtered[i]),
+              )
+            else
+              DiaryCard(
+                c: widget.c,
+                entry: filtered[i],
+                onTap: () => _openEntry(filtered[i]),
+              ),
         ],
       ),
     );
@@ -240,7 +270,6 @@ class DiaryCard extends StatelessWidget {
               ],
             ),
             Text(entry.title, style: serif(c, 17, weight: FontWeight.w600)),
-
           ],
         ),
       ),
@@ -437,4 +466,3 @@ List<String> _diaryBodyBlocks(String body) {
       .where((block) => block.isNotEmpty)
       .toList(growable: false);
 }
-

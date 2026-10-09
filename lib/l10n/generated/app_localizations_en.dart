@@ -2784,4 +2784,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get referenceWindowGardenTitle =>
       'In a quiet corner,\nplant a little longing.';
+
+  @override
+  String get referenceGardenGrowing => 'Growing';
+
+  @override
+  String get referenceGardenHarvest => 'Harvested';
+
+  @override
+  String get referenceGardenVase => 'In vases';
 }

@@ -5004,6 +5004,24 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'在世界的缝隙里，\n种一朵想念。'**
   String get referenceWindowGardenTitle;
+
+  /// No description provided for @referenceGardenGrowing.
+  ///
+  /// In zh, this message translates to:
+  /// **'花槽'**
+  String get referenceGardenGrowing;
+
+  /// No description provided for @referenceGardenHarvest.
+  ///
+  /// In zh, this message translates to:
+  /// **'已采收'**
+  String get referenceGardenHarvest;
+
+  /// No description provided for @referenceGardenVase.
+  ///
+  /// In zh, this message translates to:
+  /// **'花瓶'**
+  String get referenceGardenVase;
 }
 
 class _AppLocalizationsDelegate
