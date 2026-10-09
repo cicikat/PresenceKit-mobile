@@ -1,0 +1,50 @@
+{
+  "scope": "Independent visual demo only; no cross-platform impact",
+  "renderer": "WebGL2",
+  "syntax": "node --check passed",
+  "actualViewport": {
+    "horizontalOverflow": false,
+    "width": 407,
+    "height": 713
+  },
+  "comparisonIframe": {
+    "width": 430,
+    "height": 820
+  },
+  "animation": {
+    "pausedTimeBefore": 20.833,
+    "firstTime": 0.093,
+    "frames": 24,
+    "pausedTimeAfter": 20.833,
+    "default": "playing",
+    "artifact": "animation.gif",
+    "recordedMilliseconds": 12709,
+    "lastTime": 3.018
+  },
+  "interactions": {
+    "thickness": "passed: 24 to 25",
+    "consoleErrors": 0,
+    "localSend": "passed: 3 to 4 messages",
+    "consoleWarnings": 0,
+    "reset": "passed: back to 3 messages",
+    "pauseResume": "passed"
+  },
+  "referenceRuntime": {
+    "commit": "ddad93da04280f83f3cf25898a1f1cbdf001385e",
+    "modes": [
+      "flow",
+      "swirl"
+    ],
+    "repo": "https://github.com/nonlineartom/gradient-backdrops",
+    "screenshot": "reference-runtime.jpg",
+    "status": "actually run"
+  },
+  "limits": {
+    "youtubeContinuousAnimation": "partial: first frame visible; playback/state reads timed out",
+    "physicalPhone": "not-run",
+    "powerPerformance": "not-run",
+    "softKeyboard": "not-run",
+    "requestedViewportOverride": "390x844 override did not take effect; actual 407x713 recorded honestly"
+  },
+  "sourceImages": "Official image used only in comparison.html; renderer has no image input"
+}

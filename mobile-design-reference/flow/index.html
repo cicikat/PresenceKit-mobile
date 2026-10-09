@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#030204">
+  <title>梦境 · Flow Glass</title>
+  <link rel="stylesheet" href="flow.css">
+</head>
+<body>
+  <aside class="caption"><span class="eyebrow">DREAM STUDY / 01</span><h1>梦境</h1><p>光在流动。<br>话语，停在玻璃里。</p><div class="palette"><i></i><i></i><i></i></div><small>Flow · 紫红 / 洋红 / 蜜桃粉金</small><a href="comparison.html">查看材质对照 ↗</a></aside>
+  <main class="dream" aria-label="梦境聊天视觉演示">
+    <canvas id="scene" aria-label="流体背景与折射玻璃"></canvas>
+    <div id="failure" hidden>当前浏览器无法运行 WebGL2，请使用支持 WebGL2 的 Edge 或 Chrome。</div>
+    <div class="interface">
+      <div class="status"><span>10:09</span><span class="status-icons">▮▮▮ &nbsp; ◉ &nbsp; ▰</span></div>
+      <header><button class="icon glass" aria-label="返回初始梦境" id="reset">‹</button><div><h2>梦境</h2><span>与你，在此刻</span></div><button class="icon glass" aria-label="打开材质设置" id="settings">···</button></header>
+      <section class="conversation" aria-label="梦境对话"><div class="date">今夜 · 10:09</div><div class="messages" id="messages" aria-live="polite">
+        <article class="message incoming glass"><span class="speaker">叶暄</span><p>你来了。<br>这里的时间，走得很慢。</p></article>
+        <article class="message outgoing glass"><p>刚才的梦，像一片粉色的海。</p></article>
+        <article class="message incoming glass"><span class="speaker">叶暄</span><p>那就再停留一会儿。<br>不用急着醒来，我在这里。</p></article>
+      </div></section>
+      <div class="bottom"><div class="whisper"><span class="spark">✧</span> 把还记得的梦，轻轻说出来</div><form class="composer glass" id="composer"><button type="button" class="plus" aria-label="插入梦境提示" id="prompt">＋</button><input aria-label="梦境消息" placeholder="说说你的梦…" autocomplete="off" maxlength="180"><button type="submit" class="send glass" aria-label="发送消息">↑</button></form><div class="home-indicator"></div></div>
+    </div>
+    <dialog id="controls"><form method="dialog"><div class="dialog-heading">玻璃与光<button aria-label="关闭材质设置">×</button></div></form><p>仅调整此视觉演示</p><label>玻璃厚度<input id="thickness" type="range" min="8" max="45" value="24"></label><label>边缘反射<input id="reflection" type="range" min="0" max="1.5" step="0.05" value="0.95"></label><label>流动速度<input id="speed" type="range" min="0" max="0.6" step="0.01" value="0.24"></label><div class="color-controls"><label>紫红<input type="color" id="violet" value="#901eb1"></label><label>洋红<input type="color" id="magenta" value="#fa56f4"></label><label>粉金<input type="color" id="peach" value="#ffae85"></label></div><button id="motion" type="button">播放流体</button><button id="defaults" type="button">恢复原版配色与材质</button></dialog>
+  </main>
+  <aside class="note"><span class="eyebrow">FLOW / GLASS</span><div class="line"></div><p>深色透射<br>曲面折射<br>粉金色的厚边</p><small>独立视觉 Demo<br>消息仅在当前页面演示</small></aside>
+  <script src="flow.js"></script>
+</body>
+</html>
