@@ -2684,4 +2684,101 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get referenceYourReply => '你的回信';
+
+  @override
+  String get dreamAppearanceTheme => '梦境外观主题';
+
+  @override
+  String get dreamLayoutTheatre => '金色剧场';
+
+  @override
+  String get dreamLayoutOrbit => '靛蓝轨道';
+
+  @override
+  String get dreamTheatreTitle => '今夜，\n只听见你。';
+
+  @override
+  String get dreamOrbitTitle => '我们之间\n没有距离';
+
+  @override
+  String dreamDefaultPreset(String theme) {
+    return '$theme · 默认';
+  }
+
+  @override
+  String dreamCurrentPreset(String name) {
+    return '当前选用：$name';
+  }
+
+  @override
+  String get dreamPresetNameRequired => '请为预设填写名称';
+
+  @override
+  String get dreamAppearanceSaveFailed => '保存未完成，请重试';
+
+  @override
+  String get dreamAppearanceApplied => '已选用此梦境外观';
+
+  @override
+  String get dreamUsePreset => '选用预设';
+
+  @override
+  String get dreamSaveAsNewPreset => '另存为新预设';
+
+  @override
+  String get dreamDayFluidColors => '日间流体颜色';
+
+  @override
+  String get dreamNightFluidColors => '夜间流体颜色';
+
+  @override
+  String get dreamFluidColorOne => '底色';
+
+  @override
+  String get dreamFluidColorTwo => '流光';
+
+  @override
+  String get dreamFluidColorThree => '高光';
+
+  @override
+  String get dreamFluidParameters => '流体与玻璃';
+
+  @override
+  String get dreamFlowSpeed => '流动速度';
+
+  @override
+  String get dreamFlowScale => '流体尺寸';
+
+  @override
+  String get dreamFlowWarp => '扭曲幅度';
+
+  @override
+  String get dreamFlowSeed => '随机种子';
+
+  @override
+  String get dreamGlassThickness => '玻璃厚度';
+
+  @override
+  String get dreamGlassReflection => '边缘反射';
+
+  @override
+  String get dreamRestoreFlowDefaults => '恢复默认颜色与参数';
+
+  @override
+  String get dreamImageBackgroundLegacy => '用于经典与月夜主题，流体主题使用上方配色';
+
+  @override
+  String get dreamAppearancePreview => '外观预览';
+
+  @override
+  String get dreamTheatreEyebrow => 'AFTER HOURS';
+
+  @override
+  String get dreamOrbitEyebrow => 'BETWEEN STARS';
+
+  @override
+  String get dreamPreviewDay => '日间';
+
+  @override
+  String get dreamPreviewNight => '夜间';
 }

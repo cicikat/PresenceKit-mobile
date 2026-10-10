@@ -100,8 +100,10 @@ class SettingsStore {
     String? owner,
   }) => _store.saveLastAckedMobileSeq(value, origin: origin, owner: owner);
   Future<String?> loadCustomThemePalette() => _store.loadCustomThemePalette();
-  Future<void> saveCustomThemePalette(String value) =>
-      _store.saveCustomThemePalette(value);
+  Future<void> saveCustomThemePalette(
+    String value, {
+    bool reportFailure = false,
+  }) => _store.saveCustomThemePalette(value, reportFailure: reportFailure);
   Future<void> deleteCustomThemePalette() => _store.deleteCustomThemePalette();
   Future<Uint8List?> pickProfileImage() => _store.pickProfileImage();
   Future<Uint8List?> pickChatBackgroundImage() =>

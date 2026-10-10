@@ -2808,4 +2808,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get referenceYourReply => 'Your reply';
+
+  @override
+  String get dreamAppearanceTheme => 'Dream appearance';
+
+  @override
+  String get dreamLayoutTheatre => 'Golden theatre';
+
+  @override
+  String get dreamLayoutOrbit => 'Indigo orbit';
+
+  @override
+  String get dreamTheatreTitle => 'Tonight,\nonly your voice.';
+
+  @override
+  String get dreamOrbitTitle => 'No distance\nbetween us';
+
+  @override
+  String dreamDefaultPreset(String theme) {
+    return '$theme · Default';
+  }
+
+  @override
+  String dreamCurrentPreset(String name) {
+    return 'Currently selected: $name';
+  }
+
+  @override
+  String get dreamPresetNameRequired => 'Please name your preset';
+
+  @override
+  String get dreamAppearanceSaveFailed => 'Could not save. Please try again.';
+
+  @override
+  String get dreamAppearanceApplied => 'Dream appearance applied';
+
+  @override
+  String get dreamUsePreset => 'Use preset';
+
+  @override
+  String get dreamSaveAsNewPreset => 'Save as new preset';
+
+  @override
+  String get dreamDayFluidColors => 'Daytime fluid colors';
+
+  @override
+  String get dreamNightFluidColors => 'Nighttime fluid colors';
+
+  @override
+  String get dreamFluidColorOne => 'Base color';
+
+  @override
+  String get dreamFluidColorTwo => 'Flow color';
+
+  @override
+  String get dreamFluidColorThree => 'Highlight';
+
+  @override
+  String get dreamFluidParameters => 'Fluid and glass';
+
+  @override
+  String get dreamFlowSpeed => 'Flow speed';
+
+  @override
+  String get dreamFlowScale => 'Fluid size';
+
+  @override
+  String get dreamFlowWarp => 'Warp strength';
+
+  @override
+  String get dreamFlowSeed => 'Random seed';
+
+  @override
+  String get dreamGlassThickness => 'Glass thickness';
+
+  @override
+  String get dreamGlassReflection => 'Edge reflection';
+
+  @override
+  String get dreamRestoreFlowDefaults =>
+      'Restore default colors and parameters';
+
+  @override
+  String get dreamImageBackgroundLegacy =>
+      'Used by Classic and Moonlit; fluid themes use the colors above';
+
+  @override
+  String get dreamAppearancePreview => 'Appearance preview';
+
+  @override
+  String get dreamTheatreEyebrow => 'AFTER HOURS';
+
+  @override
+  String get dreamOrbitEyebrow => 'BETWEEN STARS';
+
+  @override
+  String get dreamPreviewDay => 'Day';
+
+  @override
+  String get dreamPreviewNight => 'Night';
 }

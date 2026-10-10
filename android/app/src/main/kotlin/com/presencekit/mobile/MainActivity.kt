@@ -194,12 +194,17 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "getCustomThemePalette" -> {
+                        // Opaque theme JSON includes local dreamAppearance v1 presets;
+                        // getCustomThemePalette is also their read-only observation path.
                         result.success(prefs.getString("customThemePalette", null))
                     }
                     "setCustomThemePalette" -> {
                         val value = call.argument<String>("value").orEmpty()
-                        prefs.edit().putString("customThemePalette", value).apply()
-                        result.success(null)
+                        if (prefs.edit().putString("customThemePalette", value).commit()) {
+                            result.success(null)
+                        } else {
+                            result.error("theme_save_failed", "Theme preferences could not be saved", null)
+                        }
                     }
                     "deleteCustomThemePalette" -> {
                         prefs.edit().remove("customThemePalette").apply()

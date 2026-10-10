@@ -1,4 +1,7 @@
 import '../widgets/reference_layout_shell.dart';
+import '../models/dream_appearance.dart';
+import '../widgets/dream_flow_surface.dart';
+import '../widgets/dream_appearance_manager.dart';
 import '../models/ui_layout.dart';
 import '../widgets/layout_settings.dart';
 import '../widgets/moonlit_scene.dart';
@@ -99,6 +102,12 @@ class _CompanionAppState extends State<CompanionApp>
   String get _adminToken => _connectionController.token;
   String get _ownerUserId => _connectionController.ownerUserId;
   YxPalette get c {
+    if (_route == AppRoute.dream && isFlowDream(_themeController.dreamLayout)) {
+      return dreamFlowPalette(
+        _themeController.dreamLayout,
+        _themeController.isDark,
+      );
+    }
     final custom = _themeController.activePalette;
     if (_route == AppRoute.dream &&
         _themeController.dreamLayout == DreamLayout.moonlit) {
@@ -135,6 +144,8 @@ class _CompanionAppState extends State<CompanionApp>
     _themeController = ThemeController(
       loadPersisted: _settings.loadCustomThemePalette,
       savePersisted: _settings.saveCustomThemePalette,
+      saveDreamPersisted: (value) =>
+          _settings.saveCustomThemePalette(value, reportFailure: true),
     );
     _themeController.addListener(_handleThemeChanged);
 
@@ -509,6 +520,23 @@ class _CompanionAppState extends State<CompanionApp>
       ),
     );
   }
+
+  Future<void> _openDreamAppearance() => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => AnimatedBuilder(
+      animation: _profileAppearance,
+      builder: (context, _) => DreamAppearanceManager(
+        c: c,
+        controller: _themeController,
+        prefs: _prefs,
+        onPrefs: (value) => unawaited(_profileAppearance.savePrefs(value)),
+        onImportBackground: _importDreamBackground,
+        onResetBackground: _resetDreamBackground,
+      ),
+    ),
+  );
 
   Future<void> _lockScreenNow() async {
     final locked = await _deviceController.lockScreen();
@@ -972,7 +1000,6 @@ class _CompanionAppState extends State<CompanionApp>
               }
 
               void manageThemes(bool selectingDark) {
-                Navigator.pop(context);
                 unawaited(
                   _openThemePresetManager(selectingDark: selectingDark),
                 );
@@ -1055,6 +1082,7 @@ class _CompanionAppState extends State<CompanionApp>
                 },
                 onManageThemes: () => manageThemes(_themeController.isDark),
                 onManageThemesForMode: manageThemes,
+                onManageDreamThemes: () => unawaited(_openDreamAppearance()),
                 onPrefs: updatePrefs,
                 onEditProfileName: () async {
                   await _editProfileName();
@@ -1421,6 +1449,12 @@ class _CompanionAppState extends State<CompanionApp>
           key: const ValueKey('dream'),
           onRoute: _pickRoute,
           layout: _themeController.dreamLayout,
+          dark: _themeController.isDark,
+          flowSettings: isFlowDream(_themeController.dreamLayout)
+              ? _themeController.dreamAppearance
+                    .active(_themeController.dreamLayout)
+                    .flow
+              : const DreamFlowSettings(),
           c: c,
           prefs: _prefs,
           profileDisplayName: _profileDisplayName,

@@ -191,7 +191,10 @@ class AppSettingsStore {
     }
   }
 
-  Future<void> saveCustomThemePalette(String value) async {
+  Future<void> saveCustomThemePalette(
+    String value, {
+    bool reportFailure = false,
+  }) async {
     if (!_channelAvailable) return;
     try {
       await PlatformSettingsChannel.channel.invokeMethod<void>(
@@ -199,7 +202,7 @@ class AppSettingsStore {
         {'value': value},
       );
     } on PlatformException {
-      // A custom theme is cosmetic; keep the runtime theme even if persistence fails.
+      if (reportFailure) rethrow;
     }
   }
 

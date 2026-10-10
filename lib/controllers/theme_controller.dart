@@ -1,4 +1,6 @@
 import '../models/ui_layout.dart';
+import '../models/dream_appearance.dart';
+import 'dream_appearance_controller.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -19,9 +21,11 @@ class ThemeController extends ChangeNotifier {
   ThemeController({
     required LoadThemeData loadPersisted,
     required SaveThemeData savePersisted,
+    SaveThemeData? saveDreamPersisted,
     Brightness Function()? systemBrightness,
   }) : _loadPersisted = loadPersisted,
        _savePersisted = savePersisted,
+       _saveDreamPersisted = saveDreamPersisted ?? savePersisted,
        _systemBrightness =
            systemBrightness ??
            (() =>
@@ -36,13 +40,19 @@ class ThemeController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    dreamAppearance.dispose();
     super.dispose();
   }
 
   final LoadThemeData _loadPersisted;
   final SaveThemeData _savePersisted;
+  final SaveThemeData _saveDreamPersisted;
   final Brightness Function() _systemBrightness;
   final List<ThemeColorPreset> _userPresets = [];
+  late final DreamAppearanceController dreamAppearance =
+      DreamAppearanceController(
+        persist: (value) => _persist(dreamAppearance: value),
+      )..addListener(notifyListeners);
   final List<ThemeColorPreset> _bundledPresets = [];
   String? _lightThemePresetId;
   String? _darkThemePresetId;
@@ -58,8 +68,9 @@ class ThemeController extends ChangeNotifier {
   }
 
   Future<void> setDreamLayout(DreamLayout value) async {
+    await _persist(dreamLayout: value);
     _dreamLayout = value;
-    await _changed();
+    notifyListeners();
   }
 
   AppThemeMode _themeMode = AppThemeMode.system;
@@ -103,12 +114,19 @@ class ThemeController extends ChangeNotifier {
         ..addAll(snapshot.layoutPresetIds);
       _dailyLayout = canonicalDailyLayout(snapshot.dailyLayout);
       _dreamLayout = snapshot.dreamLayout;
+      _storedDreamLayout = snapshot.dreamLayout;
+      dreamAppearance.restore(snapshot.dreamAppearance);
+      _storedDreamAppearance = snapshot.dreamAppearance;
       final legacyNoir = snapshot.dailyLayout == DailyLayout.noir;
-      final hadNoirSlots = _layoutPresetIds.keys.any((key) => key.startsWith('noir.'));
+      final hadNoirSlots = _layoutPresetIds.keys.any(
+        (key) => key.startsWith('noir.'),
+      );
       final oldActive = _layoutPresetIds['noir.${isDark ? 'dark' : 'light'}'];
       for (final mode in ['light', 'dark']) {
         final old = _layoutPresetIds['noir.$mode'];
-        if (old != null) _layoutPresetIds.putIfAbsent('reverie.$mode', () => old);
+        if (old != null) {
+          _layoutPresetIds.putIfAbsent('reverie.$mode', () => old);
+        }
       }
       if (legacyNoir) {
         // The old noir skin was always dark, even with global light mode.
@@ -117,7 +135,11 @@ class ThemeController extends ChangeNotifier {
       }
       _layoutPresetIds.removeWhere((key, _) => key.startsWith('noir.'));
       // Rewrites legacy activeId snapshots into the dual-preset representation.
-      if (legacyNoir || hadNoirSlots || raw != null && !raw.contains('lightThemePresetId')) await _persist();
+      if (legacyNoir ||
+          hadNoirSlots ||
+          raw != null && !raw.contains('lightThemePresetId')) {
+        await _persist();
+      }
     } else {
       final legacy = YxPalette.fromJsonString(raw);
       if (legacy != null) {
@@ -290,21 +312,40 @@ class ThemeController extends ChangeNotifier {
     await _persist();
   }
 
-  Future<void> _persist() async {
-    final value = ThemePresetSnapshot(
-      lightThemePresetId: _lightThemePresetId,
-      darkThemePresetId: _darkThemePresetId,
-      themeMode: _themeMode.name,
-      presets: _userPresets,
-      layoutPresetIds: _layoutPresetIds,
-      dailyLayout: _dailyLayout,
-      dreamLayout: _dreamLayout,
-    ).toJsonString();
-    if (kIsWeb) {
-      await saveWebThemePresets(value);
-    } else {
-      await _savePersisted(value);
-    }
+  DreamAppearanceSnapshot _storedDreamAppearance =
+      const DreamAppearanceSnapshot();
+  DreamLayout? _storedDreamLayout;
+  Future<void> _pendingPersist = Future.value();
+  Future<void> _persist({
+    DreamAppearanceSnapshot? dreamAppearance,
+    DreamLayout? dreamLayout,
+  }) {
+    final operation = _pendingPersist.then((_) async {
+      final value = ThemePresetSnapshot(
+        lightThemePresetId: _lightThemePresetId,
+        darkThemePresetId: _darkThemePresetId,
+        themeMode: _themeMode.name,
+        presets: _userPresets,
+        layoutPresetIds: _layoutPresetIds,
+        dailyLayout: _dailyLayout,
+        dreamLayout: dreamLayout ?? _storedDreamLayout ?? _dreamLayout,
+        dreamAppearance: dreamAppearance ?? _storedDreamAppearance,
+      ).toJsonString();
+      if (kIsWeb) {
+        await saveWebThemePresets(value);
+      } else {
+        await (dreamAppearance != null || dreamLayout != null
+            ? _saveDreamPersisted
+            : _savePersisted)(value);
+      }
+      if (dreamAppearance != null) _storedDreamAppearance = dreamAppearance;
+      if (dreamLayout != null) _storedDreamLayout = dreamLayout;
+    });
+    _pendingPersist = operation.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace __) {},
+    );
+    return operation;
   }
 
   Future<void> _loadBundledMods() async {

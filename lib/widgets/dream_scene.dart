@@ -1,4 +1,7 @@
 import '../models/ui_layout.dart';
+import '../models/dream_appearance.dart';
+import 'dream_flow_surface.dart';
+import 'dream_flow_chrome.dart';
 import 'conversation_presentation.dart';
 import 'moonlit_scene.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +18,8 @@ class DreamPage extends StatelessWidget {
     super.key,
     required this.c,
     this.layout = DreamLayout.classic,
+    this.flowSettings = const DreamFlowSettings(),
+    this.dark = false,
     this.onRoute,
     required this.prefs,
     required this.profileDisplayName,
@@ -26,6 +31,8 @@ class DreamPage extends StatelessWidget {
 
   final ValueChanged<AppRoute>? onRoute;
   final DreamLayout layout;
+  final DreamFlowSettings flowSettings;
+  final bool dark;
   final YxPalette c;
   final YxPrefs prefs;
   final String profileDisplayName;
@@ -36,17 +43,23 @@ class DreamPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConversationPresentation(
-      dream: layout,
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (context, _) => _build(context),
+    return DreamFlowSurface(
+      layout: layout,
+      settings: flowSettings,
+      dark: dark,
+      child: ConversationPresentation(
+        dream: layout,
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) => _build(context),
+        ),
       ),
     );
   }
 
   Widget _build(BuildContext context) {
     final moonlit = layout == DreamLayout.moonlit;
+    final flow = isFlowDream(layout);
     final state = controller.state;
     final stats = controller.stats;
     final loadingState = controller.loadingState;
@@ -60,7 +73,15 @@ class DreamPage extends StatelessWidget {
       children: [
         Column(
           children: [
-            if (moonlit)
+            if (flow)
+              DreamFlowHeader(
+                c: c,
+                name: profileDisplayName,
+                active: active,
+                onMenu: onOpenDrawer,
+                onWake: controller.transitioning || entering ? null : onWake,
+              )
+            else if (moonlit)
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
                 child: Align(
@@ -146,12 +167,21 @@ class DreamPage extends StatelessWidget {
               child: active
                   ? ListView(
                       controller: scrollController,
-                      padding: moonlit
+                      padding: flow
+                          ? const EdgeInsets.fromLTRB(24, 4, 24, 22)
+                          : moonlit
                           ? const EdgeInsets.fromLTRB(24, 14, 65, 22)
                           : const EdgeInsets.fromLTRB(12, 14, 12, 22),
                       children: [
                         if (moonlit) MoonlitTitle(c: c),
-                        if (!moonlit) DreamStateStrip(c: c, state: state!),
+                        if (flow)
+                          DreamFlowTitle(
+                            c: c,
+                            layout: layout,
+                            scene: state!.sceneLabel,
+                          ),
+                        if (!moonlit && !flow)
+                          DreamStateStrip(c: c, state: state!),
                         if (error != null)
                           MetaLine(
                             c: c,

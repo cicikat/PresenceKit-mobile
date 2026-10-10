@@ -1,3 +1,7 @@
+## 梦境外观预设（2026-10-11）
+
+既有 getCustomThemePalette/setCustomThemePalette 继续读写不透明主题 JSON，新增可选 dreamAppearance v1 不增加权限或业务 API；Android 使用 commit 确认主题落盘，失败返回 theme_save_failed。AppSettingsStore 的 reportFailure 与 SettingsStore 同步，新梦境预设失败保留原选用；getCustomThemePalette 与外观编辑器可只读查看保存内容。旧图片/字体/外观 prefs 保留。真机重启恢复/GPU/键盘验收 observe，详见 mobile/dream-flow-appearance.md。
+
 ## 聊天交接根因修复（2026-10-08）
 
 工单 27 / 后端 271：历史 plain/display 与 HTTP/poll 使用同份 ledger 显示正文；刷新保留失败状态及原请求，assistant 成功证据优先于迟到 HTTP 错误；前台周期交接 native pending 并补偿 poll。Android 去掉固定 30 分钟冷却，重连立即补拉、有界分页排空；pending 500 条且满载拒绝 ack，不静默淘汰。既有 getBackgroundPollStatus 新增可选 pendingCount/pendingLimit，能力检查只读展示；AppSettingsStore、PlatformSettingsChannel 和 MainActivity 同步。旧测试模式方法/偏好仅兼容。详见 [根因复查](../mobile/chat-handoff-2026-10-08.md)。真机/Doze/真实模型仍 observe，consume 崩溃窗口与后台产物元数据仍 open。

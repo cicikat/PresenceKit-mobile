@@ -13,7 +13,12 @@ String dailyLayoutLabel(AppLocalizations l, DailyLayout value) =>
       DailyLayout.messenger => l.layoutMessenger,
     };
 String dreamLayoutLabel(AppLocalizations l, DreamLayout value) =>
-    value == DreamLayout.classic ? l.layoutClassic : l.layoutMoonlit;
+    switch (value) {
+      DreamLayout.classic => l.layoutClassic,
+      DreamLayout.moonlit => l.layoutMoonlit,
+      DreamLayout.theatre => l.dreamLayoutTheatre,
+      DreamLayout.orbit => l.dreamLayoutOrbit,
+    };
 
 class LayoutSettings extends StatelessWidget {
   const LayoutSettings({

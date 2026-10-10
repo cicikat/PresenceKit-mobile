@@ -5,7 +5,6 @@ import '../controllers/personalization_controller.dart';
 import 'personalization_widgets.dart';
 import 'screen_observation_settings.dart';
 import 'package:flutter/material.dart';
-import 'dream_appearance_settings.dart';
 import 'package:flutter/services.dart';
 import '../controllers/locale_controller.dart';
 import '../l10n/l10n.dart';
@@ -47,6 +46,7 @@ class SettingsPage extends StatelessWidget {
     required this.onLanguage,
     required this.onManageThemes,
     this.onManageThemesForMode,
+    this.onManageDreamThemes,
     required this.onPrefs,
     required this.onEditProfileName,
     required this.onImportProfileAvatar,
@@ -108,6 +108,7 @@ class SettingsPage extends StatelessWidget {
   final ValueChanged<AppLanguage> onLanguage;
   final VoidCallback onManageThemes;
   final ValueChanged<bool>? onManageThemesForMode;
+  final VoidCallback? onManageDreamThemes;
   final ValueChanged<YxPrefs> onPrefs;
   final VoidCallback onEditProfileName;
   final VoidCallback onImportProfileAvatar;
@@ -405,6 +406,15 @@ class SettingsPage extends StatelessWidget {
                             night,
                           ),
                     ),
+                  ListTile(
+                    title: Text(l10n.dreamAppearanceTheme, style: serif(c, 16)),
+                    subtitle: Text(
+                      dreamLayoutLabel(l10n, dreamLayout),
+                      style: mono(c, 12),
+                    ),
+                    trailing: Icon(Icons.chevron_right, color: c.ink3),
+                    onTap: onManageDreamThemes,
+                  ),
                   SettingsRow(
                     c: c,
                     title: l10n.settingsDayChatBackgroundTitle,
@@ -583,54 +593,6 @@ class SettingsPage extends StatelessWidget {
                 title: l10n.settingsDreamModule,
                 icon: Icons.cloud_outlined,
                 children: [
-                  _SettingsModule(
-                    c: c,
-                    title: l10n.dreamUi,
-                    icon: Icons.palette_outlined,
-                    children: [
-                      SettingsRow(
-                        c: c,
-                        title: l10n.settingsDreamBackgroundTitle,
-                        subtitle: l10n.settingsChatBackgroundSubtitle,
-                        child: Wrap(
-                          spacing: 8,
-                          children: [
-                            if (prefs.dreamBackground != null)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: Image.memory(
-                                  prefs.dreamBackground!,
-                                  width: 64,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            YxIconButton(
-                              c: c,
-                              icon: Icons.add_photo_alternate_outlined,
-                              onPressed: onImportDreamBackground ?? () {},
-                              tooltip: l10n.settingsImportChatBackgroundTooltip,
-                              size: 30,
-                            ),
-                            if (prefs.dreamBackground != null)
-                              YxIconButton(
-                                c: c,
-                                icon: Icons.restore_rounded,
-                                onPressed: onResetDreamBackground ?? () {},
-                                tooltip:
-                                    l10n.settingsResetChatBackgroundTooltip,
-                                size: 30,
-                              ),
-                          ],
-                        ),
-                      ),
-                      DreamAppearanceSettings(
-                        c: c,
-                        prefs: prefs,
-                        onPrefs: onPrefs,
-                      ),
-                    ],
-                  ),
                   for (final entry
                       in <String, (String, String?, Map<String, String>)>{
                         'memory_access': (

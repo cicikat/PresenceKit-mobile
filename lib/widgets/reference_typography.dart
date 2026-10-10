@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/app_models.dart';
 import 'common_widgets.dart';
 
@@ -34,6 +35,7 @@ TextStyle referenceUiText(
   double spacing = 0,
 }) => TextStyle(
   fontFamily: AppTypography.family,
+  fontFamilyFallback: kIsWeb ? const [referenceSerifFamily] : null,
   fontSize: size * AppTypography.scale,
   height: height,
   letterSpacing: spacing,

@@ -1,3 +1,7 @@
+## 梦境流体外观（2026-10-11）
+
+`DreamAppearanceController` 管理本机流体预设并由 `ThemeController` 的既有 JSON 串行持久化；`DreamFlowSurface`/`DreamFlowGlass` 提供组件级 GPU 渲染和生命周期，`dream_flow_chrome.dart` 提供两种界面排版。梦境业务、文字 prefs 和图片所有权不变。新预览/编辑入口取代原梦境 UI 分组；日夜主题子窗口关闭返回父设置。详见 [梦境流体外观](dream-flow-appearance.md)。真机验收 observe。
+
 ## 主题、引用与使用情况（2026-10-10）
 
 `chat_history_display.dart` 仅在显示层恢复既有规范引用信封；用户历史正文不再经助手分段器。`inline_display.dart` 与 `InlineDisplayText` 统一即时/历史、引用、逐字显示和复制选择的常见 HTML 文本样式及实体，不执行脚本或外部资源。非经典布局的引用、预览与等待状态使用自身外观，不继承经典灰底竖线。

@@ -1,4 +1,5 @@
 import 'ui_layout.dart';
+import 'dream_appearance.dart';
 import 'dart:convert';
 
 import 'app_models.dart';
@@ -98,6 +99,7 @@ class ThemePresetSnapshot {
     this.layoutPresetIds = const {},
     this.dailyLayout = DailyLayout.classic,
     this.dreamLayout = DreamLayout.classic,
+    this.dreamAppearance = const DreamAppearanceSnapshot(),
   });
 
   final String? lightThemePresetId;
@@ -107,6 +109,7 @@ class ThemePresetSnapshot {
   final Map<String, String> layoutPresetIds;
   final DailyLayout dailyLayout;
   final DreamLayout dreamLayout;
+  final DreamAppearanceSnapshot dreamAppearance;
 
   String toJsonString() => jsonEncode({
     'schema': mobileColorPresetStoreSchema,
@@ -117,6 +120,7 @@ class ThemePresetSnapshot {
     'layoutPresetIds': layoutPresetIds,
     'dailyLayout': dailyLayout.name,
     'dreamLayout': dreamLayout.name,
+    'dreamAppearance': dreamAppearance.toJson(),
     'presets': presets.map((preset) => preset.toModJson()).toList(),
   });
 
@@ -166,6 +170,9 @@ class ThemePresetSnapshot {
           json['dreamLayout'],
           DreamLayout.values,
           DreamLayout.classic,
+        ),
+        dreamAppearance: DreamAppearanceSnapshot.fromJson(
+          json['dreamAppearance'],
         ),
       );
     } catch (_) {

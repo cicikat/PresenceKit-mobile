@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
@@ -46,6 +47,7 @@ TextStyle contentSerif(
 TextStyle serif(YxPalette c, double size, {Color? color, FontWeight? weight}) {
   return TextStyle(
     fontFamily: AppTypography.family ?? 'serif',
+    fontFamilyFallback: kIsWeb ? const ['ReferenceSong'] : null,
     fontSize: size * AppTypography.scale,
     height: 1.35,
     color: color ?? c.ink1,
@@ -57,6 +59,7 @@ TextStyle serif(YxPalette c, double size, {Color? color, FontWeight? weight}) {
 TextStyle mono(YxPalette c, double size, {Color? color, FontWeight? weight}) {
   return TextStyle(
     fontFamily: AppTypography.family ?? 'monospace',
+    fontFamilyFallback: kIsWeb ? const ['ReferenceSong'] : null,
     fontSize: size * AppTypography.scale,
     height: 1.3,
     color: color ?? c.ink2,

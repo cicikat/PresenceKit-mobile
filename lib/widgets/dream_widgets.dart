@@ -1,5 +1,8 @@
 import 'reference_typography.dart';
 import '../models/ui_layout.dart';
+import '../models/dream_appearance.dart';
+import 'dream_flow_surface.dart';
+import 'dream_flow_chrome.dart';
 import 'conversation_presentation.dart';
 export 'dream_scene.dart';
 import 'package:flutter/material.dart';
@@ -222,50 +225,57 @@ class DreamSegmentedMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final layout = ConversationPresentation.dreamOf(context);
+    final flow = isFlowDream(layout);
+    final content = Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (final segment in segments)
-            _buildSegment(
-              segment,
-              ConversationPresentation.dreamOf(context) == DreamLayout.moonlit,
-            ),
+            _buildSegment(segment, layout == DreamLayout.moonlit, flow),
         ],
       ),
     );
+    return flow
+        ? DreamFlowReply(
+            c: c,
+            layout: layout,
+            speaker: profileDisplayName,
+            child: content,
+          )
+        : content;
   }
 
-  Widget _description({required Widget child, bool moonlit = false}) =>
-      Container(
-        width: double.infinity,
-        margin: EdgeInsets.symmetric(
-          horizontal: moonlit ? 0 : 22,
-          vertical: moonlit ? 0 : 7,
-        ),
-        padding: EdgeInsets.fromLTRB(
-          moonlit ? 0 : 14,
-          moonlit ? 4 : 11,
-          moonlit ? 0 : 14,
-          moonlit ? 25 : 11,
-        ),
-        decoration: moonlit
-            ? null
-            : BoxDecoration(
-                color: c.surfaceSoft.withValues(
-                  alpha: prefs.dreamDescriptionOpacity * (moonlit ? .45 : 1),
-                ),
-                border: Border.all(
-                  color: c.ink3.withValues(alpha: .3),
-                  width: .7,
-                ),
-                borderRadius: BorderRadius.circular(6),
-              ),
-        child: child,
-      );
+  Widget _description({
+    required Widget child,
+    bool moonlit = false,
+    bool flow = false,
+  }) => Container(
+    width: double.infinity,
+    margin: EdgeInsets.symmetric(
+      horizontal: moonlit || flow ? 0 : 22,
+      vertical: moonlit ? 0 : 7,
+    ),
+    padding: EdgeInsets.fromLTRB(
+      moonlit ? 0 : 14,
+      moonlit ? 4 : 11,
+      moonlit ? 0 : 14,
+      moonlit ? 25 : 11,
+    ),
+    decoration: moonlit
+        ? null
+        : BoxDecoration(
+            color: c.surfaceSoft.withValues(
+              alpha: prefs.dreamDescriptionOpacity * (moonlit ? .45 : 1),
+            ),
+            border: Border.all(color: c.ink3.withValues(alpha: .3), width: .7),
+            borderRadius: BorderRadius.circular(6),
+          ),
+    child: child,
+  );
 
-  Widget _buildSegment(NarrativeSegment segment, bool moonlit) {
+  Widget _buildSegment(NarrativeSegment segment, bool moonlit, bool flow) {
     switch (segment.type) {
       case 'say':
         return Padding(
@@ -273,21 +283,21 @@ class DreamSegmentedMessage extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!moonlit)
+              if (!moonlit && !flow)
                 YxAvatar(
                   c: c,
                   size: 28,
                   imageBytes: profileAvatarBytes,
                   text: profileDisplayName.characters.first,
                 ),
-              if (!moonlit) const SizedBox(width: 8),
+              if (!moonlit && !flow) const SizedBox(width: 8),
               Expanded(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 300),
-                  padding: moonlit
+                  padding: moonlit || flow
                       ? EdgeInsets.zero
                       : const EdgeInsets.fromLTRB(14, 10, 14, 11),
-                  decoration: moonlit
+                  decoration: moonlit || flow
                       ? null
                       : BoxDecoration(
                           color: c.surfaceSoft.withValues(
@@ -300,8 +310,8 @@ class DreamSegmentedMessage extends StatelessWidget {
                           ),
                         ),
                   child: Container(
-                    padding: EdgeInsets.only(left: moonlit ? 0 : 10),
-                    decoration: moonlit
+                    padding: EdgeInsets.only(left: moonlit || flow ? 0 : 10),
+                    decoration: moonlit || flow
                         ? null
                         : BoxDecoration(
                             border: Border(
@@ -340,6 +350,7 @@ class DreamSegmentedMessage extends StatelessWidget {
         final weak = segment.type == 'feel';
         return _description(
           moonlit: moonlit,
+          flow: flow,
           child: AnimatedRevealText(
             text: segment.text,
             animate: animate,
@@ -370,6 +381,7 @@ class DreamSegmentedMessage extends StatelessWidget {
       default:
         return _description(
           moonlit: moonlit,
+          flow: flow,
           child: AnimatedRevealText(
             text: segment.text,
             animate: animate,
@@ -437,10 +449,13 @@ class _DreamComposerState extends State<DreamComposer> {
   @override
   Widget build(BuildContext context) {
     final c = widget.c;
+    final flow = isFlowDream(ConversationPresentation.dreamOf(context));
     final moonlit =
         ConversationPresentation.dreamOf(context) == DreamLayout.moonlit;
-    return Container(
-      color: moonlit
+    final composer = Container(
+      color: flow
+          ? Colors.transparent
+          : moonlit
           ? c.surface.withValues(alpha: .35)
           : c.surfaceSoft.withValues(alpha: widget.prefs.chatBubbleOpacity),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -452,13 +467,15 @@ class _DreamComposerState extends State<DreamComposer> {
               constraints: const BoxConstraints(minHeight: 38, maxHeight: 92),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
-                color: moonlit
+                color: flow
+                    ? Colors.transparent
+                    : moonlit
                     ? c.ink1.withValues(alpha: .06)
                     : c.surface.withValues(
                         alpha: widget.prefs.chatBubbleOpacity,
                       ),
-                border: Border.all(color: c.surfaceEdge),
-                borderRadius: BorderRadius.circular(moonlit ? 24 : 4),
+                border: flow ? null : Border.all(color: c.surfaceEdge),
+                borderRadius: BorderRadius.circular(flow || moonlit ? 24 : 4),
               ),
               child: TextField(
                 controller: _controller,
@@ -497,7 +514,7 @@ class _DreamComposerState extends State<DreamComposer> {
                 disabledBackgroundColor: c.send.withValues(alpha: .45),
                 disabledForegroundColor: c.surface.withValues(alpha: .8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(flow ? 24 : 3),
                 ),
               ),
               onPressed:
@@ -506,7 +523,10 @@ class _DreamComposerState extends State<DreamComposer> {
                       _controller.text.trim().isNotEmpty
                   ? _send
                   : null,
-              icon: const Icon(Icons.send_rounded, size: 15),
+              icon: Icon(
+                flow ? Icons.arrow_upward_rounded : Icons.send_rounded,
+                size: 15,
+              ),
               label: Text(
                 context.l10n.sendAction,
                 style: mono(c, 11, color: c.surface),
@@ -516,5 +536,11 @@ class _DreamComposerState extends State<DreamComposer> {
         ],
       ),
     );
+    return flow
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            child: DreamFlowGlass(radius: 28, child: composer),
+          )
+        : composer;
   }
 }

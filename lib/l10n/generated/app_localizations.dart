@@ -5052,6 +5052,192 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'你的回信'**
   String get referenceYourReply;
+
+  /// No description provided for @dreamAppearanceTheme.
+  ///
+  /// In zh, this message translates to:
+  /// **'梦境外观主题'**
+  String get dreamAppearanceTheme;
+
+  /// No description provided for @dreamLayoutTheatre.
+  ///
+  /// In zh, this message translates to:
+  /// **'金色剧场'**
+  String get dreamLayoutTheatre;
+
+  /// No description provided for @dreamLayoutOrbit.
+  ///
+  /// In zh, this message translates to:
+  /// **'靛蓝轨道'**
+  String get dreamLayoutOrbit;
+
+  /// No description provided for @dreamTheatreTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'今夜，\n只听见你。'**
+  String get dreamTheatreTitle;
+
+  /// No description provided for @dreamOrbitTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'我们之间\n没有距离'**
+  String get dreamOrbitTitle;
+
+  /// No description provided for @dreamDefaultPreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'{theme} · 默认'**
+  String dreamDefaultPreset(String theme);
+
+  /// No description provided for @dreamCurrentPreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前选用：{name}'**
+  String dreamCurrentPreset(String name);
+
+  /// No description provided for @dreamPresetNameRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'请为预设填写名称'**
+  String get dreamPresetNameRequired;
+
+  /// No description provided for @dreamAppearanceSaveFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存未完成，请重试'**
+  String get dreamAppearanceSaveFailed;
+
+  /// No description provided for @dreamAppearanceApplied.
+  ///
+  /// In zh, this message translates to:
+  /// **'已选用此梦境外观'**
+  String get dreamAppearanceApplied;
+
+  /// No description provided for @dreamUsePreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'选用预设'**
+  String get dreamUsePreset;
+
+  /// No description provided for @dreamSaveAsNewPreset.
+  ///
+  /// In zh, this message translates to:
+  /// **'另存为新预设'**
+  String get dreamSaveAsNewPreset;
+
+  /// No description provided for @dreamDayFluidColors.
+  ///
+  /// In zh, this message translates to:
+  /// **'日间流体颜色'**
+  String get dreamDayFluidColors;
+
+  /// No description provided for @dreamNightFluidColors.
+  ///
+  /// In zh, this message translates to:
+  /// **'夜间流体颜色'**
+  String get dreamNightFluidColors;
+
+  /// No description provided for @dreamFluidColorOne.
+  ///
+  /// In zh, this message translates to:
+  /// **'底色'**
+  String get dreamFluidColorOne;
+
+  /// No description provided for @dreamFluidColorTwo.
+  ///
+  /// In zh, this message translates to:
+  /// **'流光'**
+  String get dreamFluidColorTwo;
+
+  /// No description provided for @dreamFluidColorThree.
+  ///
+  /// In zh, this message translates to:
+  /// **'高光'**
+  String get dreamFluidColorThree;
+
+  /// No description provided for @dreamFluidParameters.
+  ///
+  /// In zh, this message translates to:
+  /// **'流体与玻璃'**
+  String get dreamFluidParameters;
+
+  /// No description provided for @dreamFlowSpeed.
+  ///
+  /// In zh, this message translates to:
+  /// **'流动速度'**
+  String get dreamFlowSpeed;
+
+  /// No description provided for @dreamFlowScale.
+  ///
+  /// In zh, this message translates to:
+  /// **'流体尺寸'**
+  String get dreamFlowScale;
+
+  /// No description provided for @dreamFlowWarp.
+  ///
+  /// In zh, this message translates to:
+  /// **'扭曲幅度'**
+  String get dreamFlowWarp;
+
+  /// No description provided for @dreamFlowSeed.
+  ///
+  /// In zh, this message translates to:
+  /// **'随机种子'**
+  String get dreamFlowSeed;
+
+  /// No description provided for @dreamGlassThickness.
+  ///
+  /// In zh, this message translates to:
+  /// **'玻璃厚度'**
+  String get dreamGlassThickness;
+
+  /// No description provided for @dreamGlassReflection.
+  ///
+  /// In zh, this message translates to:
+  /// **'边缘反射'**
+  String get dreamGlassReflection;
+
+  /// No description provided for @dreamRestoreFlowDefaults.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复默认颜色与参数'**
+  String get dreamRestoreFlowDefaults;
+
+  /// No description provided for @dreamImageBackgroundLegacy.
+  ///
+  /// In zh, this message translates to:
+  /// **'用于经典与月夜主题，流体主题使用上方配色'**
+  String get dreamImageBackgroundLegacy;
+
+  /// No description provided for @dreamAppearancePreview.
+  ///
+  /// In zh, this message translates to:
+  /// **'外观预览'**
+  String get dreamAppearancePreview;
+
+  /// No description provided for @dreamTheatreEyebrow.
+  ///
+  /// In zh, this message translates to:
+  /// **'AFTER HOURS'**
+  String get dreamTheatreEyebrow;
+
+  /// No description provided for @dreamOrbitEyebrow.
+  ///
+  /// In zh, this message translates to:
+  /// **'BETWEEN STARS'**
+  String get dreamOrbitEyebrow;
+
+  /// No description provided for @dreamPreviewDay.
+  ///
+  /// In zh, this message translates to:
+  /// **'日间'**
+  String get dreamPreviewDay;
+
+  /// No description provided for @dreamPreviewNight.
+  ///
+  /// In zh, this message translates to:
+  /// **'夜间'**
+  String get dreamPreviewNight;
 }
 
 class _AppLocalizationsDelegate

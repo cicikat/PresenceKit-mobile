@@ -9,6 +9,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import '../models/dream_appearance.dart';
+import 'dream_flow_chrome.dart';
 import 'package:flutter/services.dart';
 import '../controllers/chat_controller.dart';
 import '../controllers/voice_input_controller.dart';
@@ -1226,7 +1228,8 @@ class _YouMessageState extends State<YouMessage> {
         presentation?.daily == DailyLayout.noir;
 
     final c = widget.c;
-    final moonlit = presentation?.dream == DreamLayout.moonlit;
+    final flow = isFlowDream(presentation?.dream ?? DreamLayout.classic);
+    final moonlit = presentation?.dream == DreamLayout.moonlit || flow;
     final letter =
         ConversationPresentation.dailyOf(context) == DailyLayout.letter;
     final text = widget.text;
@@ -1260,7 +1263,7 @@ class _YouMessageState extends State<YouMessage> {
         widget.attachments.any((file) => file.isImage) ||
         attachment?.isImage == true ||
         (widget.attachments.isEmpty && canonicalImages.isNotEmpty);
-    return Padding(
+    final content = Padding(
       padding: EdgeInsets.only(
         top: letter
             ? 4
@@ -1334,7 +1337,9 @@ class _YouMessageState extends State<YouMessage> {
                         : BoxDecoration(
                             color: (letter ? c.surfaceDeep : c.userBubble)
                                 .withValues(
-                                  alpha: moonlit
+                                  alpha: flow
+                                      ? 0
+                                      : moonlit
                                       ? .32
                                       : prefs.chatBubbleOpacity,
                                 ),
@@ -1489,6 +1494,14 @@ class _YouMessageState extends State<YouMessage> {
         ],
       ),
     );
+    return flow
+        ? DreamFlowReply(
+            c: c,
+            layout: presentation!.dream,
+            outgoing: true,
+            child: content,
+          )
+        : content;
   }
 }
 

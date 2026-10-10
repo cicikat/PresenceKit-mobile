@@ -1,3 +1,7 @@
+## 梦境 Flow 外观（2026-10-11）
+
+工单 33：flutter gen-l10n 成功；flutter analyze --no-pub 零问题；flutter test --no-pub 全量 376 项通过。flutter build web --no-pub --no-web-resources-cdn 和 flutter build apk --debug --flavor dev --no-pub 均成功。实际 Flutter 网页 390×844 四种主题/日夜截图已检查，预览期间零异常，关闭窗口返回父设置通过；隔离浏览器以 503 fixture 拦截后端，启动阶段有连接异常，不能作为后端连接验收。证据在 build/review/dream-flow/，Dev APK 在 build/app/outputs/flutter-apk/app-dev-debug.apk。未安装、未正式发布；真机 GPU、软键盘、相册、重启与功耗 not-run。纯本机外观，无跨端行为影响。
+
 ## 聊天交接复查验收（2026-10-08）
 
 工单 27 / 后端 271：flutter gen-l10n 成功；flutter test --no-pub 全量 327 passed；flutter analyze --no-pub 0 issues；Android :app:testDevDebugUnitTest 指定 MobileDeliveryStateStoreTest（12）、SettingsChannelDeliveryTest（4）、MobileNotificationDeliveryTest（1）共 17 passed。flutter build apk --debug --flavor dev --no-pub 成功，产物 build/app/outputs/flutter-apk/app-dev-debug.apk。没有连接手机、没有安装或正式发布，长回复/弱网/Doze/杀进程/真实模型仍 not-run。后端相关 73 passed；既有 desktop trusted_user_text mock 不匹配的测试单独记录、未改且从定向通过集合排除。详情见 [复查审计](../mobile/chat-handoff-2026-10-08.md)。

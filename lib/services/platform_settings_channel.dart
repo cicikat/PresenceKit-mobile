@@ -1,6 +1,7 @@
 // Appearance calendarPalette: local heatmap palette (jade/blue/rose/amber).
 // Dream description opacity: local appearance float 0-1, default .65.
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/services.dart';
 
@@ -18,11 +19,14 @@ import 'package:flutter/services.dart';
 /// Appearance get/set includes local showChatTime (default true).
 /// Domain services depend on this holder instead of owning their own channel.
 class PlatformSettingsChannel {
+  // get/setCustomThemePalette carries the opaque theme JSON, including local
+  // dreamAppearance v1 presets. Reads expose the saved selection and parameters.
   static const MethodChannel channel = MethodChannel(
     'presence_mobile/settings',
   );
 
   static bool debugForceChannelAvailable = false;
 
-  static bool get available => Platform.isAndroid || debugForceChannelAvailable;
+  static bool get available =>
+      (!kIsWeb && Platform.isAndroid) || debugForceChannelAvailable;
 }
