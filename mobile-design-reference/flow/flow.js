@@ -1,7 +1,7 @@
 /* Independent procedural renderer. No images, libraries, network or app APIs. */
 (() => {
   'use strict';
-  const DEFAULTS = Object.freeze({thickness:24, bevel:23, reflection:.95, ior:1.46, dispersion:.018, transmission:.46, speed:.24, violet:'#901eb1', magenta:'#fa56f4', peach:'#ffae85'});
+  const DEFAULTS = Object.freeze({thickness:24, bevel:23, reflection:.95, ior:1.46, dispersion:.018, transmission:.46, speed:.24, mode:0, seed:13.7, warp:1.15, violet:'#901eb1', magenta:'#fa56f4', peach:'#ffae85'});
   const params = {...DEFAULTS};
   const canvas = document.querySelector('#scene');
   const stage = document.querySelector('.dream');
@@ -24,34 +24,63 @@
   `;
   const bg = `#version 300 es
   ${common}
+  uniform float seed,warp;
+  uniform int mode;
+  float hash3(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
+  float noise3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*f*(f*(f*6.-15.)+10.);return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z)*2.-1.;}
+  float fbm(vec3 p){return .68*noise3(p)+.32*noise3(p*2.03+vec3(17.1,31.7,7.3));}
+  vec3 curve(float a,float t){return vec3(.72*sin(2.*a)+.09*sin(3.*a+t*.21),1.43*cos(a)+.08*sin(2.*a-t*.17),.42*sin(a));}
   void main(){
-    vec2 p=vec2(uv.x,1.-uv.y)*vec2(430.,860.);
-    float t=time;
-    // Coherent domain warp: the same moving radiance is sampled by every glass.
-    p+=vec2(22.*sin(p.y*.008+t*.9)+9.*sin(p.y*.019-t*.6),18.*sin(p.x*.008+t*.7)+8.*sin(p.x*.024-t*.5));
+    vec2 p=(vec2(uv.x,1.-uv.y)-.5)*vec2(2.,4.);
+    float t=time+(mode==1?seed*.17:0.);
     vec3 c=vec3(.002,.001,.003);
-    vec2 q=rot(-.36+.14*sin(t*.6))*(p-vec2(175.+18.*sin(t),255.+20.*sin(t*.65)));
-    float ring=ellipse(q,vec2(96.+9.*sin(t*.8),140.+14.*sin(t*.55)));
-    float band=exp(-pow(ring/22.,2.));
-    c+=mix(violet,magenta,smoothstep(-70.,70.,q.y)) * band*.75;
-    c+=violet*exp(-pow(ring/42.,2.))*.19;
-    // Tall folded peach ribbon, with a magenta envelope and black negative space.
-    float cx=251.+(53.+14.*sin(t*.45))*sin((p.y-200.)*(.010+.0015*sin(t*.35))+t*.6);
-    float dx=p.x-cx;
-    float gate=smoothstep(100.,200.,p.y)*(1.-smoothstep(680.,810.,p.y));
-    float shape=exp(-pow(abs(dx)/43.,4.))*gate;
-    float envelope=exp(-pow(dx/72.,2.))*gate;
-    float pink=exp(-pow((dx+28.)/25.,2.));
-    vec3 ribbon=mix(peach,magenta,pink*.78);
-    c+=magenta*envelope*.52;
-    c=mix(c,ribbon,shape*.92);
-    vec2 q2=rot(.27+.14*sin(t*.55))*(p-vec2(160.+12.*sin(t*.7),625.+18.*cos(t*.6)-18.));
-    float d2=ellipse(q2,vec2(75.,115.));
-    float lowerRing=exp(-pow(d2/27.,2.))*.60;
-    c=mix(c,mix(magenta,peach,smoothstep(-30.,70.,q2.x)),lowerRing);
-    // Peripheral falloff retains Apple's deep black rather than filling the screen.
-    float vignette=1.-smoothstep(165.,250.,abs(p.x-215.));
-    c*=vignette;
+    if(mode==0){
+      // Three nested, seeded fields evolve through a third dimension. No fixed
+      // ring, strip or periodically repeated texture is used as the silhouette.
+      vec3 domain=vec3(p*.86+vec2(seed,seed*.71),t*.21);
+      vec2 q=vec2(fbm(domain),fbm(domain+vec3(5.2,1.3,2.1)));
+      vec2 r=vec2(fbm(domain+vec3(q*warp+vec2(1.7,9.2),1.3)),fbm(domain+vec3(q*warp+vec2(8.3,2.8),4.7)));
+      float field=fbm(domain+vec3(r*warp,2.8))+.18*r.y;
+      float ridge=exp(-pow((field-.04)/.19,2.));
+      float mass=smoothstep(.25,.88,ridge);
+      float height=mass*(.7+.3*q.x);
+      vec3 n=normalize(vec3(-dFdx(height)*resolution.x*.028,-dFdy(height)*resolution.y*.014,1.));
+      float lighting=.50+.45*max(dot(n,normalize(vec3(-.6,-.5,1.))),0.);
+      float warmth=smoothstep(-.08,.35,field+.26*q.y);
+      vec3 liquid=mix(violet,magenta,smoothstep(.18,.75,ridge));
+      liquid=mix(liquid,peach,warmth*.92);
+      c+=liquid*mass*lighting;
+      c+=magenta*exp(-pow((field+.20)/.14,2.))*.12;
+      float sheen=pow(max(dot(n,normalize(vec3(-.4,-.6,1.7))),0.),22.);
+      c+=peach*sheen*mass*.16;
+    }else{
+      // Project a spatial ribbon, resolving crossing layers by depth. Its
+      // varying projected width and half twist give a Mobius-like reading.
+      float scores[2];scores[0]=999.;scores[1]=999.;vec4 metrics[2];metrics[0]=vec4(0.);metrics[1]=vec4(0.);
+      vec3 prev=curve(0.,t);
+      for(int i=1;i<=72;i++){
+        float a=float(i)*6.2831853/72.;vec3 next=curve(a,t);
+        vec2 delta=next.xy-prev.xy;
+        float along=clamp(dot(p-prev.xy,delta)/dot(delta,delta),0.,1.);
+        vec3 point=mix(prev,next,along);
+        float theta=a-(1.-along)*6.2831853/72.;
+        float twist=theta*.5+t*.11;
+        float width=.10+.12*abs(cos(twist));
+        float distance=length(p-point.xy);
+        int layer=point.z>=0.?1:0;float score=distance/width;if(score<scores[layer]){scores[layer]=score;metrics[layer]=vec4(theta,dot(p-point.xy,normalize(vec2(-delta.y,delta.x))),width,point.z);}
+        prev=next;
+      }
+      for(int layer=0;layer<2;layer++){if(scores[layer]>1.25)continue;float phase=metrics[layer].x,signedD=metrics[layer].y,bandWidth=metrics[layer].z,depth=metrics[layer].w,bestD=scores[layer]*bandWidth;
+        float cross=signedD/bandWidth;
+        float roundness=sqrt(max(1.-cross*cross,0.));
+        float forward=.6+.4*smoothstep(-.4,.4,depth);
+        vec3 tint=mix(magenta,peach,.5+.5*sin(phase*.5+t*.11+cross*.8));
+        float spec=pow(max(roundness*.8-cross*.5,0.),8.);
+        vec3 ribbon=tint*(.30+.55*roundness)*forward+peach*spec*.16;
+        c=mix(c,ribbon,1.-smoothstep(bandWidth-.01,bandWidth+.025,bestD));
+      }
+    }
+    c*=1.-smoothstep(.78,1.14,abs(p.x));
     color=vec4(clamp(c,0.,1.),1.);
   }`;
   const material = `#version 300 es
@@ -135,6 +164,7 @@
     if(w!==width||h!==height){width=w;height=h;canvas.width=w;canvas.height=h;gl.bindTexture(gl.TEXTURE_2D,texture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);}
     gl.viewport(0,0,width,height);
     gl.useProgram(background);gl.uniform2f(loc(background,'resolution'),bounds.width,bounds.height);gl.uniform1f(loc(background,'time'),clock);
+    gl.uniform1i(loc(background,'mode'),params.mode);gl.uniform1f(loc(background,'seed'),params.seed);gl.uniform1f(loc(background,'warp'),params.warp);
     for(const key of ['violet','magenta','peach'])gl.uniform3fv(loc(background,key),hex(params[key]));
     gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);gl.drawArrays(gl.TRIANGLES,0,3);
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.useProgram(glass);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.uniform1i(loc(glass,'backdrop'),0);
@@ -152,8 +182,10 @@
   function setPlaying(on){cancelAnimationFrame(raf);playing=on;previous=performance.now();document.querySelector('#motion').textContent=playing?'暂停流体':'播放流体';render();if(playing&&!document.hidden)raf=requestAnimationFrame(tick);}
   document.querySelector('#motion').onclick=()=>setPlaying(!playing);
   document.querySelector('#settings').onclick=()=>controls.showModal();
+  document.querySelector('#shape').onchange=e=>{params.mode=Number(e.target.value);clock=0;render();};
+  document.querySelector('#reseed').onclick=()=>{params.seed=crypto.getRandomValues(new Uint32Array(1))[0]/4294967296*100;clock=0;render();};
   for(const key of ['thickness','reflection','speed','violet','magenta','peach'])document.querySelector('#'+key).oninput=e=>{params[key]=e.target.type==='color'?e.target.value:Number(e.target.value);render();};
-  document.querySelector('#defaults').onclick=()=>{Object.assign(params,DEFAULTS);for(const key of ['thickness','reflection','speed','violet','magenta','peach'])document.querySelector('#'+key).value=params[key];clock=0;render();};
+  document.querySelector('#defaults').onclick=()=>{Object.assign(params,DEFAULTS);document.querySelector('#shape').value=String(params.mode);for(const key of ['thickness','reflection','speed','violet','magenta','peach'])document.querySelector('#'+key).value=params[key];clock=0;render();};
   const messages=document.querySelector('#messages'),initial=messages.innerHTML,input=document.querySelector('.composer input');
   document.querySelector('#composer').onsubmit=e=>{e.preventDefault();const value=input.value.trim();if(!value)return;const article=document.createElement('article');article.className='message outgoing glass';const p=document.createElement('p');p.textContent=value;article.append(p);messages.append(article);input.value='';const scroller=document.querySelector('.conversation');scroller.scrollTop=scroller.scrollHeight;render();};
   document.querySelector('#reset').onclick=()=>{messages.innerHTML=initial;input.value='';document.querySelector('.conversation').scrollTop=0;clock=0;render();};

@@ -1,0 +1,30 @@
+{
+  "reseed": "clicked, visibly changed noise layout",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "pauseFrames": [
+    288,
+    288
+  ],
+  "canvas": {
+    "width": 430,
+    "height": 711
+  },
+  "scope": "standalone only; no cross-end impact",
+  "modes": "noise fluid / spatial infinity ribbon, switched in browser",
+  "consoleErrors": [],
+  "horizontalOverflow": false,
+  "browser": "Codex in-app browser",
+  "recording": {
+    "file": "fluid-v2.gif",
+    "durationMs": 13585,
+    "frames": 24
+  },
+  "limits": [
+    "procedural visual fluid, no fluid physics",
+    "Mobius-like appearance, not true Mobius topology",
+    "new narrow viewport and real device not-run"
+  ]
+}
