@@ -30,7 +30,38 @@
   float noise3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*f*(f*(f*6.-15.)+10.);return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z)*2.-1.;}
   float fbm(vec3 p){return .68*noise3(p)+.32*noise3(p*2.03+vec3(17.1,31.7,7.3));}
   vec3 curve(float a,float t){return vec3(.72*sin(2.*a)+.09*sin(3.*a+t*.21),1.43*cos(a)+.08*sin(2.*a-t*.17),.42*sin(a));}
+  void legacyCurl(){
+    vec2 p=vec2(uv.x,1.-uv.y)*vec2(430.,860.);
+    float t=time;
+    // Coherent domain warp: the same moving radiance is sampled by every glass.
+    p+=vec2(22.*sin(p.y*.008+t*.9)+9.*sin(p.y*.019-t*.6),18.*sin(p.x*.008+t*.7)+8.*sin(p.x*.024-t*.5));
+    vec3 c=vec3(.002,.001,.003);
+    vec2 q=rot(-.36+.14*sin(t*.6))*(p-vec2(175.+18.*sin(t),255.+20.*sin(t*.65)));
+    float ring=ellipse(q,vec2(96.+9.*sin(t*.8),140.+14.*sin(t*.55)));
+    float band=exp(-pow(ring/22.,2.));
+    c+=mix(violet,magenta,smoothstep(-70.,70.,q.y)) * band*.75;
+    c+=violet*exp(-pow(ring/42.,2.))*.19;
+    // Tall folded peach ribbon, with a magenta envelope and black negative space.
+    float cx=251.+(53.+14.*sin(t*.45))*sin((p.y-200.)*(.010+.0015*sin(t*.35))+t*.6);
+    float dx=p.x-cx;
+    float gate=smoothstep(100.,200.,p.y)*(1.-smoothstep(680.,810.,p.y));
+    float shape=exp(-pow(abs(dx)/43.,4.))*gate;
+    float envelope=exp(-pow(dx/72.,2.))*gate;
+    float pink=exp(-pow((dx+28.)/25.,2.));
+    vec3 ribbon=mix(peach,magenta,pink*.78);
+    c+=magenta*envelope*.52;
+    c=mix(c,ribbon,shape*.92);
+    vec2 q2=rot(.27+.14*sin(t*.55))*(p-vec2(160.+12.*sin(t*.7),625.+18.*cos(t*.6)-18.));
+    float d2=ellipse(q2,vec2(75.,115.));
+    float lowerRing=exp(-pow(d2/27.,2.))*.60;
+    c=mix(c,mix(magenta,peach,smoothstep(-30.,70.,q2.x)),lowerRing);
+    // Peripheral falloff retains Apple's deep black rather than filling the screen.
+    float vignette=1.-smoothstep(165.,250.,abs(p.x-215.));
+    c*=vignette;
+    color=vec4(clamp(c,0.,1.),1.);
+  }
   void main(){
+    if(mode==2){legacyCurl();return;}
     vec2 p=(vec2(uv.x,1.-uv.y)-.5)*vec2(2.,4.);
     float t=time+(mode==1?seed*.17:0.);
     vec3 c=vec3(.002,.001,.003);
