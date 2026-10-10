@@ -46,3 +46,7 @@ flow.js 的 DEFAULTS 是参数入口。第一 pass 生成伪随机流体或立�
 - 仅桌面浏览器响应式检查，未做真机 GPU、软键盘与功耗验收。
 
 经典卷曲恢复自提交 00bf35f 的完整动态背景 Shader，与上传截图对应。保持旧版流动方式与配色；该模式不使用随机种子。legacy-curl.jpg 为实际浏览器截图。
+
+## 梦境 UI 八方向
+
+新增 [八套总览](directions/index.html)：经典卷曲与伪随机流体各四套，不同布局、配色与排版。运行现有服务后访问 http://127.0.0.1:8766/directions/index.html 。实际浏览器截图、交互验收与限制见 [说明](directions/README.md)。无跨端影响。
