@@ -100,19 +100,19 @@ YxPalette dailyLayoutPalette(DailyLayout layout, YxPalette base) {
   if (layout == DailyLayout.messenger) {
     final dark = base.surface.computeLuminance() < .2;
     return base.copyWith(
-      surface: Color(dark ? 0xFF111111 : 0xFFEDEDED),
-      surfaceSoft: Color(dark ? 0xFF2A2A2A : 0xFFFFFFFF),
+      surface: Color(dark ? 0xFF0E0E0F : 0xFFE7E9EA),
+      surfaceSoft: Color(dark ? 0xFF202122 : 0xFFFDFFFF),
       surfaceDeep: Color(dark ? 0xFF1E1E1E : 0xFFF7F7F7),
       surfaceEdge: Color(dark ? 0xFF383838 : 0xFFDADADA),
-      ink1: Color(dark ? 0xFFD5D5D5 : 0xFF111111),
+      ink1: Color(dark ? 0xFFB7B9BA : 0xFF131415),
       ink2: Color(dark ? 0xFFBBBBBB : 0xFF555555),
-      ink3: Color(dark ? 0xFF666666 : 0xFFA5A5A5),
+      ink3: Color(dark ? 0xFF404142 : 0xFF949596),
       character: const Color(0xFF278B47),
       send: const Color(0xFF278B47),
       characterDeep: Color(dark ? 0xFF2A2A2A : 0xFFEDEDED),
-      characterOn: Color(dark ? 0xFFD5D5D5 : 0xFF111111),
-      userBubble: Color(dark ? 0xFF38B477 : 0xFF95EC69),
-      userBubbleText: const Color(0xFF071B10),
+      characterOn: Color(dark ? 0xFFB7B9BA : 0xFF131415),
+      userBubble: Color(dark ? 0xFF24A94F : 0xFF84EC57),
+      userBubbleText: Color(dark ? 0xFF04100A : 0xFF0C1415),
     );
   }
   return base;
@@ -144,86 +144,98 @@ class ConversationHeader extends StatelessWidget {
     final l = context.l10n;
     final messenger = layout == DailyLayout.messenger;
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
-    return SafeArea(
-      bottom: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: messenger
-                ? const EdgeInsets.fromLTRB(6, 4, 6, 4)
-                : const EdgeInsets.fromLTRB(16, 12, 16, 10),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: onMenu,
-                  icon: Icon(
-                    messenger
-                        ? Icons.chevron_left
-                        : window
-                        ? Icons.auto_awesome_outlined
-                        : Icons.menu_rounded,
-                    color: messenger ? c.ink1 : c.character,
-                    size: messenger ? 30 : 24,
-                  ),
-                  tooltip: l.drawerTooltip,
-                ),
-                Expanded(
-                  child: Text(
-                    name,
-                    textAlign: messenger ? TextAlign.center : TextAlign.start,
-                    style: messenger
-                        ? messengerText(
-                            c,
-                            messengerHeaderFontSize,
-                            weight: FontWeight.w600,
-                          )
-                        : serif(
-                            c,
-                            messenger
-                                ? 18
-                                : window
-                                ? 28
-                                : 24,
-                            weight: FontWeight.w500,
-                          ).copyWith(
-                            fontStyle: window
-                                ? FontStyle.italic
-                                : FontStyle.normal,
-                          ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                IconButton(
-                  onPressed: messenger ? onToggleTheme : onSettings,
-                  icon: Icon(
-                    messenger ? Icons.more_horiz : Icons.tune_rounded,
-                    color: c.ink2,
-                  ),
-                  tooltip: messenger
-                      ? (dark ? l.switchToLightTooltip : l.switchToDarkTooltip)
-                      : l.drawerSettingsTitle,
-                ),
-              ],
-            ),
-          ),
-          if (onRoute != null && !messenger)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+    final headerInk = Color(dark ? 0xFFC3C4C6 : 0xFF121314);
+    return ColoredBox(
+      color: messenger
+          ? Color(dark ? 0xFF0E0E0F : 0xFFECEDEE)
+          : Colors.transparent,
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: messenger
+                  ? const EdgeInsets.fromLTRB(6, 4, 6, 4)
+                  : const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: Row(
                 children: [
-                  _tab(l.drawerChatTitle, AppRoute.chat, true),
-                  _tab(l.drawerDiaryTitle(name), AppRoute.diary, false),
-                  _tab(l.drawerGardenTitle, AppRoute.garden, false),
-                  _tab(l.drawerDreamTitle, AppRoute.dream, false),
+                  IconButton(
+                    onPressed: onMenu,
+                    icon: Icon(
+                      messenger
+                          ? Icons.chevron_left
+                          : window
+                          ? Icons.auto_awesome_outlined
+                          : Icons.menu_rounded,
+                      color: messenger ? headerInk : c.character,
+                      size: messenger ? 30 : 24,
+                    ),
+                    tooltip: l.drawerTooltip,
+                  ),
+                  Expanded(
+                    child: Text(
+                      name,
+                      textAlign: messenger ? TextAlign.center : TextAlign.start,
+                      style: messenger
+                          ? messengerText(
+                              c,
+                              messengerCssPixels(
+                                context,
+                                messengerHeaderFontSize,
+                              ),
+                              color: headerInk,
+                              weight: FontWeight.w500,
+                            )
+                          : serif(
+                              c,
+                              messenger
+                                  ? 18
+                                  : window
+                                  ? 28
+                                  : 24,
+                              weight: FontWeight.w500,
+                            ).copyWith(
+                              fontStyle: window
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
+                            ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: messenger ? onToggleTheme : onSettings,
+                    icon: Icon(
+                      messenger ? Icons.more_horiz : Icons.tune_rounded,
+                      color: messenger ? headerInk : c.ink2,
+                    ),
+                    tooltip: messenger
+                        ? (dark
+                              ? l.switchToLightTooltip
+                              : l.switchToDarkTooltip)
+                        : l.drawerSettingsTitle,
+                  ),
                 ],
               ),
             ),
-          const SizedBox(height: 6),
-          Divider(height: 1, color: c.surfaceEdge),
-        ],
+            if (onRoute != null && !messenger)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    _tab(l.drawerChatTitle, AppRoute.chat, true),
+                    _tab(l.drawerDiaryTitle(name), AppRoute.diary, false),
+                    _tab(l.drawerGardenTitle, AppRoute.garden, false),
+                    _tab(l.drawerDreamTitle, AppRoute.dream, false),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 6),
+            Divider(height: 1, color: c.surfaceEdge),
+          ],
+        ),
       ),
     );
   }
@@ -251,16 +263,23 @@ TextStyle messengerText(
 }) => TextStyle(
   fontFamily: 'sans-serif',
   fontSize: size * AppTypography.scale,
-  height: 1.35,
+  height: 1.2,
   color: color ?? c.ink1,
   fontWeight: weight ?? FontWeight.w400,
 );
 
-Decoration messengerBubble(Color color, {bool outgoing = false}) =>
-    ShapeDecoration(color: color, shape: _MessengerBubbleShape(outgoing));
+Decoration messengerBubble(
+  Color color, {
+  bool outgoing = false,
+  double cssScale = 1,
+}) => ShapeDecoration(
+  color: color,
+  shape: _MessengerBubbleShape(outgoing, cssScale),
+);
 
 class _MessengerBubbleShape extends ShapeBorder {
-  const _MessengerBubbleShape(this.outgoing);
+  const _MessengerBubbleShape(this.outgoing, this.cssScale);
+  final double cssScale;
   final bool outgoing;
   @override
   EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
@@ -269,12 +288,12 @@ class _MessengerBubbleShape extends ShapeBorder {
   @override
   Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
     final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(4)));
+      ..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(7 * cssScale)));
     final x = outgoing ? rect.right : rect.left;
-    final y = rect.top + 20;
-    path.moveTo(x, y - 6);
-    path.lineTo(x + (outgoing ? 6 : -6), y);
-    path.lineTo(x, y + 6);
+    final y = rect.top + 18 * cssScale;
+    path.moveTo(x, y - 8 * cssScale);
+    path.lineTo(x + (outgoing ? 5 : -5) * cssScale, y);
+    path.lineTo(x, y + 8 * cssScale);
     path.close();
     return path;
   }
@@ -328,19 +347,30 @@ class MessengerQuote extends StatelessWidget {
 // Messenger size knobs. Body/input follow the existing "body font size" setting;
 // header/quote/time follow the existing interface size setting.
 const messengerBodyFontFactor = 1.0;
-const messengerHeaderFontSize = 17.0;
+const messengerHeaderFontSize = 13.0; // CSS px before viewport scaling.
 const messengerQuoteFontSize = 14.0;
 const messengerTimeFontSize = 12.0;
 
 TextStyle messengerContentText(
+  BuildContext context,
   YxPalette c,
   double configuredSize, {
   Color? color,
-}) => messengerText(
-  c,
-  configuredSize * messengerBodyFontFactor,
-  color: color,
-).copyWith(fontSize: configuredSize * messengerBodyFontFactor);
+}) =>
+    messengerText(
+      c,
+      messengerCssPixels(context, 13) *
+          configuredSize /
+          16 *
+          messengerBodyFontFactor,
+      color: color,
+    ).copyWith(
+      fontSize:
+          messengerCssPixels(context, 13) *
+          configuredSize /
+          16 *
+          messengerBodyFontFactor,
+    );
 
 class MessengerReplyPreview extends StatelessWidget {
   const MessengerReplyPreview({
@@ -400,3 +430,9 @@ class MessengerReplyPreview extends StatelessWidget {
     );
   }
 }
+
+// Original phone frame: 350px; inner chat viewport: 88% = 308px.
+double messengerCssPixels(BuildContext context, double cssPixels) =>
+    cssPixels * MediaQuery.sizeOf(context).width / 308;
+double messengerBubbleMaxWidth(BuildContext context) =>
+    MediaQuery.sizeOf(context).width * .8 - messengerCssPixels(context, 42);

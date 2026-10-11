@@ -646,7 +646,10 @@ class _HimMessageState extends State<HimMessage> {
         ConversationPresentation.dailyOf(context) == DailyLayout.letter;
     return Padding(
       padding: EdgeInsets.only(
-        bottom: letter
+        top: messenger ? messengerCssPixels(context, 10) : 0,
+        bottom: messenger
+            ? messengerCssPixels(context, 10)
+            : letter
             ? 18
             : window
             ? 17
@@ -665,14 +668,17 @@ class _HimMessageState extends State<HimMessage> {
                 padding: EdgeInsets.only(top: messenger ? 0 : 18),
                 child: YxAvatar(
                   c: c,
-                  size: messenger ? 48 : 28,
-                  cornerRadius: messenger ? 4 : null,
+                  size: messenger ? messengerCssPixels(context, 30) : 28,
+                  cornerRadius: messenger
+                      ? messengerCssPixels(context, 5)
+                      : null,
                   transparentFrame: messenger,
                   imageBytes: widget.profileAvatarBytes,
                   text: widget.profileDisplayName.characters.first,
                 ),
               ),
-            if (!letter && !window) SizedBox(width: messenger ? 13 : 8),
+            if (!letter && !window)
+              SizedBox(width: messenger ? messengerCssPixels(context, 12) : 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -725,7 +731,7 @@ class _HimMessageState extends State<HimMessage> {
                         maxWidth: letter || window
                             ? double.infinity
                             : messenger
-                            ? MediaQuery.sizeOf(context).width * .685
+                            ? messengerBubbleMaxWidth(context)
                             : 300,
                       ),
                       padding: letter
@@ -735,6 +741,8 @@ class _HimMessageState extends State<HimMessage> {
                               horizontal: 15,
                               vertical: 14,
                             )
+                          : messenger
+                          ? EdgeInsets.all(messengerCssPixels(context, 10))
                           : const EdgeInsets.fromLTRB(14, 10, 14, 11),
                       decoration: letter || window
                           ? null
@@ -743,6 +751,7 @@ class _HimMessageState extends State<HimMessage> {
                               c.surfaceSoft.withValues(
                                 alpha: widget.prefs.chatBubbleOpacity,
                               ),
+                              cssScale: messengerCssPixels(context, 1),
                             )
                           : BoxDecoration(
                               color: c.surfaceSoft.withValues(
@@ -809,6 +818,7 @@ class _HimMessageState extends State<HimMessage> {
                                           )
                                         : messenger
                                         ? messengerContentText(
+                                            context,
                                             c,
                                             widget.prefs.fontSize,
                                           )
@@ -1311,7 +1321,12 @@ class _YouMessageState extends State<YouMessage> {
             color: c.ink1,
           ).copyWith(fontSize: 13 * prefs.fontSize / 16)
         : messenger
-        ? messengerContentText(c, prefs.fontSize, color: c.userBubbleText)
+        ? messengerContentText(
+            context,
+            c,
+            prefs.fontSize,
+            color: c.userBubbleText,
+          )
         : contentSerif(c, prefs.fontSize, color: c.userBubbleText);
     final attachment = AttachmentPlaceholder.parse(text);
     final canonicalImages = widget.mediaRefs
@@ -1323,12 +1338,16 @@ class _YouMessageState extends State<YouMessage> {
         (widget.attachments.isEmpty && canonicalImages.isNotEmpty);
     final content = Padding(
       padding: EdgeInsets.only(
-        top: letter
+        top: messenger
+            ? messengerCssPixels(context, 10)
+            : letter
             ? 4
             : window
             ? 14
             : 0,
-        bottom: letter
+        bottom: messenger
+            ? messengerCssPixels(context, 10)
+            : letter
             ? 22
             : window
             ? 18
@@ -1379,11 +1398,13 @@ class _YouMessageState extends State<YouMessage> {
                       maxWidth: letter || window
                           ? double.infinity
                           : messenger
-                          ? MediaQuery.sizeOf(context).width * .685
+                          ? messengerBubbleMaxWidth(context)
                           : 280,
                     ),
                     padding: hasImages
                         ? EdgeInsets.zero
+                        : messenger
+                        ? EdgeInsets.all(messengerCssPixels(context, 10))
                         : const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 12,
@@ -1396,6 +1417,7 @@ class _YouMessageState extends State<YouMessage> {
                               alpha: prefs.chatBubbleOpacity,
                             ),
                             outgoing: true,
+                            cssScale: messengerCssPixels(context, 1),
                           )
                         : BoxDecoration(
                             color: (letter ? c.surfaceDeep : c.userBubble)
@@ -1540,7 +1562,7 @@ class _YouMessageState extends State<YouMessage> {
           ),
           if ((!letter && !window && !moonlit && prefs.showYouAvatar) ||
               messenger) ...[
-            SizedBox(width: messenger ? 13 : 8),
+            SizedBox(width: messenger ? messengerCssPixels(context, 12) : 8),
             Padding(
               padding: EdgeInsets.only(
                 top: messenger
@@ -1555,8 +1577,8 @@ class _YouMessageState extends State<YouMessage> {
                     ? presentation.userName.characters.first
                     : context.l10n.chatRoleYou.characters.first,
                 imageBytes: messenger ? presentation?.userAvatar : null,
-                size: messenger ? 48 : 28,
-                cornerRadius: messenger ? 4 : null,
+                size: messenger ? messengerCssPixels(context, 30) : 28,
+                cornerRadius: messenger ? messengerCssPixels(context, 5) : null,
                 transparentFrame: messenger,
               ),
             ),
@@ -1906,7 +1928,11 @@ class _ComposerState extends State<Composer> {
                                 controller: _controller,
                                 minLines: 1,
                                 maxLines: 3,
-                                style: messengerContentText(c, widget.fontSize),
+                                style: messengerContentText(
+                                  context,
+                                  c,
+                                  widget.fontSize,
+                                ),
                                 decoration: const InputDecoration.collapsed(
                                   hintText: '',
                                 ),

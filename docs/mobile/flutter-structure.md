@@ -1,3 +1,7 @@
+## 微信 CSS 来源校准（2026-10-11）
+
+微信布局当前以外部参考项目 commit `ab5e62c084b25f947388f884334f4afe07691f54` 的单聊 CSS 为尺寸/配色来源，替代工单34/35中头像48px等先前截图估值。仅作Flutter视觉映射，不引入其JS、消息文件、手机外框或动画。视口基准308px，`messengerCssPixels`统一换算；正文13 CSS px×视口比例×正文字号/16，标题13 CSS px×视口比例×界面字号缩放。完整表格与截图补齐项见 [messenger-visual-reference.md](messenger-visual-reference.md)，验证见工单36。无跨端影响；现有消息/时间/引用业务逻辑不变。
+
 ## 微信输入引用栏与字号（2026-10-11）
 
 `Composer.replyPreview` 仅在 messenger 使用，将待发送引用放到输入框下方；`MessengerReplyPreview` 复用真实回复目标与取消回调。`YxAvatar.transparentFrame` 仅由 messenger 开启，背景透明且无描边；图片自身内容不被改写。正文/输入从默认20px缩至16px，引用14px、标题17px、时间12px。

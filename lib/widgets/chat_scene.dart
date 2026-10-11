@@ -235,7 +235,7 @@ class ChatScene extends StatelessWidget {
                   cacheExtent: 720,
                   padding: EdgeInsets.fromLTRB(
                     messenger
-                        ? 14
+                        ? messengerCssPixels(context, 12)
                         : classic
                         ? 12
                         : window
@@ -247,7 +247,7 @@ class ChatScene extends StatelessWidget {
                         ? 14
                         : topInset + 58,
                     messenger
-                        ? 14
+                        ? messengerCssPixels(context, 12)
                         : classic
                         ? 12
                         : window
@@ -375,9 +375,8 @@ class ChatScene extends StatelessWidget {
                         children: [
                           if (showMessengerTime)
                             Padding(
-                              padding: const EdgeInsets.only(
-                                top: 20,
-                                bottom: 28,
+                              padding: EdgeInsets.symmetric(
+                                vertical: messengerCssPixels(context, 15),
                               ),
                               child: Text(
                                 l10n.messengerTimestamp(
