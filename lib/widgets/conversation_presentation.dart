@@ -1,3 +1,4 @@
+import '../models/inline_display.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import '../models/app_models.dart';
@@ -100,18 +101,18 @@ YxPalette dailyLayoutPalette(DailyLayout layout, YxPalette base) {
     final dark = base.surface.computeLuminance() < .2;
     return base.copyWith(
       surface: Color(dark ? 0xFF111111 : 0xFFEDEDED),
-      surfaceSoft: Color(dark ? 0xFF252525 : 0xFFFFFFFF),
-      surfaceDeep: Color(dark ? 0xFF191919 : 0xFFE7E7E7),
+      surfaceSoft: Color(dark ? 0xFF2A2A2A : 0xFFFFFFFF),
+      surfaceDeep: Color(dark ? 0xFF1E1E1E : 0xFFF7F7F7),
       surfaceEdge: Color(dark ? 0xFF383838 : 0xFFDADADA),
-      ink1: Color(dark ? 0xFFEDEDED : 0xFF191919),
+      ink1: Color(dark ? 0xFFD5D5D5 : 0xFF111111),
       ink2: Color(dark ? 0xFFBBBBBB : 0xFF555555),
-      ink3: Color(dark ? 0xFF999999 : 0xFF767676),
+      ink3: Color(dark ? 0xFF666666 : 0xFFA5A5A5),
       character: const Color(0xFF278B47),
       send: const Color(0xFF278B47),
-      characterDeep: Color(dark ? 0xFF252525 : 0xFFEDEDED),
-      characterOn: Color(dark ? 0xFFEDEDED : 0xFF191919),
-      userBubble: Color(dark ? 0xFF65AA49 : 0xFF95EC69),
-      userBubbleText: const Color(0xFF13210D),
+      characterDeep: Color(dark ? 0xFF2A2A2A : 0xFFEDEDED),
+      characterOn: Color(dark ? 0xFFD5D5D5 : 0xFF111111),
+      userBubble: Color(dark ? 0xFF38B477 : 0xFF95EC69),
+      userBubbleText: const Color(0xFF071B10),
     );
   }
   return base;
@@ -149,7 +150,9 @@ class ConversationHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+            padding: messenger
+                ? const EdgeInsets.fromLTRB(6, 4, 6, 4)
+                : const EdgeInsets.fromLTRB(16, 12, 16, 10),
             child: Row(
               children: [
                 IconButton(
@@ -160,7 +163,8 @@ class ConversationHeader extends StatelessWidget {
                         : window
                         ? Icons.auto_awesome_outlined
                         : Icons.menu_rounded,
-                    color: c.character,
+                    color: messenger ? c.ink1 : c.character,
+                    size: messenger ? 30 : 24,
                   ),
                   tooltip: l.drawerTooltip,
                 ),
@@ -168,20 +172,21 @@ class ConversationHeader extends StatelessWidget {
                   child: Text(
                     name,
                     textAlign: messenger ? TextAlign.center : TextAlign.start,
-                    style:
-                        serif(
-                          c,
-                          messenger
-                              ? 18
-                              : window
-                              ? 28
-                              : 24,
-                          weight: FontWeight.w500,
-                        ).copyWith(
-                          fontStyle: window
-                              ? FontStyle.italic
-                              : FontStyle.normal,
-                        ),
+                    style: messenger
+                        ? messengerText(c, 19, weight: FontWeight.w600)
+                        : serif(
+                            c,
+                            messenger
+                                ? 18
+                                : window
+                                ? 28
+                                : 24,
+                            weight: FontWeight.w500,
+                          ).copyWith(
+                            fontStyle: window
+                                ? FontStyle.italic
+                                : FontStyle.normal,
+                          ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -192,7 +197,9 @@ class ConversationHeader extends StatelessWidget {
                     messenger ? Icons.more_horiz : Icons.tune_rounded,
                     color: c.ink2,
                   ),
-                  tooltip: messenger ? (dark ? l.switchToLightTooltip : l.switchToDarkTooltip) : l.drawerSettingsTitle,
+                  tooltip: messenger
+                      ? (dark ? l.switchToLightTooltip : l.switchToDarkTooltip)
+                      : l.drawerSettingsTitle,
                 ),
               ],
             ),
@@ -229,4 +236,87 @@ class ConversationHeader extends StatelessWidget {
       child: Text(title),
     ),
   );
+}
+
+/// Reference geometry is expressed in logical pixels, independent of device DPI.
+TextStyle messengerText(
+  YxPalette c,
+  double size, {
+  Color? color,
+  FontWeight? weight,
+}) => TextStyle(
+  fontFamily: 'sans-serif',
+  fontSize: size * AppTypography.scale,
+  height: 1.35,
+  color: color ?? c.ink1,
+  fontWeight: weight ?? FontWeight.w400,
+);
+
+Decoration messengerBubble(Color color, {bool outgoing = false}) =>
+    ShapeDecoration(color: color, shape: _MessengerBubbleShape(outgoing));
+
+class _MessengerBubbleShape extends ShapeBorder {
+  const _MessengerBubbleShape(this.outgoing);
+  final bool outgoing;
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
+  @override
+  ShapeBorder scale(double t) => this;
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(4)));
+    final x = outgoing ? rect.right : rect.left;
+    final y = rect.top + 20;
+    path.moveTo(x, y - 6);
+    path.lineTo(x + (outgoing ? 6 : -6), y);
+    path.lineTo(x, y + 6);
+    path.close();
+    return path;
+  }
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) =>
+      getOuterPath(rect, textDirection: textDirection);
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
+}
+
+class MessengerQuote extends StatelessWidget {
+  const MessengerQuote({
+    super.key,
+    required this.c,
+    required this.text,
+    this.author,
+  });
+  final YxPalette c;
+  final String text;
+  final String? author;
+  @override
+  Widget build(BuildContext context) {
+    final dark = c.surface.computeLuminance() < .2;
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width * .685,
+      ),
+      margin: const EdgeInsets.only(top: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Color(dark ? 0xFF222222 : 0xFFE0E0E0),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        author == null || author!.isEmpty
+            ? inlinePlainText(text)
+            : '$author: ${inlinePlainText(text)}',
+        style: messengerText(
+          c,
+          16,
+          color: Color(dark ? 0xFF999999 : 0xFF777777),
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
 }

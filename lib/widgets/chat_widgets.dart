@@ -367,9 +367,15 @@ Future<void> showChatTextSelection(
   String? displayText,
   Color accent = Colors.red,
 }) async {
-  final visible = validatedInlineDisplay(text, displayText).map((run) => run.text).join();
-  final controller = _ChatSelectionController(visible, displayText ?? text, accent)
-    ..selection = TextSelection(baseOffset: 0, extentOffset: visible.length);
+  final visible = validatedInlineDisplay(
+    text,
+    displayText,
+  ).map((run) => run.text).join();
+  final controller = _ChatSelectionController(
+    visible,
+    displayText ?? text,
+    accent,
+  )..selection = TextSelection(baseOffset: 0, extentOffset: visible.length);
   try {
     await showDialog<void>(
       context: context,
@@ -424,7 +430,8 @@ class ReplyPreviewBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final classic = ConversationPresentation.dailyOf(context) == DailyLayout.classic &&
+    final classic =
+        ConversationPresentation.dailyOf(context) == DailyLayout.classic &&
         ConversationPresentation.dreamOf(context) == DreamLayout.classic;
     return Container(
       color: c.surfaceSoft,
@@ -433,8 +440,9 @@ class ReplyPreviewBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: classic ? c.surface : null,
-          border: classic ? Border(left: BorderSide(color: c.character, width: 3)) :
-              Border(bottom: BorderSide(color: c.surfaceEdge)),
+          border: classic
+              ? Border(left: BorderSide(color: c.character, width: 3))
+              : Border(bottom: BorderSide(color: c.surfaceEdge)),
         ),
         child: Row(
           children: [
@@ -444,7 +452,11 @@ class ReplyPreviewBar extends StatelessWidget {
                 children: [
                   Text(label, style: mono(c, 9.5, color: c.character)),
                   Text.rich(
-                    inlineDisplaySpan(text: text, style: mono(c, 11, color: c.ink3), accent: c.character),
+                    inlineDisplaySpan(
+                      text: text,
+                      style: mono(c, 11, color: c.ink3),
+                      accent: c.character,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -473,24 +485,34 @@ class _QuoteBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final classic = ConversationPresentation.dailyOf(context) == DailyLayout.classic &&
+    final classic =
+        ConversationPresentation.dailyOf(context) == DailyLayout.classic &&
         ConversationPresentation.dreamOf(context) == DreamLayout.classic;
     return Container(
-    constraints: const BoxConstraints(maxWidth: 272),
-    margin: const EdgeInsets.fromLTRB(6, 9, 6, 10),
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: classic ? BoxDecoration(
-      color: Colors.grey.withValues(alpha: .18),
-      borderRadius: BorderRadius.circular(4),
-      border: Border(
-        left: BorderSide(color: dark ? c.characterOn : c.character, width: 2),
+      constraints: const BoxConstraints(maxWidth: 272),
+      margin: const EdgeInsets.fromLTRB(6, 9, 6, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: classic
+          ? BoxDecoration(
+              color: Colors.grey.withValues(alpha: .18),
+              borderRadius: BorderRadius.circular(4),
+              border: Border(
+                left: BorderSide(
+                  color: dark ? c.characterOn : c.character,
+                  width: 2,
+                ),
+              ),
+            )
+          : null,
+      child: Text.rich(
+        inlineDisplaySpan(
+          text: text,
+          style: mono(c, 10, color: c.ink2),
+          accent: c.character,
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
-    ) : null,
-    child: Text.rich(
-      inlineDisplaySpan(text: text, style: mono(c, 10, color: c.ink2), accent: c.character),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-    ),
     );
   }
 }
@@ -549,6 +571,7 @@ class HimMessage extends StatefulWidget {
     this.onRevealSkipped,
     this.onReply,
     this.quotedText,
+    this.quotedAuthor,
     this.showDateDivider = false,
     this.dateKey,
   });
@@ -572,6 +595,7 @@ class HimMessage extends StatefulWidget {
   /// 长按菜单「回复」;仅角色气泡传入,气泡分段场景下引用目标是这一段本身。
   final VoidCallback? onReply;
   final String? quotedText;
+  final String? quotedAuthor;
   final bool showDateDivider;
   final String? dateKey;
 
@@ -589,7 +613,14 @@ class _HimMessageState extends State<HimMessage> {
     if (!mounted || action == null) return;
     switch (action) {
       case ChatBubbleAction.copy:
-        await Clipboard.setData(ClipboardData(text: validatedInlineDisplay(widget.text, widget.displayText).map((run) => run.text).join()));
+        await Clipboard.setData(
+          ClipboardData(
+            text: validatedInlineDisplay(
+              widget.text,
+              widget.displayText,
+            ).map((run) => run.text).join(),
+          ),
+        );
         break;
       case ChatBubbleAction.selectAll:
         await showChatTextSelection(
@@ -631,16 +662,16 @@ class _HimMessageState extends State<HimMessage> {
           children: [
             if (!letter && !window)
               Padding(
-                padding: EdgeInsets.only(top: messenger ? 4 : 18),
+                padding: EdgeInsets.only(top: messenger ? 0 : 18),
                 child: YxAvatar(
                   c: c,
-                  size: messenger ? 36 : 28,
-                  cornerRadius: messenger ? 5 : null,
+                  size: messenger ? 48 : 28,
+                  cornerRadius: messenger ? 4 : null,
                   imageBytes: widget.profileAvatarBytes,
                   text: widget.profileDisplayName.characters.first,
                 ),
               ),
-            if (!letter && !window) const SizedBox(width: 8),
+            if (!letter && !window) SizedBox(width: messenger ? 13 : 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -651,9 +682,7 @@ class _HimMessageState extends State<HimMessage> {
                       dateKey: widget.dateKey!,
                       role: context.l10n.chatRoleHim,
                     ),
-                  if (!letter &&
-                      !window &&
-                      (!messenger || widget.prefs.showChatTime))
+                  if (!letter && !window && !messenger)
                     Row(
                       children: [
                         Flexible(
@@ -682,9 +711,7 @@ class _HimMessageState extends State<HimMessage> {
                         ],
                       ],
                     ),
-                  if (!letter &&
-                      !window &&
-                      (!messenger || widget.prefs.showChatTime))
+                  if (!letter && !window && !messenger)
                     const SizedBox(height: 4),
                   GestureDetector(
                     onLongPressStart: widget.sticker == null
@@ -694,7 +721,11 @@ class _HimMessageState extends State<HimMessage> {
                         : null,
                     child: Container(
                       constraints: BoxConstraints(
-                        maxWidth: letter || window ? double.infinity : 300,
+                        maxWidth: letter || window
+                            ? double.infinity
+                            : messenger
+                            ? MediaQuery.sizeOf(context).width * .685
+                            : 300,
                       ),
                       padding: letter
                           ? EdgeInsets.zero
@@ -706,6 +737,12 @@ class _HimMessageState extends State<HimMessage> {
                           : const EdgeInsets.fromLTRB(14, 10, 14, 11),
                       decoration: letter || window
                           ? null
+                          : messenger
+                          ? messengerBubble(
+                              c.surfaceSoft.withValues(
+                                alpha: widget.prefs.chatBubbleOpacity,
+                              ),
+                            )
                           : BoxDecoration(
                               color: c.surfaceSoft.withValues(
                                 alpha: widget.prefs.chatBubbleOpacity,
@@ -744,7 +781,7 @@ class _HimMessageState extends State<HimMessage> {
                             : Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (widget.quotedText != null)
+                                  if (widget.quotedText != null && !messenger)
                                     _QuoteBar(c: c, text: widget.quotedText!),
                                   AnimatedRevealText(
                                     text: widget.text,
@@ -769,6 +806,11 @@ class _HimMessageState extends State<HimMessage> {
                                             fontSize:
                                                 12 * widget.prefs.fontSize / 16,
                                           )
+                                        : messenger
+                                        ? messengerText(
+                                            c,
+                                            widget.prefs.fontSize * 1.25,
+                                          )
                                         : contentSerif(
                                             c,
                                             widget.prefs.fontSize,
@@ -786,6 +828,12 @@ class _HimMessageState extends State<HimMessage> {
                       ),
                     ),
                   ),
+                  if (messenger && widget.quotedText != null)
+                    MessengerQuote(
+                      c: c,
+                      text: widget.quotedText!,
+                      author: widget.quotedAuthor,
+                    ),
                 ],
               ),
             ),
@@ -873,9 +921,10 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
     _animate = widget.animate;
     if (_animate) {
       _controller.duration = Duration(
-        milliseconds: (inlinePlainText(widget.text).characters.length / _revealCps * 1000)
-            .round()
-            .clamp(1, 60000),
+        milliseconds:
+            (inlinePlainText(widget.text).characters.length / _revealCps * 1000)
+                .round()
+                .clamp(1, 60000),
       );
       _controller.forward();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -902,8 +951,9 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
     child: AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        final count = (_controller.value * inlinePlainText(widget.text).characters.length)
-            .floor();
+        final count =
+            (_controller.value * inlinePlainText(widget.text).characters.length)
+                .floor();
         final cursor = _animate && !_skipped && _controller.value < 1
             ? '▍'
             : '';
@@ -943,11 +993,14 @@ class TypingHimMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final layout = ConversationPresentation.dailyOf(context);
     if (layout != DailyLayout.classic) {
-      final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
+      final window =
+          layout == DailyLayout.reverie || layout == DailyLayout.noir;
       return Padding(
         padding: const EdgeInsets.only(bottom: 14),
         child: MessageWindow(
-          enabled: window, c: c, label: profileDisplayName,
+          enabled: window,
+          c: c,
+          label: profileDisplayName,
           time: prefs.showChatTime ? time : null,
           child: Align(
             alignment: Alignment.centerLeft,
@@ -1164,6 +1217,7 @@ class YouMessage extends StatefulWidget {
     required this.text,
     required this.prefs,
     this.quotedText,
+    this.quotedAuthor,
     this.failed = false,
     this.uncertain = false,
     this.onRetry,
@@ -1182,6 +1236,7 @@ class YouMessage extends StatefulWidget {
   final String text;
   final YxPrefs prefs;
   final String? quotedText;
+  final String? quotedAuthor;
   final bool failed;
   final bool uncertain;
   final VoidCallback? onRetry;
@@ -1254,6 +1309,8 @@ class _YouMessageState extends State<YouMessage> {
             height: 1.95,
             color: c.ink1,
           ).copyWith(fontSize: 13 * prefs.fontSize / 16)
+        : messenger
+        ? messengerText(c, prefs.fontSize * 1.25, color: c.userBubbleText)
         : contentSerif(c, prefs.fontSize, color: c.userBubbleText);
     final attachment = AttachmentPlaceholder.parse(text);
     final canonicalImages = widget.mediaRefs
@@ -1294,10 +1351,7 @@ class _YouMessageState extends State<YouMessage> {
                     dateKey: widget.dateKey!,
                     role: context.l10n.chatRoleYou,
                   ),
-                if (widget.showHeader &&
-                    !letter &&
-                    !window &&
-                    (!messenger || prefs.showChatTime))
+                if (widget.showHeader && !letter && !window && !messenger)
                   Text(
                     letter
                         ? context.l10n.referenceYourReply
@@ -1308,10 +1362,7 @@ class _YouMessageState extends State<YouMessage> {
                         : context.l10n.chatRoleYou,
                     style: mono(c, 9.5, color: c.ink3),
                   ),
-                if (widget.showHeader &&
-                    !letter &&
-                    !window &&
-                    (!messenger || prefs.showChatTime))
+                if (widget.showHeader && !letter && !window && !messenger)
                   const SizedBox(height: 4),
                 GestureDetector(
                   onLongPressStart: attachment == null
@@ -1324,7 +1375,11 @@ class _YouMessageState extends State<YouMessage> {
                         : EdgeInsets.zero,
                     width: letter || window ? double.infinity : null,
                     constraints: BoxConstraints(
-                      maxWidth: letter || window ? double.infinity : 280,
+                      maxWidth: letter || window
+                          ? double.infinity
+                          : messenger
+                          ? MediaQuery.sizeOf(context).width * .685
+                          : 280,
                     ),
                     padding: hasImages
                         ? EdgeInsets.zero
@@ -1334,6 +1389,13 @@ class _YouMessageState extends State<YouMessage> {
                           ),
                     decoration: hasImages
                         ? null
+                        : messenger
+                        ? messengerBubble(
+                            c.userBubble.withValues(
+                              alpha: prefs.chatBubbleOpacity,
+                            ),
+                            outgoing: true,
+                          )
                         : BoxDecoration(
                             color: (letter ? c.surfaceDeep : c.userBubble)
                                 .withValues(
@@ -1448,7 +1510,13 @@ class _YouMessageState extends State<YouMessage> {
                   ),
                 ),
                 if (widget.quotedText != null)
-                  _QuoteBar(c: c, text: widget.quotedText!, dark: true),
+                  messenger
+                      ? MessengerQuote(
+                          c: c,
+                          text: widget.quotedText!,
+                          author: widget.quotedAuthor,
+                        )
+                      : _QuoteBar(c: c, text: widget.quotedText!, dark: true),
                 if (widget.uncertain && !widget.failed)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
@@ -1471,11 +1539,11 @@ class _YouMessageState extends State<YouMessage> {
           ),
           if ((!letter && !window && !moonlit && prefs.showYouAvatar) ||
               messenger) ...[
-            const SizedBox(width: 8),
+            SizedBox(width: messenger ? 13 : 8),
             Padding(
               padding: EdgeInsets.only(
                 top: messenger
-                    ? 4
+                    ? 0
                     : widget.showHeader
                     ? 18
                     : 0,
@@ -1486,8 +1554,8 @@ class _YouMessageState extends State<YouMessage> {
                     ? presentation.userName.characters.first
                     : context.l10n.chatRoleYou.characters.first,
                 imageBytes: messenger ? presentation?.userAvatar : null,
-                size: messenger ? 36 : 28,
-                cornerRadius: messenger ? 5 : null,
+                size: messenger ? 48 : 28,
+                cornerRadius: messenger ? 4 : null,
               ),
             ),
           ],
@@ -1755,10 +1823,195 @@ class _ComposerState extends State<Composer> {
     super.dispose();
   }
 
+  Widget _messengerComposer(BuildContext context) {
+    final c = widget.c;
+    final l = context.l10n;
+    Widget record(IconData icon, double size) => Tooltip(
+      message: _recording ? l.releaseToSendTooltip : l.holdToTalkTooltip,
+      child: Semantics(
+        button: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _recording
+              ? unawaited(_handleRecordEnd())
+              : unawaited(_handleRecordStart()),
+          onLongPressStart: (_) => unawaited(_handleRecordStart()),
+          onLongPressEnd: (_) => unawaited(_handleRecordEnd()),
+          onLongPressCancel: _handleRecordCancel,
+          child: SizedBox(
+            width: 36,
+            height: 42,
+            child: Center(
+              child: icon == Icons.surround_sound_outlined
+                  ? Container(
+                      width: 29,
+                      height: 29,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _recording ? c.send : c.ink1,
+                          width: 1.6,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.volume_up_outlined,
+                        size: 21,
+                        color: _recording ? c.send : c.ink1,
+                      ),
+                    )
+                  : Icon(icon, size: size, color: _recording ? c.send : c.ink1),
+            ),
+          ),
+        ),
+      ),
+    );
+    return ColoredBox(
+      color: c.surfaceDeep,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  record(Icons.surround_sound_outlined, 30),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minHeight: 48,
+                        maxHeight: 112,
+                      ),
+                      decoration: BoxDecoration(
+                        color: c.surfaceSoft,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 9,
+                              ),
+                              child: TextField(
+                                controller: _controller,
+                                minLines: 1,
+                                maxLines: 3,
+                                style: messengerText(c, widget.fontSize * 1.25),
+                                decoration: const InputDecoration.collapsed(
+                                  hintText: '',
+                                ),
+                                onChanged: (value) => _draft.value = value,
+                              ),
+                            ),
+                          ),
+                          if (_transcribing)
+                            const SizedBox(
+                              width: 30,
+                              height: 20,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            record(Icons.mic_none_rounded, 23),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<String>(
+                    tooltip: l.composerEmojiTooltip,
+                    onSelected: (emoji) {
+                      final selection = _controller.selection;
+                      final start = selection.isValid
+                          ? selection.start
+                          : _controller.text.length;
+                      final end = selection.isValid ? selection.end : start;
+                      _controller.value = TextEditingValue(
+                        text: _controller.text.replaceRange(start, end, emoji),
+                        selection: TextSelection.collapsed(
+                          offset: start + emoji.length,
+                        ),
+                      );
+                      _draft.value = _controller.text;
+                    },
+                    itemBuilder: (_) => ['😊', '😄', '🥰', '😂', '🥺', '❤️']
+                        .map(
+                          (emoji) =>
+                              PopupMenuItem(value: emoji, child: Text(emoji)),
+                        )
+                        .toList(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Icon(
+                        Icons.sentiment_satisfied_alt_outlined,
+                        size: 31,
+                        color: c.ink1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  ValueListenableBuilder<String>(
+                    valueListenable: _draft,
+                    builder: (context, draft, _) => draft.trim().isEmpty
+                        ? IconButton(
+                            tooltip: l.attachmentTooltip,
+                            onPressed: widget.onOpenAttach,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints.tightFor(
+                              width: 36,
+                              height: 42,
+                            ),
+                            icon: Icon(
+                              Icons.add_circle_outline,
+                              size: 32,
+                              color: c.ink1,
+                            ),
+                          )
+                        : IconButton.filled(
+                            tooltip: l.sendAction,
+                            style: IconButton.styleFrom(
+                              backgroundColor: c.send,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () {
+                              widget.onSend(_controller.text);
+                              _controller.clear();
+                              _draft.value = '';
+                            },
+                            icon: const Icon(Icons.send_rounded, size: 20),
+                          ),
+                  ),
+                ],
+              ),
+              if (_voiceError != null)
+                Text(
+                  _voiceError!,
+                  style: messengerText(c, 12, color: c.danger),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final layout = ConversationPresentation.dailyOf(context);
+    if (layout == DailyLayout.messenger) return _messengerComposer(context);
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
     final reference = window || layout == DailyLayout.letter;
     final inputStyle = reference

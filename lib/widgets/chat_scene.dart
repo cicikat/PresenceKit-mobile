@@ -1,3 +1,4 @@
+import '../models/messenger_display.dart';
 import 'reference_layout_shell.dart';
 import 'reference_chat_intro.dart';
 import 'reverie_scene.dart';
@@ -113,6 +114,7 @@ class ChatScene extends StatelessWidget {
     );
     final topInset = MediaQuery.paddingOf(context).top;
     final classic = layout == DailyLayout.classic;
+    final messenger = layout == DailyLayout.messenger;
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
     int? letterLeadId;
     for (final message
@@ -232,7 +234,9 @@ class ChatScene extends StatelessWidget {
                   controller: scrollController,
                   cacheExtent: 720,
                   padding: EdgeInsets.fromLTRB(
-                    classic
+                    messenger
+                        ? 14
+                        : classic
                         ? 12
                         : window
                         ? 22
@@ -242,12 +246,14 @@ class ChatScene extends StatelessWidget {
                         : !classic || prefs.infoStrip
                         ? 14
                         : topInset + 58,
-                    classic
+                    messenger
+                        ? 14
+                        : classic
                         ? 12
                         : window
                         ? 22
                         : 25,
-                    92,
+                    messenger ? 14 : 92,
                   ),
                   itemCount: itemCount,
                   itemBuilder: (context, index) {
@@ -341,48 +347,95 @@ class ChatScene extends StatelessWidget {
                         bubbleOpacity: prefs.chatBubbleOpacity,
                       );
                     }
+                    final preceding = historyMessages
+                        .followedBy(sentMessages)
+                        .take(globalMessageIndex)
+                        .where((row) => row.role == 'you' || row.role == 'him');
+                    final previousMessage = preceding.lastOrNull;
+                    final quoteRole = messenger
+                        ? messengerQuoteRole(m, preceding)
+                        : null;
+                    final quoteAuthor = quoteRole == 'him'
+                        ? profileDisplayName
+                        : quoteRole == 'you'
+                        ? (userName.isNotEmpty ? userName : l10n.chatRoleYou)
+                        : null;
+                    final stamp = messengerMessageTime(m);
+                    final stampClock =
+                        '${stamp.hour.toString().padLeft(2, '0')}:${stamp.minute.toString().padLeft(2, '0')}';
+                    final showMessengerTime =
+                        messenger &&
+                        prefs.showChatTime &&
+                        (m.role == 'you' || m.role == 'him') &&
+                        messengerShowsTimestamp(m, previousMessage);
                     return RepaintBoundary(
                       key: ValueKey('chat-${m.id}'),
-                      child: m.role == 'you'
-                          ? YouMessage(
-                              c: c,
-                              time: m.time,
-                              prefs: prefs,
-                              text: m.text,
-                              attachments: m.attachments,
-                              mediaRefs: m.mediaRefs,
-                              loadCanonicalMedia: controller.loadCanonicalMedia,
-                              uploadNote: m.uploadNote,
-                              quotedText: m.quotedText,
-                              failed: m.failed,
-                              uncertain: m.uncertain,
-                              onRetry: () => controller.retryMessage(m),
-                              onReply: () => controller.setReplyTarget(m),
-                              showDateDivider: showDateDivider,
-                              dateKey: m.dateKey,
-                            )
-                          : HimMessage(
-                              c: c,
-                              time: m.time,
-                              prefs: prefs,
-                              profileDisplayName: profileDisplayName,
-                              profileAvatarBytes: profileAvatarBytes,
-                              text: m.text,
-                              letterIllustration: m.id == letterLeadId,
-                              displayText: m.displayText,
-                              quotedText: m.quotedText,
-                              showDateDivider: showDateDivider,
-                              dateKey: m.dateKey,
-                              onReply: () => controller.setReplyTarget(m),
-                              sticker: m.sticker,
-                              animate: m.animate,
-                              onRevealStarted: m.animate
-                                  ? () => controller.markRevealStarted(m)
-                                  : null,
-                              onRevealSkipped: m.animate
-                                  ? controller.skipReveal
-                                  : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (showMessengerTime)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: 20,
+                                bottom: 28,
+                              ),
+                              child: Text(
+                                l10n.messengerTimestamp(
+                                  stamp.month,
+                                  stamp.day,
+                                  stampClock,
+                                ),
+                                textAlign: TextAlign.center,
+                                style: messengerText(c, 14, color: c.ink3),
+                              ),
                             ),
+                          m.role == 'you'
+                              ? YouMessage(
+                                  c: c,
+                                  time: m.time,
+                                  prefs: prefs,
+                                  text: m.text,
+                                  attachments: m.attachments,
+                                  mediaRefs: m.mediaRefs,
+                                  loadCanonicalMedia:
+                                      controller.loadCanonicalMedia,
+                                  uploadNote: m.uploadNote,
+                                  quotedText: m.quotedText,
+                                  quotedAuthor: quoteAuthor,
+                                  failed: m.failed,
+                                  uncertain: m.uncertain,
+                                  onRetry: () => controller.retryMessage(m),
+                                  onReply: () => controller.setReplyTarget(m),
+                                  showDateDivider:
+                                      !messenger && showDateDivider,
+                                  dateKey: m.dateKey,
+                                )
+                              : HimMessage(
+                                  c: c,
+                                  time: m.time,
+                                  prefs: prefs,
+                                  profileDisplayName: profileDisplayName,
+                                  profileAvatarBytes: profileAvatarBytes,
+                                  text: m.text,
+                                  letterIllustration: m.id == letterLeadId,
+                                  displayText: m.displayText,
+                                  quotedText: m.quotedText,
+                                  quotedAuthor: quoteAuthor,
+                                  showDateDivider:
+                                      !messenger && showDateDivider,
+                                  dateKey: m.dateKey,
+                                  onReply: () => controller.setReplyTarget(m),
+                                  sticker: m.sticker,
+                                  animate: m.animate,
+                                  onRevealStarted: m.animate
+                                      ? () => controller.markRevealStarted(m)
+                                      : null,
+                                  onRevealSkipped: m.animate
+                                      ? controller.skipReveal
+                                      : null,
+                                ),
+                        ],
+                      ),
                     );
                   },
                 ),

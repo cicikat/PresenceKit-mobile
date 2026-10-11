@@ -59,7 +59,7 @@ void main() {
         ..addFont(Future.value(ByteData.sublistView(font.readAsBytesSync())));
       await loader.load();
       reviewUiFamily = 'LayoutReview';
-      for (final family in ['serif', 'monospace']) {
+      for (final family in ['serif', 'monospace', 'sans-serif']) {
         final fallback = FontLoader(family)
           ..addFont(Future.value(ByteData.sublistView(font.readAsBytesSync())));
         await fallback.load();
@@ -128,7 +128,12 @@ void main() {
           text: '今天过得怎么样？\n如果有想说的，我在这里听。',
           time: '20:16',
         ),
-        ChatMessage(role: 'you', text: '想和你一起，慢慢说说今天。\n这仍是一条消息。', time: '20:18', quotedText: '<b>今天过得怎么样？</b>'),
+        ChatMessage(
+          role: 'you',
+          text: '想和你一起，慢慢说说今天。\n这仍是一条消息。',
+          time: '20:18',
+          quotedText: '<b>今天过得怎么样？</b>',
+        ),
         ChatMessage(
           role: 'him',
           text: '<span style="color:#b65a78"><b>好，我们不着急。</b></span>',
@@ -136,8 +141,17 @@ void main() {
           quotedText: '慢慢说说今天',
         ),
       ]);
+      if (layout == DailyLayout.messenger) {
+        controller.history[1] = controller.history[1].copyWith(
+          quotedText: controller.history.first.text,
+        );
+        controller.history[2] = controller.history[2].copyWith(
+          quotedText: controller.history[1].text,
+        );
+      }
       controller.replyTarget = controller.history.first;
-      final c = dailyLayoutPalette(layout, YxPalette.light);
+      var dark = false;
+      var c = dailyLayoutPalette(layout, YxPalette.light);
       var profileName = '测试角色';
       Widget scene() => LayoutBackdrop(
         c: c,
@@ -146,7 +160,7 @@ void main() {
         child: ChatScene(
           c: c,
           layout: layout,
-          dark: false,
+          dark: dark,
           prefs: const YxPrefs(),
           profileDisplayName: profileName,
           profileAvatarBytes: null,
@@ -172,6 +186,15 @@ void main() {
       await tester.pump();
       expect(tester.takeException(), isNull);
       await capture(tester, layout.name);
+      if (layout == DailyLayout.messenger) {
+        dark = true;
+        c = dailyLayoutPalette(layout, YxPalette.dark);
+        await tester.pumpWidget(app(scene(), c));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(tester.takeException(), isNull);
+        await capture(tester, 'messenger-dark');
+      }
+
       tester.view.physicalSize = const Size(320, 700);
       AppTypography.scale = 1.4;
       profileName = '一个很长很长的自定义角色备注名称';

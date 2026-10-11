@@ -5238,6 +5238,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'夜间'**
   String get dreamPreviewNight;
+
+  /// No description provided for @composerEmojiTooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'表情'**
+  String get composerEmojiTooltip;
+
+  /// No description provided for @messengerTimestamp.
+  ///
+  /// In zh, this message translates to:
+  /// **'{month}月{day}日 {time}'**
+  String messengerTimestamp(int month, int day, String time);
 }
 
 class _AppLocalizationsDelegate

@@ -1490,5 +1490,8 @@
   "dreamTheatreEyebrow": "AFTER HOURS",
   "dreamOrbitEyebrow": "BETWEEN STARS",
   "dreamPreviewDay": "Day",
-  "dreamPreviewNight": "Night"
+  "dreamPreviewNight": "Night",
+  "composerEmojiTooltip": "Emoji",
+  "messengerTimestamp": "{month}/{day} {time}",
+  "@messengerTimestamp": {"placeholders": {"month": {"type": "int"}, "day": {"type": "int"}, "time": {"type": "String"}}}
 }

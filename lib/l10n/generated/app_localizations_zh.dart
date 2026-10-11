@@ -2781,4 +2781,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dreamPreviewNight => '夜间';
+
+  @override
+  String get composerEmojiTooltip => '表情';
+
+  @override
+  String messengerTimestamp(int month, int day, String time) {
+    return '$month月$day日 $time';
+  }
 }

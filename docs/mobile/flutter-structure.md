@@ -1,3 +1,9 @@
+## 微信布局参考校准（2026-10-11）
+
+仅 `DailyLayout.messenger` 调整：背景 #111111/#EDEDED、接收气泡 #2A2A2A/#FFFFFF、发送气泡 #38B477/#95EC69；保留气泡透明度偏好，实际合成色随偏好变化。48px 方头像、14px 两侧留白、约 68.5% 屏宽上限、气泡尖角与无衬线正文。时间移至消息流中央，相邻聊天消息至少间隔十分钟再显示日期＋时间，原时间显示开关仍生效。MessengerQuote 在正文下方独立显示灰色引用条，只展示有证据的作者；旧引用缺少作者时不猜测。输入栏使用既有录音、附件、草稿与发送回调，表情菜单只插入草稿；没有新增业务接口或持久状态。日夜切换、真实角色与头像所有权不变。无跨端影响。
+
+验证及真机 open 项见 `../../cc-tasks/34-messenger-reference.md`。
+
 ## 梦境流体外观（2026-10-11）
 
 `DreamAppearanceController` 管理本机流体预设并由 `ThemeController` 的既有 JSON 串行持久化；`DreamFlowSurface`/`DreamFlowGlass` 提供组件级 GPU 渲染和生命周期，`dream_flow_chrome.dart` 提供两种界面排版。梦境业务、文字 prefs 和图片所有权不变。新预览/编辑入口取代原梦境 UI 分组；日夜主题子窗口关闭返回父设置。详见 [梦境流体外观](dream-flow-appearance.md)。真机验收 observe。

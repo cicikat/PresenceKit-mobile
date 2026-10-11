@@ -2907,4 +2907,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dreamPreviewNight => 'Night';
+
+  @override
+  String get composerEmojiTooltip => 'Emoji';
+
+  @override
+  String messengerTimestamp(int month, int day, String time) {
+    return '$month/$day $time';
+  }
 }
