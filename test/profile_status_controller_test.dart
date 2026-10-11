@@ -35,6 +35,23 @@ class _Backend extends BackendClient {
 }
 
 void main() {
+  test('no expression signal differs from explicit neutral', () {
+    expect(
+      MoodStateSnapshot.fromJson({
+        'current': '',
+        'has_signal': false,
+      }).hasSignal,
+      isFalse,
+    );
+    expect(
+      MoodStateSnapshot.fromJson({
+        'current': 'neutral',
+        'has_signal': true,
+      }).hasSignal,
+      isTrue,
+    );
+  });
+
   test(
     'retains the last success and marks it stale after a refresh failure',
     () async {

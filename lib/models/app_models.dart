@@ -2020,12 +2020,19 @@ class ActivityCurrentState {
 }
 
 class MoodStateSnapshot {
-  const MoodStateSnapshot({required this.current, required this.intensity});
+  const MoodStateSnapshot({
+    required this.current,
+    required this.intensity,
+    this.hasSignal = true,
+  });
 
   factory MoodStateSnapshot.fromJson(Map<String, dynamic> json) {
     final intensity = json['intensity'];
     return MoodStateSnapshot(
-      current: (json['current'] ?? 'neutral').toString(),
+      current: (json['current'] ?? '').toString(),
+      hasSignal: json['has_signal'] is bool
+          ? json['has_signal'] == true
+          : (json['current'] ?? '').toString().isNotEmpty,
       intensity: intensity is num
           ? intensity.toDouble()
           : double.tryParse((intensity ?? '0').toString()) ?? 0,
@@ -2034,6 +2041,7 @@ class MoodStateSnapshot {
 
   final String current;
   final double intensity;
+  final bool hasSignal;
 }
 
 class DreamStats {

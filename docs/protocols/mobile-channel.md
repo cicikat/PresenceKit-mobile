@@ -239,3 +239,14 @@ The Flutter parser mirrors desktop paired-tag rules (up to 200 characters, no ne
 ## 聊天产物（253.3）
 
 后端 mobile/chat 与 mobile/poll 可附带 artifacts[]（id、filename、mime、size、download_url、previewable、可选 preview_url），不含正文与绝对路径；既有 ack/TTL 不变。下载与预览为 chat scope，路径 /chat/artifacts/{id} 与 /chat/artifacts/{id}/preview。手机解析该字段（`ChatArtifact`）并渲染文件卡片：预览走 `GET /chat/artifacts/{id}` 取文本应用内查看，下载经系统另存为；客户端只按 id 拼固定路径，不信任任意 download_url。历史 `GET /chat-log/{date}` entry 也带 `artifacts[]`（后端按 turn_id 持久化元数据）。聊天原图不走产物路径，而走 `GET /chat/media/{sha256}`；身份为 sha256，不把磁盘路径当 URL。
+
+
+## 工单284当前合同
+
+Reality 活动对话由同一 owner/char 的 canonical turn sink 落盘，使用原有脱敏、来源与回合去重。阅读、棋局和 Minecraft 保留独立交互界面；回复只由调用窗口消费，不进行全局主聊天伪流转播。结构化棋步、页面正文、文件和工具回执不批量转换成聊天消息。Dream 隔离不变。
+
+活动请求可携带 request_id，重试须复用同一值；返回 turn_id、msg_id、request_id、source_ref。配置 owner 是服务端身份，客户端不能用 uid 切换用户。新状态使用 revision 比较写入，旧快照拒绝覆盖；state_events 保留实际状态变化。活动对话的 canonical event 携带 activity_record 引用，派生记忆可通过源 event 回到完整分页记录。旧局部 transcript 可原地查询，不自动导入历史或增加指标。
+
+GET /activity/records（state.read）默认仅列来源元数据；指定 source_ref 才读取原文。query_activity_records 使用 dispatcher 身份；未指定引用时关键词/时间查询跨当前身份的活动原文。概要是 revision 绑定的分段摘录，标注 coverage/pending，回复发送后构建；失败保留原文，后续对话或关闭重试。canonical 撤回也遮蔽已关联的局部召回，并使旧概要失效。
+
+表达状态 has_signal=false 表示无短时信号，区别于明确 neutral。来源 turn/source_at/version/expires_at 可观测，最多30分钟且只读不续期；旧固定 mood 不转成新余韵。prompt 的 expression_afterglow 是可裁剪层，prompt_eligible 表示资格，实际注入以 prompt 观测为准。没有新增模型情绪检测、随机活动或成长等级控制开关。

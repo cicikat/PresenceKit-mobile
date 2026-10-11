@@ -153,7 +153,7 @@ class ProfileSettingsContent extends StatelessWidget {
                           : l10n.profileNoActivity,
                       variant: 'warm',
                     ),
-                    if (moodState != null)
+                    if (moodState?.hasSignal == true)
                       YxTag(
                         c: c,
                         text: l10n.profileMoodStatus(
