@@ -208,6 +208,7 @@ class YxAvatar extends StatelessWidget {
     this.size = 28,
     this.onDark = false,
     this.cornerRadius,
+    this.transparentFrame = false,
   });
 
   final YxPalette c;
@@ -216,10 +217,15 @@ class YxAvatar extends StatelessWidget {
   final double size;
   final bool onDark;
   final double? cornerRadius;
+  final bool transparentFrame;
 
   @override
   Widget build(BuildContext context) {
-    final fg = onDark ? c.characterOn : c.character;
+    final fg = transparentFrame
+        ? c.ink2
+        : onDark
+        ? c.characterOn
+        : c.character;
     return Container(
       width: size,
       height: size,
@@ -229,8 +235,10 @@ class YxAvatar extends StatelessWidget {
         borderRadius: cornerRadius == null
             ? null
             : BorderRadius.circular(cornerRadius!),
-        color: onDark ? Colors.transparent : c.characterSoft,
-        border: Border.all(color: fg),
+        color: transparentFrame || onDark
+            ? Colors.transparent
+            : c.characterSoft,
+        border: transparentFrame ? null : Border.all(color: fg),
       ),
       child: imageBytes == null
           ? Text(

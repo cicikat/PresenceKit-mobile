@@ -1,3 +1,9 @@
+## 微信输入引用栏与字号（2026-10-11）
+
+`Composer.replyPreview` 仅在 messenger 使用，将待发送引用放到输入框下方；`MessengerReplyPreview` 复用真实回复目标与取消回调。`YxAvatar.transparentFrame` 仅由 messenger 开启，背景透明且无描边；图片自身内容不被改写。正文/输入从默认20px缩至16px，引用14px、标题17px、时间12px。
+
+自行调整入口：设置 → 外观与显示 → 正文字号（14–20，影响消息和输入）；界面字号（12–24，影响标题/引用/时间等界面文字）。只改微信布局的代码参数集中在 `lib/widgets/conversation_presentation.dart`：`messengerBodyFontFactor` 默认1.0；`messengerQuoteFontSize` 14；`messengerHeaderFontSize` 17；`messengerTimeFontSize` 12。正文跟随 `prefs.fontSize`，不再叠加界面缩放。其他布局与10分钟时间规则不变。无跨端影响，工单35记录验收。
+
 ## 微信布局参考校准（2026-10-11）
 
 仅 `DailyLayout.messenger` 调整：背景 #111111/#EDEDED、接收气泡 #2A2A2A/#FFFFFF、发送气泡 #38B477/#95EC69；保留气泡透明度偏好，实际合成色随偏好变化。48px 方头像、14px 两侧留白、约 68.5% 屏宽上限、气泡尖角与无衬线正文。时间移至消息流中央，相邻聊天消息至少间隔十分钟再显示日期＋时间，原时间显示开关仍生效。MessengerQuote 在正文下方独立显示灰色引用条，只展示有证据的作者；旧引用缺少作者时不猜测。输入栏使用既有录音、附件、草稿与发送回调，表情菜单只插入草稿；没有新增业务接口或持久状态。日夜切换、真实角色与头像所有权不变。无跨端影响。

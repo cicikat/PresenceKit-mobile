@@ -137,6 +137,26 @@ void main() {
     await tester.pumpWidget(page(DailyLayout.messenger));
     expect(find.text('keep this draft'), findsOneWidget);
     expect(find.text("Nova's diary"), findsNothing);
+    controller.setReplyTarget(
+      ChatMessage(role: 'him', text: 'A quoted message', time: '12:00'),
+    );
+    await tester.pump();
+    expect(find.byType(MessengerReplyPreview), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byType(MessengerReplyPreview)).dy,
+      greaterThan(tester.getBottomLeft(find.byType(TextField)).dy),
+    );
+    final previewRect = tester.getRect(find.byType(MessengerReplyPreview));
+    final inputRect = tester.getRect(
+      find.byKey(const ValueKey('messenger-input-surface')),
+    );
+    expect(previewRect.left, closeTo(inputRect.left, .1));
+    expect(previewRect.right, closeTo(inputRect.right, .1));
+    await tester.tap(find.byTooltip('Cancel'));
+    await tester.pump();
+    expect(controller.replyTarget, isNull);
+    expect(find.byType(MessengerReplyPreview), findsNothing);
+    expect(find.text('keep this draft'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     controller.dispose();

@@ -667,6 +667,7 @@ class _HimMessageState extends State<HimMessage> {
                   c: c,
                   size: messenger ? 48 : 28,
                   cornerRadius: messenger ? 4 : null,
+                  transparentFrame: messenger,
                   imageBytes: widget.profileAvatarBytes,
                   text: widget.profileDisplayName.characters.first,
                 ),
@@ -807,9 +808,9 @@ class _HimMessageState extends State<HimMessage> {
                                                 12 * widget.prefs.fontSize / 16,
                                           )
                                         : messenger
-                                        ? messengerText(
+                                        ? messengerContentText(
                                             c,
-                                            widget.prefs.fontSize * 1.25,
+                                            widget.prefs.fontSize,
                                           )
                                         : contentSerif(
                                             c,
@@ -1310,7 +1311,7 @@ class _YouMessageState extends State<YouMessage> {
             color: c.ink1,
           ).copyWith(fontSize: 13 * prefs.fontSize / 16)
         : messenger
-        ? messengerText(c, prefs.fontSize * 1.25, color: c.userBubbleText)
+        ? messengerContentText(c, prefs.fontSize, color: c.userBubbleText)
         : contentSerif(c, prefs.fontSize, color: c.userBubbleText);
     final attachment = AttachmentPlaceholder.parse(text);
     final canonicalImages = widget.mediaRefs
@@ -1556,6 +1557,7 @@ class _YouMessageState extends State<YouMessage> {
                 imageBytes: messenger ? presentation?.userAvatar : null,
                 size: messenger ? 48 : 28,
                 cornerRadius: messenger ? 4 : null,
+                transparentFrame: messenger,
               ),
             ),
           ],
@@ -1740,8 +1742,10 @@ class Composer extends StatefulWidget {
     required this.onVoiceRecordStart,
     required this.onVoiceRecordStop,
     required this.onVoiceRecordCancel,
+    this.replyPreview,
   });
 
+  final Widget? replyPreview;
   final YxPalette c;
   final double bubbleOpacity;
   final double fontSize;
@@ -1881,6 +1885,7 @@ class _ComposerState extends State<Composer> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Container(
+                      key: const ValueKey('messenger-input-surface'),
                       constraints: const BoxConstraints(
                         minHeight: 48,
                         maxHeight: 112,
@@ -1901,7 +1906,7 @@ class _ComposerState extends State<Composer> {
                                 controller: _controller,
                                 minLines: 1,
                                 maxLines: 3,
-                                style: messengerText(c, widget.fontSize * 1.25),
+                                style: messengerContentText(c, widget.fontSize),
                                 decoration: const InputDecoration.collapsed(
                                   hintText: '',
                                 ),
@@ -1995,6 +2000,11 @@ class _ComposerState extends State<Composer> {
                   ),
                 ],
               ),
+              if (widget.replyPreview != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 44, right: 98),
+                  child: widget.replyPreview!,
+                ),
               if (_voiceError != null)
                 Text(
                   _voiceError!,

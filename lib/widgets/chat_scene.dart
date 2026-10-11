@@ -386,7 +386,11 @@ class ChatScene extends StatelessWidget {
                                   stampClock,
                                 ),
                                 textAlign: TextAlign.center,
-                                style: messengerText(c, 14, color: c.ink3),
+                                style: messengerText(
+                                  c,
+                                  messengerTimeFontSize,
+                                  color: c.ink3,
+                                ),
                               ),
                             ),
                           m.role == 'you'
@@ -441,7 +445,7 @@ class ChatScene extends StatelessWidget {
                 ),
               ),
             ),
-            if (controller.replyTarget != null)
+            if (!messenger && controller.replyTarget != null)
               ReplyPreviewBar(
                 c: c,
                 text: controller.replyTarget!.text,
@@ -454,6 +458,16 @@ class ChatScene extends StatelessWidget {
               ),
             Composer(
               key: const ValueKey('daily-composer'),
+              replyPreview: messenger && controller.replyTarget != null
+                  ? MessengerReplyPreview(
+                      c: c,
+                      text: controller.replyTarget!.text,
+                      author: controller.replyTarget!.role == 'you'
+                          ? (userName.isNotEmpty ? userName : l10n.chatRoleYou)
+                          : profileDisplayName,
+                      onCancel: controller.clearReplyTarget,
+                    )
+                  : null,
               c: c,
               bubbleOpacity: prefs.chatBubbleOpacity,
               fontSize: prefs.fontSize,

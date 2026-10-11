@@ -173,7 +173,11 @@ class ConversationHeader extends StatelessWidget {
                     name,
                     textAlign: messenger ? TextAlign.center : TextAlign.start,
                     style: messenger
-                        ? messengerText(c, 19, weight: FontWeight.w600)
+                        ? messengerText(
+                            c,
+                            messengerHeaderFontSize,
+                            weight: FontWeight.w600,
+                          )
                         : serif(
                             c,
                             messenger
@@ -311,11 +315,87 @@ class MessengerQuote extends StatelessWidget {
             : '$author: ${inlinePlainText(text)}',
         style: messengerText(
           c,
-          16,
+          messengerQuoteFontSize,
           color: Color(dark ? 0xFF999999 : 0xFF777777),
         ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+// Messenger size knobs. Body/input follow the existing "body font size" setting;
+// header/quote/time follow the existing interface size setting.
+const messengerBodyFontFactor = 1.0;
+const messengerHeaderFontSize = 17.0;
+const messengerQuoteFontSize = 14.0;
+const messengerTimeFontSize = 12.0;
+
+TextStyle messengerContentText(
+  YxPalette c,
+  double configuredSize, {
+  Color? color,
+}) => messengerText(
+  c,
+  configuredSize * messengerBodyFontFactor,
+  color: color,
+).copyWith(fontSize: configuredSize * messengerBodyFontFactor);
+
+class MessengerReplyPreview extends StatelessWidget {
+  const MessengerReplyPreview({
+    super.key,
+    required this.c,
+    required this.text,
+    required this.author,
+    required this.onCancel,
+  });
+  final YxPalette c;
+  final String text;
+  final String author;
+  final VoidCallback onCancel;
+  @override
+  Widget build(BuildContext context) {
+    final dark = c.surface.computeLuminance() < .2;
+    final ink = Color(dark ? 0xFF999999 : 0xFF777777);
+    return Container(
+      margin: const EdgeInsets.only(top: 5),
+      padding: const EdgeInsets.fromLTRB(14, 7, 7, 7),
+      decoration: BoxDecoration(
+        color: Color(dark ? 0xFF2A2A2A : 0xFFEAEAEA),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$author: ${inlinePlainText(text)}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: messengerText(c, messengerQuoteFontSize, color: ink),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: context.l10n.cancelAction,
+            onPressed: onCancel,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+            icon: Container(
+              width: 17,
+              height: 17,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: ink.withValues(alpha: .45),
+              ),
+              child: Icon(
+                Icons.close_rounded,
+                size: 13,
+                color: dark ? c.surfaceSoft : Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
