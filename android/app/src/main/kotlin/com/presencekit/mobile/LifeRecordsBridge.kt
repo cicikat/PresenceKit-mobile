@@ -25,7 +25,11 @@ object LifeRecordsBridge {
             executor.execute {
                 try {
                     val answer = LifeRecordsStore(app).use { store ->
-                        val sync = LifeRecordsSync(app, store)
+                        val character = call.argument<String>("char_id").orEmpty()
+                        require(character.matches(Regex("[A-Za-z0-9_-]+"))) { "character_required" }
+                        app.getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
+                            .edit().putString("lifeRecordsCharacter", character).apply()
+                        val sync = LifeRecordsSync(app, store, character = character)
                         val origin = BackendSecurityPolicy.normalizeOrigin(call.argument<String>("origin").orEmpty()).orEmpty()
                         val owner = call.argument<String>("owner").orEmpty()
                         val realm = sync.checkRealm(origin, owner)

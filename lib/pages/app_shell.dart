@@ -159,6 +159,7 @@ class _CompanionAppState extends State<CompanionApp>
     _lifeRecordsController = LifeRecordsController(
       origin: () => _backendBaseUrl,
       owner: () => _ownerUserId,
+      character: () => _currentCharacterId ?? '',
     );
     _connectionController.addListener(_lifeRecordsController.connectionChanged);
     _profileStatusController = ProfileStatusController(
@@ -174,6 +175,7 @@ class _CompanionAppState extends State<CompanionApp>
       origin: () => _backendBaseUrl,
       owner: () => _ownerUserId,
     )..addListener(_handleShellChanged);
+    _profileAppearance.addListener(_lifeRecordsController.connectionChanged);
     _voiceService = VoiceService(settingsStore);
     _deviceController = DeviceController(
       device: _deviceService,
@@ -351,6 +353,7 @@ class _CompanionAppState extends State<CompanionApp>
     _personalization.dispose();
     _profileStatusController.removeListener(_handleShellChanged);
     _profileStatusController.dispose();
+    _profileAppearance.removeListener(_lifeRecordsController.connectionChanged);
     _profileAppearance.removeListener(_handleShellChanged);
     _profileAppearance.dispose();
     _capabilitySettings.removeListener(_handleShellChanged);

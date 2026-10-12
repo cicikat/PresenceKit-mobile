@@ -140,16 +140,28 @@ void main() {
   late FakeLifeService service;
   late LifeRecordsController controller;
   var owner = 'owner';
+  var character = 'alpha';
   setUp(() {
     owner = 'owner';
+    character = 'alpha';
     service = FakeLifeService();
     controller = LifeRecordsController(
       origin: () => 'https://example.test',
       owner: () => owner,
+      character: () => character,
       service: service,
     );
   });
   tearDown(() => controller.dispose());
+
+  test('character switch invalidates editor and clears visible state', () async {
+    final previous = controller.realm;
+    character = 'beta';
+    controller.connectionChanged();
+    expect(controller.records, isEmpty);
+    expect(controller.realm, isNot(previous));
+    expect(await controller.save(row('one'), null, expectedRealm: previous), isFalse);
+  });
 
   test('operation, sync and recognition stay independent', () {
     final queued = LifeRecord(

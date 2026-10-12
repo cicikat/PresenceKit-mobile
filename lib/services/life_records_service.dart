@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 /// Dedicated facade: native owns durable outbox and shares transport with JobService.
 /// No token is passed through this channel or written to the outbox.
 class LifeRecordsService {
+  LifeRecordsService({this.character});
+  final String Function()? character;
   static const channel = MethodChannel('presence_mobile/life_records');
 
   Future<dynamic> invoke(
@@ -14,6 +16,7 @@ class LifeRecordsService {
   ]) => channel.invokeMethod(method, {
     'origin': origin,
     'owner': owner,
+    'char_id': character?.call() ?? '',
     ...arguments,
   });
 

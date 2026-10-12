@@ -17,13 +17,13 @@ import java.io.IOException
 class LifeRecordsTest {
     private lateinit var context: Context
     private val origin = "http://127.0.0.1:8080"
-    private val realm = "$origin\nowner"
+    private val realm = "$origin\nowner\nalpha"
     private val image = byteArrayOf(1, 2, 3, 4)
 
     @Before fun setup() {
         context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE).edit()
-            .putString("backendBaseUrl", origin).putString("ownerUserId", "owner").commit()
+            .putString("backendBaseUrl", origin).putString("ownerUserId", "owner").putString("lifeRecordsCharacter", "alpha").commit()
     }
 
     private fun body(title: String = "Lunch") = JSONObject().put("category", "diet")
@@ -35,6 +35,27 @@ class LifeRecordsTest {
         .put("operation_id", op.getString("operation_id")).put("record_id", op.getString("record_id"))
         .put("revision", revision).put("deleted", op.getString("action") == "delete")
         .put("record", body(title).put("id", op.getString("record_id")).put("revision", revision))
+
+    @Test fun `character scopes do not mix queued records and requests`() {
+        LifeRecordsStore(context).use { store ->
+            store.save(realm, body(), image)
+            assertNull(store.next("$origin\nowner\nbeta"))
+            assertEquals(0, store.snapshot("$origin\nowner\nbeta").getJSONArray("records").length())
+            val sync = LifeRecordsSync(context, store, { "test" }) { path, request ->
+                assertTrue(path.contains("char_id=alpha"))
+                if (path.contains("capabilities")) JSONObject().put("schema_version", 1).put("enabled", true)
+                else {
+                    assertEquals("alpha", request!!.getString("char_id"))
+                    ack(request, 1)
+                }
+            }
+            assertEquals("ready", sync.run(origin, "owner").getString("status"))
+            context.getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().putString("lifeRecordsCharacter", "beta").commit()
+            try { sync.query(origin, "owner", JSONObject()); fail("stale scope must fail") }
+            catch (_: IllegalArgumentException) { }
+        }
+    }
 
     @Test fun `queue and exact uncertain request survive reopen`() {
         val first: String

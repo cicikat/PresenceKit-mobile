@@ -11,11 +11,13 @@ class LifeRecordsController extends ChangeNotifier {
   LifeRecordsController({
     required this.origin,
     required this.owner,
+    this.character,
     LifeRecordsService? service,
-  }) : service = service ?? LifeRecordsService();
+  }) : service = service ?? LifeRecordsService(character: character);
 
   final String Function() origin;
   final String Function() owner;
+  final String Function()? character;
   final LifeRecordsService service;
   List<LifeRecord> records = [];
   Map<String, dynamic> queue = {};
@@ -39,7 +41,7 @@ class LifeRecordsController extends ChangeNotifier {
   int _generation = 0;
   Set<String>? _remoteIds;
 
-  String get realm => '${origin()}\n${owner()}';
+  String get realm => '${origin()}\n${owner()}\n${character?.call() ?? ''}';
   bool get available =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
   int get pendingCount =>

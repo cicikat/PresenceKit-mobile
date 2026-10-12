@@ -12,6 +12,7 @@ class LifeRecordsHttpException(val status: Int, val response: JSONObject?) : Exc
 /** Separate from chat ingest/poll: both UI and JobService use this identical transport. */
 class LifeRecordsSync(private val context: Context, private val store: LifeRecordsStore,
     private val tokenProvider: (() -> String)? = null,
+    private val character: String? = null,
     private val transport: ((String, JSONObject?) -> JSONObject)? = null) {
     private val prefs = context.getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -20,11 +21,15 @@ class LifeRecordsSync(private val context: Context, private val store: LifeRecor
         BackendSecurityPolicy.ownerUserId(prefs)
     )
 
-    fun realm(origin: String, owner: String): String = "$origin\n$owner"
+    val charId: String = character ?: prefs.getString("lifeRecordsCharacter", "").orEmpty()
+
+    fun realm(origin: String, owner: String): String = "$origin\n$owner\n$charId"
 
     fun checkRealm(origin: String, owner: String): String {
         require(current() == Pair(origin, owner)) { "account_changed" }
         require(origin.isNotEmpty() && owner.matches(Regex("[A-Za-z0-9_-]+"))) { "setup_required" }
+        require(charId.matches(Regex("[A-Za-z0-9_-]+"))) { "character_required" }
+        require(prefs.getString("lifeRecordsCharacter", "") == charId) { "account_changed" }
         return realm(origin, owner)
     }
 
@@ -33,8 +38,9 @@ class LifeRecordsSync(private val context: Context, private val store: LifeRecor
         require(BackendSecurityPolicy.isAllowedBaseUrl(origin, prefs)) { "origin_untrusted" }
         val token = tokenProvider?.invoke() ?: BackendSecurityPolicy.adminToken(context, prefs)
         require(token.isNotBlank()) { "setup_required" }
-        transport?.let { return it(path, body) }
-        val connection = URL(origin + path).openConnection() as HttpURLConnection
+        val scopedPath = path + (if (path.contains("?")) "&" else "?") + "char_id=${encode(charId)}"
+        transport?.let { return it(scopedPath, body) }
+        val connection = URL(origin + scopedPath).openConnection() as HttpURLConnection
         val deadline = deadlines.schedule({ connection.disconnect() }, 35, java.util.concurrent.TimeUnit.SECONDS)
         try {
             connection.instanceFollowRedirects = false
@@ -97,7 +103,7 @@ class LifeRecordsSync(private val context: Context, private val store: LifeRecor
                 var sent = 0
                 while (!cancelled() && sent < 200 && android.os.SystemClock.elapsedRealtime() - started < 60_000) {
                     operation = store.next(realm) ?: break
-                    val response = request(origin, owner, "/life-records/sync", store.wire(realm, owner, operation))
+                    val response = request(origin, owner, "/life-records/sync", store.wire(realm, owner, operation).put("char_id", charId))
                     store.acknowledge(realm, operation, response)
                     operation = null
                     meta.put("last_ack", System.currentTimeMillis())
@@ -117,7 +123,7 @@ class LifeRecordsSync(private val context: Context, private val store: LifeRecor
                     else -> "offline"
                 }
                 is IllegalArgumentException, is IllegalStateException -> when (e.message) {
-                    "setup_required", "origin_untrusted", "account_changed", "unsupported" -> e.message!!
+                    "setup_required", "character_required", "origin_untrusted", "account_changed", "unsupported" -> e.message!!
                     else -> "invalid_response"
                 }
                 else -> "offline"
