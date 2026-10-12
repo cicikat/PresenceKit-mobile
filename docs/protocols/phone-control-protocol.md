@@ -1,3 +1,5 @@
+工单 288：角色动作使用默认开放的工具权限，不再有 safe/danger 模式、聊天二次确认、手机起手/锁屏二次确认或敏感页面确认状态。phone_control/step 状态为 continue/done/refused；refused 表示连接/参数/任务失败。用户可手动关闭角色工具与 Android 系统权限；步数、取消、鉴权和真实设备依赖保持有效。被动屏幕观测仍使用其独立隐私过滤。
+
 # 手机自动化协议（phone control / "computer use 手机版"）
 
 > 状态：v1，2026-07-25 起草。后端四步（契约/敏感拦截/循环端点/工具注册）与 Android 三步

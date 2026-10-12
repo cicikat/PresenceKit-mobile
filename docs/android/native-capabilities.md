@@ -1,3 +1,5 @@
+工单 288：角色动作使用默认开放的工具权限，不再有 safe/danger 模式、聊天二次确认、手机起手/锁屏二次确认或敏感页面确认状态。phone_control/step 状态为 continue/done/refused；refused 表示连接/参数/任务失败。用户可手动关闭角色工具与 Android 系统权限；步数、取消、鉴权和真实设备依赖保持有效。被动屏幕观测仍使用其独立隐私过滤。
+
 ## 梦境外观预设（2026-10-11）
 
 既有 getCustomThemePalette/setCustomThemePalette 继续读写不透明主题 JSON，新增可选 dreamAppearance v1 不增加权限或业务 API；Android 使用 commit 确认主题落盘，失败返回 theme_save_failed。AppSettingsStore 的 reportFailure 与 SettingsStore 同步，新梦境预设失败保留原选用；getCustomThemePalette 与外观编辑器可只读查看保存内容。旧图片/字体/外观 prefs 保留。真机重启恢复/GPU/键盘验收 observe，详见 mobile/dream-flow-appearance.md。

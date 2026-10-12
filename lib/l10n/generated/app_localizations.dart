@@ -3985,18 +3985,6 @@ abstract class AppLocalizations {
   /// **'元模式'**
   String get diagnosticMetaMode;
 
-  /// No description provided for @diagnosticDangerMode.
-  ///
-  /// In zh, this message translates to:
-  /// **'危险模式'**
-  String get diagnosticDangerMode;
-
-  /// No description provided for @diagnosticSafeMode.
-  ///
-  /// In zh, this message translates to:
-  /// **'安全模式'**
-  String get diagnosticSafeMode;
-
   /// No description provided for @diagnosticModel.
   ///
   /// In zh, this message translates to:
@@ -4102,7 +4090,7 @@ abstract class AppLocalizations {
   /// No description provided for @phoneControlTestDescription.
   ///
   /// In zh, this message translates to:
-  /// **'跳过 LLM 判断和聊天内二次确认，直接发起一次手机自动化任务；仍然要先在后端开启危险模式，安全模式下会直接拒绝。'**
+  /// **'直接发起一次手机自动化任务，使用当前角色工具权限；可在后端权限设置中手动关闭。'**
   String get phoneControlTestDescription;
 
   /// No description provided for @phoneControlTestHint.

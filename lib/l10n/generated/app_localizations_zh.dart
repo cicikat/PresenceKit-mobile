@@ -2114,12 +2114,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get diagnosticMetaMode => '元模式';
 
   @override
-  String get diagnosticDangerMode => '危险模式';
-
-  @override
-  String get diagnosticSafeMode => '安全模式';
-
-  @override
   String get diagnosticModel => '模型';
 
   @override
@@ -2175,7 +2169,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get phoneControlTestDescription =>
-      '跳过 LLM 判断和聊天内二次确认，直接发起一次手机自动化任务；仍然要先在后端开启危险模式，安全模式下会直接拒绝。';
+      '直接发起一次手机自动化任务，使用当前角色工具权限；可在后端权限设置中手动关闭。';
 
   @override
   String get phoneControlTestHint => '任务描述，例如：帮我点杯奶茶';

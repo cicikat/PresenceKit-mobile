@@ -19,7 +19,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 // 手机自动化循环协调服务：观察（读屏幕/截屏）→ 上报后端 /phone_control/step → 拿下一步动作 →
-// 本地二次拦截 → 执行 → 循环，直到 done/need_confirmation/refused/取消/步数超限。
+// 执行 → 循环，直到 done/refused/取消/步数超限。
 // 后端已经过一遍 core/phone_control/sensitive_filter.py，这里的本地校验是防御性的第二道闸，
 // 不是"后端说了算"——两边独立判断，任一方拦截即停，参见 docs/protocols/phone-control-protocol.md。
 class PhoneControlService : Service() {
@@ -124,10 +124,6 @@ class PhoneControlService : Service() {
             val observation = YexuanAccessibilityService.capturePhoneControlObservation()
                 ?: return LoopOutcome("任务已停止", "读取屏幕失败，已停止")
 
-            if (isSensitiveObservation(observation)) {
-                return LoopOutcome("需要你确认", "识别到敏感页面，已本地拦截并停下")
-            }
-
             val response = try {
                 postStep(baseUrl, token, taskId, step, observation, lastAction, lastActionResult)
             } catch (error: Exception) {
@@ -139,18 +135,11 @@ class PhoneControlService : Service() {
                 "continue" -> {
                     val action = response.optJSONObject("action")
                         ?: return LoopOutcome("任务已停止", "后端没有给出下一步动作")
-                    if (isSensitiveAction(action)) {
-                        return LoopOutcome("需要你确认", "下一步动作命中本地敏感词，已拦截")
-                    }
                     lastAction = action
                     lastActionResult = executeAction(action, observation)
                     updateOngoingNotification("正在操作（第 $step 步）：${task.ifBlank { "手机任务" }}", taskId)
                 }
                 "done" -> return LoopOutcome("手机任务完成", "已经完成")
-                "need_confirmation" -> return LoopOutcome(
-                    "需要你确认",
-                    response.optString("message").ifBlank { "需要你确认一下" },
-                )
                 "refused" -> return LoopOutcome(
                     "任务已停止",
                     response.optString("message").ifBlank { "任务被拒绝" },
@@ -168,19 +157,6 @@ class PhoneControlService : Service() {
     private fun requestCancel(reason: String) {
         cancelRequested = true
         Log.d(tag, "phone control cancel requested: $reason")
-    }
-
-    // 复用无障碍服务里被动屏幕采集已有的敏感包名/文案关键词表——两条判断路径共用同一份
-    // "什么算敏感"的定义。这里额外把节点文本、辅助描述和窗口标题一起丢进去判断。
-    private fun isSensitiveObservation(observation: YexuanAccessibilityService.PhoneControlObservation): Boolean {
-        val texts = observation.nodes.flatMap { listOf(it.text, it.contentDesc) } + observation.screenTitle
-        return YexuanAccessibilityService.isSensitiveObservation(observation.packageName, texts)
-    }
-
-    private fun isSensitiveAction(action: JSONObject): Boolean {
-        val texts = mutableListOf<String>()
-        action.optString("text").takeIf { it.isNotBlank() }?.let(texts::add)
-        return YexuanAccessibilityService.isSensitiveObservation("", texts)
     }
 
     private fun executeAction(

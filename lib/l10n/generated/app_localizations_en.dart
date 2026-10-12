@@ -2217,12 +2217,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticMetaMode => 'Meta mode';
 
   @override
-  String get diagnosticDangerMode => 'Danger mode';
-
-  @override
-  String get diagnosticSafeMode => 'Safe mode';
-
-  @override
   String get diagnosticModel => 'Model';
 
   @override
@@ -2279,7 +2273,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get phoneControlTestDescription =>
-      'Skips the LLM decision and in-chat confirmation, starting a phone automation task directly; danger mode must still be enabled on the backend first, or it\'s refused in safe mode.';
+      'Starts a phone automation task with the current character tool permissions. You can disable it in backend permission settings.';
 
   @override
   String get phoneControlTestHint =>

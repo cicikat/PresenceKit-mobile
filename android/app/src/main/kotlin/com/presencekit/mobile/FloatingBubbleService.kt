@@ -35,7 +35,6 @@ class FloatingBubbleService : Service() {
     private val danger = Color.rgb(139, 58, 43)
     private val warn = Color.rgb(184, 137, 58)
     private var bubbleCreatedAt = 0L
-    private var lockConfirmPending = false
 
     override fun onCreate() {
         super.onCreate()
@@ -66,7 +65,6 @@ class FloatingBubbleService : Service() {
     private fun showBubble(intent: Intent?) {
         removeBubble()
         bubbleCreatedAt = System.currentTimeMillis()
-        lockConfirmPending = false
 
         val mode = intent?.getStringExtra("mode").orEmpty()
         val target = intent?.getStringExtra("target").orEmpty().ifBlank { "meituan" }
@@ -76,6 +74,19 @@ class FloatingBubbleService : Service() {
         val isOrder = mode == "order"
         val isLock = mode == "lock"
         val isControl = mode == "control"
+        if (isControl) {
+            if (taskId.isNotBlank() && task.isNotBlank()) PhoneControlService.start(this, taskId, task)
+            stopSelf()
+            return
+        }
+        if (isLock) {
+            lockNowOrOpenApp()
+            return
+        }
+        if (isOrder) {
+            openShoppingTarget(target)
+            return
+        }
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -98,12 +109,7 @@ class FloatingBubbleService : Service() {
             },
         )
 
-        when {
-            isOrder -> addOrderContent(root, target)
-            isLock -> addLockContent(root, message)
-            isControl -> addControlContent(root, taskId, task)
-            else -> addChatContent(root, message)
-        }
+        addChatContent(root, message)
 
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -260,97 +266,8 @@ class FloatingBubbleService : Service() {
         root.addView(actions)
     }
 
-    private fun addLockContent(root: LinearLayout, message: String) {
-        addTagRow(root, "ACTION \u00b7 LOCK", danger)
-        addTitle(root, "\u4ed6\u60f3\u66ff\u4f60\u9501\u5c4f")
-        addVoice(root, message.ifBlank { "\u5df2\u7ecf\u5f88\u665a\u4e86\u3002\u6211\u66ff\u4f60\u6309\u4e00\u4e0b\uff0c\u597d\u5417\u3002" })
-        root.addView(
-            TextView(this).apply {
-                text = "\u203b \u53ea\u6709\u4f60\u70b9\u4e0b\u9762\u7684\u6309\u94ae\u540e\uff0c\u624d\u4f1a\u8c03\u7528\u7cfb\u7edf\u9501\u5c4f\u3002"
-                setTextColor(characterGhost)
-                textSize = 11f
-                typeface = Typeface.MONOSPACE
-                setPadding(0, dp(8), 0, dp(10))
-            },
-        )
-        addDivider(root)
-        val actions = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, dp(8), 0, 0)
-        }
-        var lockBtn: TextView? = null
-        lockBtn = actionText("\u66ff\u6211\u9501\u5c4f", true) {
-            if (!lockConfirmPending) {
-                lockConfirmPending = true
-                lockBtn?.text = "\u518d\u70b9\u786e\u8ba4\u9501\u5c4f"
-            } else {
-                lockNowOrOpenApp()
-            }
-        }
-        actions.addView(lockBtn)
-        actions.addView(actionText("\u6253\u5f00\u804a\u5929", false) { openApp() })
-        actions.addView(actionText("\u7a0d\u540e", false) { stopSelf() })
-        root.addView(actions)
-    }
 
-    private fun addOrderContent(root: LinearLayout, target: String) {
-        val label = if (target == "taobao") "\u6dd8\u5b9d" else "\u7f8e\u56e2"
-        addTagRow(root, "ACTION \u00b7 \u9700\u8981\u4f60\u786e\u8ba4", warn)
-        addTitle(root, "\u662f\u5426\u6253\u5f00 $label \u67e5\u770b\u8d2d\u7269\u8f66\uff1f")
-        addVoice(root, "\u5f53\u524d\u6ca1\u6709\u53ef\u4fe1\u7684\u5546\u54c1\u6216\u91d1\u989d\u6570\u636e\u3002\u6253\u5f00\u540e\u8bf7\u4f60\u81ea\u884c\u6838\u5bf9\uff0c\u5e94\u7528\u4e0d\u4f1a\u81ea\u52a8\u4e0b\u5355\u6216\u652f\u4ed8\u3002")
-        root.addView(
-            TextView(this).apply {
-                text = "\u203b \u4e0d\u4f1a\u81ea\u52a8\u52a0\u8d2d\u3001\u63d0\u4ea4\u8ba2\u5355\u6216\u652f\u4ed8\u3002"
-                setTextColor(characterGhost)
-                textSize = 11f
-                typeface = Typeface.MONOSPACE
-                setPadding(0, dp(8), 0, dp(10))
-            },
-        )
 
-        val actions = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, dp(8), 0, 0)
-        }
-        actions.addView(actionText("\u6253\u5f00 $label", true) { openShoppingTarget(target) })
-        actions.addView(actionText("\u6253\u5f00\u804a\u5929", false) { openApp() })
-        actions.addView(actionText("\u6682\u4e0d\u652f\u4ed8", false) { stopSelf() })
-        root.addView(actions)
-    }
-
-    private fun addControlContent(root: LinearLayout, taskId: String, task: String) {
-        addTagRow(root, "ACTION · 需要你确认", warn)
-        addTitle(root, "要帮你操作手机？")
-        addVoice(root, task.ifBlank { "没有任务描述。" })
-        root.addView(
-            TextView(this).apply {
-                text = "※ 遇到密码/支付页面会自动停下，过程随时可取消。"
-                setTextColor(characterGhost)
-                textSize = 11f
-                typeface = Typeface.MONOSPACE
-                setPadding(0, dp(8), 0, dp(10))
-            },
-        )
-        addDivider(root)
-        val actions = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, dp(8), 0, 0)
-        }
-        actions.addView(
-            actionText("开始", true) {
-                if (taskId.isNotBlank()) {
-                    PhoneControlService.start(this, taskId, task)
-                }
-                stopSelf()
-            },
-        )
-        actions.addView(actionText("打开聊天", false) { openApp() })
-        actions.addView(actionText("取消", false) { stopSelf() })
-        root.addView(actions)
-    }
 
     private fun addTagRow(root: LinearLayout, textValue: String, color: Int) {
         root.addView(
