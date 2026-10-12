@@ -388,3 +388,8 @@ Reality 活动对话由同一 owner/char 的 canonical turn sink 落盘，使用
 GET /activity/records（state.read）默认仅列来源元数据；指定 source_ref 才读取原文。query_activity_records 使用 dispatcher 身份；未指定引用时关键词/时间查询跨当前身份的活动原文。概要是 revision 绑定的分段摘录，标注 coverage/pending，回复发送后构建；失败保留原文，后续对话或关闭重试。canonical 撤回也遮蔽已关联的局部召回，并使旧概要失效。
 
 表达状态 has_signal=false 表示无短时信号，区别于明确 neutral。来源 turn/source_at/version/expires_at 可观测，最多30分钟且只读不续期；旧固定 mood 不转成新余韵。prompt 的 expression_afterglow 是可裁剪层，prompt_eligible 表示资格，实际注入以 prompt 观测为准。没有新增模型情绪检测、随机活动或成长等级控制开关。
+
+
+## 工单288：生活记录归属
+
+生活记录能力、上传、分页、识别重试请求携带 char_id；应用的生活记录控制器随当前角色切换。原生离线队列以服务地址、owner、角色三项区分，任务保存创建时角色，后台同步继续使用该角色。旧无角色归属队列保留并停止自动上传，不能在切角色后认领给新角色。后端识别任务使用记录所属角色，不依赖完成时当前角色。Flutter 回归和原生 LifeRecordsTest 通过，真实设备后台切角色同步未实测。
