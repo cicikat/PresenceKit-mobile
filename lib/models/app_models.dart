@@ -1636,8 +1636,6 @@ class BackendDiagnostics {
     this.dataPath,
     this.dataPathError,
     this.dataPathForbidden = false,
-    this.metaMode,
-    this.metaModeError,
     this.statusSummary,
     this.statusSummaryError,
     this.activeCharacter,
@@ -1660,8 +1658,6 @@ class BackendDiagnostics {
   // round-鉴权分层-scoped-tokens-移动端.md §2.3；渲染时不应视为故障。
   final bool dataPathForbidden;
 
-  final BackendMetaMode? metaMode;
-  final String? metaModeError;
 
   final BackendStatusSummary? statusSummary;
   final String? statusSummaryError;
@@ -1723,22 +1719,6 @@ class PhoneControlDebugResult {
 
   final bool ok;
   final String message;
-}
-
-class BackendMetaMode {
-  const BackendMetaMode({required this.mode, this.expiresAt});
-
-  factory BackendMetaMode.fromJson(Map<String, dynamic> json) {
-    return BackendMetaMode(
-      mode: (json['mode'] ?? '').toString(),
-      expiresAt: json['expires_at']?.toString(),
-    );
-  }
-
-  final String mode;
-  final String? expiresAt;
-
-  bool get isDanger => mode == 'danger';
 }
 
 class BackendStatusSummary {

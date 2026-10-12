@@ -15,7 +15,6 @@ import '../models/app_models.dart'
         BackendChatResponse,
         BackendDiagnostics,
         BackendDreamSettingsSummary,
-        BackendMetaMode,
         BackendPhoneControlStatus,
         BackendStatusSummary,
         BehaviorDecisionStatus,
@@ -1471,10 +1470,7 @@ class BackendClient {
         '/system/data-path',
         token: token,
       ).then<Object?>((d) => d).catchError((e) => e),
-      _request(
-        '/system/meta-mode',
-        token: token,
-      ).then<Object?>((d) => d).catchError((e) => e),
+      Future<Object?>.value(null),
       _request(
         '/status',
         token: token,
@@ -1516,14 +1512,6 @@ class BackendClient {
       dataPathForbidden = true;
     } else {
       dataPathError = errMsg(results[0]);
-    }
-
-    BackendMetaMode? metaMode;
-    String? metaModeError;
-    if (results[1] is Map<String, dynamic>) {
-      metaMode = BackendMetaMode.fromJson(results[1] as Map<String, dynamic>);
-    } else {
-      metaModeError = errMsg(results[1]);
     }
 
     BackendStatusSummary? statusSummary;
@@ -1589,8 +1577,6 @@ class BackendClient {
       dataPath: dataPath,
       dataPathError: dataPathError,
       dataPathForbidden: dataPathForbidden,
-      metaMode: metaMode,
-      metaModeError: metaModeError,
       statusSummary: statusSummary,
       statusSummaryError: statusSummaryError,
       activeCharacter: activeCharacter,
@@ -1607,7 +1593,7 @@ class BackendClient {
   }
 
   /// 调试用：跳过 LLM 判断和 chat 内二次确认，直接发起一次手机自动化任务；
-  /// 后端仍然会走 danger-mode 门禁，安全模式下会返回 ok=false + 拒绝文案，
+  /// 后端按当前角色权限和连接条件执行，无需切换模式，
   /// 不是异常——调用方按 PhoneControlDebugResult.ok 判断，不要用 try/catch 分流。
   Future<PhoneControlDebugResult> debugStartPhoneControl({
     required String task,

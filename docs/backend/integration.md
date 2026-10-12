@@ -1,3 +1,7 @@
+# 工单 288：移除模式诊断
+
+后端已删除 `/system/meta-mode`。能力检查不再请求或展示 safe/danger 模式；角色工具默认开放，用户可在后端管理面手动调整权限。真实依赖与连接检查继续生效。
+
 ## 聊天交接根因修复（2026-10-08）
 
 280 长文档：现有 `/upload/ingest`、Bearer/chat scope 和 media_refs 不变。后端保存 TXT/MD/DOCX 完整解析正文，角色可分页回读并用分块概要/进度接续。422 的既有 `{code,message}` 新增 `document_text_too_large`（解析正文超过50万字符）与 `document_archive_failed`；不把保存失败当成功。旧 DOC 请转换为 DOCX。手机无新设置/权限/通知或poll/ack字段，真实上传与模型效果仍 observe。

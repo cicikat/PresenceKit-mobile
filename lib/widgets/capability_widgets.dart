@@ -1606,21 +1606,6 @@ class BackendDiagnosticsCard extends StatelessWidget {
                     : null,
               ),
             const SizedBox(height: 6),
-            // ── 元模式 ──────────────────────────────────────────────────
-            if (d.metaModeError != null)
-              _errorRow(
-                context,
-                context.l10n.diagnosticMetaMode,
-                d.metaModeError!,
-              )
-            else if (d.metaMode != null)
-              _infoRow(
-                context.l10n.diagnosticMetaMode,
-                d.metaMode!.isDanger
-                    ? context.l10n.diagnosticDangerMode
-                    : context.l10n.diagnosticSafeMode,
-                danger: d.metaMode!.isDanger,
-              ),
             // ── 模型 ─────────────────────────────────────────────────────
             if (d.statusSummaryError != null)
               _errorRow(
