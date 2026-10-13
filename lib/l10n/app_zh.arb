@@ -866,6 +866,7 @@
   "themeRoleScrim": "遮罩颜色",
   "backendInvalidAddress": "后端地址格式不对",
   "tokenSetTitle": "设置访问 Token",
+  "tokenFirstUseHelp": "首次使用说明：PresenceKit 手机端需要配合后端使用。请先将后端部署并运行在服务器或电脑上，然后在此填写后端签发的 mobile Token。保存后，请在「后端节点」中设置手机可访问的后端地址。",
   "tokenReplaceTitle": "设置 / 更换 Token",
   "tokenHelp": "填后端签发的 mobile token（emt_ 开头）；旧 admin secret 仍可用但不建议。Token 只保存在 Android 本机私有存储中，不会打包进应用。",
   "tokenRequiredError": "请填写访问 Token",

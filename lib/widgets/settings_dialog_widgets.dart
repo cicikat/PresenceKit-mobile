@@ -85,6 +85,10 @@ class _AdminTokenDialogState extends State<AdminTokenDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (widget.required) ...[
+            Text(l10n.tokenFirstUseHelp, style: TextStyle(color: widget.c.ink2)),
+            const SizedBox(height: 12),
+          ],
           Text(l10n.tokenHelp, style: TextStyle(color: widget.c.ink2)),
           const SizedBox(height: 12),
           TextField(

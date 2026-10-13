@@ -3115,6 +3115,12 @@ abstract class AppLocalizations {
   /// **'设置访问 Token'**
   String get tokenSetTitle;
 
+  /// No description provided for @tokenFirstUseHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'首次使用说明：PresenceKit 手机端需要配合后端使用。请先将后端部署并运行在服务器或电脑上，然后在此填写后端签发的 mobile Token。保存后，请在「后端节点」中设置手机可访问的后端地址。'**
+  String get tokenFirstUseHelp;
+
   /// No description provided for @tokenReplaceTitle.
   ///
   /// In zh, this message translates to:

@@ -866,6 +866,7 @@
   "themeRoleScrim": "Scrim",
   "backendInvalidAddress": "Invalid backend address",
   "tokenSetTitle": "Set access token",
+  "tokenFirstUseHelp": "First-time setup: PresenceKit mobile requires a running backend. Deploy and run the backend on a server or computer, then enter the mobile token issued by that backend here. After saving, set a backend address your phone can reach in Backend node settings.",
   "tokenReplaceTitle": "Set / replace token",
   "tokenHelp": "Enter a mobile token issued by the backend (starts with emt_). Legacy admin secrets still work but are not recommended. The token stays in Android private storage and is never bundled with the app.",
   "tokenRequiredError": "Enter an access token",

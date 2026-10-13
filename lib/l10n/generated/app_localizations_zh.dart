@@ -1633,6 +1633,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tokenSetTitle => '设置访问 Token';
 
   @override
+  String get tokenFirstUseHelp =>
+      '首次使用说明：PresenceKit 手机端需要配合后端使用。请先将后端部署并运行在服务器或电脑上，然后在此填写后端签发的 mobile Token。保存后，请在「后端节点」中设置手机可访问的后端地址。';
+
+  @override
   String get tokenReplaceTitle => '设置 / 更换 Token';
 
   @override

@@ -1708,6 +1708,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tokenSetTitle => 'Set access token';
 
   @override
+  String get tokenFirstUseHelp =>
+      'First-time setup: PresenceKit mobile requires a running backend. Deploy and run the backend on a server or computer, then enter the mobile token issued by that backend here. After saving, set a backend address your phone can reach in Backend node settings.';
+
+  @override
   String get tokenReplaceTitle => 'Set / replace token';
 
   @override
