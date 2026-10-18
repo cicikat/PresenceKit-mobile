@@ -89,6 +89,34 @@ flutter build apk --release --flavor prod
 
 `CredentialMigrationTest` 覆盖 legacy 到 secure 的成功迁移与明文清理、安全写入失败时保留明文、secure 优先级、幂等性、token 替换和删除。Android Keystore 的真实操作及已安装应用恢复，仍需按 `docs/v1-release-readiness.md` 的真机流程验收。
 
+## 无线传输 / 安装 APK（AA4）
+
+双击根目录 `AA4无线连接并传给手机.bat`。Android 11 及以上支持原生无线调试，电脑与手机需处于同一 Wi-Fi；无需先插 USB。
+
+1. 手机打开「设置 → 开发者选项 → 无线调试」。未显示开发者选项时，通常在「关于本机」连续点击版本号，依系统提示启用；不同厂商路径可能不同。
+2. 首次使用在脚本选择 `1`，手机点击「使用配对码配对设备」，保持弹窗打开，按提示输入弹窗中的 `IP:端口` 和 6 位配对码。配对码只在本机隐藏输入，不需要发给他人；脚本不保存它。
+3. 返回手机「无线调试」主页，输入主页显示的 `IP:端口`。**连接端口与配对弹窗端口通常不同**。之后通常直接选择 `2` 连接，不必重复配对；若手机已忘记该电脑，则重新配对。
+4. 连接后选择：`1` 安装最近修改的已有发行 APK、`2` 安装已有测试 APK、`3` 手动填写/拖入 APK 路径、`0` 仅连接。自动选择会比较对应 `dist/` 与 `build/app/outputs/flutter-apk/` 的文件修改时间，并显示完整路径、时间和大小供确认；文件修改时间不保证等同于最高版本，请核对文件。安装使用指定无线设备的 `adb -s ... install -r`，不会自动卸载、清数据或强制降级。
+
+AA4 只连接并安装已有 APK，不会重新打包。要先打新的发行 APK 可用 AA1；也可先在 AA4 选择仅连接，再运行 AA2 / AA3 打包安装。AA2 / AA3 仍要求恰好一个 ADB 设备；USB 与 Wi-Fi 同时连接同一手机也可能被视为两台设备，拔掉 USB 后重试。测试包与发行包使用不同 package，不会互相替换。
+
+可在仓库根通过 PowerShell 使用参数（地址取自手机当前页面）：
+
+```powershell
+# 已配对：仅连接。
+.\scripts\wireless_phone.ps1 -ConnectAddress '192.168.1.10:37123' -ConnectOnly
+
+# 指定已有 APK 无线安装，相对路径从仓库根解析。
+.\scripts\wireless_phone.ps1 -ConnectAddress '192.168.1.10:37123' -ApkPath 'dist/release/PresenceKit-mobile-v1.3.0.apk'
+
+# 可选：通过当前无线 ADB 连接，把手机 127.0.0.1:8080 转发到电脑后端。
+.\scripts\wireless_phone.ps1 -ConnectAddress '192.168.1.10:37123' -ConnectOnly -ReverseBackend
+```
+
+无线传包与 app 的后端连接分别配置。默认不修改后端地址或建立隧道；需要本机后端时可显式传 `-ReverseBackend`，并保持电脑后端与 ADB 连接运行。Wi-Fi 切换、无线调试关闭或手机重启后，端口可能变化，重新运行连接并恢复隧道。连接失败时检查同一网络、AP 隔离/防火墙、手机当前连接端口；`adb pair` 不支持时更新 Android SDK Platform-Tools。使用后可关闭手机无线调试。
+
+范围：仅本机开发工具，无跨端影响；未改 app 设置、后台服务、mobile channel 或后端/桌面能力配置。官方说明：[Android ADB 无线调试](https://developer.android.com/tools/adb#connect-to-a-device-over-wi-fi)。自动化/模拟验证不能代替真实手机首次配对、无线安装和重连验收。
+
 ## 常用命令
 
 > 以下命令在仓库根目录执行。`flutter`/`adb` 不在 PATH 时，SDK 位置以
