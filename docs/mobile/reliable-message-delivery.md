@@ -6,7 +6,7 @@
 
 - **请求总期限与真实取消**：BackendClient六类HTTP入口共用HttpRequestBudget。打开请求（含HTTPS CONNECT）最多8秒，认证/打开/请求头/正文共享总期限；普通HTTP20秒、聊天120秒、上传180秒，其他方法保留各自timeout。过期关闭该请求独占client，接收取消只影响poll/activate/ack，不误伤发送与上传。保持用户代理/VPN选择，没有隐式DIRECT或绕VPN。暂不共享client连接池，避免取消poll连带中断未知结果的发送。
 - **连续前台收件**：wait=25、limit=50，成功后100ms让出事件循环再补下一页，无固定5秒空档；失败1/2/4/8/16秒退避。history与首次收件并行，经既有身份/出现次数对账。pause/resume、连接变化、网络变化切换receive epoch，旧回包及finally不能覆盖新任务。
-- **网络恢复**：原生MobileNetworkObserver观察默认网络，150ms合并可用/丢失/能力/路由变化。`presence_mobile/network` EventChannel只传递递增epoch，NetworkStatusService注入ChatController；不传地址、VPN名或凭据，不改AppShell领域状态，不新增权限（复用ACCESS_NETWORK_STATE）。后台同一观察器中断旧relay/poll并缩短恢复等待；没有relay的已退出服务仍依赖系统补偿，不能承诺即时唤醒。
+- **网络恢复**：原生MobileNetworkObserver观察默认网络，150ms合并可用/丢失/能力/路由变化；只在网络归属、可达性、传输类型或DNS/路由/代理/MTU改变时恢复，忽略纯带宽/信号和重复链路回调，避免取消健康收件。`presence_mobile/network` EventChannel只传递递增epoch，NetworkStatusService注入ChatController；不传地址、VPN名或凭据，不改AppShell领域状态，不新增权限（复用ACCESS_NETWORK_STATE）。后台同一观察器中断旧relay/poll并缩短恢复等待；没有relay的已退出服务仍依赖系统补偿，不能承诺即时唤醒。
 - **完整本机inbox**：复用原pendingMobileEnvelopes，最多500条。前台所有角色的poll信封在seen/UI/服务端ACK前先落盘；request_id、turn_id/id、seq、display_text、artifacts、sticker、完整behavior、voice_available随信封保存。后台也保留空正文的附件/贴纸信封，不额外生成空通知。
 - **非删除交接**：新增peekPendingMobileEnvelopes，只有当前scope/epoch已接纳到页面状态之后才调用ackPendingMobileEnvelopes，以origin+owner+charId及精确id+seq确认。迟到peek不删除信封，进程重开可读；确认写盘失败保留错误。legacy consume方法保留旧ABI，新页面不再使用。页面状态接纳不是逐像素绘制确认；已确认后的历史恢复仍由后端canonical history负责，不宣称手机离线完整历史库或跨重启exactly-once。
 - **平台通道期限**：收件相关设置/落盘/peek/ack调用8秒期限，后台服务running只读查询2秒后降级为false；不改变等待用户操作的文件选择/权限对话框。

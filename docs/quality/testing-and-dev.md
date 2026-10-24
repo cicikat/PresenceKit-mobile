@@ -1,3 +1,9 @@
+## 手机可靠收件 R0/R1（2026-10-25 收尾，工单42）
+
+Flutter 全量393项通过，flutter analyze零问题；Android定向25项（store14、settings5、notification1、network2、pull recovery3）通过；后端ACK/队列/分发相关52项通过。覆盖真实本地CONNECT黑洞与正文停滞的期限/资源关闭、收件取消不误伤发送、历史并行收件、完整inbox及精确确认、后台回源重试、网络变化及带宽噪声隔离。自动测试不代表已验证用户实际V2Ray路径。
+
+最终 flutter build apk --debug --flavor dev --no-pub 成功（构建日志2026-10-24 21:00，2026-10-25复核）；产物 build/app/outputs/flutter-apk/app-dev-debug.apk，SHA-256：0093C42C7C4DFCFFF78E05E0640D8C6CDD540C9E93F8541EF3979CBBAFE2C37E。日志位于 build/review/mobile-delivery-audit/；Android结果在 build/app/test-results/testDevDebugUnitTest/。用户明确手机未连接、不安装；未安装、未部署服务器、未正式发布。真实代理开关/节点、Wi-Fi/流量、前后台/Doze/杀进程、真实模型时延仍not-run。独立手机WS尚未接入，见工单43；三面边界见 [可靠消息收件](../mobile/reliable-message-delivery.md)。
+
 ## 梦境 Flow 外观（2026-10-11）
 
 工单 33：flutter gen-l10n 成功；flutter analyze --no-pub 零问题；flutter test --no-pub 全量 376 项通过。flutter build web --no-pub --no-web-resources-cdn 和 flutter build apk --debug --flavor dev --no-pub 均成功。实际 Flutter 网页 390×844 四种主题/日夜截图已检查，预览期间零异常，关闭窗口返回父设置通过；隔离浏览器以 503 fixture 拦截后端，启动阶段有连接异常，不能作为后端连接验收。证据在 build/review/dream-flow/，Dev APK 在 build/app/outputs/flutter-apk/app-dev-debug.apk。未安装、未正式发布；真机 GPU、软键盘、相册、重启与功耗 not-run。纯本机外观，无跨端行为影响。

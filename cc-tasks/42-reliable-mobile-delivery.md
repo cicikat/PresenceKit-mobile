@@ -10,7 +10,7 @@
 - [x] R1b：后端ACK先写盘成功后返回；注入False/异常/恢复验证；mobile持久镜像不再等其他网络通道完成。
 - [x] R1c：本机pending改成非删除读取+按scope/身份确认，前台先持久完整信封再后端ACK；保留artifacts/sticker/behavior，提供既有状态入口只读数量/容量。
 - [x] R1d：后台signal回源失败保留补收意图并有界退避重试，网络恢复即重连/补拉；不改变授权与通知闸门。
-- [ ] R1e：同步三面文档/ABI与跨仓总账、更新known-issues；Flutter/Android/后端相关回归和分析、Dev APK构建，独立提交各修复。
+- [x] R1e：同步三面文档/ABI与跨仓总账、更新known-issues；Flutter/Android/后端相关回归和分析、Dev APK构建，独立提交各修复。
 - [ ] 现场验收（not-run直到真机证据）：V2Ray开/关/切节点、Wi-Fi/流量切换、前后台/杀进程/Doze、真实模型；安装/服务器部署版本核对，首条/整条到达p50/p95。
 
 验收证据逐项补入；静态/单测/Dev构建不等于真机。新落盘状态/观测同单提供；服务端业务真值与token权限不变。先后关系：R0a→R0b→R1a；后端R1b可独立；R1c→R1d→R1e；R2依赖上述可靠补收。
@@ -22,3 +22,5 @@ R0b/R1a证据：mobile_receive_loop_test三项（旧poll迟到不能清新状态
 R1c/R1d证据：Flutter全量393 passed / analyze 0 issues（日志build/review/mobile-delivery-audit/flutter-final.log与analyze-final.log）；Android MobileDeliveryStateStoreTest14、SettingsChannelDeliveryTest5、MobileNotificationDeliveryTest1、MobileNetworkObserverTest1、MobilePullRecoveryTest3，共24 passed。覆盖stash失败不ACK、旧代peek可重放、精确scope/id/seq确认、完整元数据、失败后不依赖新signal即可补收、退避上限、终止auth失败与signal合并。已有轮询节拍/历史串行的3个旧测试按新合同更新后全量通过。
 
 网络恢复收尾：新增带宽估值/重复LinkProperties噪声测试先断言失败（expected1/actual2）；MobileNetworkObserver仅在网络归属、可达性、传输类型、DNS/路由/代理/MTU变化时重连，忽略纯带宽/信号变化，避免健康收件被频繁取消。Android观察器2项、相关合计25 passed；Flutter最终393 passed/分析零问题保持有效（Dart未再变更）。
+
+R1e证据（2026-10-25收尾）：手机分步提交1ae32a9/f251c1e/4663d6c/06387c0；后端修复19176cc、三面总账收尾afb3cd6。Flutter393、Android25、后端52通过，分析零问题；最终Dev APK构建成功，SHA-256与日志位置见docs/quality/testing-and-dev.md。本期无新增可见文案/本地化key；管理面、桌面、手机与原调用链核对见docs/mobile/reliable-message-delivery.md。用户明确手机未连接、不安装；未安装、未部署，现场验收继续not-run。独立WS仅工单43 roadmap。
