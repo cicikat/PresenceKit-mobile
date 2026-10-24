@@ -13,6 +13,7 @@ import '../models/session_scope.dart';
 import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/device_services.dart';
+import '../services/network_status_service.dart';
 import 'chat_history_reconciliation.dart';
 import '../models/chat_history_display.dart';
 import 'chat_session_coordinator.dart';
@@ -38,6 +39,7 @@ class ChatController extends ChangeNotifier {
     resolvePresenceSession,
     void Function()? onPresenceSessionInvalid,
     String? Function()? presenceBindError,
+    Stream<void>? networkChanges,
   }) : _backend = backend,
        _token = token,
        _settings = settings,
@@ -52,6 +54,11 @@ class ChatController extends ChangeNotifier {
        _onPresenceSessionInvalid = onPresenceSessionInvalid,
        _presenceBindError = presenceBindError {
     scrollController.addListener(_handleScroll);
+    _networkSubscription =
+        (networkChanges ?? const NetworkStatusService().changes).listen(
+          (_) => _handleNetworkChange(),
+          onError: (Object _) {},
+        );
   }
 
   static const initialVisibleMessageCount = 80;
@@ -95,6 +102,11 @@ class ChatController extends ChangeNotifier {
   final Map<String, String> _recentIdsByFingerprint = {};
   final List<({String text, ReplyTarget? replyTo})> _pendingSends = [];
   Timer? _pollTimer;
+  StreamSubscription<void>? _networkSubscription;
+  BackendClient? _receivingBackend;
+  int _receiveEpoch = 0;
+  int _receiveFailures = 0;
+  bool _pollingEnabled = true;
   Timer? _uncertainTimer;
   final List<List<ChatMessage>> _messageQueue = [];
   Completer<void>? _revealWake;
@@ -132,6 +144,8 @@ class ChatController extends ChangeNotifier {
 
   Future<void> start() async {
     if (_accessToken == null) return;
+    if (_session.disposed) return;
+    _pollingEnabled = true;
     if (_session.initialSync != null) return _session.initialSync!;
     if (_session.initialSyncComplete) {
       _ensurePollTimer();
@@ -139,6 +153,7 @@ class ChatController extends ChangeNotifier {
       return;
     }
     _pollTimer?.cancel();
+    _pollTimer = null;
     final work = _startInitialSync();
     _session.initialSync = work;
     try {
@@ -150,33 +165,80 @@ class ChatController extends ChangeNotifier {
 
   Future<void> _startInitialSync() async {
     final generation = _session.generation;
-    await loadHistory(reconcileLocal: true);
-    if (_session.isStale(generation)) return;
-    final historyOk = historyLoaded && historyError == null;
+    final historyWork = loadHistory(reconcileLocal: true);
     await _replayPendingEnvelopes();
     if (_session.isStale(generation)) return;
     await activateMobile(source: ChatDeliverySource.initialSync);
     if (_session.isStale(generation)) return;
-    if (historyOk) {
+    _ensurePollTimer();
+    await historyWork;
+    if (_session.isStale(generation)) return;
+    if (historyLoaded && historyError == null) {
       _session.initialSyncComplete = true;
     }
     _ensurePollTimer();
   }
 
-  void _ensurePollTimer() {
-    if (_pollTimer != null) return;
-    _pollTimer = Timer.periodic(
-      const Duration(seconds: 5),
-      (_) => unawaited(pollIfBackgroundUnavailable()),
-    );
+  void _ensurePollTimer({Duration delay = Duration.zero}) {
+    if (_pollTimer != null ||
+        !_pollingEnabled ||
+        _session.disposed ||
+        _accessToken == null)
+      return;
+    final epoch = _receiveEpoch;
+    _pollTimer = Timer(delay, () {
+      _pollTimer = null;
+      unawaited(_receiveCycle(epoch));
+    });
+  }
+
+  Future<void> _receiveCycle(int epoch) async {
+    try {
+      await pollIfBackgroundUnavailable();
+    } catch (error) {
+      if (epoch == _receiveEpoch && !_session.disposed) {
+        mobileError = error.toString();
+        notifyListeners();
+      }
+    } finally {
+      if (_pollingEnabled && !_session.disposed && epoch == _receiveEpoch) {
+        _receiveFailures = mobileError == null
+            ? 0
+            : math.min(_receiveFailures + 1, 5);
+        _ensurePollTimer(
+          delay: mobileError == null
+              ? const Duration(milliseconds: 100)
+              : Duration(seconds: 1 << (_receiveFailures - 1)),
+        );
+      }
+    }
+  }
+
+  void _cancelReceiveWork() {
+    _receiveEpoch++;
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    _receivingBackend?.cancelMobileReceive();
+    _backend().cancelMobileReceive();
+    _foregroundDelivery = null;
+    pollingMobile = false;
+  }
+
+  void _handleNetworkChange() {
+    if (!_pollingEnabled || _session.disposed) return;
+    _cancelReceiveWork();
+    _receiveFailures = 0;
+    _ensurePollTimer();
   }
 
   void pausePolling() {
-    _pollTimer?.cancel();
-    _pollTimer = null;
+    _pollingEnabled = false;
+    _cancelReceiveWork();
   }
 
   void resumePolling() {
+    _pollingEnabled = true;
+    _cancelReceiveWork();
     if (!_session.initialSyncComplete) {
       unawaited(start());
       return;
@@ -267,17 +329,18 @@ class ChatController extends ChangeNotifier {
     if (_session.isStale(generation)) return;
     await _replayPendingEnvelopes();
     if (_session.isStale(generation)) return;
-    await loadHistory(reconcileLocal: true);
-    if (_session.isStale(generation)) return;
+    final historyWork = loadHistory(reconcileLocal: true);
     await activateMobile(source: ChatDeliverySource.catchUp);
     if (_session.isStale(generation)) return;
     if (mobileActive && mobileError == null) backendError = null;
     _ensurePollTimer();
     notifyListeners();
+    await historyWork;
   }
 
   Future<void> resetForConnectionChange({bool restart = true}) async {
     _session.beginEpoch();
+    pausePolling();
     _session.initialSync = null;
     _session.refresh = null;
     _foregroundDelivery = null;
@@ -1113,9 +1176,12 @@ class ChatController extends ChangeNotifier {
     final generation = _session.generation;
     final origin = _deliveryOrigin()?.trim();
     final owner = _deliveryOwner()?.trim();
+    final epoch = _receiveEpoch;
+    _receivingBackend = _backend();
     try {
       final result = await _backend().activateMobile(token: token);
-      if (_staleDelivery(generation, origin, owner)) return;
+      if (epoch != _receiveEpoch || _staleDelivery(generation, origin, owner))
+        return;
       if (!result.ok || !result.active) {
         mobileActive = false;
         mobileError = result.error ?? 'mobile channel is not active';
@@ -1126,13 +1192,17 @@ class ChatController extends ChangeNotifier {
       mobileError = null;
       notifyListeners();
       await pollIfBackgroundUnavailable(source: source);
+    } on BackendRequestCancelled {
+      return;
     } on BackendException catch (e) {
-      if (_staleDelivery(generation, origin, owner)) return;
+      if (epoch != _receiveEpoch || _staleDelivery(generation, origin, owner))
+        return;
       mobileActive = false;
       mobileError = e.message;
       notifyListeners();
     } catch (e) {
-      if (_staleDelivery(generation, origin, owner)) return;
+      if (epoch != _receiveEpoch || _staleDelivery(generation, origin, owner))
+        return;
       mobileActive = false;
       mobileError = e.toString();
       notifyListeners();
@@ -1147,14 +1217,15 @@ class ChatController extends ChangeNotifier {
     final existing = _foregroundDelivery;
     if (existing != null) return existing;
     final generation = _session.generation;
+    final epoch = _receiveEpoch;
     late final Future<void> work;
     work =
         (() async {
           // Native ack and Flutter presentation are separate stages.
           await _replayPendingEnvelopes();
-          if (_session.isStale(generation)) return;
+          if (_session.isStale(generation) || epoch != _receiveEpoch) return;
           final backgroundRunning = await _relay.isBackgroundServiceRunning();
-          if (_session.isStale(generation)) return;
+          if (_session.isStale(generation) || epoch != _receiveEpoch) return;
           await pollMobile(source: source, animate: !backgroundRunning);
         })().whenComplete(() {
           if (identical(_foregroundDelivery, work)) _foregroundDelivery = null;
@@ -1173,18 +1244,25 @@ class ChatController extends ChangeNotifier {
     final generation = _session.generation;
     final origin = _deliveryOrigin()?.trim();
     final owner = _deliveryOwner()?.trim();
+    final epoch = _receiveEpoch;
+    bool stale() =>
+        epoch != _receiveEpoch || _staleDelivery(generation, origin, owner);
+    _receivingBackend = _backend();
     try {
       await _bindDeliveryScope();
-      if (_staleDelivery(generation, origin, owner)) return;
+      if (stale()) return;
       _syncDeliveryScope(origin, owner);
       final persistedSeq = await _settings.loadLastAckedMobileSeq();
+      if (stale()) return;
       if (persistedSeq == null) {
         lastAckedMobileSeq = null;
       } else if (lastAckedMobileSeq == null ||
           persistedSeq > lastAckedMobileSeq!) {
         lastAckedMobileSeq = persistedSeq;
       }
-      for (final id in await _settings.loadSeenMobileMessageIds()) {
+      final persistedSeen = await _settings.loadSeenMobileMessageIds();
+      if (stale()) return;
+      for (final id in persistedSeen) {
         if (id.isNotEmpty && !_seenIds.contains(id)) _seenIds.add(id);
       }
       while (_seenIds.length > 200) {
@@ -1193,9 +1271,10 @@ class ChatController extends ChangeNotifier {
       final result = await _backend().pollMobile(
         token: token,
         after: lastAckedMobileSeq,
-        waitSeconds: source == ChatDeliverySource.live ? 5 : 0,
+        limit: 50,
+        waitSeconds: source == ChatDeliverySource.live ? 25 : 0,
       );
-      if (_staleDelivery(generation, origin, owner)) return;
+      if (stale()) return;
       if (!result.ok || !result.active) {
         mobileActive = false;
         mobileError = result.error ?? 'mobile channel is not active';
@@ -1273,7 +1352,7 @@ class ChatController extends ChangeNotifier {
         }
       }
       notifyListeners();
-      if (_staleDelivery(generation, origin, owner)) return;
+      if (stale()) return;
       if (_seenIds.isNotEmpty) {
         await _settings.saveSeenMobileMessageIds(
           List.unmodifiable(_seenIds),
@@ -1281,7 +1360,7 @@ class ChatController extends ChangeNotifier {
           owner: owner,
         );
       }
-      if (_staleDelivery(generation, origin, owner)) return;
+      if (stale()) return;
       int? maxSeq;
       for (final message in messages) {
         final seq = message.seq;
@@ -1289,27 +1368,30 @@ class ChatController extends ChangeNotifier {
       }
       if (maxSeq != null) {
         await _backend().ackMobile(token: token, ackSeq: maxSeq);
-        if (_staleDelivery(generation, origin, owner)) return;
+        if (stale()) return;
         await _settings.saveLastAckedMobileSeq(
           maxSeq,
           origin: origin,
           owner: owner,
         );
-        if (_staleDelivery(generation, origin, owner)) return;
+        if (stale()) return;
         lastAckedMobileSeq = maxSeq;
       }
+    } on BackendRequestCancelled {
+      return;
     } on BackendException catch (e) {
-      if (_staleDelivery(generation, origin, owner)) return;
+      if (stale()) return;
       mobileActive = false;
       mobileError = e.message;
       notifyListeners();
     } catch (e) {
-      if (_staleDelivery(generation, origin, owner)) return;
+      if (stale()) return;
       mobileActive = false;
       mobileError = e.toString();
       notifyListeners();
     } finally {
-      if (_session.isCurrent(generation)) pollingMobile = false;
+      if (_session.isCurrent(generation) && epoch == _receiveEpoch)
+        pollingMobile = false;
     }
   }
 
@@ -1898,7 +1980,9 @@ class ChatController extends ChangeNotifier {
             role: 'you',
             text: historyUserDisplay(entry.user).text,
             quotedText: historyUserDisplay(entry.user).quote,
-            quotedLabel: historyUserDisplay(entry.user).quote == null ? null : 'reply',
+            quotedLabel: historyUserDisplay(entry.user).quote == null
+                ? null
+                : 'reply',
             time: entry.time,
             dateKey: day.date,
             turnId: entry.turnId,
@@ -2081,6 +2165,7 @@ class ChatController extends ChangeNotifier {
     _session.markDisposed();
     _uncertainTimer?.cancel();
     pausePolling();
+    unawaited(_networkSubscription?.cancel());
     _canonicalMedia.clear();
     _canonicalMediaInflight.clear();
     scrollController.removeListener(_handleScroll);

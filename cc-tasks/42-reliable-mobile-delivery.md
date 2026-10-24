@@ -5,8 +5,8 @@
 范围：兼容现有mobile HTTP、身份/seq/TTL/用户权限；桌面只读。第一施工阶段R0/R1；R2独立mobile WS在可靠补收验收后实施，R3多手机游标不纳入本单。不得复用desktop WS，不强制绕VPN，不自动重跑未知结果。
 
 - [x] R0a：先补CONNECT不响应/打开请求/正文卡住/取消的失败测试；所有BackendClient网络路径使用总期限，连接阶段有独立上限，超时真实关闭资源。
-- [ ] R0b：前台接收任务可取消，暂停/恢复/身份和网络变化使旧轮次失效；Android网络回调经独立轻量服务通知ChatController，不给AppShell增加领域状态。
-- [ ] R1a：将固定5秒tick改为连续有界长轮询，收到即补下一页、异常退避；历史加载不挡首次收件；保留发送/历史/poll对账与取消代际。
+- [x] R0b：前台接收任务可取消，暂停/恢复/身份和网络变化使旧轮次失效；Android网络回调经独立轻量服务通知ChatController，不给AppShell增加领域状态。
+- [x] R1a：将固定5秒tick改为连续有界长轮询，收到即补下一页、异常退避；历史加载不挡首次收件；保留发送/历史/poll对账与取消代际。
 - [x] R1b：后端ACK先写盘成功后返回；注入False/异常/恢复验证；mobile持久镜像不再等其他网络通道完成。
 - [ ] R1c：本机pending改成非删除读取+按scope/身份确认，前台先持久完整信封再后端ACK；保留artifacts/sticker/behavior，提供既有状态入口只读数量/容量。
 - [ ] R1d：后台signal回源失败保留补收意图并有界退避重试，网络恢复即重连/补拉；不改变授权与通知闸门。
@@ -16,3 +16,5 @@
 验收证据逐项补入；静态/单测/Dev构建不等于真机。新落盘状态/观测同单提供；服务端业务真值与token权限不变。先后关系：R0a→R0b→R1a；后端R1b可独立；R1c→R1d→R1e；R2依赖上述可靠补收。
 R0a证据：test/backend_transport_recovery_test.dart真实CONNECT黑洞/正文卡住先2失败；修复后含取消不误伤发送共3项通过，HTTP相关合计36 passed。资源关闭有代理端EOF验证。审计临时脚本改存build/review/mobile-delivery-audit/audit_transport_probe_test.dart.txt，避免被analyzer当生产代码扫描。
 R1b证据：后端19176cc；ACK False/exception/恢复与慢通道镜像测试先失败后52 passed。
+
+R0b/R1a证据：mobile_receive_loop_test三项（旧poll迟到不能清新状态、历史阻塞仍排空两页、暂停后不ACK）；含现有前台/恢复/协调器共48 passed。MobileNetworkObserverTest验证合并/取消注册，Gradle BUILD SUCCESSFUL。请求预算提交1ae32a9。

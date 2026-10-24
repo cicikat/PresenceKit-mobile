@@ -1,3 +1,9 @@
+## 2026-10-24 连续收件与网络恢复（工单42 R0b/R1a）
+
+前台改为单任务连续HTTP长轮询（wait=25、limit=50），每次成功后100ms让出事件循环即补下一页；异常按1/2/4/8/16秒退避，避免空响应忙循环。history hydration并行，不再挡住首次收件。暂停/恢复、身份变化和网络变化取消旧收件，receive epoch隔离迟到回包和finally，不影响发送request_id。
+
+原生 `presence_mobile/network` EventChannel只发送递增epoch，默认网络可用/丢失/路由变化150ms合并；由独立MobileNetworkObserver与NetworkStatusService接入ChatController，AppShell不增加领域状态。复用已有ACCESS_NETWORK_STATE，不变更权限、VPN路由或后端配置。48项Flutter相关回归与原生网络观察生命周期1项通过；真实V2Ray/设备切网仍待验收。
+
 ## 微信 CSS 来源校准（2026-10-11）
 
 微信布局当前以外部参考项目 commit `ab5e62c084b25f947388f884334f4afe07691f54` 的单聊 CSS 为尺寸/配色来源，替代工单34/35中头像48px等先前截图估值。仅作Flutter视觉映射，不引入其JS、消息文件、手机外框或动画。视口基准308px，`messengerCssPixels`统一换算；正文13 CSS px×视口比例×正文字号/16，标题13 CSS px×视口比例×界面字号缩放。完整表格与截图补齐项见 [messenger-visual-reference.md](messenger-visual-reference.md)，验证见工单36。无跨端影响；现有消息/时间/引用业务逻辑不变。

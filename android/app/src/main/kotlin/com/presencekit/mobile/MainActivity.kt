@@ -95,6 +95,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         LifeRecordsBridge.register(this, flutterEngine.dartExecutor.binaryMessenger)
         ScreenObservationClient.register(this, flutterEngine.dartExecutor.binaryMessenger)
+        MobileNetworkObserver.register(this, flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, settingsChannel)
             .setMethodCallHandler(::handleSettingsMethodCall)
     }

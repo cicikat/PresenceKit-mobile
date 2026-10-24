@@ -315,7 +315,7 @@ void main() {
         'arrived while open',
       ]);
       expect(settings.consumeCalls, 2);
-      expect(backend.wait, 5);
+      expect(backend.wait, 25);
     },
   );
   test('delivered poll receipt wins over a later HTTP timeout', () async {

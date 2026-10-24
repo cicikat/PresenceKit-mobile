@@ -1,3 +1,9 @@
+## 2026-10-24 连续收件与网络恢复（工单42 R0b/R1a）
+
+前台改为单任务连续HTTP长轮询（wait=25、limit=50），每次成功后100ms让出事件循环即补下一页；异常按1/2/4/8/16秒退避，避免空响应忙循环。history hydration并行，不再挡住首次收件。暂停/恢复、身份变化和网络变化取消旧收件，receive epoch隔离迟到回包和finally，不影响发送request_id。
+
+原生 `presence_mobile/network` EventChannel只发送递增epoch，默认网络可用/丢失/路由变化150ms合并；由独立MobileNetworkObserver与NetworkStatusService接入ChatController，AppShell不增加领域状态。复用已有ACCESS_NETWORK_STATE，不变更权限、VPN路由或后端配置。48项Flutter相关回归与原生网络观察生命周期1项通过；真实V2Ray/设备切网仍待验收。
+
 工单 288：角色动作使用默认开放的工具权限，不再有 safe/danger 模式、聊天二次确认、手机起手/锁屏二次确认或敏感页面确认状态。phone_control/step 状态为 continue/done/refused；refused 表示连接/参数/任务失败。用户可手动关闭角色工具与 Android 系统权限；步数、取消、鉴权和真实设备依赖保持有效。被动屏幕观测仍使用其独立隐私过滤。
 
 ## 梦境外观预设（2026-10-11）

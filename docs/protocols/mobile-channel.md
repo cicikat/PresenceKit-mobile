@@ -1,3 +1,9 @@
+## 2026-10-24 连续收件与网络恢复（工单42 R0b/R1a）
+
+前台改为单任务连续HTTP长轮询（wait=25、limit=50），每次成功后100ms让出事件循环即补下一页；异常按1/2/4/8/16秒退避，避免空响应忙循环。history hydration并行，不再挡住首次收件。暂停/恢复、身份变化和网络变化取消旧收件，receive epoch隔离迟到回包和finally，不影响发送request_id。
+
+原生 `presence_mobile/network` EventChannel只发送递增epoch，默认网络可用/丢失/路由变化150ms合并；由独立MobileNetworkObserver与NetworkStatusService接入ChatController，AppShell不增加领域状态。复用已有ACCESS_NETWORK_STATE，不变更权限、VPN路由或后端配置。48项Flutter相关回归与原生网络观察生命周期1项通过；真实V2Ray/设备切网仍待验收。
+
 ## 聊天交接根因修复（2026-10-08）
 
 工单 27 / 后端 271：历史 plain/display 与 HTTP/poll 使用同份 ledger 显示正文；刷新保留失败状态及原请求，assistant 成功证据优先于迟到 HTTP 错误；前台周期交接 native pending 并补偿 poll。Android 去掉固定 30 分钟冷却，重连立即补拉、有界分页排空；pending 500 条且满载拒绝 ack，不静默淘汰。既有 getBackgroundPollStatus 新增可选 pendingCount/pendingLimit，能力检查只读展示；AppSettingsStore、PlatformSettingsChannel 和 MainActivity 同步。旧测试模式方法/偏好仅兼容。详见 [根因复查](../mobile/chat-handoff-2026-10-08.md)。真机/Doze/真实模型仍 observe，consume 崩溃窗口与后台产物元数据仍 open。
