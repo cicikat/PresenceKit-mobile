@@ -18,11 +18,36 @@ internal class MobileNetworkObserver(context: Context, private val changed: () -
     private val handler = Handler(Looper.getMainLooper())
     private val dispatch = Runnable { if (started) changed() }
     @Volatile private var started = false
+    private var capabilitiesKey: List<Any?>? = null
+    private var linkKey: List<Any?>? = null
     private val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) = schedule()
         override fun onLost(network: Network) = schedule()
-        override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = schedule()
-        override fun onLinkPropertiesChanged(network: Network, properties: LinkProperties) = schedule()
+        override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+            // Signal strength / estimated bandwidth updates do not change the route.
+            val key = listOf(network,
+                caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET),
+                caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED),
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN),
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI),
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR),
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET),
+            )
+            synchronized(this@MobileNetworkObserver) {
+                if (key == capabilitiesKey) return
+                capabilitiesKey = key
+            }
+            schedule()
+        }
+        override fun onLinkPropertiesChanged(network: Network, properties: LinkProperties) {
+            val key = listOf(network, properties.interfaceName, properties.dnsServers.toList(),
+                properties.routes.toList(), properties.httpProxy, properties.mtu)
+            synchronized(this@MobileNetworkObserver) {
+                if (key == linkKey) return
+                linkKey = key
+            }
+            schedule()
+        }
     }
 
     private fun schedule() {

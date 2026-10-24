@@ -20,3 +20,5 @@ R1b证据：后端19176cc；ACK False/exception/恢复与慢通道镜像测试�
 R0b/R1a证据：mobile_receive_loop_test三项（旧poll迟到不能清新状态、历史阻塞仍排空两页、暂停后不ACK）；含现有前台/恢复/协调器共48 passed。MobileNetworkObserverTest验证合并/取消注册，Gradle BUILD SUCCESSFUL。请求预算提交1ae32a9。
 
 R1c/R1d证据：Flutter全量393 passed / analyze 0 issues（日志build/review/mobile-delivery-audit/flutter-final.log与analyze-final.log）；Android MobileDeliveryStateStoreTest14、SettingsChannelDeliveryTest5、MobileNotificationDeliveryTest1、MobileNetworkObserverTest1、MobilePullRecoveryTest3，共24 passed。覆盖stash失败不ACK、旧代peek可重放、精确scope/id/seq确认、完整元数据、失败后不依赖新signal即可补收、退避上限、终止auth失败与signal合并。已有轮询节拍/历史串行的3个旧测试按新合同更新后全量通过。
+
+网络恢复收尾：新增带宽估值/重复LinkProperties噪声测试先断言失败（expected1/actual2）；MobileNetworkObserver仅在网络归属、可达性、传输类型、DNS/路由/代理/MTU变化时重连，忽略纯带宽/信号变化，避免健康收件被频繁取消。Android观察器2项、相关合计25 passed；Flutter最终393 passed/分析零问题保持有效（Dart未再变更）。
