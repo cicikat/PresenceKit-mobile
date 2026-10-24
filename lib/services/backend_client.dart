@@ -46,6 +46,7 @@ import '../models/app_models.dart'
 import '../models/screen_context.dart';
 import '../models/session_scope.dart';
 import 'app_settings_store.dart';
+import 'http_request_budget.dart';
 
 const _presenceSessionHeader = 'X-Presence-Session';
 
@@ -69,6 +70,13 @@ class BackendClient {
   final String baseUrl;
   final AppSettingsStore settingsStore;
   final HttpClient Function() _httpClientFactory;
+  final Set<HttpRequestBudget> _mobileReceives = {};
+
+  void cancelMobileReceive() {
+    for (final budget in _mobileReceives.toList()) {
+      budget.cancel();
+    }
+  }
 
   Future<ConversationCalendar> fetchConversationCalendar({
     required String token,
@@ -117,33 +125,38 @@ class BackendClient {
     Duration timeout = const Duration(seconds: 60),
     int maxBytes = 2 * 1024 * 1024,
   }) async {
-    if (!RegExp(r'^/chat/artifacts/[0-9a-fA-F]{32}(/preview)?$',
+    if (!RegExp(
+      r'^/chat/artifacts/[0-9a-fA-F]{32}(/preview)?$',
     ).hasMatch(path)) {
       throw const BackendException('文件地址不合法');
     }
     final client = _httpClientFactory()
       ..connectionTimeout = const Duration(seconds: 8);
+    final budget = HttpRequestBudget(client, timeout);
     try {
-      final endpoint = await _endpoint(path, token: token);
-      final request = await client.getUrl(endpoint);
+      final endpoint = await budget.wait(_endpoint(path, token: token));
+      final request = await budget.open(client.getUrl(endpoint));
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       final scoped = sessionId?.trim();
       if (scoped != null && scoped.isNotEmpty) {
         request.headers.set(_presenceSessionHeader, scoped);
       }
-      final response = await request.close().timeout(timeout);
+      final response = await budget.wait(request.close());
       final total = response.contentLength >= 0 ? response.contentLength : null;
       final builder = BytesBuilder(copy: false);
       var received = 0;
-      await for (final chunk in response.timeout(timeout)) {
-        received += chunk.length;
-        if (received > maxBytes) {
-          throw const BackendException('文件过大，无法在手机上处理');
-        }
-        builder.add(chunk);
-        onProgress?.call(received, total);
-      }
+      await budget.wait(
+        response.forEach((chunk) {
+          budget.check();
+          received += chunk.length;
+          if (received > maxBytes) {
+            throw const BackendException('文件过大，无法在手机上处理');
+          }
+          builder.add(chunk);
+          onProgress?.call(received, total);
+        }),
+      );
       final bytes = builder.takeBytes();
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final text = utf8.decode(bytes, allowMalformed: true);
@@ -155,12 +168,14 @@ class BackendClient {
         );
       }
       return Uint8List.fromList(bytes);
+    } on HttpRequestCancelled {
+      throw const BackendRequestCancelled();
     } on TimeoutException {
       throw const BackendException('后端响应超时');
     } on SocketException {
       throw const BackendException('连不上后端：请确认网络或后端已启动');
     } finally {
-      client.close(force: true);
+      budget.close();
     }
   }
 
@@ -176,20 +191,26 @@ class BackendClient {
     }
     final client = _httpClientFactory()
       ..connectionTimeout = const Duration(seconds: 8);
+    final budget = HttpRequestBudget(client, timeout);
     try {
-      final endpoint = await _endpoint('/chat/media/$digest', token: token);
-      final request = await client.getUrl(endpoint);
+      final endpoint = await budget.wait(
+        _endpoint('/chat/media/$digest', token: token),
+      );
+      final request = await budget.open(client.getUrl(endpoint));
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       final scoped = sessionId?.trim();
       if (scoped != null && scoped.isNotEmpty) {
         request.headers.set(_presenceSessionHeader, scoped);
       }
-      final response = await request.close().timeout(timeout);
+      final response = await budget.wait(request.close());
       final builder = BytesBuilder(copy: false);
-      await for (final chunk in response) {
-        builder.add(chunk);
-      }
+      await budget.wait(
+        response.forEach((chunk) {
+          budget.check();
+          builder.add(chunk);
+        }),
+      );
       final bytes = builder.takeBytes();
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final text = utf8.decode(bytes, allowMalformed: true);
@@ -199,12 +220,14 @@ class BackendClient {
         );
       }
       return Uint8List.fromList(bytes);
+    } on HttpRequestCancelled {
+      throw const BackendRequestCancelled();
     } on TimeoutException {
       throw const BackendException('后端响应超时');
     } on SocketException {
       throw const BackendException('连不上后端：请确认后端已启动，或 adb reverse 已生效');
     } finally {
-      client.close(force: true);
+      budget.close();
     }
   }
 
@@ -219,13 +242,19 @@ class BackendClient {
   }) async {
     final client = _httpClientFactory()
       ..connectionTimeout = const Duration(seconds: 8);
+    final budget = HttpRequestBudget(client, timeout);
+    final receiving =
+        path.startsWith('/mobile/poll') ||
+        path == '/mobile/activate' ||
+        path == '/mobile/ack';
+    if (receiving) _mobileReceives.add(budget);
     try {
-      final endpoint = await _endpoint(path, token: token);
+      final endpoint = await budget.wait(_endpoint(path, token: token));
       final request = switch (method) {
-        'PATCH' => await client.patchUrl(endpoint),
-        'POST' => await client.postUrl(endpoint),
-        'DELETE' => await client.deleteUrl(endpoint),
-        _ => await client.getUrl(endpoint),
+        'PATCH' => await budget.open(client.patchUrl(endpoint)),
+        'POST' => await budget.open(client.postUrl(endpoint)),
+        'DELETE' => await budget.open(client.deleteUrl(endpoint)),
+        _ => await budget.open(client.getUrl(endpoint)),
       };
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
@@ -237,11 +266,10 @@ class BackendClient {
         request.headers.contentType = ContentType.json;
         request.write(jsonEncode(body));
       }
-      final response = await request.close().timeout(timeout);
-      final responseBody = await response
-          .transform(utf8.decoder)
-          .join()
-          .timeout(timeout);
+      final response = await budget.wait(request.close());
+      final responseBody = await budget.wait(
+        response.transform(utf8.decoder).join(),
+      );
       if (response.statusCode == 202 ||
           response.statusCode < 200 ||
           response.statusCode >= 300) {
@@ -256,6 +284,8 @@ class BackendClient {
         throw const BackendException('后端返回格式不是 JSON object');
       }
       return decoded;
+    } on HttpRequestCancelled {
+      throw const BackendRequestCancelled();
     } on TimeoutException {
       throw const BackendException('后端响应超时');
     } on SocketException {
@@ -263,7 +293,8 @@ class BackendClient {
     } on FormatException {
       throw const BackendException('后端返回不是有效 JSON');
     } finally {
-      client.close(force: true);
+      _mobileReceives.remove(budget);
+      budget.close();
     }
   }
 
@@ -476,8 +507,12 @@ class BackendClient {
     String? sessionId,
     String? requestId,
   }) async {
-    final receipt = _voiceToken == token && _voiceText?.trim() == message.trim()
-        && (_voiceExpires?.isAfter(DateTime.now()) ?? false) ? _voiceReceipt : null;
+    final receipt =
+        _voiceToken == token &&
+            _voiceText?.trim() == message.trim() &&
+            (_voiceExpires?.isAfter(DateTime.now()) ?? false)
+        ? _voiceReceipt
+        : null;
     _voiceReceipt = null;
     _voiceText = null;
     _voiceToken = null;
@@ -486,8 +521,8 @@ class BackendClient {
     final scopedRequestId = (scoped == null || scoped.isEmpty)
         ? null
         : (requestId != null && requestId.trim().isNotEmpty
-            ? requestId.trim()
-            : mintRequestId());
+              ? requestId.trim()
+              : mintRequestId());
     return BackendChatResponse.fromJson(
       await _request(
         '/mobile/chat',
@@ -787,9 +822,12 @@ class BackendClient {
     }
     final client = _httpClientFactory()
       ..connectionTimeout = const Duration(seconds: 8);
+    final budget = HttpRequestBudget(client, const Duration(seconds: 180));
     try {
-      final endpoint = await _endpoint('/upload/ingest', token: token);
-      final request = await client.postUrl(endpoint);
+      final endpoint = await budget.wait(
+        _endpoint('/upload/ingest', token: token),
+      );
+      final request = await budget.open(client.postUrl(endpoint));
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       final scoped = sessionId?.trim();
@@ -818,8 +856,8 @@ class BackendClient {
       final scopedRequestId = (scoped == null || scoped.isEmpty)
           ? null
           : (requestId != null && requestId.trim().isNotEmpty
-              ? requestId.trim()
-              : mintRequestId());
+                ? requestId.trim()
+                : mintRequestId());
       if (scopedRequestId != null) {
         writeTextField('request_id', scopedRequestId);
       }
@@ -836,11 +874,8 @@ class BackendClient {
       }
       request.add(utf8.encode('--$boundary--\r\n'));
 
-      final response = await request.close().timeout(
-        const Duration(seconds: 180),
-      );
-      final body = await response.transform(utf8.decoder).join()
-          .timeout(const Duration(seconds: 180));
+      final response = await budget.wait(request.close());
+      final body = await budget.wait(response.transform(utf8.decoder).join());
       if (response.statusCode == 202 ||
           response.statusCode < 200 ||
           response.statusCode >= 300) {
@@ -855,6 +890,8 @@ class BackendClient {
         throw const BackendException('文件上传返回格式不是 JSON object');
       }
       return BackendChatResponse.fromJson(decoded);
+    } on HttpRequestCancelled {
+      throw const BackendRequestCancelled();
     } on TimeoutException {
       throw const BackendException('文件上传响应超时');
     } on SocketException {
@@ -862,7 +899,7 @@ class BackendClient {
     } on FormatException {
       throw const BackendException('文件上传返回不是有效 JSON');
     } finally {
-      client.close(force: true);
+      budget.close();
     }
   }
 
@@ -886,9 +923,12 @@ class BackendClient {
     }
     final client = _httpClientFactory()
       ..connectionTimeout = const Duration(seconds: 8);
+    final budget = HttpRequestBudget(client, const Duration(seconds: 60));
     try {
-      final endpoint = await _endpoint('/transcribe', token: token);
-      final request = await client.postUrl(endpoint);
+      final endpoint = await budget.wait(
+        _endpoint('/transcribe', token: token),
+      );
+      final request = await budget.open(client.postUrl(endpoint));
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       final boundary =
@@ -920,10 +960,8 @@ class BackendClient {
       request.add(utf8.encode('\r\n'));
       request.add(utf8.encode('--$boundary--\r\n'));
 
-      final response = await request.close().timeout(
-        const Duration(seconds: 60),
-      );
-      final body = await response.transform(utf8.decoder).join();
+      final response = await budget.wait(request.close());
+      final body = await budget.wait(response.transform(utf8.decoder).join());
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw BackendException(
           _extractError(body, response.statusCode),
@@ -943,6 +981,8 @@ class BackendClient {
         _voiceExpires = DateTime.now().add(const Duration(minutes: 5));
       }
       return text is String ? text : '';
+    } on HttpRequestCancelled {
+      throw const BackendRequestCancelled();
     } on TimeoutException {
       throw const BackendException('语音转写响应超时');
     } on SocketException {
@@ -950,7 +990,7 @@ class BackendClient {
     } on FormatException {
       throw const BackendException('语音转写返回不是有效 JSON');
     } finally {
-      client.close(force: true);
+      budget.close();
     }
   }
 
@@ -989,12 +1029,12 @@ class BackendClient {
   }) async {
     final client = _httpClientFactory()
       ..connectionTimeout = const Duration(seconds: 8);
+    final budget = HttpRequestBudget(client, const Duration(seconds: 60));
     try {
-      final endpoint = await _endpoint(
-        '/activity/reading/library/add',
-        token: token,
+      final endpoint = await budget.wait(
+        _endpoint('/activity/reading/library/add', token: token),
       );
-      final request = await client.postUrl(endpoint);
+      final request = await budget.open(client.postUrl(endpoint));
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       final boundary =
@@ -1012,10 +1052,8 @@ class BackendClient {
       );
       request.add(bytes);
       request.add(utf8.encode('\r\n--$boundary--\r\n'));
-      final response = await request.close().timeout(
-        const Duration(seconds: 60),
-      );
-      final body = await response.transform(utf8.decoder).join();
+      final response = await budget.wait(request.close());
+      final body = await budget.wait(response.transform(utf8.decoder).join());
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw BackendException(
           _extractError(body, response.statusCode),
@@ -1027,12 +1065,14 @@ class BackendClient {
         throw const BackendException('添加书籍返回格式不是 JSON object');
       }
       return ReadingLibraryBook.fromJson(decoded);
+    } on HttpRequestCancelled {
+      throw const BackendRequestCancelled();
     } on TimeoutException {
       throw const BackendException('添加书籍响应超时');
     } on SocketException {
       throw const BackendException('连不上后端：请确认后端已启动，或 adb reverse 已生效');
     } finally {
-      client.close(force: true);
+      budget.close();
     }
   }
 
@@ -1703,6 +1743,9 @@ class BackendException implements Exception {
 }
 
 class SessionScopeUnsupportedException extends BackendException {
-  const SessionScopeUnsupportedException()
-    : super('session_scope_unsupported');
+  const SessionScopeUnsupportedException() : super('session_scope_unsupported');
+}
+
+class BackendRequestCancelled extends BackendException {
+  const BackendRequestCancelled() : super('request_cancelled');
 }

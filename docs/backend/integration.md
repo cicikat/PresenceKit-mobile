@@ -1,3 +1,7 @@
+## 2026-10-24 网络请求期限（工单42 R0a）
+
+BackendClient的JSON、媒体/产物、上传、语音转写、阅读上传统一使用请求预算：打开请求阶段最多8秒，整个操作以原各接口timeout作为总期限（聊天120秒、上传180秒、普通HTTP20秒，poll为wait+10）；超时关闭该请求独占的HttpClient，涵盖CONNECT/响应头/正文等待。取消仅作用于mobile poll/activate/ack，不取消发送、不重跑未知结果、不强制绕VPN。未新增后端字段/开关/落盘状态；桌面和管理面无同步配置要求，后端ACK修复单独联动。真实V2Ray路径和手机验收仍open。
+
 工单 288：角色动作使用默认开放的工具权限，不再有 safe/danger 模式、聊天二次确认、手机起手/锁屏二次确认或敏感页面确认状态。phone_control/step 状态为 continue/done/refused；refused 表示连接/参数/任务失败。用户可手动关闭角色工具与 Android 系统权限；步数、取消、鉴权和真实设备依赖保持有效。被动屏幕观测仍使用其独立隐私过滤。
 
 工单 288 C2：health_state（生理期、睡眠、传感器与 HDS）按 uid+char_id 保存。设备输入缺省归属接收时的当前角色；prompt、工具和主动心率链使用本轮角色。旧同角色 profile 可导入；旧 global 健康账本只经 migrate_character_user_facts.py --artifact health_state 显式归属，默认 dry-run，不覆盖目标且保留原件。GET/PUT/DELETE /period 可传 char_id，省略时使用当前角色。共享连接、鉴权与运行日志不属于角色记忆。
