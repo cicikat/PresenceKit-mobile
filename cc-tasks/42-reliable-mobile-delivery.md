@@ -8,8 +8,8 @@
 - [x] R0b：前台接收任务可取消，暂停/恢复/身份和网络变化使旧轮次失效；Android网络回调经独立轻量服务通知ChatController，不给AppShell增加领域状态。
 - [x] R1a：将固定5秒tick改为连续有界长轮询，收到即补下一页、异常退避；历史加载不挡首次收件；保留发送/历史/poll对账与取消代际。
 - [x] R1b：后端ACK先写盘成功后返回；注入False/异常/恢复验证；mobile持久镜像不再等其他网络通道完成。
-- [ ] R1c：本机pending改成非删除读取+按scope/身份确认，前台先持久完整信封再后端ACK；保留artifacts/sticker/behavior，提供既有状态入口只读数量/容量。
-- [ ] R1d：后台signal回源失败保留补收意图并有界退避重试，网络恢复即重连/补拉；不改变授权与通知闸门。
+- [x] R1c：本机pending改成非删除读取+按scope/身份确认，前台先持久完整信封再后端ACK；保留artifacts/sticker/behavior，提供既有状态入口只读数量/容量。
+- [x] R1d：后台signal回源失败保留补收意图并有界退避重试，网络恢复即重连/补拉；不改变授权与通知闸门。
 - [ ] R1e：同步三面文档/ABI与跨仓总账、更新known-issues；Flutter/Android/后端相关回归和分析、Dev APK构建，独立提交各修复。
 - [ ] 现场验收（not-run直到真机证据）：V2Ray开/关/切节点、Wi-Fi/流量切换、前后台/杀进程/Doze、真实模型；安装/服务器部署版本核对，首条/整条到达p50/p95。
 
@@ -18,3 +18,5 @@ R0a证据：test/backend_transport_recovery_test.dart真实CONNECT黑洞/正文�
 R1b证据：后端19176cc；ACK False/exception/恢复与慢通道镜像测试先失败后52 passed。
 
 R0b/R1a证据：mobile_receive_loop_test三项（旧poll迟到不能清新状态、历史阻塞仍排空两页、暂停后不ACK）；含现有前台/恢复/协调器共48 passed。MobileNetworkObserverTest验证合并/取消注册，Gradle BUILD SUCCESSFUL。请求预算提交1ae32a9。
+
+R1c/R1d证据：Flutter全量393 passed / analyze 0 issues（日志build/review/mobile-delivery-audit/flutter-final.log与analyze-final.log）；Android MobileDeliveryStateStoreTest14、SettingsChannelDeliveryTest5、MobileNotificationDeliveryTest1、MobileNetworkObserverTest1、MobilePullRecoveryTest3，共24 passed。覆盖stash失败不ACK、旧代peek可重放、精确scope/id/seq确认、完整元数据、失败后不依赖新signal即可补收、退避上限、终止auth失败与signal合并。已有轮询节拍/历史串行的3个旧测试按新合同更新后全量通过。

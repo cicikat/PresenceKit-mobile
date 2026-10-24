@@ -204,7 +204,8 @@ void main() {
       // storage failure would silently skip messages.
       await tester.pump(const Duration(seconds: 5));
       await tester.pump(const Duration(milliseconds: 100));
-      expect(backend.pollAfters, [null, null]);
+      expect(backend.pollAfters.length, greaterThanOrEqualTo(2));
+      expect(backend.pollAfters, everyElement(isNull));
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 500));
@@ -253,7 +254,9 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(backend.pollAfters, [null, 5]);
+      expect(backend.pollAfters.length, greaterThanOrEqualTo(2));
+      expect(backend.pollAfters.first, isNull);
+      expect(backend.pollAfters.skip(1), everyElement(5));
       // Still only one bubble: the duplicate id must be filtered out.
       expect(find.text('重复投递测试'), findsOneWidget);
 

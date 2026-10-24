@@ -9,7 +9,8 @@ import 'app_settings_store.dart';
 /// Domain facade for persisted app preferences and identity fields.
 class SettingsStore {
   Future<Uint8List?> loadDreamBackground() => _store.loadDreamBackground();
-  Future<bool> saveDreamBackground(Uint8List bytes) => _store.saveDreamBackground(bytes);
+  Future<bool> saveDreamBackground(Uint8List bytes) =>
+      _store.saveDreamBackground(bytes);
   Future<void> deleteDreamBackground() => _store.deleteDreamBackground();
   const SettingsStore(this._store);
   final AppSettingsStore _store;
@@ -27,11 +28,8 @@ class SettingsStore {
     String? characterId, {
     String? origin,
     String? owner,
-  }) => _store.saveSessionCharacterId(
-    characterId,
-    origin: origin,
-    owner: owner,
-  );
+  }) =>
+      _store.saveSessionCharacterId(characterId, origin: origin, owner: owner);
   Future<String?> loadProfileName({String? characterId}) =>
       _store.loadProfileDisplayName(characterId: characterId);
   Future<void> saveProfileName(String value, {String? characterId}) =>
@@ -79,15 +77,31 @@ class SettingsStore {
   );
   Future<void> bindMobileDeliveryScope({String? origin, String? owner}) =>
       _store.bindMobileDeliveryScope(origin: origin, owner: owner);
+  Future<List<PendingMobileEnvelope>> peekPendingMobileEnvelopes({
+    String? origin,
+    String? owner,
+    String? charId,
+  }) => _store.peekPendingMobileEnvelopes(
+    origin: origin,
+    owner: owner,
+    charId: charId,
+  );
+  Future<void> ackPendingMobileEnvelopes(
+    List<PendingMobileEnvelope> items, {
+    String? origin,
+    String? owner,
+    String? charId,
+  }) => _store.ackPendingMobileEnvelopes(
+    items,
+    origin: origin,
+    owner: owner,
+    charId: charId,
+  );
   Future<void> stashPendingMobileEnvelopes(
     List<Map<String, dynamic>> items, {
     String? origin,
     String? owner,
-  }) => _store.stashPendingMobileEnvelopes(
-    items,
-    origin: origin,
-    owner: owner,
-  );
+  }) => _store.stashPendingMobileEnvelopes(items, origin: origin, owner: owner);
   Future<void> saveSeenMobileMessageIds(
     List<String> ids, {
     String? origin,

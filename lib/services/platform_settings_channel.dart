@@ -19,11 +19,21 @@ import 'package:flutter/services.dart';
 /// Appearance get/set includes local showChatTime (default true).
 /// Domain services depend on this holder instead of owning their own channel.
 class PlatformSettingsChannel {
+  // Inbox: peekPendingMobileEnvelopes reads without deletion. ackPendingMobileEnvelopes
+  // confirms exact id+seq within origin/owner/charId after Dart accepts the rows.
+  // Legacy consume methods retain their destructive ABI for older callers.
   // get/setCustomThemePalette carries the opaque theme JSON, including local
   // dreamAppearance v1 presets. Reads expose the saved selection and parameters.
   static const MethodChannel channel = MethodChannel(
     'presence_mobile/settings',
   );
+
+  /// Delivery calls cannot leave the single receive task waiting forever.
+  /// Unlike pickers/dialogs these calls never wait for user interaction.
+  static Future<T?> deliveryCall<T>(String method, [Object? arguments]) =>
+      channel
+          .invokeMethod<T>(method, arguments)
+          .timeout(const Duration(seconds: 8));
 
   static bool debugForceChannelAvailable = false;
 

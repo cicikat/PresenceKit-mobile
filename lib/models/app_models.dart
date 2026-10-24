@@ -610,12 +610,15 @@ class ChatMessage {
 
   /// Server identity, independent of the text rendered for an upload preview.
   final String? turnId;
+
   /// Session-scoped chat/upload correlator; retries must reuse this value.
   final String? requestId;
+
   /// Canonical media refs from history; never a local disk path.
   final List<ChatMediaRef> mediaRefs;
   // Character-sent file cards (metadata only; bytes fetched on demand).
   final List<ChatArtifact> artifacts;
+
   /// In-memory local content not yet represented by a server history row.
   final bool retainOnRefresh;
 
@@ -691,12 +694,21 @@ class ChatMessage {
 
 /// 聊天气泡「回复」引用目标,对齐后端 Brief 98 §2 的 reply_to 契约。
 class ReplyTarget {
-  const ReplyTarget({required this.text, required this.timestamp, this.messageId});
+  const ReplyTarget({
+    required this.text,
+    required this.timestamp,
+    this.messageId,
+  });
 
-  factory ReplyTarget.fromMessage(ChatMessage message) =>
-      ReplyTarget(text: message.text, timestamp: message.timestamp,
-        messageId: message.turnId != null && (message.role == 'you' || message.role == 'him')
-            ? '${message.turnId}:${message.role == 'you' ? 'user' : 'assistant'}' : null);
+  factory ReplyTarget.fromMessage(ChatMessage message) => ReplyTarget(
+    text: message.text,
+    timestamp: message.timestamp,
+    messageId:
+        message.turnId != null &&
+            (message.role == 'you' || message.role == 'him')
+        ? '${message.turnId}:${message.role == 'you' ? 'user' : 'assistant'}'
+        : null,
+  );
 
   final String text;
   final DateTime timestamp;
@@ -1098,7 +1110,8 @@ class ChatLogEntry {
       entryKind: (json['entry_kind'] ?? '').toString(),
       toolActivity: ToolActivity.tryParse(json['tool_activity']),
       turnId: json['turn_id'] is String ? json['turn_id'] as String : null,
-      requestId: json['request_id'] is String &&
+      requestId:
+          json['request_id'] is String &&
               (json['request_id'] as String).isNotEmpty
           ? json['request_id'] as String
           : null,
@@ -1112,7 +1125,8 @@ class ChatLogEntry {
                   (item) =>
                       ChatMediaRef.fromJson(Map<String, dynamic>.from(item)),
                 )
-                .where((item) => item.filename.isNotEmpty || item.sha256 != null,
+                .where(
+                  (item) => item.filename.isNotEmpty || item.sha256 != null,
                 )
                 .toList(growable: false)
           : const [],
@@ -1328,6 +1342,7 @@ class MobilePollMessage {
     this.voiceAvailable = false,
     this.sticker,
     this.artifacts = const [],
+    this.behavior = const {},
   });
 
   factory MobilePollMessage.fromJson(Map<String, dynamic> json) {
@@ -1353,13 +1368,15 @@ class MobilePollMessage {
       behaviorLevel: (behavior['level'] ?? '').toString(),
       behaviorId: (behavior['behavior_id'] ?? '').toString(),
       charId: (rawChar == null || rawChar.isEmpty) ? null : rawChar,
-      requestId: json['request_id'] is String &&
+      requestId:
+          json['request_id'] is String &&
               (json['request_id'] as String).isNotEmpty
           ? json['request_id'] as String
           : null,
       voiceAvailable: json['voice_available'] == true,
       sticker: StickerPayload.fromJson(json['sticker']),
       artifacts: ChatArtifact.parseList(json['artifacts']),
+      behavior: behavior,
     );
   }
 
@@ -1378,31 +1395,36 @@ class MobilePollMessage {
   final bool voiceAvailable;
   final StickerPayload? sticker;
   final List<ChatArtifact> artifacts;
+  final Map<String, dynamic> behavior;
 
   Map<String, dynamic> toQueueItemJson() => {
-        'id': id,
-        if (seq != null) 'seq': seq,
-        'content': content,
-        if (displayText != null) 'display_text': displayText,
-        'user_id': userId,
-        if (timestamp != null)
-          'timestamp': timestamp!.millisecondsSinceEpoch / 1000.0,
-        if (charId != null) 'char_id': charId,
-        if (behaviorKind.isNotEmpty ||
-            behaviorDelivery.isNotEmpty ||
-            behaviorLevel.isNotEmpty ||
-            behaviorId.isNotEmpty)
-          'behavior': {
-            'kind': behaviorKind,
-            'delivery': behaviorDelivery,
-            'level': behaviorLevel,
-            'behavior_id': behaviorId,
-          },
-        if (voiceAvailable) 'voice_available': true,
-        if (sticker != null) 'sticker': sticker!.toJson(),
-        if (artifacts.isNotEmpty)
-          'artifacts': [for (final a in artifacts) a.toJson()],
-      };
+    'id': id,
+    'turn_id': id,
+    if (requestId != null) 'request_id': requestId,
+    if (seq != null) 'seq': seq,
+    'content': content,
+    if (displayText != null) 'display_text': displayText,
+    'user_id': userId,
+    if (timestamp != null)
+      'timestamp': timestamp!.millisecondsSinceEpoch / 1000.0,
+    if (charId != null) 'char_id': charId,
+    if (behavior.isNotEmpty)
+      'behavior': behavior
+    else if (behaviorKind.isNotEmpty ||
+        behaviorDelivery.isNotEmpty ||
+        behaviorLevel.isNotEmpty ||
+        behaviorId.isNotEmpty)
+      'behavior': {
+        'kind': behaviorKind,
+        'delivery': behaviorDelivery,
+        'level': behaviorLevel,
+        'behavior_id': behaviorId,
+      },
+    if (voiceAvailable) 'voice_available': true,
+    if (sticker != null) 'sticker': sticker!.toJson(),
+    if (artifacts.isNotEmpty)
+      'artifacts': [for (final a in artifacts) a.toJson()],
+  };
 
   ChatMessage toChatMessage() {
     return ChatMessage(
@@ -1431,6 +1453,9 @@ class PendingMobileEnvelope {
     this.displayText,
     this.replayable = false,
     this.artifacts = const [],
+    this.sticker,
+    this.behavior = const {},
+    this.voiceAvailable = false,
   });
 
   factory PendingMobileEnvelope.fromJson(Map<String, dynamic> json) {
@@ -1452,6 +1477,11 @@ class PendingMobileEnvelope {
           : null,
       replayable: json['replayable'] == true,
       artifacts: ChatArtifact.parseList(json['artifacts']),
+      sticker: StickerPayload.fromJson(json['sticker']),
+      behavior: json['behavior'] is Map
+          ? Map<String, dynamic>.from(json['behavior'] as Map)
+          : const {},
+      voiceAvailable: json['voice_available'] == true,
     );
   }
 
@@ -1472,6 +1502,9 @@ class PendingMobileEnvelope {
   final String? displayText;
   final bool replayable;
   final List<ChatArtifact> artifacts;
+  final StickerPayload? sticker;
+  final Map<String, dynamic> behavior;
+  final bool voiceAvailable;
 
   String? get identity => turnId ?? id;
 
@@ -1586,10 +1619,10 @@ class StickerPayload {
   final String dataUrl;
 
   Map<String, dynamic> toJson() => {
-        'kind': 'sticker',
-        'emotion': emotion,
-        'data_url': dataUrl,
-      };
+    'kind': 'sticker',
+    'emotion': emotion,
+    'data_url': dataUrl,
+  };
 }
 
 class BackendChatResponse {
@@ -1657,7 +1690,6 @@ class BackendDiagnostics {
   // mobile profile token 拿不到 admin-only 的 /system/data-path 是预期行为，见
   // round-鉴权分层-scoped-tokens-移动端.md §2.3；渲染时不应视为故障。
   final bool dataPathForbidden;
-
 
   final BackendStatusSummary? statusSummary;
   final String? statusSummaryError;

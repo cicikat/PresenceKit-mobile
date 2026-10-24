@@ -45,6 +45,43 @@ class MobileDeliveryStateStoreTest {
         .apply { if (turnId != null) put("turn_id", turnId) }
 
     @Test
+    fun `peek survives reopen and only exact scoped confirmation removes it`() {
+        val origin = "http://127.0.0.1:8080"
+        store.appendPending(item("m1", "body", seq = 7), origin, "owner")
+        store.appendPending(item("m2", "other", seq = 8, charId = "char-b"), origin, "owner")
+        assertEquals("m1", store.peekPending(origin, "owner", "char-a").single().id)
+        val reopened = MobileDeliveryStateStore.of(context)
+        assertEquals(2, reopened.pendingCount())
+        reopened.acknowledgePending(listOf(mapOf("id" to "m1", "seq" to 7L)), origin, "wrong", "char-a")
+        reopened.acknowledgePending(listOf(mapOf("id" to "m1", "seq" to 8L)), origin, "owner", "char-a")
+        reopened.acknowledgePending(listOf(mapOf("id" to "m1", "seq" to 7L)), origin, "owner", "char-b")
+        assertEquals(2, reopened.pendingCount())
+        reopened.acknowledgePending(listOf(mapOf("id" to "m1", "seq" to 7L)), origin, "owner", "char-a")
+        assertTrue(reopened.peekPending(origin, "owner", "char-a").isEmpty())
+        assertEquals("m2", reopened.peekPending(origin, "owner", "char-b").single().id)
+    }
+
+    @Test
+    fun `inbox retains empty-text artifact sticker behavior and voice metadata`() {
+        val origin = "http://127.0.0.1:8080"
+        val payload = item("meta", "")
+            .put("request_id", "req_meta")
+            .put("artifacts", JSONArray().put(JSONObject().put("id", "artifact")))
+            .put("sticker", JSONObject().put("kind", "sticker").put("data_url", "data:image/png;base64,fixture"))
+            .put("behavior", JSONObject().put("kind", "overlay").put("params", JSONObject().put("fixture", true)))
+            .put("voice_available", true)
+        assertTrue(store.acceptIncoming(payload, origin, "owner"))
+        val envelope = MobileDeliveryStateStore.of(context).peekPending(origin, "owner", "char-a").single()
+        val restored = MobileDeliveryStateStore.envelopeFromStored(envelope.toJson())
+        val map = restored.toMap()
+        assertEquals("req_meta", map["request_id"])
+        assertTrue(map["artifacts"] is List<*>)
+        assertTrue(map["sticker"] is Map<*, *>)
+        assertTrue(map["behavior"] is Map<*, *>)
+        assertEquals(true, map["voice_available"])
+    }
+
+    @Test
     fun `pending preserves request correlator through storage and channel projection`() {
         val envelope = MobileDeliveryStateStore.envelopeFromQueueItem(
             item("message", "reply").put("request_id", "req_fixture"),

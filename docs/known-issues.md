@@ -1,3 +1,9 @@
+## 2026-10-24 完整inbox与失败补收（工单42 R1c/R1d）
+
+current：前台poll先持久化完整信封再seen/UI/后端ACK；新peek/精确id+seq确认关闭删除式交接窗口，legacy consume ABI保留。附件/贴纸/request_id/完整behavior随既有pending保存；容量500，既有getBackgroundPollStatus只读数量/上限，满载拒绝ACK。后台signal回源失败单worker按秒级退避重试，网络变更使旧连接失效；通知授权/动作确认不变。393项Flutter全量、Android24项相关测试通过，analyze零问题。
+
+本期无新后端开关/业务状态库或桌面协议，UI无新增文案；手机settings ABI为加法，AppSettingsStore/PlatformSettingsChannel/MainActivity分发链同步。observe：真机V2Ray/Doze/实际升级及服务器部署尚未验收；独立WS、独立多设备游标与连接池仍roadmap。以本条更新工单41的对应open状态。实现/三面边界见 [可靠消息收件](mobile/reliable-message-delivery.md)。
+
 ## 2026-10-24 消息投递与代理卡住审计（open / roadmap / observe）
 
 open：真实本地HTTPS CONNECT黑洞代理可使BackendClient超过8秒连接/15秒poll响应期限仍在途，前台单任务收件持续复用该请求；缺少打开请求阶段总期限、取消和网络变化恢复。此实验显式配置HTTP代理，不等于已复现用户V2Ray VPN路径。前台5秒Timer+一页poll也存在空档/积压，手机生成不走桌面token流式。后台signal回源失败没有独立及时重试，native consume删除交接仍有崩溃/旧代丢弃窗口。后端ack写盘False仍成功、共享单消费者、串行fanout拖延离线mirror已单独验证。

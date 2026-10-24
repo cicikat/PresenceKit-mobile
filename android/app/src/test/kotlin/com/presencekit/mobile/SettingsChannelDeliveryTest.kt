@@ -19,6 +19,25 @@ class SettingsChannelDeliveryTest {
     private lateinit var context: Context
     private lateinit var prefs: SharedPreferences
 
+    @Test
+    fun `peek and explicit confirmation preserve full platform metadata`() {
+        val origin = "http://127.0.0.1:8080"
+        invoke("stashPendingMobileEnvelopes", mapOf("origin" to origin, "owner" to "owner", "items" to listOf(
+            mapOf("id" to "inbox", "seq" to 5, "char_id" to "char-a", "content" to "body",
+                "request_id" to "req_inbox", "artifacts" to listOf(mapOf("id" to "artifact"))),
+        )))
+        val scope = mapOf("origin" to origin, "owner" to "owner", "charId" to "char-a")
+        val first = invoke("peekPendingMobileEnvelopes", scope)
+        assertNull(first.errorCode)
+        @Suppress("UNCHECKED_CAST")
+        val item = (first.value as List<Map<String, Any?>>).single()
+        assertEquals("req_inbox", item["request_id"])
+        assertTrue(item["artifacts"] is List<*>)
+        assertEquals(1, (invoke("peekPendingMobileEnvelopes", scope).value as List<*>).size)
+        invoke("ackPendingMobileEnvelopes", scope + ("items" to listOf(mapOf("id" to "inbox", "seq" to 5))))
+        assertTrue((invoke("peekPendingMobileEnvelopes", scope).value as List<*>).isEmpty())
+    }
+
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()

@@ -66,6 +66,18 @@ object MobileDeliveryChannel {
             }
             "consumePendingMobileContents" -> consume(call, prefs, result, contentsOnly = true)
             "consumePendingMobileEnvelopes" -> consume(call, prefs, result, contentsOnly = false)
+            "peekPendingMobileEnvelopes" -> consume(call, prefs, result, contentsOnly = false, peek = true)
+            "ackPendingMobileEnvelopes" -> {
+                val rawOrigin = call.argument<String>("origin")
+                val origin = BackendSecurityPolicy.originFor(rawOrigin.orEmpty())
+                    ?: rawOrigin?.trim()?.ifEmpty { null }
+                val owner = call.argument<String>("owner")
+                val charId = call.argument<String>("charId")
+                val items = call.argument<List<Map<*, *>>>("items").orEmpty()
+                runCatching { store.acknowledgePending(items, origin, owner, charId) }
+                    .onSuccess { result.success(it) }
+                    .onFailure { result.error("prefs_write_failed", "Could not acknowledge mobile inbox", null) }
+            }
             "stashPendingMobileEnvelopes" -> {
                 val rawOrigin = call.argument<String>("origin")
                 val origin = BackendSecurityPolicy.originFor(rawOrigin.orEmpty())
@@ -80,7 +92,7 @@ object MobileDeliveryChannel {
                         val item = JSONObject()
                         for ((key, value) in map) {
                             if (key == null) continue
-                            item.put(key.toString(), value ?: JSONObject.NULL)
+                            item.put(key.toString(), JSONObject.wrap(value))
                         }
                         store.appendPending(item, origin, owner)
                     }
@@ -104,6 +116,7 @@ object MobileDeliveryChannel {
         prefs: SharedPreferences,
         result: MethodChannel.Result,
         contentsOnly: Boolean,
+        peek: Boolean = false,
     ) {
         val rawOrigin = call.argument<String>("origin")
         val origin = BackendSecurityPolicy.originFor(rawOrigin.orEmpty())
@@ -112,7 +125,11 @@ object MobileDeliveryChannel {
         val owner = call.argument<String>("owner")?.trim()?.ifEmpty { null }
             ?: BackendSecurityPolicy.ownerUserId(prefs).ifBlank { null }
         val charId = call.argument<String>("charId") ?: call.argument<String>("char_id")
-        runCatching { MobileDeliveryStateStore.of(prefs).consumePending(origin, owner, charId) }
+        runCatching {
+            if (peek) MobileDeliveryStateStore.ConsumeResult(
+                MobileDeliveryStateStore.of(prefs).peekPending(origin, owner, charId), 0, 0,
+            ) else MobileDeliveryStateStore.of(prefs).consumePending(origin, owner, charId)
+        }
             .onSuccess { consumed ->
                 result.success(
                     if (contentsOnly) {

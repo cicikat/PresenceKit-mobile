@@ -183,8 +183,9 @@ class ChatController extends ChangeNotifier {
     if (_pollTimer != null ||
         !_pollingEnabled ||
         _session.disposed ||
-        _accessToken == null)
+        _accessToken == null) {
       return;
+    }
     final epoch = _receiveEpoch;
     _pollTimer = Timer(delay, () {
       _pollTimer = null;
@@ -254,15 +255,16 @@ class ChatController extends ChangeNotifier {
 
   Future<void> _replayPendingEnvelopes() async {
     final generation = _session.generation;
+    final epoch = _receiveEpoch;
     final scope = _captureScope(generation);
     pendingHandoffError = null;
     try {
-      final pending = await _settings.consumePendingMobileEnvelopes(
+      final pending = await _settings.peekPendingMobileEnvelopes(
         origin: _deliveryOrigin(),
         owner: _deliveryOwner(),
         charId: _deliveryCharId(),
       );
-      if (!_scopeStillLive(generation, scope)) return;
+      if (!_scopeStillLive(generation, scope) || epoch != _receiveEpoch) return;
       final fresh = <PendingMobileEnvelope>[];
       final replayed = <String>{};
       for (final envelope in pending) {
@@ -295,17 +297,26 @@ class ChatController extends ChangeNotifier {
           origin: _deliveryOrigin(),
           owner: _deliveryOwner(),
         );
-        if (!_scopeStillLive(generation, scope)) return;
+        if (!_scopeStillLive(generation, scope) || epoch != _receiveEpoch) {
+          return;
+        }
         notifyListeners();
       }
+      if (!_scopeStillLive(generation, scope) || epoch != _receiveEpoch) return;
+      await _settings.ackPendingMobileEnvelopes(
+        pending,
+        origin: scope.origin,
+        owner: scope.owner,
+        charId: scope.charId,
+      );
     } on MissingPluginException catch (e) {
-      if (!_scopeStillLive(generation, scope)) return;
+      if (!_scopeStillLive(generation, scope) || epoch != _receiveEpoch) return;
       pendingHandoffError = e.message ?? e.toString();
     } on PlatformException catch (e) {
-      if (!_scopeStillLive(generation, scope)) return;
+      if (!_scopeStillLive(generation, scope) || epoch != _receiveEpoch) return;
       pendingHandoffError = e.message ?? e.code;
     } catch (e) {
-      if (!_scopeStillLive(generation, scope)) return;
+      if (!_scopeStillLive(generation, scope) || epoch != _receiveEpoch) return;
       pendingHandoffError = e.toString();
     }
     if (_scopeStillLive(generation, scope)) notifyListeners();
@@ -1180,8 +1191,9 @@ class ChatController extends ChangeNotifier {
     _receivingBackend = _backend();
     try {
       final result = await _backend().activateMobile(token: token);
-      if (epoch != _receiveEpoch || _staleDelivery(generation, origin, owner))
+      if (epoch != _receiveEpoch || _staleDelivery(generation, origin, owner)) {
         return;
+      }
       if (!result.ok || !result.active) {
         mobileActive = false;
         mobileError = result.error ?? 'mobile channel is not active';
@@ -1195,14 +1207,16 @@ class ChatController extends ChangeNotifier {
     } on BackendRequestCancelled {
       return;
     } on BackendException catch (e) {
-      if (epoch != _receiveEpoch || _staleDelivery(generation, origin, owner))
+      if (epoch != _receiveEpoch || _staleDelivery(generation, origin, owner)) {
         return;
+      }
       mobileActive = false;
       mobileError = e.message;
       notifyListeners();
     } catch (e) {
-      if (epoch != _receiveEpoch || _staleDelivery(generation, origin, owner))
+      if (epoch != _receiveEpoch || _staleDelivery(generation, origin, owner)) {
         return;
+      }
       mobileActive = false;
       mobileError = e.toString();
       notifyListeners();
@@ -1224,7 +1238,9 @@ class ChatController extends ChangeNotifier {
           // Native ack and Flutter presentation are separate stages.
           await _replayPendingEnvelopes();
           if (_session.isStale(generation) || epoch != _receiveEpoch) return;
-          final backgroundRunning = await _relay.isBackgroundServiceRunning();
+          final backgroundRunning = await _relay
+              .isBackgroundServiceRunning()
+              .timeout(const Duration(seconds: 2), onTimeout: () => false);
           if (_session.isStale(generation) || epoch != _receiveEpoch) return;
           await pollMobile(source: source, animate: !backgroundRunning);
         })().whenComplete(() {
@@ -1282,6 +1298,13 @@ class ChatController extends ChangeNotifier {
         return;
       }
       final messages = result.messages;
+      // The complete inbox is durable before seen state, UI mutation or server ACK.
+      await _settings.stashPendingMobileEnvelopes(
+        [for (final message in messages) message.toQueueItemJson()],
+        origin: origin,
+        owner: owner,
+      );
+      if (stale()) return;
       // Reconcile unknown-outcome sends by the request_id the server echoes.
       var settled = false;
       for (final message in messages) {
@@ -1292,10 +1315,8 @@ class ChatController extends ChangeNotifier {
       if (settled) notifyListeners();
       final scope = _captureScope(generation);
       final fresh = <MobilePollMessage>[];
-      final foreign = <MobilePollMessage>[];
       for (final message in messages) {
         if (!scope.acceptsMessageChar(message.charId)) {
-          foreign.add(message);
           continue;
         }
         if (message.id.isNotEmpty) {
@@ -1321,15 +1342,8 @@ class ChatController extends ChangeNotifier {
         }
         fresh.add(message);
       }
-      // Shared cursor: park other-character items before ack so advancing
-      // seq does not drop them. Cursor scope stays origin+owner (backend B5).
-      if (foreign.isNotEmpty) {
-        await _settings.stashPendingMobileEnvelopes(
-          [for (final message in foreign) message.toQueueItemJson()],
-          origin: origin,
-          owner: owner,
-        );
-      }
+      // All characters were parked before classification: the cursor remains
+      // origin+owner scoped without dropping another character on ACK.
       // Only a turn observed while actively polling is live. Initial hydration
       // and foreground recovery must never enter the reveal queue. A large
       // batch is also rendered atomically as a final safety valve.
@@ -1390,8 +1404,9 @@ class ChatController extends ChangeNotifier {
       mobileError = e.toString();
       notifyListeners();
     } finally {
-      if (_session.isCurrent(generation) && epoch == _receiveEpoch)
+      if (_session.isCurrent(generation) && epoch == _receiveEpoch) {
         pollingMobile = false;
+      }
     }
   }
 
@@ -1799,16 +1814,24 @@ class ChatController extends ChangeNotifier {
   bool _shouldReplayPending(PendingMobileEnvelope envelope) {
     if (!envelope.replayable) return false;
     final text = envelope.content.trim();
-    if (text.isEmpty && envelope.artifacts.isEmpty) return false;
+    if (text.isEmpty && envelope.artifacts.isEmpty && envelope.sticker == null) {
+      return false;
+    }
     final identity = envelope.identity;
     if (identity == null) return false;
     // Native `seen` means notification delivery, not Flutter presentation.
     // The pending envelope is precisely the handoff of that already-seen item.
-    if (_syncReplyIds.contains(identity) ||
-        _historyContainsIdentity(identity, content: text)) {
+    if (envelope.artifacts.isEmpty &&
+        envelope.sticker == null &&
+        (_syncReplyIds.contains(identity) ||
+            _historyContainsIdentity(identity, content: text))) {
       return false;
     }
-    if (_isRecentReply(text, msgId: identity)) return false;
+    if (envelope.artifacts.isEmpty &&
+        envelope.sticker == null &&
+        _isRecentReply(text, msgId: identity)) {
+      return false;
+    }
     _rememberReply(text, msgId: identity);
     return true;
   }
@@ -1836,6 +1859,17 @@ class ChatController extends ChangeNotifier {
           retainOnRefresh: true,
         ),
       if (envelope.toArtifactMessage() case final artifact?) artifact,
+      if (envelope.sticker != null && _stickerEnabled())
+        ChatMessage(
+          role: 'him',
+          text: '',
+          sticker: envelope.sticker,
+          turnId: envelope.identity,
+          time: base.time,
+          timestamp: base.timestamp,
+          dateKey: base.dateKey,
+          retainOnRefresh: true,
+        ),
     ];
   }
 
@@ -1866,7 +1900,9 @@ class ChatController extends ChangeNotifier {
       var matched = false;
       if (row.role == 'him' &&
           row.turnId?.isNotEmpty == true &&
-          (row.text.isNotEmpty || row.artifacts.isNotEmpty)) {
+          (row.text.isNotEmpty ||
+              row.artifacts.isNotEmpty ||
+              row.sticker != null)) {
         for (final store in _replyStores) {
           for (var i = 0; i < store.length; i++) {
             final prior = store[i];
@@ -1874,6 +1910,7 @@ class ChatController extends ChangeNotifier {
                 prior.role != row.role ||
                 prior.turnId != row.turnId ||
                 prior.text != row.text ||
+                prior.sticker?.dataUrl != row.sticker?.dataUrl ||
                 !listEquals(
                   prior.artifacts.map((a) => a.id).toList(),
                   row.artifacts.map((a) => a.id).toList(),

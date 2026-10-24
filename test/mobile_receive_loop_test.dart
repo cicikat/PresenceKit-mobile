@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:presencekit_mobile/controllers/chat_controller.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
 import 'package:presencekit_mobile/models/session_scope.dart';
@@ -11,6 +12,50 @@ import 'package:presencekit_mobile/services/device_services.dart';
 class _Store extends AppSettingsStore {
   int? cursor;
   final seen = <String>[];
+  final inbox = <PendingMobileEnvelope>[];
+  final events = <String>[];
+  bool failStash = false;
+  Completer<List<PendingMobileEnvelope>>? peekGate;
+  @override
+  Future<List<PendingMobileEnvelope>> peekPendingMobileEnvelopes({
+    String? origin,
+    String? owner,
+    String? charId,
+  }) async => await peekGate?.future ?? List.of(inbox);
+  @override
+  Future<void> stashPendingMobileEnvelopes(
+    List<Map<String, dynamic>> items, {
+    String? origin,
+    String? owner,
+  }) async {
+    if (failStash) throw PlatformException(code: 'inbox_full');
+    for (final item in items) {
+      if (inbox.any((row) => row.id == item['id'])) continue;
+      inbox.add(
+        PendingMobileEnvelope.fromJson({
+          ...item,
+          'origin': origin,
+          'owner': owner,
+          'replayable': true,
+        }),
+      );
+    }
+    events.add('persist');
+  }
+
+  @override
+  Future<void> ackPendingMobileEnvelopes(
+    List<PendingMobileEnvelope> items, {
+    String? origin,
+    String? owner,
+    String? charId,
+  }) async {
+    if (items.isNotEmpty) events.add('confirm');
+    inbox.removeWhere(
+      (row) => items.any((item) => item.id == row.id && item.seq == row.seq),
+    );
+  }
+
   @override
   Future<int?> loadLastAckedMobileSeq() async => cursor;
   @override
@@ -37,8 +82,9 @@ class _Store extends AppSettingsStore {
 }
 
 class _Backend extends BackendClient {
-  _Backend(superStore)
-    : super(baseUrl: 'http://localhost:8080', settingsStore: superStore);
+  _Backend(this.store)
+    : super(baseUrl: 'http://localhost:8080', settingsStore: store);
+  final _Store store;
   final polls = <Completer<MobilePollResult>>[];
   final waits = <int>[];
   final limits = <int>[];
@@ -82,6 +128,7 @@ class _Backend extends BackendClient {
 
   @override
   Future<void> ackMobile({required String token, required int ackSeq}) async {
+    store.events.add('server-ack');
     acks.add(ackSeq);
   }
 }
@@ -125,6 +172,78 @@ ChatController _controller(
 );
 
 void main() {
+  testWidgets(
+    'inbox persistence failure refuses UI and server acknowledgement, then recovers',
+    (tester) async {
+      final store = _Store()..failStash = true;
+      final backend = _Backend(store);
+      final chat = _controller(store, backend);
+      final first = chat.pollIfBackgroundUnavailable();
+      await tester.pump();
+      backend.polls.last.complete(_batch(1, 1));
+      await tester.pump();
+      await first;
+      expect(backend.acks, isEmpty);
+      expect(chat.sent, isEmpty);
+      expect(store.seen, isEmpty);
+      store.failStash = false;
+      final retry = chat.pollIfBackgroundUnavailable();
+      await tester.pump();
+      backend.polls.last.complete(_batch(1, 1));
+      await tester.pump();
+      await retry;
+      expect(backend.acks, [1]);
+      expect(
+        store.events.indexOf('persist'),
+        lessThan(store.events.indexOf('server-ack')),
+      );
+      expect(chat.sent.where((row) => row.text == 'item 1'), hasLength(1));
+      expect(store.inbox.single.id, 'fixture-1');
+      chat.dispose();
+      await tester.pump(const Duration(milliseconds: 500));
+    },
+  );
+
+  testWidgets(
+    'a stale peek is never confirmed and can be replayed by a new epoch',
+    (tester) async {
+      final store = _Store();
+      final backend = _Backend(store);
+      final chat = _controller(store, backend);
+      store.inbox.add(
+        PendingMobileEnvelope.fromJson({
+          'id': 'pending',
+          'seq': 9,
+          'content': 'kept',
+          'replayable': true,
+          'origin': backend.baseUrl,
+          'owner': 'owner',
+          'char_id': 'char-a',
+        }),
+      );
+      store.peekGate = Completer<List<PendingMobileEnvelope>>();
+      final stale = chat.pollIfBackgroundUnavailable();
+      await tester.pump();
+      await chat.resetForConnectionChange(restart: false);
+      store.peekGate!.complete(List.of(store.inbox));
+      await tester.pump();
+      await stale;
+      expect(store.inbox, hasLength(1));
+      expect(store.events, isNot(contains('confirm')));
+      expect(chat.sent, isEmpty);
+      store.peekGate = null;
+      final recovered = chat.pollIfBackgroundUnavailable();
+      await tester.pump();
+      expect(chat.sent.single.text, 'kept');
+      expect(store.events, contains('confirm'));
+      backend.polls.last.complete(_batch(10, 0));
+      await tester.pump();
+      await recovered;
+      chat.dispose();
+      await tester.pump(const Duration(milliseconds: 500));
+    },
+  );
+
   testWidgets(
     'network change replaces a held poll and ignores its late result/finally',
     (tester) async {

@@ -59,6 +59,8 @@ class MobileNotificationService : Service() {
     @Volatile private var relayUnavailableSince = 0L
     private val notificationIndex = AtomicInteger(0)
     private val pollGeneration = AtomicInteger(0)
+    private val networkGeneration = AtomicInteger(0)
+    private var networkObserver: MobileNetworkObserver? = null
     private val pollStateLock = Any()
     @Volatile private var activePollConnection: HttpURLConnection? = null
     @Volatile private var activeRelayConnection: HttpURLConnection? = null
@@ -67,6 +69,14 @@ class MobileNotificationService : Service() {
         super.onCreate()
         isServiceRunning = true
         createNotificationChannel()
+        networkObserver = MobileNetworkObserver(this) {
+            networkGeneration.incrementAndGet()
+            if (running) {
+                activeRelayConnection?.disconnect()
+                activePollConnection?.disconnect()
+                runRelayIfIdle()
+            }
+        }.also { runCatching { it.start() } }
         notificationPermissionError()?.let(::recordBackgroundError)
     }
 
@@ -183,6 +193,7 @@ class MobileNotificationService : Service() {
                         return@Thread
                     }
                     activatePollingFallbackIfThresholdReached()
+                    val attemptedNetwork = networkGeneration.get()
                     try {
                         connectAndReadRelay(config)
                         retryDelayMs = initialRetryDelayMs
@@ -202,7 +213,7 @@ class MobileNotificationService : Service() {
                             activatePollingFallbackIfThresholdReached()
                         }
                         Log.w(tag, "relay subscription failed: $reason", error)
-                        waitForRetry(retryDelayMs)
+                        waitForRetry(retryDelayMs, attemptedNetwork)
                         retryDelayMs = (retryDelayMs * 2).coerceAtMost(maximumRetryDelayMs)
                     }
                 }
@@ -346,18 +357,25 @@ class MobileNotificationService : Service() {
         }
         Thread {
             try {
-                while (pollGeneration.get() == generation && consumerSource == ConsumerSource.RELAY) {
-                    val shouldPoll = synchronized(pollStateLock) {
+                var attemptedNetwork = networkGeneration.get()
+                MobilePullRecovery.run(
+                    current = { running && pollGeneration.get() == generation && consumerSource == ConsumerSource.RELAY },
+                    takePending = { synchronized(pollStateLock) {
                         if (!relaySignalPollPending) {
                             false
                         } else {
                             relaySignalPollPending = false
                             true
                         }
-                    }
-                    if (!shouldPoll) break
-                    pollOnce(allowRelayFallback = true, allowRelayConnected = true)
-                }
+                    } },
+                    restorePending = { synchronized(pollStateLock) { relaySignalPollPending = true } },
+                    poll = {
+                        attemptedNetwork = networkGeneration.get()
+                        pollOnce(allowRelayFallback = true, allowRelayConnected = true)
+                    },
+                    retryable = { backgroundPullRetryable() },
+                    wait = { waitForRetry(it, attemptedNetwork) },
+                )
             } finally {
                 synchronized(pollStateLock) {
                     pollInFlight = false
@@ -427,6 +445,7 @@ class MobileNotificationService : Service() {
     private fun runConnectedSafetyPoll() {
         val started = synchronized(pollStateLock) {
             if (pollInFlight) {
+                relaySignalPollPending = true
                 false
             } else {
                 pollInFlight = true
@@ -439,7 +458,9 @@ class MobileNotificationService : Service() {
         }
         Thread {
             try {
-                pollOnce(allowRelayFallback = true, allowRelayConnected = true)
+                if (!pollOnce(allowRelayFallback = true, allowRelayConnected = true) && backgroundPullRetryable()) {
+                    synchronized(pollStateLock) { relaySignalPollPending = true }
+                }
             } finally {
                 synchronized(pollStateLock) {
                     pollInFlight = false
@@ -507,6 +528,8 @@ class MobileNotificationService : Service() {
         Log.d(tag, "service destroyed")
         isServiceRunning = false
         running = false
+        networkObserver?.stop()
+        networkObserver = null
         pollGeneration.incrementAndGet()   // 令所有在途轮次失效
         activeRelayConnection?.disconnect()
         activePollConnection?.disconnect() // 主动中断在途补偿轮询，避免服务销毁后继续消费。
@@ -643,10 +666,15 @@ class MobileNotificationService : Service() {
         }
     }
 
-    private fun waitForRetry(delayMs: Long) {
+    private fun backgroundPullRetryable(): Boolean {
+        val error = servicePrefs().getString("lastBackgroundError", null).orEmpty()
+        return error != "token invalid" && error != "token scope insufficient" && error != "origin rejected"
+    }
+
+    private fun waitForRetry(delayMs: Long, network: Int = networkGeneration.get()) {
         Log.d(tag, "retrying background consumer in ${delayMs / 1000.0}s")
         var remainingMs = delayMs
-        while (running && remainingMs > 0) {
+        while (running && remainingMs > 0 && networkGeneration.get() == network) {
             val sleepMs = remainingMs.coerceAtMost(500L)
             try {
                 Thread.sleep(sleepMs)
@@ -778,7 +806,6 @@ class MobileNotificationService : Service() {
 
     private fun consumeMobileMessage(item: JSONObject, source: String): Boolean {
         val content = item.optString("content").trim()
-        if (content.isEmpty()) return false
         val id = item.optString("id").trim()
         val prefs = servicePrefs()
         val store = MobileDeliveryStateStore.of(prefs)
@@ -790,7 +817,7 @@ class MobileNotificationService : Service() {
             }
             return false
         }
-        deliverBackgroundMessage(
+        if (content.isNotEmpty()) deliverBackgroundMessage(
             content,
             item.optJSONObject("behavior"),
             item.optString("char_id").trim().ifEmpty { null },

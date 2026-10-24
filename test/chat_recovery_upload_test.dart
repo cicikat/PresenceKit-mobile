@@ -22,7 +22,7 @@ class _Settings extends AppSettingsStore {
   Future<List<String>> loadSeenMobileMessageIds() async => seen;
 
   @override
-  Future<List<PendingMobileEnvelope>> consumePendingMobileEnvelopes({
+  Future<List<PendingMobileEnvelope>> peekPendingMobileEnvelopes({
     String? origin,
     String? owner,
     String? charId,

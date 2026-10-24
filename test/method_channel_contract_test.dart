@@ -7,6 +7,7 @@
 // this test) forces the channel path open without touching production
 // behaviour, which only ever runs on a real Android device.
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
@@ -150,10 +151,7 @@ void main() {
       calls.clear();
       await store.saveProfileDisplayName('叶瑄', characterId: 'yexuan');
       expect(calls.single.method, 'setProfileDisplayName');
-      expect(calls.single.arguments, {
-        'value': '叶瑄',
-        'characterId': 'yexuan',
-      });
+      expect(calls.single.arguments, {'value': '叶瑄', 'characterId': 'yexuan'});
       calls.clear();
       final bytes = Uint8List.fromList([1, 2, 3]);
       reply(bytes);
@@ -161,7 +159,10 @@ void main() {
       expect(calls.single.arguments, {'characterId': 'yexuan'});
       calls.clear();
       reply(true);
-      expect(await store.saveProfileAvatar(bytes, characterId: 'yexuan'), isTrue);
+      expect(
+        await store.saveProfileAvatar(bytes, characterId: 'yexuan'),
+        isTrue,
+      );
       expect(calls.single.arguments['characterId'], 'yexuan');
       calls.clear();
       await store.deleteProfileAvatar(characterId: 'yexuan');
@@ -214,33 +215,120 @@ void main() {
       expect(calls.single.arguments, isNull);
     });
 
-    test('consumes pending envelopes with origin owner and character', () async {
-      reply([
-        {
-          'id': 'm1',
-          'seq': 4,
-          'content': 'hello',
-          'turn_id': 'm1',
+    test(
+      'consumes pending envelopes with origin owner and character',
+      () async {
+        reply([
+          {
+            'id': 'm1',
+            'seq': 4,
+            'content': 'hello',
+            'turn_id': 'm1',
+            'origin': 'http://127.0.0.1:8080',
+            'owner': 'owner',
+            'char_id': 'char-a',
+            'replayable': true,
+          },
+        ]);
+        final envelopes = await store.consumePendingMobileEnvelopes(
+          origin: 'http://127.0.0.1:8080',
+          owner: 'owner',
+          charId: 'char-a',
+        );
+        expect(calls.single.method, 'consumePendingMobileEnvelopes');
+        expect(calls.single.arguments, {
           'origin': 'http://127.0.0.1:8080',
           'owner': 'owner',
-          'char_id': 'char-a',
-          'replayable': true,
-        },
-      ]);
-      final envelopes = await store.consumePendingMobileEnvelopes(
-        origin: 'http://127.0.0.1:8080',
-        owner: 'owner',
-        charId: 'char-a',
-      );
-      expect(calls.single.method, 'consumePendingMobileEnvelopes');
-      expect(calls.single.arguments, {
-        'origin': 'http://127.0.0.1:8080',
-        'owner': 'owner',
-        'charId': 'char-a',
-      });
-      expect(envelopes.single.id, 'm1');
-      expect(envelopes.single.replayable, isTrue);
-    });
+          'charId': 'char-a',
+        });
+        expect(envelopes.single.id, 'm1');
+        expect(envelopes.single.replayable, isTrue);
+      },
+    );
+
+    test(
+      'inbox peek keeps metadata and confirmation sends exact identities',
+      () async {
+        reply([
+          {
+            'id': 'fixture',
+            'seq': 8,
+            'content': '',
+            'replayable': true,
+            'request_id': 'req_fixture',
+            'voice_available': true,
+            'sticker': {
+              'kind': 'sticker',
+              'data_url': 'data:image/png;base64,fixture',
+            },
+            'behavior': {
+              'kind': 'overlay',
+              'params': {'retained': true},
+            },
+          },
+        ]);
+        final items = await store.peekPendingMobileEnvelopes(
+          origin: 'http://localhost:8080',
+          owner: 'owner',
+          charId: 'char-a',
+        );
+        expect(calls.single.method, 'peekPendingMobileEnvelopes');
+        expect(items.single.requestId, 'req_fixture');
+        expect(items.single.sticker, isNotNull);
+        expect(items.single.behavior['params'], {'retained': true});
+        expect(items.single.voiceAvailable, isTrue);
+        reply(0);
+        await store.ackPendingMobileEnvelopes(
+          items,
+          origin: 'http://localhost:8080',
+          owner: 'owner',
+          charId: 'char-a',
+        );
+        expect(calls.last.method, 'ackPendingMobileEnvelopes');
+        expect((calls.last.arguments as Map)['items'], [
+          {'id': 'fixture', 'seq': 8},
+        ]);
+      },
+    );
+
+    testWidgets(
+      'an unresponsive native inbox cannot permanently occupy reception',
+      (tester) async {
+        final gate = Completer<Object?>();
+        handler = (_) => gate.future;
+        Object? failure;
+        final work = store.peekPendingMobileEnvelopes().then<void>(
+          (_) {},
+          onError: (Object error) {
+            failure = error;
+          },
+        );
+        await tester.pump(const Duration(seconds: 9));
+        await work;
+        expect(failure, isA<TimeoutException>());
+        gate.complete([]);
+        await tester.pump();
+        expect(calls.single.method, 'peekPendingMobileEnvelopes');
+      },
+    );
+
+    test(
+      'poll serialization retains request identity and complete behavior',
+      () {
+        final row = MobilePollMessage.fromJson({
+          'id': 'fixture',
+          'seq': 8,
+          'request_id': 'req_fixture',
+          'content': 'body',
+          'behavior': {
+            'kind': 'overlay',
+            'params': {'retained': true},
+          },
+        }).toQueueItemJson();
+        expect(row['request_id'], 'req_fixture');
+        expect((row['behavior'] as Map)['params'], {'retained': true});
+      },
+    );
 
     test('pending envelope consume does not swallow missing plugin', () async {
       handler = (_) async => throw MissingPluginException('missing');
@@ -312,8 +400,8 @@ void main() {
       reply({
         'lastBackgroundPollAt': 1781280000000,
         'lastBackgroundError': ' boom ',
-          'pendingCount': 27,
-          'pendingLimit': 500,
+        'pendingCount': 27,
+        'pendingLimit': 500,
       });
       final status = await store.loadBackgroundPollStatus();
       expect(calls.single.method, 'getBackgroundPollStatus');

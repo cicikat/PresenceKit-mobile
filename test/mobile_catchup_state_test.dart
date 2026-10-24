@@ -57,10 +57,7 @@ class _Settings extends AppSettingsStore {
   }
 
   @override
-  Future<void> bindMobileDeliveryScope({
-    String? origin,
-    String? owner,
-  }) async {
+  Future<void> bindMobileDeliveryScope({String? origin, String? owner}) async {
     boundOrigin = origin;
     boundOwner = owner;
   }
@@ -150,13 +147,14 @@ ChatController _controller(
   deliveryOrigin: deliveryOrigin,
   deliveryOwner: deliveryOwner,
   deliveryCharId: () => 'char-a',
-  resolvePresenceSession: ({required String charId, bool force = false}) async =>
-      PresenceSessionGrant(
-        sessionId: 'sess-$charId',
-        charId: charId,
-        ownerId: 'owner',
-        domain: 'reality',
-      ),
+  resolvePresenceSession:
+      ({required String charId, bool force = false}) async =>
+          PresenceSessionGrant(
+            sessionId: 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          ),
 );
 
 MobilePollMessage _message(int index) => MobilePollMessage(
@@ -270,7 +268,7 @@ void main() {
   });
 
   test(
-    'initial catch-up waits for history and appends backlog without reveal',
+    'initial catch-up receives backlog without waiting for history or revealing it',
     () async {
       final gate = Completer<void>();
       final settings = _Settings();
@@ -290,12 +288,13 @@ void main() {
 
       final start = controller.start();
       await Future<void>.delayed(Duration.zero);
-      expect(backend.pollCalls, 0);
+      expect(backend.pollCalls, greaterThanOrEqualTo(1));
+      expect(controller.sent, hasLength(20));
 
       gate.complete();
       await start;
 
-      expect(backend.pollCalls, 1);
+      expect(backend.pollCalls, greaterThanOrEqualTo(1));
       expect(controller.sent, hasLength(20));
       expect(controller.sent.every((message) => !message.animate), isTrue);
       expect(controller.himTyping, isFalse);
@@ -392,38 +391,41 @@ void main() {
     controller.dispose();
   });
 
-  test('late persist after origin change does not write the new scope', () async {
-    var origin = 'http://127.0.0.1:8080';
-    var owner = 'owner';
-    final settings = _Settings(holdPersist: true);
-    final backend = _Backend(
-      settings,
-      activation: const MobileActivationResult(ok: true, active: true),
-      pollResults: [
-        MobilePollResult(ok: true, active: true, messages: [_message(4)]),
-      ],
-    );
-    final controller = _controller(
-      backend,
-      settings,
-      deliveryOrigin: () => origin,
-      deliveryOwner: () => owner,
-    );
+  test(
+    'late persist after origin change does not write the new scope',
+    () async {
+      var origin = 'http://127.0.0.1:8080';
+      var owner = 'owner';
+      final settings = _Settings(holdPersist: true);
+      final backend = _Backend(
+        settings,
+        activation: const MobileActivationResult(ok: true, active: true),
+        pollResults: [
+          MobilePollResult(ok: true, active: true, messages: [_message(4)]),
+        ],
+      );
+      final controller = _controller(
+        backend,
+        settings,
+        deliveryOrigin: () => origin,
+        deliveryOwner: () => owner,
+      );
 
-    final poll = controller.pollMobile(animate: false);
-    for (var i = 0; i < 20 && settings.persistGate == null; i += 1) {
-      await Future<void>.delayed(Duration.zero);
-    }
-    expect(settings.persistGate, isNotNull);
-    origin = 'http://10.0.0.2:8080';
-    owner = 'other';
-    settings.persistGate!.complete();
-    await poll;
+      final poll = controller.pollMobile(animate: false);
+      for (var i = 0; i < 20 && settings.persistGate == null; i += 1) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(settings.persistGate, isNotNull);
+      origin = 'http://10.0.0.2:8080';
+      owner = 'other';
+      settings.persistGate!.complete();
+      await poll;
 
-    expect(settings.persistOrigin, 'http://127.0.0.1:8080');
-    expect(settings.persistOwner, 'owner');
-    expect(controller.lastAckedMobileSeq, isNull);
-    expect(backend.ackCalls, 0);
-    controller.dispose();
-  });
+      expect(settings.persistOrigin, 'http://127.0.0.1:8080');
+      expect(settings.persistOwner, 'owner');
+      expect(controller.lastAckedMobileSeq, isNull);
+      expect(backend.ackCalls, 0);
+      controller.dispose();
+    },
+  );
 }

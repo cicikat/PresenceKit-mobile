@@ -243,11 +243,7 @@ class AppSettingsStore {
     try {
       await PlatformSettingsChannel.channel.invokeMethod<void>(
         'setSessionCharacterId',
-        {
-          'characterId': characterId,
-          'origin': origin,
-          'owner': owner,
-        },
+        {'characterId': characterId, 'origin': origin, 'owner': owner},
       );
     } on PlatformException {
       // Session preference stays in memory if persistence fails.
@@ -393,10 +389,7 @@ class AppSettingsStore {
     }
   }
 
-  Future<bool> saveProfileAvatar(
-    Uint8List bytes, {
-    String? characterId,
-  }) async {
+  Future<bool> saveProfileAvatar(Uint8List bytes, {String? characterId}) async {
     if (!_channelAvailable) return false;
     try {
       return await PlatformSettingsChannel.channel.invokeMethod<bool>(
@@ -652,7 +645,7 @@ class AppSettingsStore {
     String? owner,
   }) async {
     if (!_channelAvailable) return;
-    await PlatformSettingsChannel.channel.invokeMethod<void>(
+    await PlatformSettingsChannel.deliveryCall<void>(
       'setSeenMobileMessageIds',
       {
         'ids': ids,
@@ -662,18 +655,15 @@ class AppSettingsStore {
     );
   }
 
-  Future<void> bindMobileDeliveryScope({
-    String? origin,
-    String? owner,
-  }) async {
+  Future<void> bindMobileDeliveryScope({String? origin, String? owner}) async {
     if (!_channelAvailable) return;
-    await PlatformSettingsChannel.channel.invokeMethod<void>(
+    await PlatformSettingsChannel.deliveryCall<void>(
       'bindMobileDeliveryScope',
       {'origin': origin, 'owner': owner},
     );
   }
 
-  /// Parks poll items for another character under the shared origin+owner
+  /// Persists complete poll items under the shared origin+owner
   /// cursor so ack can advance without dropping them.
   Future<void> stashPendingMobileEnvelopes(
     List<Map<String, dynamic>> items, {
@@ -681,13 +671,9 @@ class AppSettingsStore {
     String? owner,
   }) async {
     if (!_channelAvailable || items.isEmpty) return;
-    await PlatformSettingsChannel.channel.invokeMethod<void>(
+    await PlatformSettingsChannel.deliveryCall<void>(
       'stashPendingMobileEnvelopes',
-      {
-        'items': items,
-        'origin': origin,
-        'owner': owner,
-      },
+      {'items': items, 'origin': origin, 'owner': owner},
     );
   }
 
@@ -705,12 +691,10 @@ class AppSettingsStore {
     String? charId,
   }) async {
     if (!_channelAvailable) return const [];
-    final values = await PlatformSettingsChannel.channel
-        .invokeMethod<List<dynamic>>('consumePendingMobileEnvelopes', {
-          'origin': origin,
-          'owner': owner,
-          'charId': charId,
-        });
+    final values = await PlatformSettingsChannel.deliveryCall<List<dynamic>>(
+      'consumePendingMobileEnvelopes',
+      {'origin': origin, 'owner': owner, 'charId': charId},
+    );
     return [
       for (final value in values ?? const [])
         if (value is Map)
@@ -718,17 +702,55 @@ class AppSettingsStore {
     ];
   }
 
+  Future<List<PendingMobileEnvelope>> peekPendingMobileEnvelopes({
+    String? origin,
+    String? owner,
+    String? charId,
+  }) async {
+    if (!_channelAvailable) return const [];
+    final values = await PlatformSettingsChannel.deliveryCall<List<dynamic>>(
+      'peekPendingMobileEnvelopes',
+      {'origin': origin, 'owner': owner, 'charId': charId},
+    );
+    return [
+      for (final value in values ?? const [])
+        if (value is Map)
+          PendingMobileEnvelope.fromJson(Map<String, dynamic>.from(value)),
+    ];
+  }
+
+  Future<void> ackPendingMobileEnvelopes(
+    List<PendingMobileEnvelope> items, {
+    String? origin,
+    String? owner,
+    String? charId,
+  }) async {
+    if (!_channelAvailable || items.isEmpty) return;
+    await PlatformSettingsChannel.deliveryCall<int>(
+      'ackPendingMobileEnvelopes',
+      {
+        'origin': origin,
+        'owner': owner,
+        'charId': charId,
+        'items': [
+          for (final item in items) {'id': item.id, 'seq': item.seq},
+        ],
+      },
+    );
+  }
+
   Future<List<String>> loadSeenMobileMessageIds() async {
     if (!_channelAvailable) return const [];
-    final values = await PlatformSettingsChannel.channel
-        .invokeMethod<List<dynamic>>('getSeenMobileMessageIds');
+    final values = await PlatformSettingsChannel.deliveryCall<List<dynamic>>(
+      'getSeenMobileMessageIds',
+    );
     return values?.map((value) => value.toString()).toList(growable: false) ??
         const [];
   }
 
   Future<int?> loadLastAckedMobileSeq() async {
     if (!_channelAvailable) return null;
-    return await PlatformSettingsChannel.channel.invokeMethod<int>(
+    return await PlatformSettingsChannel.deliveryCall<int>(
       'getLastAckedMobileSeq',
     );
   }
@@ -739,14 +761,11 @@ class AppSettingsStore {
     String? owner,
   }) async {
     if (!_channelAvailable) return;
-    await PlatformSettingsChannel.channel.invokeMethod<void>(
-      'setLastAckedMobileSeq',
-      {
-        'value': value,
-        if (origin != null) 'origin': origin,
-        if (owner != null) 'owner': owner,
-      },
-    );
+    await PlatformSettingsChannel.deliveryCall<void>('setLastAckedMobileSeq', {
+      'value': value,
+      if (origin != null) 'origin': origin,
+      if (owner != null) 'owner': owner,
+    });
   }
 
   Future<bool> debugBackgroundDelivery({

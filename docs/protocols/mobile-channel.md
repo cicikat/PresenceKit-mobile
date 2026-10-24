@@ -1,3 +1,7 @@
+## 2026-10-24 R0/R1 完整消息交接
+
+前台收件统一8秒打开阶段/总期限、取消与receive epoch，连续wait=25/limit=50补拉；原生网络epoch只负责恢复信号。所有poll信封先写原pending inbox再服务端ACK。新增settings `peekPendingMobileEnvelopes`（非删除）与 `ackPendingMobileEnvelopes`（origin/owner/charId下精确id+seq），legacy consume保留；新完整metadata不主动执行行为。既有getBackgroundPollStatus继续只读数量/上限，无新服务端真值或开关。后台回源失败保留signal并1秒起、上限30秒退避；网络恢复即补拉，15分钟alarm保留为系统补偿。完整字段/三面/未验收边界见 [可靠消息收件](../mobile/reliable-message-delivery.md)。
+
 ## 2026-10-24 连续收件与网络恢复（工单42 R0b/R1a）
 
 前台改为单任务连续HTTP长轮询（wait=25、limit=50），每次成功后100ms让出事件循环即补下一页；异常按1/2/4/8/16秒退避，避免空响应忙循环。history hydration并行，不再挡住首次收件。暂停/恢复、身份变化和网络变化取消旧收件，receive epoch隔离迟到回包和finally，不影响发送request_id。

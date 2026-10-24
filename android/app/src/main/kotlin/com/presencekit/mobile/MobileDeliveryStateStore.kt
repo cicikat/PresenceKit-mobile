@@ -26,8 +26,9 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
         val charId: String? = null,
         val displayText: String? = null,
         val replayable: Boolean = false,
+        val extras: String? = null,
     ) {
-        fun toMap(): Map<String, Any?> = linkedMapOf(
+        fun toMap(): Map<String, Any?> = linkedMapOf<String, Any?>(
             "content" to content,
             "id" to id,
             "seq" to seq,
@@ -39,7 +40,12 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
             "char_id" to charId,
             "display_text" to displayText,
             "replayable" to replayable,
-        )
+        ).apply {
+            extras?.let { raw ->
+                val data = JSONObject(raw)
+                for (key in EXTRA_KEYS) if (data.has(key)) put(key, platformJson(data.opt(key)))
+            }
+        }
 
         fun toJson(): JSONObject = JSONObject().apply {
             put("content", content)
@@ -54,6 +60,10 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
             owner?.let { put("owner", it) }
             charId?.let { put("char_id", it) }
             displayText?.let { put("display_text", it) }
+            extras?.let { raw ->
+                val data = JSONObject(raw)
+                for (key in EXTRA_KEYS) if (data.has(key)) put(key, data.opt(key))
+            }
         }
     }
 
@@ -97,8 +107,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
     }
 
     fun appendPending(item: JSONObject, origin: String?, owner: String?): Boolean {
-        val content = item.optString("content").trim()
-        if (content.isEmpty()) return false
+        if (!hasPayload(item)) return false
         val envelope = envelopeFromQueueItem(item, origin, owner)
         locked {
             val pending = readPendingLocked()
@@ -111,8 +120,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
     }
 
     fun acceptIncoming(item: JSONObject, origin: String?, owner: String?): Boolean {
-        val content = item.optString("content").trim()
-        if (content.isEmpty()) return false
+        if (!hasPayload(item)) return false
         val id = item.optString("id").trim()
         val envelope = envelopeFromQueueItem(item, origin, owner)
         return locked {
@@ -171,6 +179,46 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
         }
         persistPendingLocked(kept)
         ConsumeResult(envelopes, discardedLegacy, discardedUnscoped)
+    }
+
+    /** Non-destructive read. A process death or stale Flutter epoch can retry it. */
+    fun peekPending(origin: String?, owner: String?, charId: String?): List<PendingEnvelope> = locked {
+        if (prefs.contains(LEGACY_PENDING_KEY) && !prefs.edit().remove(LEGACY_PENDING_KEY).commit()) {
+            throw IOException("could not retire unscoped legacy contents")
+        }
+        val pending = readPendingLocked()
+        val kept = JSONArray()
+        val result = ArrayList<PendingEnvelope>()
+        for (index in 0 until pending.length()) {
+            val raw = pending.optJSONObject(index) ?: continue
+            val envelope = envelopeFromStored(raw)
+            // Old unscoped strings cannot be safely assigned to a character.
+            if (!envelope.replayable) continue
+            kept.put(raw)
+            if (matchesScope(envelope, origin, owner) && !charIdMismatch(envelope, charId)) {
+                result.add(envelope)
+            }
+        }
+        if (kept.length() != pending.length()) persistPendingLocked(kept)
+        result
+    }
+
+    fun acknowledgePending(items: List<Map<*, *>>, origin: String?, owner: String?, charId: String?): Int = locked {
+        val keys = items.mapNotNull { item ->
+            val id = item["id"]?.toString()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            id to (item["seq"] as? Number)?.toLong()
+        }.toSet()
+        val pending = readPendingLocked()
+        val kept = JSONArray()
+        for (i in 0 until pending.length()) {
+            val raw = pending.optJSONObject(i) ?: continue
+            val envelope = envelopeFromStored(raw)
+            val matches = matchesScope(envelope, origin, owner) && !charIdMismatch(envelope, charId) &&
+                (envelope.id to envelope.seq) in keys
+            if (!matches) kept.put(raw)
+        }
+        if (kept.length() != pending.length()) persistPendingLocked(kept)
+        kept.length()
     }
 
     fun bindCursorScope(origin: String?, owner: String?) = locked {
@@ -260,6 +308,22 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
     private fun <T> locked(block: () -> T): T = synchronized(LOCK) { block() }
 
     companion object {
+        private val EXTRA_KEYS = listOf("artifacts", "sticker", "behavior", "voice_available")
+
+        private fun hasPayload(item: JSONObject): Boolean = item.optString("content").isNotBlank() ||
+            (item.optJSONArray("artifacts")?.length() ?: 0) > 0 || item.optJSONObject("sticker") != null ||
+            item.optJSONObject("behavior") != null
+
+        private fun extras(item: JSONObject): String = JSONObject().apply {
+            for (key in EXTRA_KEYS) if (item.has(key)) put(key, item.opt(key))
+        }.toString()
+
+        private fun platformJson(value: Any?): Any? = when (value) {
+            is JSONObject -> value.keys().asSequence().associateWith { platformJson(value.opt(it)) }
+            is JSONArray -> (0 until value.length()).map { platformJson(value.opt(it)) }
+            JSONObject.NULL -> null
+            else -> value
+        }
         const val SEEN_KEY = "seenMobileMessageIds"
         const val ACK_KEY = "lastAckedSeq"
         const val PENDING_KEY = "pendingMobileEnvelopes"
@@ -306,6 +370,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
                 charId = charId,
                 displayText = displayText,
                 replayable = id != null && scopedOrigin != null && scopedOwner != null,
+                extras = extras(item),
             )
         }
 
@@ -334,6 +399,7 @@ class MobileDeliveryStateStore private constructor(private val prefs: SharedPref
                 charId = raw.optString("char_id").trim().ifEmpty { null },
                 displayText = raw.optString("display_text").trim().ifEmpty { null },
                 replayable = raw.optBoolean("replayable", false),
+                extras = extras(raw),
             )
         }
 
