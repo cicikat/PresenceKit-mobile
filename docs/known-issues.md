@@ -1,3 +1,9 @@
+## 2026-10-24 消息投递与代理卡住审计（open / roadmap / observe）
+
+open：真实本地HTTPS CONNECT黑洞代理可使BackendClient超过8秒连接/15秒poll响应期限仍在途，前台单任务收件持续复用该请求；缺少打开请求阶段总期限、取消和网络变化恢复。此实验显式配置HTTP代理，不等于已复现用户V2Ray VPN路径。前台5秒Timer+一页poll也存在空档/积压，手机生成不走桌面token流式。后台signal回源失败没有独立及时重试，native consume删除交接仍有崩溃/旧代丢弃窗口。后端ack写盘False仍成功、共享单消费者、串行fanout拖延离线mirror已单独验证。
+
+roadmap：先补网络deadline/取消、连续HTTP收件、持久交接与ack，再独立mobile WS+HTTP；禁止复用会替换桌面连接的 `/ws/desktop`。observe：实际手机V2Ray模式、安装/服务器版本、真实卡住点、Doze/OEM未验收。Flutter定向78、真实代理/前台实验1、后端49既有+4注入均通过；只证明各自覆盖。详见[完整审计与施工顺序](mobile/message-delivery-audit-2026-10-24.md)、[工单41](../cc-tasks/41-mobile-delivery-audit.md)。本次仅文档，无跨端运行行为影响。
+
 ## 2026-10-11 梦境 Flow（current / observe）
 
 current：两种原生 Shader 梦境外观、日夜颜色/参数预设、实时预览与梦境 UI 设置迁入外观入口；主题子窗口保留父设置路由。observe：真实手机 GPU/软键盘/相册/OEM/重启与功耗未验收；Shader 降级保留静态配色，无物理仿真或逐像素 HTML 对齐保证。建议按日夜 × 两主题 × 大字号 × 键盘矩阵验收，证据边界见 [工单 33](../cc-tasks/33-dream-flow-integration.md)。
