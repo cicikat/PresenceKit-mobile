@@ -17,6 +17,7 @@ import '../services/network_status_service.dart';
 import 'chat_history_reconciliation.dart';
 import '../models/chat_history_display.dart';
 import 'chat_session_coordinator.dart';
+import 'mobile_realtime_controller.dart';
 
 enum ChatDeliverySource { initialSync, catchUp, live }
 
@@ -98,6 +99,23 @@ class ChatController extends ChangeNotifier {
   final List<String> _seenIds = [];
   final Set<String> _syncReplyIds = {};
   final Set<String> _acceptedRequestIds = {};
+  final Map<String, Stopwatch> _replyClocks = {};
+
+  void _observeReplyApply(String? requestId) {
+    final clock = _replyClocks.remove(requestId);
+    final access = _accessToken;
+    if (clock == null || access == null) return;
+    unawaited(
+      _backend()
+          .reportMobileRealtimeMetric(
+            'reply_apply_ms',
+            clock.elapsedMilliseconds.clamp(0, 600000),
+            token: access,
+          )
+          .catchError((Object _) {}),
+    );
+  }
+
   final Map<String, DateTime> _recentReplies = {};
   final Map<String, String> _recentIdsByFingerprint = {};
   final List<({String text, ReplyTarget? replyTo})> _pendingSends = [];
@@ -111,6 +129,90 @@ class ChatController extends ChangeNotifier {
   final List<List<ChatMessage>> _messageQueue = [];
   Completer<void>? _revealWake;
   final ChatSessionCoordinator _session = ChatSessionCoordinator();
+  late final MobileRealtimeController realtime = MobileRealtimeController(
+    backend: _backend,
+    token: () => _accessToken,
+    grant: () async {
+      final charId = _deliveryCharId();
+      if (charId == null || _resolvePresenceSession == null) return null;
+      return _resolvePresenceSession(charId: charId, force: false);
+    },
+    isLive: () => _pollingEnabled && !_session.disposed,
+    apply: _applyRealtimeFinal,
+  );
+
+  void _applyRealtimeFinal(Map<String, dynamic> message) {
+    if (!_pollingEnabled || _session.disposed) return;
+    final envelope = PendingMobileEnvelope.fromJson(message);
+    if (envelope.charId != _deliveryCharId() ||
+        message['user_id'] != _deliveryOwner()) {
+      return;
+    }
+    if (envelope.requestId != null) {
+      final matchesSend = [
+        ...sent,
+        ...history,
+      ].any((row) => row.role == 'you' && row.requestId == envelope.requestId);
+      _settleSend(requestId: envelope.requestId);
+      if (matchesSend) {
+        himTyping = false;
+        for (final store in [sent, history]) {
+          for (var i = 0; i < store.length; i++) {
+            final row = store[i];
+            if (row.requestId != envelope.requestId) continue;
+            if (row.role == 'you') {
+              store[i] = row.copyWith(turnId: envelope.identity);
+            } else if (row.role == 'reasoning') {
+              store[i] = ChatMessage(
+                id: row.id,
+                role: row.role,
+                text: envelope.identity ?? '',
+                time: row.time,
+                timestamp: row.timestamp,
+                dateKey: row.dateKey,
+                turnId: envelope.identity,
+                requestId: row.requestId,
+              );
+            }
+          }
+        }
+      }
+    }
+    _observeReplyApply(envelope.requestId);
+    final date = envelope.timestamp == null
+        ? null
+        : _dateKey(envelope.timestamp!);
+    if (historyLoaded &&
+        _loadedDates.isNotEmpty &&
+        date != null &&
+        date.compareTo(_loadedDates.first) < 0) {
+      // Older pages remain available through the ordinary lazy day history.
+      return;
+    }
+    final fresh = _mergeIncomingRows(_pendingRows(envelope));
+    final key = date == null ? null : '$date ${envelope.toChatMessage().time}';
+    final historyPosition = key == null
+        ? -1
+        : history.indexWhere(
+            (row) =>
+                row.dateKey != null &&
+                '${row.dateKey} ${row.time}'.compareTo(key) > 0,
+          );
+    if (historyPosition >= 0) {
+      history.insertAll(historyPosition, fresh);
+    } else {
+      final sentPosition = envelope.timestamp == null
+          ? -1
+          : sent.indexWhere(
+              (row) => row.timestamp.isAfter(envelope.timestamp!),
+            );
+      sent.insertAll(sentPosition < 0 ? sent.length : sentPosition, fresh);
+    }
+    _rememberReply(envelope.content, msgId: envelope.identity);
+    notifyListeners();
+    if (fresh.isNotEmpty && _isAtBottom) scrollToBottom();
+  }
+
   double? _lastScrollPixels;
   bool get sending => _session.sending;
   set sending(bool value) => _session.sending = value;
@@ -148,6 +250,7 @@ class ChatController extends ChangeNotifier {
     _pollingEnabled = true;
     if (_session.initialSync != null) return _session.initialSync!;
     if (_session.initialSyncComplete) {
+      realtime.start();
       _ensurePollTimer();
       await pollIfBackgroundUnavailable();
       return;
@@ -173,6 +276,7 @@ class ChatController extends ChangeNotifier {
     _ensurePollTimer();
     await historyWork;
     if (_session.isStale(generation)) return;
+    realtime.start();
     if (historyLoaded && historyError == null) {
       _session.initialSyncComplete = true;
     }
@@ -216,6 +320,7 @@ class ChatController extends ChangeNotifier {
   }
 
   void _cancelReceiveWork() {
+    realtime.stop();
     _receiveEpoch++;
     _pollTimer?.cancel();
     _pollTimer = null;
@@ -229,6 +334,7 @@ class ChatController extends ChangeNotifier {
     if (!_pollingEnabled || _session.disposed) return;
     _cancelReceiveWork();
     _receiveFailures = 0;
+    realtime.start();
     _ensurePollTimer();
   }
 
@@ -240,6 +346,7 @@ class ChatController extends ChangeNotifier {
   void resumePolling() {
     _pollingEnabled = true;
     _cancelReceiveWork();
+    realtime.start();
     if (!_session.initialSyncComplete) {
       unawaited(start());
       return;
@@ -352,10 +459,12 @@ class ChatController extends ChangeNotifier {
   Future<void> resetForConnectionChange({bool restart = true}) async {
     _session.beginEpoch();
     pausePolling();
+    realtime.stop(reset: true);
     _session.initialSync = null;
     _session.refresh = null;
     _foregroundDelivery = null;
     _acceptedRequestIds.clear();
+    _replyClocks.clear();
     _uncertainTimer?.cancel();
     _messageQueue.clear();
     _pendingSends.clear();
@@ -659,6 +768,12 @@ class ChatController extends ChangeNotifier {
     required int userId,
     required ChatMessage anchor,
   }) async {
+    if (response.criticalWritten == false) {
+      throw const BackendException(
+        'execution_outcome_unknown',
+        statusCode: 503,
+      );
+    }
     _bindUserTurn(userId, response.turnId);
     final anchorIndex = sent.indexWhere((m) => m.id == anchor.id);
     final restoredAnchor =
@@ -697,6 +812,10 @@ class ChatController extends ChangeNotifier {
     final bound = (requestId != null && requestId.trim().isNotEmpty)
         ? requestId.trim()
         : mintRequestId();
+    _replyClocks[bound] = Stopwatch()..start();
+    while (_replyClocks.length > 200) {
+      _replyClocks.remove(_replyClocks.keys.first);
+    }
     final index = sent.indexWhere((item) => item.id == userId);
     if (index >= 0 && sent[index].requestId != bound) {
       sent[index] = sent[index].copyWith(requestId: bound);
@@ -713,7 +832,12 @@ class ChatController extends ChangeNotifier {
     final generation = _session.generation;
     final scope = _captureScope(generation);
     final boundRequestId = _bindOutgoingRequestId(userId, requestId: requestId);
-    final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
+    final anchor = ChatMessage(
+      role: 'reasoning',
+      text: '',
+      time: _nowLabel(),
+      requestId: boundRequestId,
+    );
     var dropAnchor = false;
     sent.add(anchor);
     notifyListeners();
@@ -1585,16 +1709,21 @@ class ChatController extends ChangeNotifier {
       }
       sent[index] = outgoing;
     }
-    final anchor = ChatMessage(role: 'reasoning', text: '', time: _nowLabel());
+    final boundRequestId = _bindOutgoingRequestId(
+      outgoing.id,
+      requestId: outgoing.requestId,
+    );
+    final anchor = ChatMessage(
+      role: 'reasoning',
+      text: '',
+      time: _nowLabel(),
+      requestId: boundRequestId,
+    );
     var dropAnchor = false;
     sent.add(anchor);
     notifyListeners();
     scrollToBottom();
     try {
-      final boundRequestId = _bindOutgoingRequestId(
-        outgoing.id,
-        requestId: outgoing.requestId,
-      );
       final response = await _scopedChatCall(
         scope: scope,
         generation: generation,
@@ -1814,7 +1943,9 @@ class ChatController extends ChangeNotifier {
   bool _shouldReplayPending(PendingMobileEnvelope envelope) {
     if (!envelope.replayable) return false;
     final text = envelope.content.trim();
-    if (text.isEmpty && envelope.artifacts.isEmpty && envelope.sticker == null) {
+    if (text.isEmpty &&
+        envelope.artifacts.isEmpty &&
+        envelope.sticker == null) {
       return false;
     }
     final identity = envelope.identity;

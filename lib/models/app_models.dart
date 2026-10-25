@@ -1633,6 +1633,7 @@ class BackendChatResponse {
     this.msgId,
     this.turnId,
     this.artifacts = const [],
+    this.criticalWritten,
   });
 
   factory BackendChatResponse.fromJson(Map<String, dynamic> json) {
@@ -1643,6 +1644,9 @@ class BackendChatResponse {
 
     return BackendChatResponse(
       reply: (json['reply'] ?? '').toString(),
+      criticalWritten: json['critical_written'] is bool
+          ? json['critical_written'] as bool
+          : null,
       displayText: json['display_text'] is String
           ? json['display_text'] as String
           : null,
@@ -1655,6 +1659,7 @@ class BackendChatResponse {
 
   final List<ChatArtifact> artifacts;
   final String reply;
+  final bool? criticalWritten;
   final String? displayText;
   final String emotion;
   final String? msgId;

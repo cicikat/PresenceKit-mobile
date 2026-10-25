@@ -47,6 +47,7 @@ import '../models/screen_context.dart';
 import '../models/session_scope.dart';
 import 'app_settings_store.dart';
 import 'http_request_budget.dart';
+import 'mobile_realtime_socket.dart';
 
 const _presenceSessionHeader = 'X-Presence-Session';
 
@@ -71,6 +72,63 @@ class BackendClient {
   final AppSettingsStore settingsStore;
   final HttpClient Function() _httpClientFactory;
   final Set<HttpRequestBudget> _mobileReceives = {};
+  final Set<HttpClient> _mobileUpgrades = {};
+
+  void cancelMobileRealtime() {
+    for (final client in _mobileUpgrades.toList()) {
+      client.close(force: true);
+    }
+    _mobileUpgrades.clear();
+  }
+
+  Future<Map<String, dynamic>> mobileRealtimeCapability({
+    required String token,
+  }) => _request('/mobile/realtime', token: token);
+
+  Future<void> reportMobileRealtimeMetric(
+    String kind,
+    int value, {
+    required String token,
+  }) async {
+    await _request(
+      '/mobile/realtime/metric',
+      token: token,
+      method: 'POST',
+      body: {'kind': kind, 'value': value},
+      timeout: const Duration(seconds: 5),
+    );
+  }
+
+  Future<Map<String, dynamic>> mobileFinalHistory({
+    required String token,
+    required String sessionId,
+    int? before,
+  }) => _request(
+    '/mobile/history${before == null ? '' : '?before=$before'}',
+    token: token,
+    sessionId: sessionId,
+  );
+
+  Future<MobileRealtimeSocket> openMobileRealtime({
+    required String token,
+    required String sessionId,
+    required String clientId,
+  }) async {
+    final endpoint = await _endpoint('/ws/mobile', token: token);
+    final client = _httpClientFactory();
+    _mobileUpgrades.add(client);
+    try {
+      return await MobileRealtimeSocket.connect(
+        endpoint.replace(scheme: endpoint.scheme == 'https' ? 'wss' : 'ws'),
+        token: token,
+        sessionId: sessionId,
+        clientId: clientId,
+        client: client,
+      );
+    } finally {
+      _mobileUpgrades.remove(client);
+    }
+  }
 
   void cancelMobileReceive() {
     for (final budget in _mobileReceives.toList()) {
@@ -245,6 +303,8 @@ class BackendClient {
     final budget = HttpRequestBudget(client, timeout);
     final receiving =
         path.startsWith('/mobile/poll') ||
+        path.startsWith('/mobile/history') ||
+        path == '/mobile/realtime' ||
         path == '/mobile/activate' ||
         path == '/mobile/ack';
     if (receiving) _mobileReceives.add(budget);

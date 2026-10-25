@@ -1,3 +1,11 @@
+## 手机前台实时连接 R2（2026-10-25，工单43）
+
+本地接入独立 `/ws/mobile`：Bearer、X-Presence-Session、随机 X-Presence-Client；服务端按现有 chat 权限与会话固定owner/char/domain，逐帧复核，ready/final/ping/pong。当前固定 final_only，持久成功后 msg_id=turn_id；从不把桌面临时stream id或chunk序号当最终身份。既有POST生成链与全局ACK不变，WS不ACK。
+
+GET `/mobile/realtime` 返回 enabled/mode/protocol；后端管理面 GET/PUT `/settings/clients` 独立热开关，默认true，关闭即HTTP。GET `/mobile/history`（memory.read + session）每页最多50，before/history_index仅历史页索引，不是投递seq；chat-log按日懒加载补齐稳定request_id、正文/display_text/artifacts。原媒体鉴权/不可用规则保留。POST `/mobile/realtime/metric`（chat）只传kind+整数，无正文/身份；state.read `/observability/mobile-realtime` 汇总。reply_apply_ms只是发送到transcript应用，真实屏幕/网络延迟仍observe。
+
+取消升级真实关闭资源；后台断WS，前台重新鉴权及HTTP补收。生成/持久化失败没有成功final，HTTP critical_written=false转不确定结果；保留原request_id对账，不自动重发。旧服务端/关WS/握手失败沿原HTTP收发和通知。详细合同见后端 docs/mobile-realtime-r2.md 与本仓[协议](../protocols/mobile-channel.md)。未部署、未安装或正式发布。
+
 ## 2026-10-24 R0/R1 完整消息交接
 
 前台收件统一8秒打开阶段/总期限、取消与receive epoch，连续wait=25/limit=50补拉；原生网络epoch只负责恢复信号。所有poll信封先写原pending inbox再服务端ACK。新增settings `peekPendingMobileEnvelopes`（非删除）与 `ackPendingMobileEnvelopes`（origin/owner/charId下精确id+seq），legacy consume保留；新完整metadata不主动执行行为。既有getBackgroundPollStatus继续只读数量/上限，无新服务端真值或开关。后台回源失败保留signal并1秒起、上限30秒退避；网络恢复即补拉，15分钟alarm保留为系统补偿。完整字段/三面/未验收边界见 [可靠消息收件](../mobile/reliable-message-delivery.md)。

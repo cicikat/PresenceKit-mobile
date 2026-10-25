@@ -1,3 +1,11 @@
+## R2 前台最终消息分发（工单43，本地 current）
+
+`/ws/mobile` 独立于desktop，握手固定Bearer/session/client instance。ready含mode=final_only、session_id、generation、char_id/domain/client_type；final包含同代scope与message信封，message包含id=msg_id=turn_id、request_id、user_id、char_id、domain、content/display_text、artifacts、timestamp、critical_written=true，不含seq。绑定在持久成功后才发布；客户端同一身份按段出现次数合并HTTP/poll/history/WS，不重复生成或ACK。ping每20秒，客户端回同代pong；45秒无响应关闭。任何其他客户端帧拒绝，旧代不能改新UI。
+
+`/mobile/history`（memory.read + X-Presence-Session）返回messages/next_before，按history_index降序，每页50，索引仅分页，跨日可补收且不推进ACK；原chat-log按日读取也投影长期身份与富展示。初次只补最新页，更旧历史按需；同一会话重连补内存边界后的全部页。最终投影受原证据墓碑/删除约束。HTTP critical_written=false为不确定，不能把正文当成功；失败、取消、超时停止指示并原请求对账。当前不发暂态半句。未来delta须request_id+stream_id临时关联、显式绑定turn/msg，且有失败/取消/超时收尾；未实现的delta不能冒充完成。
+
+后台停止连接与重试；前台重新绑定与HTTP对账。传输开关只在后端管理面，关闭即HTTP；全局seq/TTL/inbox精确确认、Android通知保留。旧服务端降级HTTP。上线前无投影的旧记录和无父turn的独立贴纸/behavior不伪造补全；资源失效仍不可用。真机/V2Ray与p50/p95比较未验收，未部署。
+
 ## 2026-10-24 R0/R1 完整消息交接
 
 前台收件统一8秒打开阶段/总期限、取消与receive epoch，连续wait=25/limit=50补拉；原生网络epoch只负责恢复信号。所有poll信封先写原pending inbox再服务端ACK。新增settings `peekPendingMobileEnvelopes`（非删除）与 `ackPendingMobileEnvelopes`（origin/owner/charId下精确id+seq），legacy consume保留；新完整metadata不主动执行行为。既有getBackgroundPollStatus继续只读数量/上限，无新服务端真值或开关。后台回源失败保留signal并1秒起、上限30秒退避；网络恢复即补拉，15分钟alarm保留为系统补偿。完整字段/三面/未验收边界见 [可靠消息收件](../mobile/reliable-message-delivery.md)。

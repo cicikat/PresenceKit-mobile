@@ -1,3 +1,7 @@
+## R2 前台实时验收边界（工单43，observe/open）
+
+current为本地final_only安全降级：独立WS、身份合并、HTTP补收与持久化失败收尾已实现。未部署/安装，真实手机、V2Ray/Wi-Fi/流量/后台/杀进程及真实模型p50/p95仍not-run，不能声称首token提速。上线前无展示投影的旧消息仍旧历史降级；无父turn的独立贴纸/behavior仍由原队列/inbox消费，清队列后不能伪造恢复。更细边界见工单43与后端docs/mobile-realtime-r2.md。
+
 ## 2026-10-24 完整inbox与失败补收（工单42 R1c/R1d）
 
 current：前台poll先持久化完整信封再seen/UI/后端ACK；新peek/精确id+seq确认关闭删除式交接窗口，legacy consume ABI保留。附件/贴纸/request_id/完整behavior随既有pending保存；容量500，既有getBackgroundPollStatus只读数量/上限，满载拒绝ACK。后台signal回源失败单worker按秒级退避重试，网络变更使旧连接失效；通知授权/动作确认不变。393项Flutter全量、Android25项相关测试通过（含网络质量噪声隔离），analyze零问题。

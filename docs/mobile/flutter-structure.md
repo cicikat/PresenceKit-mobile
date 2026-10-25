@@ -1,3 +1,9 @@
+## R2 手机实时订阅（工单43）
+
+新领域控制器 `lib/controllers/mobile_realtime_controller.dart` 管理前台WS、连接代际、有限心跳/带抖动退避和HTTP历史补收；`lib/services/mobile_realtime_socket.dart` 持有升级/socket资源。BackendClient仍统一鉴权、可信origin与HTTP预算；取消只影响收件，不误伤发送。ChatController只组合订阅、复用原逐段协调器和失败/不确定状态；AppShell无新增Timer或领域状态。传输默认final_only，业务真值仍在后端。
+
+本次无新增Flutter可见文案或布局，无新增l10n key；沿原消息样式与错误本地化。新增控制面只在后端管理面，桌面与Android原生无代码变动。验收范围见工单43。
+
 ## 2026-10-24 连续收件与网络恢复（工单42 R0b/R1a）
 
 前台改为单任务连续HTTP长轮询（wait=25、limit=50），每次成功后100ms让出事件循环即补下一页；异常按1/2/4/8/16秒退避，避免空响应忙循环。history hydration并行，不再挡住首次收件。暂停/恢复、身份变化和网络变化取消旧收件，receive epoch隔离迟到回包和finally，不影响发送request_id。

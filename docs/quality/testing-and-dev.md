@@ -1,3 +1,9 @@
+## 手机前台实时 R2（2026-10-25，工单43）
+
+Flutter相关124项通过；最后request/turn绑定及WS成功即停止生成指示的收尾后，R2/发送恢复/揭示/协调器49项再次通过；最终flutter analyze零问题。最终 `flutter build apk --debug --flavor dev --no-pub` 成功，产物 `build/app/outputs/flutter-apk/app-dev-debug.apk`，SHA-256 `30E5060FA6CDC5B9E5EAD38807BF9B0DD938F8EFE8E712E5622D9AB379F96C3C`。证据日志 `build/review/mobile-r2/`：flutter-tests.log、final-tests.log、analyze.log、dev-build.log；管理面实际fragment/JS的隔离浏览器开关截图 admin-realtime-enabled.png。
+
+后端相关173项通过，最后R2的29项通过；提交47459af/ba7b1f1。自动测试覆盖真实本地WS和升级黑洞的取消/资源关闭、重复段落及HTTP竞态、持久化失败、清队列后跨日恢复、会话撤权/代际。无新增Flutter文案；桌面与Android后台服务无代码变动。本期fixed final_only，不开启原始模型增量token；未安装、未正式发布、未部署服务器。真实手机、代理/V2Ray、Wi-Fi/流量、Doze/杀进程、真实模型首可见正文p50/p95与双端体验仍not-run，不能用本机reply_apply_ms替代。
+
 ## 手机可靠收件 R0/R1（2026-10-25 收尾，工单42）
 
 Flutter 全量393项通过，flutter analyze零问题；Android定向25项（store14、settings5、notification1、network2、pull recovery3）通过；后端ACK/队列/分发相关52项通过。覆盖真实本地CONNECT黑洞与正文停滞的期限/资源关闭、收件取消不误伤发送、历史并行收件、完整inbox及精确确认、后台回源重试、网络变化及带宽噪声隔离。自动测试不代表已验证用户实际V2Ray路径。

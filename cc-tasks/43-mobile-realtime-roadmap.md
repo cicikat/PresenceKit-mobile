@@ -1,8 +1,8 @@
-# 43 独立手机实时连接（R2，roadmap）
+# 43 独立手机实时连接（R2，本地 final_only；真机 observe）
 
-边界修订：2026-10-25。前置为[工单42](42-reliable-mobile-delivery.md)的R0/R1代码与自动验收；真实代理/弱网与首字时延基线仍observe。本文是后续施工约束和验收计划，所有R2运行能力均未实现、未验收。
+边界修订：2026-10-25。前置为[工单42](42-reliable-mobile-delivery.md)的R0/R1代码与自动验收；真实代理/弱网与首字时延基线仍observe。本地已实现 final_only 安全降级、独立前台WS及HTTP持久历史恢复；未开启原始token流、未部署。主体约束复选框保留完整联合验收门槛，已完成的施工/自动项在第六节单独勾选，不以自动测试冒充真机。
 
-- [x] 本轮仅修订工单：补齐单次生成、内容权威、流式过滤、前台生命周期、连接权限隔离及验收/降级边界；下列施工项全部保留未完成。证据：本文六节与验收矩阵逐项对照用户要求；仅此文档变更，git diff --check通过。未修改代码、接口或配置，无跨端运行行为影响；未运行构建、未安装或部署。
+- [x] 历史记录（上轮仅文档修订）：补齐单次生成、内容权威、流式过滤、前台生命周期、连接权限隔离及验收/降级边界；下列施工项全部保留未完成。证据：本文六节与验收矩阵逐项对照用户要求；仅此文档变更，git diff --check通过。未修改代码、接口或配置，无跨端运行行为影响；未运行构建、未安装或部署。
 
 ## 1. 单次生成，多端分发
 
@@ -42,7 +42,28 @@
 
 ## 6. 验收、观测与HTTP降级
 
-以下每项均为未来R2验收，当前全部not-run；自动注入证据与真实手机/代理证据分别记录。
+### 本次施工合同（2026-10-25，已授权实现；不部署、不发布）
+
+- [x] R2a（本地自动项）：核实历史覆盖并补最小兼容投影；复用现有事件账本保存 eligible Reality 最终展示信封，提供按当前授权范围分页的 HTTP 历史。覆盖跨日、队列清空、完整正文、display_text、artifacts 与稳定身份；资源是否仍可下载单独验收。旧记录缺失的展示元数据不伪造。
+- [x] R2b（本地自动项）：独立 `/ws/mobile`、前台连接代际、逐次鉴权、有界心跳/退避与 HTTP 降级；仅订阅现有 turn，不执行生成、工具或记忆写入。安全边界未证明前固定使用 `final_only`，不转发桌面的原始模型 delta；这一降级必须可观测，不能宣称首 token 提速。
+- [x] R2c（本地自动项）：Flutter 接入复用既有消息协调器及 inbox；WS 不推进队列 ACK。前台恢复、断线、关 WS 均通过 HTTP 最终历史对账；暂停和身份变化关闭连接并拒绝旧代际。
+- [x] R2d（本地自动项）：身份、故障、撤权和多端竞态自动回归；同步协议、控制面、缺口及构建证据。自动验收与真机验收分别记账。
+- [ ] 现场：工单42真实网络/设备基线及本单 p50/p95 对比；未获得设备证据前保持 not-run，不部署服务器。
+
+### 已完成施工证据
+
+- R2a/R2b：后端 `47459af`（独立分发/恢复/控制面）与 `ba7b1f1`（遗忘后历史位置不复用）；`core/mobile_realtime.py:35` / `:89` / `:185`、`core/turn_sink.py`、`admin/routers/mobile.py`。相关173项通过，最后R2的29项再次通过。完整授权历史、跨日页、清队列、长期request_id、墓碑、内部标记、撤权及多连接回归见 `tests/test_mobile_realtime.py`。
+- R2c：`lib/controllers/mobile_realtime_controller.dart:10`、`lib/services/mobile_realtime_socket.dart:6`、`lib/controllers/chat_controller.dart`。相关124项通过；随后新增「WS成功即绑定request/turn并结束生成指示」收尾后，R2/发送恢复/揭示/协调器49项再次通过。真实本地WS、黑洞升级关闭、重复段落、迟到HTTP失败与持久化失败均覆盖；WS不推进ACK。
+- 管理面实际fragment/JS配隔离本机fixture，浏览器实测开/关及HTTP降级回显；截图 `build/review/mobile-r2/admin-realtime-enabled.png`。不读写生产配置；后端静态资源和fragment版本均更新。
+- 三面闭环：后端有独立热开关/effective state/state.read观测；手机只消费能力/遵守前后台，复用原HTTP、inbox和消息协调器；桌面协议与Android后台服务无代码变动。本次没有新增Flutter可见文案，不需要新增l10n key。边界见本仓backend/integration、protocols/mobile-channel及后端docs/mobile-realtime-r2.md。
+- R2d：Flutter相关124项通过；最后request/turn绑定与立即停止生成指示收尾后，相关49项再次通过，flutter analyze零问题，最终Dev APK再次构建成功。SHA-256 `30E5060FA6CDC5B9E5EAD38807BF9B0DD938F8EFE8E712E5622D9AB379F96C3C`；产物 `build/app/outputs/flutter-apk/app-dev-debug.apk`；日志在 `build/review/mobile-r2/`（flutter-tests.log、final-tests.log、analyze.log、dev-build.log）。仅本地构建，未安装、未发布、未部署。
+- open：上线前无投影的旧记录仍按旧历史降级；无稳定父turn的独立贴纸/behavior不猜关联，仍沿既有队列/inbox。资源实际可用性、真实手机与模型/网络性能保留现场验收。final_only不宣称模型首token提速。
+
+**流片段和最终消息身份**：`request_id` 关联输入请求；若生成开始时尚无持久 `turn_id/msg_id`，暂态只能以当前连接代际内的 `request_id + stream_id` 关联，不能捏造最终身份。持久化成功后才发送含 `stream_id + turn_id + msg_id` 的绑定及 final；HTTP、历史、队列必须返回同一绑定，客户端按身份替换暂态而非新建成功回复。分段共享同一最终消息身份，并按段序号/出现次数合并。本次 `final_only` 不发送暂态片段，绑定和 final 同帧，且 `msg_id=turn_id`；不得将桌面的临时 stream msg_id 当成手机最终身份。
+
+**失败后的临时内容收尾**：生成失败、持久化失败、取消不发送成功 final。若将来开启增量流，终态必须区分 failed/cancelled/unknown，暂态正文从成功 transcript 移除，停止生成指示并保留原请求的失败或待对账状态；断线/超时不能推断后端取消或允许重生成。通过同一 request_id 的 receipt/已持久历史恢复最终结果；已最终化消息不可被迟到失败降级。缺少终态帧时也须有本机期限，停止指示并转 HTTP 对账。当前 `final_only` 没有半句气泡，沿既有发送失败/不确定结果状态收尾。
+
+以下保留完整R2联合验收门槛。自动注入证据见本节施工结果；真实手机/代理与首字基线全部not-run，不能将矩阵整体勾为完成。
 
 | 检查项 | 必须满足的结果/证据 |
 |---|---|
@@ -64,4 +85,4 @@
 
 顺序：工单42可靠补收→核实持久历史覆盖及安全分发边界→独立前台WS与HTTP降级→竞态/撤权/安全自动验收→取得工单42实测基线并完成真机比较。边界/过滤/历史覆盖无法成立的项应明确标为open或阻塞，不能以“socket已连通”替代验收。
 
-R2/R3划分不变：R2不修改全局ACK合同，不提前实现R3独立设备游标、EventBus、通用传输框架或新的双端消息状态机；复用现有身份、协调器、inbox与HTTP合同，必要的连接代际仅服务本单隔离。部署/发布不在本单默认授权范围。本次仅工单文档修订，不进入实现。
+R2/R3划分不变：R2不修改全局ACK合同，不提前实现R3独立设备游标、EventBus、通用传输框架或新的双端消息状态机；复用现有身份、协调器、inbox与HTTP合同，必要的连接代际仅服务本单隔离。部署/发布不在本单授权范围；2026-10-25 用户已授权本次本地实现。
