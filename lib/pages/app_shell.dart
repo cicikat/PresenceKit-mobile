@@ -263,6 +263,7 @@ class _CompanionAppState extends State<CompanionApp>
       _profileAppearance.restore(includeSessionCharacter: false),
       _capabilitySettings.restore(),
     ]);
+    unawaited(_profileAppearance.applyActiveCharacterPresentation());
     await _profileAppearance.restoreSessionCharacter();
     _restoreComplete = true;
     if (!mounted) return;
