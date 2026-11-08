@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/app_models.dart';
@@ -256,6 +258,8 @@ class ProfileAppearanceController extends ChangeNotifier {
   Future<void> loadPromptAssets() async {
     final token = _accessToken;
     if (token == null) return;
+    // 本地资料先画：头像/名称不挡在网络后面。
+    unawaited(applyActiveCharacterPresentation());
     final generation = ++_assetsGeneration;
     loadingPromptAssets = true;
     promptAssetsError = null;
@@ -266,7 +270,9 @@ class ProfileAppearanceController extends ChangeNotifier {
       promptAssets = assets;
       await _reconcileSessionCharacter(assets);
       if (_disposed || generation != _assetsGeneration) return;
+      notifyListeners();
       await _refreshSessionScope(token);
+      if (_disposed || generation != _assetsGeneration) return;
       if (_disposed || generation != _assetsGeneration) return;
     } on BackendException catch (e) {
       if (_disposed || generation != _assetsGeneration) return;

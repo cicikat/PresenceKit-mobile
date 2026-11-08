@@ -167,7 +167,7 @@ class BackendClient {
     if (token.trim().isEmpty) {
       throw const BackendException('Please enter an access credential first');
     }
-    if (!await settingsStore.isAllowedBaseUrl(baseUrl)) {
+    if (!await _isAllowedBaseUrl(baseUrl)) {
       throw const BackendException('Backend origin is not trusted');
     }
     return Uri.parse('$baseUrl$path');
@@ -289,6 +289,28 @@ class BackendClient {
     }
   }
 
+  HttpClient? _sharedClient;
+  final Map<String, bool> _allowedOriginCache = {};
+
+  HttpClient _newClient() {
+    if (_httpClientFactory == HttpClient.new) {
+      _sharedClient ??= _httpClientFactory()
+        ..connectionTimeout = const Duration(seconds: 3)
+        ..idleTimeout = const Duration(seconds: 30);
+      return _sharedClient!;
+    }
+    return _httpClientFactory()
+      ..connectionTimeout = const Duration(seconds: 3);
+  }
+
+  Future<bool> _isAllowedBaseUrl(String baseUrl) async {
+    final cached = _allowedOriginCache[baseUrl];
+    if (cached != null) return cached;
+    final allowed = await settingsStore.isAllowedBaseUrl(baseUrl);
+    if (allowed) _allowedOriginCache[baseUrl] = true;
+    return allowed;
+  }
+
   Future<Map<String, dynamic>> _request(
     String path, {
     required String token,
@@ -298,9 +320,9 @@ class BackendClient {
     bool expectJson = true,
     String? sessionId,
   }) async {
-    final client = _httpClientFactory()
-      ..connectionTimeout = const Duration(seconds: 8);
-    final budget = HttpRequestBudget(client, timeout);
+    final client = _newClient();
+    final shared = identical(client, _sharedClient);
+    final budget = HttpRequestBudget(client, timeout, closeClient: !shared);
     final receiving =
         path.startsWith('/mobile/poll') ||
         path.startsWith('/mobile/history') ||

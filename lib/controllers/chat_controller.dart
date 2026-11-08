@@ -1103,6 +1103,7 @@ class ChatController extends ChangeNotifier {
         );
         messages = _messagesFromDay(day);
         loaded.add(firstDate);
+        // 首屏只取当天一页；不足 10 条的旧日页延后到首屏后后台补。
         final index = dates.indexOf(firstDate);
         final previous = index >= 0 && index + 1 < dates.length
             ? dates[index + 1]

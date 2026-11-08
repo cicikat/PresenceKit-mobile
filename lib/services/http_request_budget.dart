@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:io';
 
-/// One request owns its sockets. Cancelling a poll cannot cancel a chat send.
+/// One request owns its budget. Cancelling a poll cannot cancel a chat send.
+/// The underlying [HttpClient] may be shared (keep-alive); budget close must
+/// not force-close a shared client, only abort via the timer + [_stopped].
 class HttpRequestBudget {
-  HttpRequestBudget(this.client, Duration total) {
+  HttpRequestBudget(this.client, Duration total, {bool closeClient = true})
+    : _closeClient = closeClient {
     _timer = Timer(total, () => _stop(TimeoutException('request deadline')));
   }
 
   final HttpClient client;
+  final bool _closeClient;
   final Completer<void> _stopped = Completer<void>();
   late final Timer _timer;
   Object? _reason;
@@ -54,7 +58,7 @@ class HttpRequestBudget {
     if (_closed) return;
     _closed = true;
     _timer.cancel();
-    client.close(force: true);
+    if (_closeClient) client.close(force: true);
   }
 }
 
