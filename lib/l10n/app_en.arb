@@ -1,4 +1,10 @@
 {
+  "artifactUnsupported": "This file type cannot be saved on this device",
+  "artifactSaveUnavailable": "File saving is unavailable on this platform",
+  "artifactSaved": "Saved",
+  "artifactSaveCancelled": "Not saved (cancelled or denied by system)",
+  "artifactImageRetry": "Load image / retry",
+
   "screenObservationTitle": "Allow character-requested screenshots",
   "screenObservationHint": "When this phone is active and unlocked, allow a requested screenshot to be sent to your configured vision service for a privacy-filtered summary. Requires the backend screen observation switch. Separate from screen text sharing.",
   "screenObservationRequirements": "Requires Android 11 or later and Accessibility permission. Locked screens are never captured.",

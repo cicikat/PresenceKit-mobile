@@ -202,6 +202,9 @@ class BackendClient {
       }
       final response = await budget.wait(request.close());
       final total = response.contentLength >= 0 ? response.contentLength : null;
+      if (total != null && total > maxBytes) {
+        throw const BackendException('文件过大，无法在手机上处理');
+      }
       final builder = BytesBuilder(copy: false);
       var received = 0;
       await budget.wait(

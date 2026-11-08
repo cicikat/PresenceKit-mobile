@@ -9,6 +9,24 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get artifactUnsupported =>
+      'This file type cannot be saved on this device';
+
+  @override
+  String get artifactSaveUnavailable =>
+      'File saving is unavailable on this platform';
+
+  @override
+  String get artifactSaved => 'Saved';
+
+  @override
+  String get artifactSaveCancelled =>
+      'Not saved (cancelled or denied by system)';
+
+  @override
+  String get artifactImageRetry => 'Load image / retry';
+
+  @override
   String get screenObservationTitle => 'Allow character-requested screenshots';
 
   @override

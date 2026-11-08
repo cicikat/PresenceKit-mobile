@@ -261,3 +261,7 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 管理面提供全局开关、effective state 与 `/perception/screen/status` 无正文观测；电脑视觉观察页、手机系统配置页各有独立本地授权，默认关闭。全局开启时自主工具继承启用，显式工具禁用优先；角色消息继续走原通知/免打扰链路。桌面 IPC 新增可选 onDemandEnabled；手机使用专用 screen_observation 通道与无障碍 worker，不改 mobile poll/ack/relay。
 
 实现及构建/定向测试通过，真实双设备、锁屏、OEM 后台及 VLM/消息联合验收保持 open。管理面既有国际化测试 3 项失败保持 open，详见施工记录，不能将静态检查作为真实设备验收。
+
+## 294 生成图产物
+既有 artifacts[] 支持可选 kind=image 和 image/png、image/jpeg、image/webp。沿原即时回复/推送/历史链路保留元数据，旧文本卡片兼容；chat scope 与会话/角色授权不变。使用固定id的原产物端点带鉴权加载，不拼接带token的图片URL。显示缩略图、放大和失败重试，25MiB有界传输。
+桌面使用 preview_chat_image IPC 返回data URL，下载使用原保存对话框；手机复用ChatImage全屏缩放，saveChatImage(name,mime,bytes) 经AppSettingsStore/PlatformSettingsChannel/MainActivity通道调用系统ACTION_CREATE_DOCUMENT保存二进制图片，不新增存储权限或后台服务。模型密钥、默认连接、角色白名单与用户prompt约束由后端管理面统一配置，客户端不复制设置。真实图像服务/原生窗口/真机保存器验收为observe。

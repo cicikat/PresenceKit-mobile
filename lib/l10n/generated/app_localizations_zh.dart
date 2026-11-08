@@ -9,6 +9,21 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get artifactUnsupported => '此类型暂不支持保存到手机';
+
+  @override
+  String get artifactSaveUnavailable => '当前平台不支持保存文件';
+
+  @override
+  String get artifactSaved => '已保存';
+
+  @override
+  String get artifactSaveCancelled => '未保存（已取消或被系统拒绝）';
+
+  @override
+  String get artifactImageRetry => '加载图片 / 重试';
+
+  @override
   String get screenObservationTitle => '允许角色按需截图';
 
   @override

@@ -39,6 +39,7 @@ class MainActivity : FlutterActivity() {
     private val exportThemeRequest = 9105
     private var pendingThemeExport: MethodChannel.Result? = null
     private var pendingThemeJson: String? = null
+    private var pendingImageExport: ByteArray? = null
     private var pendingImagePickResult: MethodChannel.Result? = null
     private var pendingFilePickResult: MethodChannel.Result? = null
     private var pendingImagesPickResult: MethodChannel.Result? = null
@@ -584,6 +585,27 @@ class MainActivity : FlutterActivity() {
                         prefs.edit().putBoolean("autoPlayVoice", call.argument<Boolean>("value") ?: false).apply()
                         result.success(null)
                     }
+                    "saveChatImage" -> {
+                        val bytes = call.argument<ByteArray>("bytes")
+                        val mime = call.argument<String>("mime").orEmpty()
+                        if (pendingThemeExport != null || bytes == null || bytes.isEmpty() || bytes.size > 25 * 1024 * 1024 || mime !in setOf("image/png", "image/jpeg", "image/webp")) {
+                            result.success(false)
+                        } else {
+                            pendingThemeExport = result
+                            pendingImageExport = bytes
+                            try {
+                                startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    type = mime
+                                    putExtra(Intent.EXTRA_TITLE, File(call.argument<String>("name") ?: "generated.png").name)
+                                }, exportThemeRequest)
+                            } catch (_: Exception) {
+                                pendingThemeExport = null
+                                pendingImageExport = null
+                                result.success(false)
+                            }
+                        }
+                    }
                     "exportThemeJson" -> {
                         val json = call.argument<String>("json").orEmpty()
                         if (pendingThemeExport != null || json.length > 262144) {
@@ -753,11 +775,13 @@ class MainActivity : FlutterActivity() {
         if (requestCode == exportThemeRequest) {
             val callback = pendingThemeExport
             val json = pendingThemeJson
+            val bytes = pendingImageExport ?: json?.toByteArray(Charsets.UTF_8)
+            pendingImageExport = null
             pendingThemeExport = null
             pendingThemeJson = null
             val uri = data?.data
-            val success = resultCode == RESULT_OK && uri != null && json != null && runCatching {
-                contentResolver.openOutputStream(uri!!, "wt")?.use { it.write(json!!.toByteArray(Charsets.UTF_8)) } != null
+            val success = resultCode == RESULT_OK && uri != null && bytes != null && runCatching {
+                contentResolver.openOutputStream(uri!!, "wt")?.use { it.write(bytes!!) } != null
             }.getOrDefault(false)
             callback?.success(success)
             return

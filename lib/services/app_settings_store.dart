@@ -18,6 +18,30 @@ class AppSettingsStore {
 
   bool get _channelAvailable => PlatformSettingsChannel.available;
 
+  /// Save a generated raster image through Android's user-selected document URI.
+  Future<bool> saveChatImage({
+    required String filename,
+    required String mime,
+    required Uint8List bytes,
+  }) async {
+    if (!_channelAvailable ||
+        bytes.isEmpty ||
+        bytes.length > 25 * 1024 * 1024) {
+      return false;
+    }
+    try {
+      return await PlatformSettingsChannel.channel.invokeMethod<bool>(
+            'saveChatImage',
+            {'name': filename, 'mime': mime.split(';').first, 'bytes': bytes},
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   const AppSettingsStore();
 
   Future<String?> loadAppLanguage() async {

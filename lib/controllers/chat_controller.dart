@@ -671,6 +671,7 @@ class ChatController extends ChangeNotifier {
       generation: scope.generation,
       call: (grant) => _backend().downloadChatArtifact(
         artifact.downloadPath,
+        maxBytes: artifact.isImage ? 25 * 1024 * 1024 : 2 * 1024 * 1024,
         token: token,
         sessionId: grant.sessionId,
         onProgress: onProgress,

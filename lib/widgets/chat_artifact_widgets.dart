@@ -9,6 +9,8 @@ import '../models/chat_artifact.dart';
 import '../services/backend_client.dart' show BackendException;
 import '../services/chat_artifact_saver.dart';
 import 'common_widgets.dart';
+import 'chat_image.dart';
+import '../l10n/l10n.dart';
 
 typedef ArtifactFetcher =
     Future<Uint8List> Function(
@@ -30,7 +32,18 @@ IconData artifactIcon(ChatArtifact a) {
     return Icons.picture_as_pdf_outlined;
   }
   if (name.endsWith('.csv')) return Icons.table_chart_outlined;
-  const code = ['.json', '.py', '.js', '.css', '.html', '.htm', '.xml', '.yaml', '.yml', '.toml'];
+  const code = [
+    '.json',
+    '.py',
+    '.js',
+    '.css',
+    '.html',
+    '.htm',
+    '.xml',
+    '.yaml',
+    '.yml',
+    '.toml',
+  ];
   if (code.any(name.endsWith)) return Icons.code;
   if (name.endsWith('.md') || name.endsWith('.txt')) {
     return Icons.description_outlined;
@@ -101,6 +114,36 @@ class ArtifactCard extends StatefulWidget {
 }
 
 class _ArtifactCardState extends State<ArtifactCard> {
+  Uint8List? _imageBytes;
+  @override
+  void initState() {
+    super.initState();
+    if (widget.artifact.isImage) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadImage());
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ArtifactCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.artifact.id != widget.artifact.id) {
+      _imageBytes = null;
+      _imageEpoch++;
+      if (widget.artifact.isImage) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _loadImage());
+      }
+    }
+  }
+
+  int _imageEpoch = 0;
+  Future<void> _loadImage() async {
+    if (!mounted) return;
+    final epoch = _imageEpoch;
+    final bytes = await _load();
+    if (!mounted || epoch != _imageEpoch) return;
+    if (bytes != null) setState(() => _imageBytes = bytes);
+  }
+
   bool _busy = false;
   double? _progress;
   String? _notice;
@@ -178,22 +221,32 @@ class _ArtifactCardState extends State<ArtifactCard> {
 
   Future<void> _download() async {
     final a = widget.artifact;
-    if (!a.isTextLike) {
-      _setNotice('此类型暂不支持保存到手机', error: true);
+    if (!a.isTextLike && !a.isImage) {
+      _setNotice(context.l10n.artifactUnsupported, error: true);
       return;
     }
-    final bytes = await _load();
+    final bytes = _imageBytes ?? await _load();
     if (bytes == null || !mounted) return;
     if (!widget.saver.available) {
-      _setNotice('当前平台不支持保存文件', error: true);
+      _setNotice(context.l10n.artifactSaveUnavailable, error: true);
       return;
     }
-    final saved = await widget.saver.saveText(
-      filename: a.filename,
-      mime: a.mime,
-      text: utf8.decode(bytes, allowMalformed: true),
+    final saved = a.isImage
+        ? await widget.saver.saveImage(
+            filename: a.filename,
+            mime: a.mime,
+            bytes: bytes,
+          )
+        : await widget.saver.saveText(
+            filename: a.filename,
+            mime: a.mime,
+            text: utf8.decode(bytes, allowMalformed: true),
+          );
+    if (!mounted) return;
+    _setNotice(
+      saved ? context.l10n.artifactSaved : context.l10n.artifactSaveCancelled,
+      error: !saved,
     );
-    _setNotice(saved ? '已保存：${a.filename}' : '未保存（已取消或被系统拒绝）', error: !saved);
   }
 
   @override
@@ -234,6 +287,16 @@ class _ArtifactCardState extends State<ArtifactCard> {
               ),
             ],
           ),
+          if (a.isImage && _imageBytes != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: ChatImage(bytes: _imageBytes!),
+            ),
+          if (a.isImage && _imageBytes == null && !_busy)
+            TextButton(
+              onPressed: _loadImage,
+              child: Text(context.l10n.artifactImageRetry),
+            ),
           if (_busy)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -255,7 +318,7 @@ class _ArtifactCardState extends State<ArtifactCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              if (a.previewable)
+              if (a.previewable && !a.isImage)
                 TextButton(
                   key: const ValueKey('artifact-preview'),
                   onPressed: _busy ? null : _preview,

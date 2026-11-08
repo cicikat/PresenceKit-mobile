@@ -98,6 +98,36 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @artifactUnsupported.
+  ///
+  /// In zh, this message translates to:
+  /// **'此类型暂不支持保存到手机'**
+  String get artifactUnsupported;
+
+  /// No description provided for @artifactSaveUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前平台不支持保存文件'**
+  String get artifactSaveUnavailable;
+
+  /// No description provided for @artifactSaved.
+  ///
+  /// In zh, this message translates to:
+  /// **'已保存'**
+  String get artifactSaved;
+
+  /// No description provided for @artifactSaveCancelled.
+  ///
+  /// In zh, this message translates to:
+  /// **'未保存（已取消或被系统拒绝）'**
+  String get artifactSaveCancelled;
+
+  /// No description provided for @artifactImageRetry.
+  ///
+  /// In zh, this message translates to:
+  /// **'加载图片 / 重试'**
+  String get artifactImageRetry;
+
   /// No description provided for @screenObservationTitle.
   ///
   /// In zh, this message translates to:

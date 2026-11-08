@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 /// Appearance get/set includes independent Dream sizes (12-28), ARGB colors,
 /// showReasoning, expandReasoning and reasoningOpacity (0-1, default .85).
 /// localPresentationDirectory returns the
+/// saveChatImage writes bounded PNG/JPEG/WebP bytes to a system-selected document URI.
 /// private font/profile directory; exportThemeJson uses the system save dialog.
 /// Appearance get/set includes local showToolActivity (default true).
 /// Appearance get/set includes local showChatTime (default true).

@@ -7,6 +7,7 @@ class ChatArtifact {
     required this.mime,
     required this.size,
     this.previewable = false,
+    this.kind,
     this.downloadUrl,
     this.previewUrl,
   });
@@ -20,6 +21,14 @@ class ChatArtifact {
   final String mime;
   final int size;
   final bool previewable;
+  final String? kind;
+  bool get isImage =>
+      kind == 'image' ||
+      const [
+        'image/png',
+        'image/jpeg',
+        'image/webp',
+      ].contains(mime.split(';').first);
   final String? downloadUrl;
   final String? previewUrl;
 
@@ -27,11 +36,12 @@ class ChatArtifact {
   static ChatArtifact? tryParse(Object? raw) {
     if (raw is! Map) return null;
     final id = (raw['id'] is String ? raw['id'] as String : '').trim();
-    final filename = (raw['filename'] is String ? raw['filename'] as String : '')
-        .trim();
+    final filename =
+        (raw['filename'] is String ? raw['filename'] as String : '').trim();
     if (!idPattern.hasMatch(id) || filename.isEmpty) return null;
     final size = raw['size'] is num ? (raw['size'] as num).toInt() : 0;
-    final mime = raw['mime'] is String && (raw['mime'] as String).trim().isNotEmpty
+    final mime =
+        raw['mime'] is String && (raw['mime'] as String).trim().isNotEmpty
         ? raw['mime'] as String
         : 'application/octet-stream';
     return ChatArtifact(
@@ -42,6 +52,7 @@ class ChatArtifact {
       mime: mime,
       size: size < 0 ? 0 : size,
       previewable: raw['previewable'] == true,
+      kind: raw['kind'] == 'image' ? 'image' : null,
       downloadUrl: raw['download_url'] is String
           ? raw['download_url'] as String
           : null,
@@ -69,6 +80,7 @@ class ChatArtifact {
     'mime': mime,
     'size': size,
     'previewable': previewable,
+    if (kind != null) 'kind': kind,
     if (downloadUrl != null) 'download_url': downloadUrl,
     if (previewUrl != null) 'preview_url': previewUrl,
   };
