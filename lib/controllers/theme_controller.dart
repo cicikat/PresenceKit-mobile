@@ -57,7 +57,7 @@ class ThemeController extends ChangeNotifier {
   String? _lightThemePresetId;
   String? _darkThemePresetId;
   final Map<String, String> _layoutPresetIds = {};
-  DailyLayout _dailyLayout = DailyLayout.classic;
+  DailyLayout _dailyLayout = DailyLayout.classic; // 新用户默认书信见 restore()
   DreamLayout _dreamLayout = DreamLayout.classic;
   DailyLayout get dailyLayout => _dailyLayout;
   DreamLayout get dreamLayout => _dreamLayout;
@@ -158,6 +158,8 @@ class ThemeController extends ChangeNotifier {
     if (_find(_lightThemePresetId) == null) _lightThemePresetId = null;
     if (_find(_darkThemePresetId) == null) _darkThemePresetId = null;
     _layoutPresetIds.removeWhere((key, value) => _find(value) == null);
+    // 全新用户（从未有过快照）默认书信布局；已有用户保留原选择。
+    if (raw == null) _dailyLayout = DailyLayout.letter;
     notifyListeners();
   }
 
