@@ -210,7 +210,7 @@ class ChatController extends ChangeNotifier {
     }
     _rememberReply(envelope.content, msgId: envelope.identity);
     notifyListeners();
-    if (fresh.isNotEmpty && _isAtBottom) scrollToBottom();
+    if (fresh.isNotEmpty) _followIncoming(fresh.length);
   }
 
   double? _lastScrollPixels;
@@ -875,7 +875,6 @@ class ChatController extends ChangeNotifier {
           time: _nowLabel(),
         ),
       ); */
-      scrollToBottom();
     } catch (e) {
       if (_session.isStale(generation) ||
           !scope.matchesLive(
@@ -891,7 +890,6 @@ class ChatController extends ChangeNotifier {
       /* sent.add(
         ChatMessage(role: 'him', text: '（手机端遇到一个未预期错误：$e）', time: _nowLabel()),
       ); */
-      scrollToBottom();
     } finally {
       if (_session.isCurrent(generation)) {
         final live = scope.matchesLive(
@@ -924,7 +922,10 @@ class ChatController extends ChangeNotifier {
     final pending = _messageQueue.expand((batch) => batch).toList();
     _messageQueue.clear();
     if (_revealWake?.isCompleted == false) _revealWake!.complete();
-    if (pending.isNotEmpty) sent.addAll(pending.map((m) => m.settled()));
+    if (pending.isNotEmpty) {
+      sent.addAll(pending.map((m) => m.settled()));
+      _followIncoming(pending.where((message) => message.role == 'him').length);
+    }
     himTyping = false;
     notifyListeners();
   }
@@ -1199,7 +1200,11 @@ class ChatController extends ChangeNotifier {
       if (!reconcileLocal) visibleMessageLimit = initialVisibleMessageCount;
       if (unchanged) return;
       notifyListeners();
-      if (!silent || _isAtBottom) scrollToBottom(animate: !silent);
+      if (!silent && previousSnapshot.isEmpty && localSnapshot.isEmpty) {
+        scrollToBottom(animate: false);
+      } else {
+        _followIncoming(0);
+      }
     } on BackendException catch (e) {
       if (_session.isCurrent(generation)) historyError = e.message;
     } catch (e) {
@@ -1484,12 +1489,6 @@ class ChatController extends ChangeNotifier {
       if (fresh.isNotEmpty) {
         mobileReceivedCount += fresh.length;
         lastMobileContent = fresh.last.content;
-        if (_isAtBottom) {
-          scrollToBottom();
-        } else {
-          showJumpToLatest = true;
-          unreadHimCount += fresh.length;
-        }
       }
       notifyListeners();
       if (stale()) return;
@@ -1616,8 +1615,9 @@ class ChatController extends ChangeNotifier {
         }
       }
       if (immediate.isNotEmpty) {
-        sent.addAll(_mergeIncomingRows(immediate));
-        scrollToBottom();
+        final fresh = _mergeIncomingRows(immediate);
+        sent.addAll(fresh);
+        if (fresh.isNotEmpty) _followIncoming(fresh.length);
       }
       return;
     }
@@ -1752,12 +1752,10 @@ class ChatController extends ChangeNotifier {
       if (!uncertain) backendError = e.message;
       if (e.isSessionNotFound) _onPresenceSessionInvalid?.call();
       _markSendFailed(outgoing.id, uncertain: uncertain);
-      scrollToBottom();
     } catch (e) {
       if (!_scopeStillLive(generation, scope)) return;
       dropAnchor = true;
       _markSendFailed(outgoing.id, uncertain: true);
-      scrollToBottom();
     } finally {
       if (_session.isCurrent(generation)) {
         if (dropAnchor || backendError != null) {
@@ -1851,7 +1849,6 @@ class ChatController extends ChangeNotifier {
       return;
     }
     final generation = _session.generation;
-    final wasAtBottom = _isAtBottom;
     _messageQueue.add(List.of(messages));
     if (_session.playingSegments) return;
     _session.playingSegments = true;
@@ -1863,12 +1860,8 @@ class ChatController extends ChangeNotifier {
         if (batch.isEmpty) _messageQueue.removeAt(0);
         himTyping = false;
         sent.add(message);
+        _followIncoming(message.role == 'him' ? 1 : 0);
         notifyListeners();
-        if (wasAtBottom) {
-          scrollToBottom();
-        } else if (message.role == 'him') {
-          unreadHimCount++;
-        }
         if (_messageQueue.isNotEmpty) {
           himTyping = true;
           notifyListeners();
@@ -1896,11 +1889,36 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  bool get _isAtBottom =>
-      !scrollController.hasClients ||
-      scrollController.position.maxScrollExtent -
-              scrollController.position.pixels <=
-          260;
+  void _followIncoming(int unread) {
+    if (!scrollController.hasClients) return;
+    final position = scrollController.position;
+    if (!position.hasContentDimensions) return;
+    void markUnread() {
+      if (unread == 0) return;
+      unreadHimCount += unread;
+      showJumpToLatest = true;
+      notifyListeners();
+    }
+
+    if (position.extentAfter > 32 || position.isScrollingNotifier.value) {
+      markUnread();
+      return;
+    }
+    final generation = _session.generation;
+    final pixels = position.pixels;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_session.isCurrent(generation) ||
+          !scrollController.hasClients ||
+          !identical(scrollController.position, position)) {
+        return;
+      }
+      if (position.isScrollingNotifier.value || position.pixels < pixels - 0.5) {
+        markUnread();
+        return;
+      }
+      if (position.extentAfter > 0) position.jumpTo(position.maxScrollExtent);
+    });
+  }
 
   List<String> _splitSegments(String text) {
     final value = text.trim();
@@ -2251,20 +2269,16 @@ class ChatController extends ChangeNotifier {
     final distanceFromBottom = position.maxScrollExtent - pixels;
     final previousPixels = _lastScrollPixels;
     _lastScrollPixels = pixels;
-    var show = showJumpToLatest;
-    if (previousPixels != null) {
-      final delta = pixels - previousPixels;
-      if (delta > 0.5) {
-        // 向下滑（朝最新方向）：立即隐藏，即使距底仍 >260。
-        show = false;
-      } else if (delta < -0.5 && distanceFromBottom > 260) {
-        // 向上滑且距底 >260：显示。
-        show = true;
+    if (distanceFromBottom <= 32) {
+      if (showJumpToLatest || unreadHimCount != 0) {
+        showJumpToLatest = false;
+        unreadHimCount = 0;
+        notifyListeners();
       }
-    }
-    if (distanceFromBottom <= 260) show = false;
-    if (show != showJumpToLatest) {
-      showJumpToLatest = show;
+    } else if (!showJumpToLatest &&
+        previousPixels != null &&
+        pixels < previousPixels - 0.5) {
+      showJumpToLatest = true;
       notifyListeners();
     }
     if (position.pixels < 200) {
@@ -2305,8 +2319,11 @@ class ChatController extends ChangeNotifier {
       unreadHimCount = 0;
       notifyListeners();
     }
-    void scroll({required bool animate}) {
-      if (!scrollController.hasClients) return;
+    final generation = _session.generation;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_session.isCurrent(generation) || !scrollController.hasClients) {
+        return;
+      }
       final target = scrollController.position.maxScrollExtent;
       if (animate) {
         scrollController.animateTo(
@@ -2317,17 +2334,7 @@ class ChatController extends ChangeNotifier {
       } else {
         scrollController.jumpTo(target);
       }
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => scroll(animate: animate),
-    );
-    if (animate) {
-      Future<void>.delayed(
-        const Duration(milliseconds: 360),
-        () => scroll(animate: false),
-      );
-    }
+    });
   }
 
   @override

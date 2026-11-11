@@ -41,6 +41,63 @@ void main() {
     controller.dispose();
   });
 
+  testWidgets('later reply segments leave the history reader in place', (
+    tester,
+  ) async {
+    const store = AppSettingsStore();
+    final backend = _LongReplyBackend();
+    final controller = ChatController(
+      backend: () => backend,
+      token: () => 'test',
+      settings: const SettingsStore(store),
+      relay: const RelayStatusService(store),
+      deliveryCharId: () => 'char-a',
+      resolvePresenceSession: ({required String charId, bool force = false}) async =>
+          PresenceSessionGrant(
+            sessionId: 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          ),
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: ListenableBuilder(
+        listenable: controller,
+        builder: (context, child) => ListView.builder(
+          controller: controller.scrollController,
+          itemExtent: 60,
+          itemCount: 60 + controller.sent.length,
+          itemBuilder: (context, index) => Text('row $index'),
+        ),
+      ),
+    ));
+    controller.scrollController.jumpTo(
+      controller.scrollController.position.maxScrollExtent,
+    );
+    await tester.pump();
+    controller.send('hello');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 280));
+    await tester.pump();
+    expect(controller.sent.where((m) => m.role == 'him').length, 1);
+
+    final position = controller.scrollController.position;
+    position.jumpTo(position.maxScrollExtent - 200);
+    await tester.pump();
+    final readingPosition = position.pixels;
+    final unreadBefore = controller.unreadHimCount;
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pump();
+
+    expect(controller.sent.where((m) => m.role == 'him').length, 3);
+    expect(position.pixels, closeTo(readingPosition, 0.5));
+    expect(controller.showJumpToLatest, isTrue);
+    expect(controller.unreadHimCount, unreadBefore + 2);
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
+
   test('a new reply loses its animation flag once reveal starts', () {
     const store = AppSettingsStore();
     final backend = BackendClient(
