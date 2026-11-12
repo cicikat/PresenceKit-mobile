@@ -83,6 +83,7 @@ class _Backend extends BackendClient {
     required String token,
     ReplyTarget? replyTo,
     String? sessionId,
+    String? voiceReceipt,
     String? requestId,
   }) {
     sends++;

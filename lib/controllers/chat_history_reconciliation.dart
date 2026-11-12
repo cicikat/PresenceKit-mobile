@@ -175,8 +175,11 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
     final item = source[i];
     // An unconfirmed send must not inherit the turn of a neighbouring bubble
     // (it would claim a later message's reply); only its own turn_id,
-    // request_id or exact text can reconcile it.
-    final turn = (item.failed || item.uncertain)
+    // request_id can reconcile an identified send.
+    final turn =
+        (item.failed ||
+            item.uncertain ||
+            (item.role == 'you' && item.requestId != null))
         ? (item.turnId?.isNotEmpty == true ? item.turnId : null)
         : _turn(source, i);
     // A sticker carries no text the log could echo, so identity is the only
@@ -241,7 +244,8 @@ Map<int, int> _matches(List<ChatMessage> remote, List<ChatMessage> source) {
             unique) {
           candidates.add(j);
         }
-      } else if (j >= cursor &&
+      } else if (!(item.role == 'you' && item.requestId != null) &&
+          j >= cursor &&
           (item.text == candidate.text ||
               (item.role == 'you' &&
                   item.attachments.isNotEmpty &&

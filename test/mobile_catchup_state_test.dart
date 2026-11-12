@@ -87,6 +87,7 @@ class _Backend extends BackendClient {
     required String token,
     ReplyTarget? replyTo,
     String? sessionId,
+    String? voiceReceipt,
     String? requestId,
   }) async => const BackendChatResponse(
     reply: 'styled',
@@ -145,7 +146,7 @@ ChatController _controller(
   settings: SettingsStore(settings),
   relay: RelayStatusService(settings),
   deliveryOrigin: deliveryOrigin,
-  deliveryOwner: deliveryOwner,
+  deliveryOwner: deliveryOwner ?? () => 'owner',
   deliveryCharId: () => 'char-a',
   resolvePresenceSession:
       ({required String charId, bool force = false}) async =>
@@ -213,7 +214,7 @@ void main() {
       pollResults: [],
     );
     final controller = _controller(backend, settings);
-    controller.send('hello');
+    await controller.send('hello');
     await Future<void>.delayed(Duration.zero);
     final reply = controller.sent.singleWhere((m) => m.role == 'him');
     expect(reply.text, 'styled');

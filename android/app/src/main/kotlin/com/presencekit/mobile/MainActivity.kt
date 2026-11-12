@@ -103,6 +103,7 @@ class MainActivity : FlutterActivity() {
 
     private fun handleSettingsMethodCall(call: MethodCall, result: MethodChannel.Result) {
         val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
+        if (ChatOutboxStorage.dispatch(this, call, result)) return
         if (MobileDeliveryChannel.dispatch(call, prefs, result)) return
         when (call.method) {
                     "getAppLanguage" -> {

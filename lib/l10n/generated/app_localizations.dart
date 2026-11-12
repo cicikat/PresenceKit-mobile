@@ -1100,6 +1100,60 @@ abstract class AppLocalizations {
   /// **'确认中'**
   String get chatConfirming;
 
+  /// No description provided for @chatOutboxQueued.
+  ///
+  /// In zh, this message translates to:
+  /// **'本机排队中'**
+  String get chatOutboxQueued;
+
+  /// No description provided for @chatOutboxSending.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送中…'**
+  String get chatOutboxSending;
+
+  /// No description provided for @chatOutboxUnknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'投递结果未知'**
+  String get chatOutboxUnknown;
+
+  /// No description provided for @chatOutboxBlocked.
+  ///
+  /// In zh, this message translates to:
+  /// **'投递受阻'**
+  String get chatOutboxBlocked;
+
+  /// No description provided for @chatOutboxCheck.
+  ///
+  /// In zh, this message translates to:
+  /// **'查询投递结果'**
+  String get chatOutboxCheck;
+
+  /// No description provided for @chatOutboxRemove.
+  ///
+  /// In zh, this message translates to:
+  /// **'移出本机队列'**
+  String get chatOutboxRemove;
+
+  /// No description provided for @chatOutboxRemoveDetail.
+  ///
+  /// In zh, this message translates to:
+  /// **'移除后会继续发送后续消息。服务器已经收到的消息仍可能出现在历史中。'**
+  String get chatOutboxRemoveDetail;
+
+  /// No description provided for @chatOutboxStorageError.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法更新本机投递队列。请检查存储后刷新。'**
+  String get chatOutboxStorageError;
+
+  /// No description provided for @chatOutboxCorrupt.
+  ///
+  /// In zh, this message translates to:
+  /// **'部分本机投递记录无法读取。'**
+  String get chatOutboxCorrupt;
+
   /// No description provided for @chatSendFailed.
   ///
   /// In zh, this message translates to:

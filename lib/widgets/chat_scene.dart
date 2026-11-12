@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/chat_controller.dart';
+import '../services/mobile_outbox_store.dart';
 import '../controllers/voice_input_controller.dart';
 import '../models/app_models.dart';
 import '../l10n/l10n.dart';
@@ -85,6 +86,38 @@ class ChatScene extends StatelessWidget {
 
   Widget _build(BuildContext context) {
     final l10n = context.l10n;
+    String? deliveryLabel(ChatMessage message) =>
+        switch (controller.deliveryState(message)) {
+          OutboxState.queued => l10n.chatOutboxQueued,
+          OutboxState.sending => l10n.chatOutboxSending,
+          OutboxState.outcomeUnknown => l10n.chatOutboxUnknown,
+          OutboxState.blocked => l10n.chatOutboxBlocked,
+          OutboxState.retryableFailed => l10n.chatSendFailed,
+          null => null,
+        };
+    Future<void> removeOutgoing(ChatMessage message) async {
+      final remove = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: Text(l10n.chatOutboxRemove),
+          content: Text(l10n.chatOutboxRemoveDetail),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog),
+              child: Text(l10n.cancelAction),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: Text(l10n.chatOutboxRemove),
+            ),
+          ],
+        ),
+      );
+      if (remove == true && context.mounted) {
+        await controller.removeFromOutbox(message);
+      }
+    }
+
     final backendBusy = controller.sending;
     final himTyping = controller.himTyping;
     final backendError = controller.backendError;
@@ -144,6 +177,13 @@ class ChatScene extends StatelessWidget {
           text: l10n.chatHistoryError(
             localizeSessionScopeError(l10n, historyError),
           ),
+        ),
+      if (controller.outboxError != null)
+        MetaLine(
+          c: c,
+          text: controller.outboxError == 'corrupt'
+              ? l10n.chatOutboxCorrupt
+              : l10n.chatOutboxStorageError,
         ),
       if (backendBusy) MetaLine(c: c, text: l10n.chatWaitingReply),
       if (backendError != null)
@@ -407,6 +447,10 @@ class ChatScene extends StatelessWidget {
                                   quotedAuthor: quoteAuthor,
                                   failed: m.failed,
                                   uncertain: m.uncertain,
+                                  deliveryLabel: deliveryLabel(m),
+                                  onRemoveOutgoing: m.failed || m.uncertain
+                                      ? () => removeOutgoing(m)
+                                      : null,
                                   onRetry: () => controller.retryMessage(m),
                                   onReply: () => controller.setReplyTarget(m),
                                   showDateDivider:

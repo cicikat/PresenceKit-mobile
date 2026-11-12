@@ -28,7 +28,10 @@ void main() {
                 fontSize: 16,
                 sending: false,
                 onOpenAttach: () => attached++,
-                onSend: (text) => sent = text,
+                onSend: (text) async {
+                  sent = text;
+                  return true;
+                },
                 onVoiceRecordStart: () async {
                   recorded++;
                   return null;

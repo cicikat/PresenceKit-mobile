@@ -15,6 +15,9 @@ class SettingsStore {
   const SettingsStore(this._store);
   final AppSettingsStore _store;
 
+  Future<String?> loadChatOutbox() => _store.loadChatOutbox();
+  Future<void> saveChatOutbox(String value) => _store.saveChatOutbox(value);
+
   Future<String?> loadBackendBaseUrl() => _store.loadBackendBaseUrl();
   Future<void> saveBackendBaseUrl(String value) =>
       _store.saveBackendBaseUrl(value);

@@ -17,8 +17,8 @@
 ///   or another history read is in flight
 /// - two concurrent history reads, initial syncs, connection refreshes,
 ///   sends, or polls
-/// - dropping a queued user send or a failed bubble across generation reset
-///   until [resetForConnectionChange] explicitly clears live queues
+/// Durable outgoing delivery belongs to MobileOutboxStore. Resetting the
+/// view epoch only invalidates live work and UI updates.
 class ChatSessionCoordinator {
   int generation = 0;
   bool disposed = false;

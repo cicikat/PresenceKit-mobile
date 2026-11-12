@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/main.dart';
 import 'package:presencekit_mobile/models/session_scope.dart';
+import 'package:presencekit_mobile/models/theme_models.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 
 class _ForegroundSettingsStore extends AppSettingsStore {
-  _ForegroundSettingsStore(this.baseUrl);
+  _ForegroundSettingsStore(this.baseUrl, {this.classic = false});
+
+  final bool classic;
+
+  @override
+  Future<String?> loadCustomThemePalette() async => classic ? const ThemePresetSnapshot(
+    lightThemePresetId: null, darkThemePresetId: null, themeMode: 'system', presets: [],
+  ).toJsonString() : null;
 
   final String baseUrl;
   final List<String> events = [];
@@ -173,6 +181,7 @@ class _ForegroundBackendClient extends BackendClient {
     required String token,
     ReplyTarget? replyTo,
     String? sessionId,
+    String? voiceReceipt,
     String? requestId,
   }) async {
     return chatResponse ??
@@ -182,6 +191,7 @@ class _ForegroundBackendClient extends BackendClient {
           replyTo: replyTo,
           sessionId: sessionId,
           requestId: requestId,
+          voiceReceipt: voiceReceipt,
         );
   }
 
@@ -245,7 +255,7 @@ void main() {
   testWidgets('chat status shows emotion without a retired affection display', (
     tester,
   ) async {
-    final settings = _ForegroundSettingsStore('http://127.0.0.1:8080');
+    final settings = _ForegroundSettingsStore('http://127.0.0.1:8080', classic: true);
     final backend = _ForegroundBackendClient(
       settings,
       chatResponse: BackendChatResponse.fromJson(const {
@@ -269,6 +279,9 @@ void main() {
     await tester.tap(find.byIcon(Icons.send_rounded));
     await tester.pump(const Duration(seconds: 1));
 
+    for (var i = 0; i < 12 && find.text('后端已接入 · gentle').evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
     expect(find.text('后端已接入 · gentle'), findsOneWidget);
     expect(find.textContaining('好感'), findsNothing);
 
