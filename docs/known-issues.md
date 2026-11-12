@@ -1,3 +1,8 @@
+## 工单 308 · Android 真机投递验收（observe）
+
+待连接设备运行五连发、断网及 Wi-Fi/移动网络/VPN 切换、后台唤醒、杀进程和附件混发。
+需记录原 request_id 对账、状态转换、通知 inbox 与发件队列独立性。测试用例使用合成连接和数据。
+
 ## R2 前台实时验收边界（工单43，observe/open）
 
 current为本地final_only安全降级：独立WS、身份合并、HTTP补收与持久化失败收尾已实现。未部署/安装，真实手机、V2Ray/Wi-Fi/流量/后台/杀进程及真实模型p50/p95仍not-run，不能声称首token提速。上线前无展示投影的旧消息仍旧历史降级；无父turn的独立贴纸/behavior仍由原队列/inbox消费，清队列后不能伪造恢复。更细边界见工单43与后端docs/mobile-realtime-r2.md。

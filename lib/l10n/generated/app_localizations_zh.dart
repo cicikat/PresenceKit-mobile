@@ -536,6 +536,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatConfirming => '确认中';
 
   @override
+  String get chatOutboxQueued => '本机排队中';
+
+  @override
+  String get chatOutboxSending => '发送中…';
+
+  @override
+  String get chatOutboxUnknown => '投递结果未知';
+
+  @override
+  String get chatOutboxBlocked => '投递受阻';
+
+  @override
+  String get chatOutboxCheck => '查询投递结果';
+
+  @override
+  String get chatOutboxRemove => '移出本机队列';
+
+  @override
+  String get chatOutboxRemoveDetail => '移除后会继续发送后续消息。服务器已经收到的消息仍可能出现在历史中。';
+
+  @override
+  String get chatOutboxStorageError => '无法更新本机投递队列。请检查存储后刷新。';
+
+  @override
+  String get chatOutboxCorrupt => '部分本机投递记录无法读取。';
+
+  @override
   String get chatSendFailed => '发送失败';
 
   @override

@@ -1231,6 +1231,8 @@ class YouMessage extends StatefulWidget {
     this.quotedAuthor,
     this.failed = false,
     this.uncertain = false,
+    this.deliveryLabel,
+    this.onRemoveOutgoing,
     this.onRetry,
     this.onReply,
     this.showDateDivider = false,
@@ -1250,6 +1252,8 @@ class YouMessage extends StatefulWidget {
   final String? quotedAuthor;
   final bool failed;
   final bool uncertain;
+  final String? deliveryLabel;
+  final VoidCallback? onRemoveOutgoing;
   final VoidCallback? onRetry;
   final VoidCallback? onReply;
   final bool showDateDivider;
@@ -1540,22 +1544,27 @@ class _YouMessageState extends State<YouMessage> {
                           author: widget.quotedAuthor,
                         )
                       : _QuoteBar(c: c, text: widget.quotedText!, dark: true),
-                if (widget.uncertain && !widget.failed)
+                if (widget.deliveryLabel != null || (widget.uncertain && !widget.failed))
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      context.l10n.chatConfirming,
+                      widget.deliveryLabel ?? context.l10n.chatConfirming,
                       style: TextStyle(
                         fontSize: 12,
                         color: c.userBubbleText.withValues(alpha: 0.6),
                       ),
                     ),
                   ),
-                if (widget.failed)
+                if (widget.failed || widget.uncertain)
                   TextButton.icon(
                     onPressed: widget.onRetry,
                     icon: const Icon(Icons.refresh_rounded, size: 14),
-                    label: Text(context.l10n.chatRetry),
+                    label: Text(widget.uncertain ? context.l10n.chatOutboxCheck : context.l10n.chatRetry),
+                  ),
+                if (widget.onRemoveOutgoing != null)
+                  TextButton(
+                    onPressed: widget.onRemoveOutgoing,
+                    child: Text(context.l10n.chatOutboxRemove),
                   ),
               ],
             ),
@@ -1773,7 +1782,7 @@ class Composer extends StatefulWidget {
   final double fontSize;
   final bool sending;
   final VoidCallback onOpenAttach;
-  final ValueChanged<String> onSend;
+  final Future<bool> Function(String) onSend;
 
   /// 开始录音；返回 false 表示启动失败（如无权限），composer 会回退到未录音态。
   final Future<String?> Function() onVoiceRecordStart;
@@ -1793,6 +1802,7 @@ class _ComposerState extends State<Composer> {
   final ValueNotifier<String> _draft = ValueNotifier<String>('');
   bool _recording = false;
   bool _transcribing = false;
+  bool _persistingDraft = false;
   String? _voiceError;
 
   Future<void> _handleRecordStart() async {
@@ -1847,6 +1857,20 @@ class _ComposerState extends State<Composer> {
     _draft.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitDraft() async {
+    final text = _controller.text;
+    if (_persistingDraft || text.trim().isEmpty) return;
+    _persistingDraft = true;
+    try {
+      if (await widget.onSend(text) && mounted && _controller.text == text) {
+        _controller.clear();
+        _draft.value = '';
+      }
+    } finally {
+      _persistingDraft = false;
+    }
   }
 
   Widget _messengerComposer(BuildContext context) {
@@ -2017,9 +2041,7 @@ class _ComposerState extends State<Composer> {
                               foregroundColor: Colors.white,
                             ),
                             onPressed: () {
-                              widget.onSend(_controller.text);
-                              _controller.clear();
-                              _draft.value = '';
+                              unawaited(_submitDraft());
                             },
                             icon: const Icon(Icons.send_rounded, size: 20),
                           ),
@@ -2201,9 +2223,7 @@ class _ComposerState extends State<Composer> {
                           padding: EdgeInsets.zero,
                         ),
                         onPressed: () {
-                          widget.onSend(_controller.text);
-                          _controller.clear();
-                          _draft.value = '';
+                          unawaited(_submitDraft());
                         },
                         icon: const Icon(Icons.send_rounded, size: 19),
                       ),
@@ -2220,9 +2240,7 @@ class _ComposerState extends State<Composer> {
                         ),
                       ),
                       onPressed: () {
-                        widget.onSend(_controller.text);
-                        _controller.clear();
-                        _draft.value = '';
+                        unawaited(_submitDraft());
                       },
                       icon: Icon(Icons.send_rounded, size: 15),
                       label: Text(

@@ -207,7 +207,7 @@ class _CompanionAppState extends State<CompanionApp>
       stickerEnabled: () => _capabilitySettings.stickerEnabled,
       autoPlayVoice: () => _capabilitySettings.autoPlayVoice,
       deliveryOrigin: () => _backendBaseUrl,
-      deliveryOwner: () => _ownerUserId,
+      deliveryOwner: () => _profileAppearance.presenceGrant?.ownerId ?? _ownerUserId,
       deliveryCharId: () => _currentCharacterId,
       resolvePresenceSession: ({required String charId, bool force = false}) {
         return _profileAppearance.ensurePresenceSession(
@@ -1203,7 +1203,6 @@ class _CompanionAppState extends State<CompanionApp>
   }
 
   Future<void> _pickAndUploadFile() async {
-    if (_chatController.sending) return;
     final picked = await _attachments.pickFile();
     if (!mounted || picked == null) return;
     switch (_attachments.validateFile(picked)) {
@@ -1219,12 +1218,10 @@ class _CompanionAppState extends State<CompanionApp>
     await _chatController.uploadFiles(
       [picked],
       preview: _attachments.filePreview(picked),
-      failureLabel: UploadFeedback.fileFailureLabel(context),
     );
   }
 
   Future<void> _pickAndUploadImages() async {
-    if (_chatController.sending) return;
     final picked = await _attachments.pickImages();
     if (!mounted || picked.isEmpty) return;
     switch (_attachments.validateImages(picked)) {
@@ -1251,7 +1248,6 @@ class _CompanionAppState extends State<CompanionApp>
     await _chatController.uploadFiles(
       picked,
       preview: preview,
-      failureLabel: UploadFeedback.imageFailureLabel(context),
       message: message,
     );
   }

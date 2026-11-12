@@ -572,6 +572,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatConfirming => 'Confirming...';
 
   @override
+  String get chatOutboxQueued => 'Queued on this device';
+
+  @override
+  String get chatOutboxSending => 'Sending…';
+
+  @override
+  String get chatOutboxUnknown => 'Delivery unknown';
+
+  @override
+  String get chatOutboxBlocked => 'Delivery blocked';
+
+  @override
+  String get chatOutboxCheck => 'Check delivery';
+
+  @override
+  String get chatOutboxRemove => 'Remove from queue';
+
+  @override
+  String get chatOutboxRemoveDetail =>
+      'This removes the local item and lets later messages proceed. A message the server already received may still appear in history.';
+
+  @override
+  String get chatOutboxStorageError =>
+      'Could not update the local delivery queue. Check local storage and refresh.';
+
+  @override
+  String get chatOutboxCorrupt =>
+      'Some local delivery records could not be read.';
+
+  @override
   String get chatSendFailed => 'Send failed';
 
   @override

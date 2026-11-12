@@ -585,13 +585,7 @@ class BackendClient {
         .join('\n\n');
   }
 
-  Future<BackendChatResponse> sendChat(
-    String message, {
-    required String token,
-    ReplyTarget? replyTo,
-    String? sessionId,
-    String? requestId,
-  }) async {
+  String? takeVoiceReceipt(String message, String token) {
     final receipt =
         _voiceToken == token &&
             _voiceText?.trim() == message.trim() &&
@@ -602,6 +596,18 @@ class BackendClient {
     _voiceText = null;
     _voiceToken = null;
     _voiceExpires = null;
+    return receipt;
+  }
+
+  Future<BackendChatResponse> sendChat(
+    String message, {
+    required String token,
+    ReplyTarget? replyTo,
+    String? sessionId,
+    String? requestId,
+    String? voiceReceipt,
+  }) async {
+    final receipt = voiceReceipt ?? (requestId == null ? takeVoiceReceipt(message, token) : null);
     final scoped = sessionId?.trim();
     final scopedRequestId = (scoped == null || scoped.isEmpty)
         ? null

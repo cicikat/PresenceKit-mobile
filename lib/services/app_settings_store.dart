@@ -44,6 +44,18 @@ class AppSettingsStore {
 
   const AppSettingsStore();
 
+  Future<String?> loadChatOutbox() async {
+    if (!_channelAvailable) return null;
+    return PlatformSettingsChannel.channel.invokeMethod<String>('loadChatOutbox');
+  }
+
+  Future<void> saveChatOutbox(String value) async {
+    if (!_channelAvailable) return;
+    await PlatformSettingsChannel.channel.invokeMethod<void>(
+      'saveChatOutbox', {'value': value},
+    );
+  }
+
   Future<String?> loadAppLanguage() async {
     if (!_channelAvailable) return null;
     try {

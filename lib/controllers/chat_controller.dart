@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import '../services/app_settings_store.dart';
 import '../services/backend_client.dart';
 import '../services/device_services.dart';
 import '../services/network_status_service.dart';
+import '../services/mobile_outbox_store.dart';
 import 'chat_history_reconciliation.dart';
 import '../models/chat_history_display.dart';
 import 'chat_session_coordinator.dart';
@@ -44,6 +46,10 @@ class ChatController extends ChangeNotifier {
   }) : _backend = backend,
        _token = token,
        _settings = settings,
+       _outbox = MobileOutboxStore(
+         settings.loadChatOutbox,
+         settings.saveChatOutbox,
+       ),
        _relay = relay,
        _voice = voice ?? const VoiceService(AppSettingsStore()),
        _stickerEnabled = stickerEnabled ?? _alwaysEnabled,
@@ -118,14 +124,21 @@ class ChatController extends ChangeNotifier {
 
   final Map<String, DateTime> _recentReplies = {};
   final Map<String, String> _recentIdsByFingerprint = {};
-  final List<({String text, ReplyTarget? replyTo})> _pendingSends = [];
+  final MobileOutboxStore _outbox;
+  final Map<String, OutboxState> _outboxStates = {};
+  int? _drainGeneration;
+  bool _drainRequested = false;
+  String? outboxError;
+
+  OutboxState? deliveryState(ChatMessage message) =>
+      _outboxStates[message.requestId];
   Timer? _pollTimer;
   StreamSubscription<void>? _networkSubscription;
   BackendClient? _receivingBackend;
   int _receiveEpoch = 0;
   int _receiveFailures = 0;
   bool _pollingEnabled = true;
-  Timer? _uncertainTimer;
+
   final List<List<ChatMessage>> _messageQueue = [];
   Completer<void>? _revealWake;
   final ChatSessionCoordinator _session = ChatSessionCoordinator();
@@ -262,12 +275,17 @@ class ChatController extends ChangeNotifier {
     try {
       await work;
     } finally {
-      if (identical(_session.initialSync, work)) _session.initialSync = null;
+      if (identical(_session.initialSync, work)) {
+        _session.initialSync = null;
+        _requestOutboxDrain();
+      }
     }
   }
 
   Future<void> _startInitialSync() async {
     final generation = _session.generation;
+    await _restoreOutbox(generation);
+    if (_session.isStale(generation)) return;
     final historyWork = loadHistory(reconcileLocal: true);
     await _replayPendingEnvelopes();
     if (_session.isStale(generation)) return;
@@ -378,7 +396,7 @@ class ChatController extends ChangeNotifier {
         if (envelope.identity != null && !replayed.add(envelope.identity!)) {
           continue;
         }
-        if (envelope.requestId != null) {
+        if (envelope.requestId != null && envelope.charId == scope.charId) {
           _settleSend(requestId: envelope.requestId);
         }
         if (!_shouldReplayPending(envelope)) continue;
@@ -434,7 +452,10 @@ class ChatController extends ChangeNotifier {
     if (existing != null) return existing;
     late final Future<void> work;
     work = _refreshConnection().whenComplete(() {
-      if (identical(_session.refresh, work)) _session.refresh = null;
+      if (identical(_session.refresh, work)) {
+        _session.refresh = null;
+        _requestOutboxDrain();
+      }
     });
     _session.refresh = work;
     return work;
@@ -444,6 +465,8 @@ class ChatController extends ChangeNotifier {
     if (_accessToken == null) return;
     final generation = _session.generation;
     if (_session.initialSync != null) await _session.initialSync;
+    if (_session.isStale(generation)) return;
+    await _restoreOutbox(generation);
     if (_session.isStale(generation)) return;
     await _replayPendingEnvelopes();
     if (_session.isStale(generation)) return;
@@ -465,9 +488,11 @@ class ChatController extends ChangeNotifier {
     _foregroundDelivery = null;
     _acceptedRequestIds.clear();
     _replyClocks.clear();
-    _uncertainTimer?.cancel();
+
     _messageQueue.clear();
-    _pendingSends.clear();
+    _outboxStates.clear();
+    replyTarget = null;
+    outboxError = null;
     if (_revealWake?.isCompleted == false) _revealWake!.complete();
     if (_session.historyRead != null) await _session.historyRead;
     _session.clearLiveWork();
@@ -487,39 +512,26 @@ class ChatController extends ChangeNotifier {
     if (restart) await start();
   }
 
-  void send(String text, {ReplyTarget? replyToOverride}) {
+  Future<bool> send(String text, {ReplyTarget? replyToOverride}) async {
     final value = text.trim();
-    if (value.isEmpty || _accessToken == null) return;
+    final token = _accessToken;
+    if (value.isEmpty || token == null) return false;
+    final target = replyTarget;
     final replyTo =
         replyToOverride ??
         (replyTarget == null ? null : ReplyTarget.fromMessage(replyTarget!));
-    if (replyToOverride == null) replyTarget = null;
-    if (sending) {
-      _pendingSends.add((text: value, replyTo: replyTo));
-      notifyListeners();
-      return;
-    }
-    sending = true;
-    himTyping = true;
-    backendError = null;
-    sent.add(
-      ChatMessage(
-        role: 'you',
-        text: value,
-        time: '现在',
-        retainOnRefresh: true,
-        retryReplyTo: replyTo,
-      ),
+    final saved = await _enqueueOutgoing(
+      value,
+      replyTo: replyTo,
+      voiceReceipt: _backend().takeVoiceReceipt(value, token),
     );
-    if (sent.isNotEmpty && replyTo != null) {
-      sent[sent.length - 1] = sent.last.copyWith(
-        quotedText: replyTo.text,
-        quotedLabel: 'reply',
-      );
+    if (saved &&
+        !_session.disposed &&
+        replyToOverride == null &&
+        identical(replyTarget, target)) {
+      clearReplyTarget();
     }
-    notifyListeners();
-    scrollToBottom();
-    unawaited(_send(value, userId: sent.last.id, replyTo: replyTo));
+    return saved;
   }
 
   void setReplyTarget(ChatMessage message) {
@@ -528,40 +540,59 @@ class ChatController extends ChangeNotifier {
   }
 
   void retryMessage(ChatMessage message) {
-    if (sending || message.role != 'you' || !message.failed) return;
-    final historical = history.indexWhere((item) => item.id == message.id);
-    if (historical >= 0) sent.add(history.removeAt(historical));
-    final index = sent.indexWhere((item) => item.id == message.id);
-    if (index < 0) return;
-    if (message.attachments.isNotEmpty) {
-      unawaited(
-        uploadFiles(
-          message.attachments,
-          preview: message.text,
-          failureLabel: '',
-          message: message.uploadNote,
-          retryOf: message,
-        ),
-      );
-      return;
+    final requestId = message.requestId;
+    if (message.role != 'you' || requestId == null) return;
+    unawaited(_retryOutgoing(requestId));
+  }
+
+  Future<void> _retryOutgoing(String requestId) async {
+    final scope = _captureScope(_session.generation);
+    try {
+      final rows = await _outbox.readScope(_outboxScope(scope));
+      if (!_scopeStillLive(scope.generation, scope)) return;
+      final row = rows.where((row) => row.requestId == requestId).firstOrNull;
+      if (row == null) return;
+      if (row.state == OutboxState.outcomeUnknown ||
+          row.state == OutboxState.sending) {
+        await refreshConnection();
+        return;
+      }
+      if (row.state != OutboxState.retryableFailed &&
+          row.state != OutboxState.blocked) {
+        return;
+      }
+      if (await _outbox.setState(row, OutboxState.queued) &&
+          _scopeStillLive(scope.generation, scope)) {
+        _renderOutgoing(row.withState(OutboxState.queued));
+        _requestOutboxDrain();
+      }
+    } catch (_) {
+      _reportOutboxError(scope);
     }
-    sent[index] = message.copyWith(
-      failed: false,
-      clearUncertain: true,
-      time: _nowLabel(),
-    );
-    sending = true;
-    himTyping = true;
-    backendError = null;
-    notifyListeners();
-    unawaited(
-      _send(
-        message.text,
-        userId: message.id,
-        requestId: message.requestId,
-        replyTo: message.retryReplyTo,
-      ),
-    );
+  }
+
+  Future<void> removeFromOutbox(ChatMessage message) async {
+    final scope = _captureScope(_session.generation);
+    try {
+      final rows = await _outbox.readScope(_outboxScope(scope));
+      if (!_scopeStillLive(scope.generation, scope)) return;
+      final row = rows
+          .where((row) => row.requestId == message.requestId)
+          .firstOrNull;
+      if (row == null || row.state == OutboxState.sending) return;
+      if (!await _outbox.setState(row, null, requireCurrent: true) ||
+          !_scopeStillLive(scope.generation, scope)) {
+        return;
+      }
+      _outboxStates.remove(row.requestId);
+      for (final list in [sent, history]) {
+        list.removeWhere((item) => item.id == message.id);
+      }
+      notifyListeners();
+      _requestOutboxDrain();
+    } catch (_) {
+      _reportOutboxError(scope);
+    }
   }
 
   void clearReplyTarget() {
@@ -713,22 +744,6 @@ class ChatController extends ChangeNotifier {
     throw BackendException(bindError ?? 'session_scope_unsupported');
   }
 
-  Future<BackendChatResponse> _sendChatAttempt({
-    required String text,
-    required String token,
-    required PresenceSessionGrant grant,
-    required String requestId,
-    ReplyTarget? replyTo,
-  }) {
-    return _backend().sendChat(
-      text,
-      token: token,
-      replyTo: replyTo,
-      sessionId: grant.sessionId,
-      requestId: requestId,
-    );
-  }
-
   Future<T> _withLiveGrant<T>({
     required SessionScope scope,
     required int generation,
@@ -752,16 +767,6 @@ class ChatController extends ChangeNotifier {
       grant = await _requirePresenceGrant(force: true);
       return invoke(grant);
     }
-  }
-
-  Future<BackendChatResponse> _scopedChatCall({
-    required SessionScope scope,
-    required int generation,
-    required String requestId,
-    required Future<BackendChatResponse> Function(PresenceSessionGrant grant)
-    call,
-  }) {
-    return _withLiveGrant(scope: scope, generation: generation, call: call);
   }
 
   Future<void> _applyChatResponse({
@@ -809,111 +814,282 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  String _bindOutgoingRequestId(int userId, {String? requestId}) {
-    final bound = (requestId != null && requestId.trim().isNotEmpty)
-        ? requestId.trim()
-        : mintRequestId();
-    _replyClocks[bound] = Stopwatch()..start();
-    while (_replyClocks.length > 200) {
-      _replyClocks.remove(_replyClocks.keys.first);
-    }
-    final index = sent.indexWhere((item) => item.id == userId);
-    if (index >= 0 && sent[index].requestId != bound) {
-      sent[index] = sent[index].copyWith(requestId: bound);
-    }
-    return bound;
+  String _outboxScope(SessionScope scope) => jsonEncode([
+    scope.origin,
+    scope.owner,
+    scope.charId,
+    'reality',
+    'mobile',
+  ]);
+
+  void _reportOutboxError(SessionScope scope) {
+    if (!_scopeStillLive(scope.generation, scope)) return;
+    outboxError = 'storage';
+    notifyListeners();
   }
 
-  Future<void> _send(
+  Future<bool> _enqueueOutgoing(
     String text, {
-    required int userId,
     ReplyTarget? replyTo,
-    String? requestId,
+    List<PickedUploadFile> files = const [],
+    String caption = '',
+    String? voiceReceipt,
   }) async {
-    final generation = _session.generation;
+    final scope = _captureScope(_session.generation);
+    final requestId = mintRequestId();
+    final createdAt = clock();
+    try {
+      final row = await _outbox.enqueue(
+        (sequence) => OutboxEntry(
+          requestId: requestId,
+          scope: _outboxScope(scope),
+          sequence: sequence,
+          createdAt: createdAt,
+          text: text,
+          replyTo: replyTo,
+          files: files,
+          caption: caption,
+          voiceReceipt: voiceReceipt,
+        ),
+      );
+      if (!_scopeStillLive(scope.generation, scope)) return true;
+      outboxError = null;
+      _renderOutgoing(row);
+      notifyListeners();
+      scrollToBottom();
+      _requestOutboxDrain();
+      return true;
+    } catch (_) {
+      _reportOutboxError(scope);
+      return false;
+    }
+  }
+
+  Future<void> _restoreOutbox(int generation) async {
     final scope = _captureScope(generation);
-    final boundRequestId = _bindOutgoingRequestId(userId, requestId: requestId);
+    try {
+      final rows = await _outbox.readScope(_outboxScope(scope));
+      if (!_scopeStillLive(generation, scope)) return;
+      for (final row in rows) {
+        if (_acceptedRequestIds.contains(row.requestId)) continue;
+        _renderOutgoing(
+          row.state == OutboxState.sending && !sending
+              ? row.withState(OutboxState.outcomeUnknown)
+              : row,
+        );
+      }
+      if (_outbox.corruptEntries > 0) outboxError = 'corrupt';
+      notifyListeners();
+    } catch (_) {
+      _reportOutboxError(scope);
+    }
+  }
+
+  ChatMessage _renderOutgoing(OutboxEntry row) {
+    _outboxStates[row.requestId] = row.state;
+    final uncertain = row.state == OutboxState.outcomeUnknown;
+    final failed =
+        row.state == OutboxState.blocked ||
+        row.state == OutboxState.retryableFailed;
+    for (final list in [sent, history]) {
+      final i = list.indexWhere(
+        (message) =>
+            message.role == 'you' && message.requestId == row.requestId,
+      );
+      if (i >= 0) {
+        return list[i] = list[i].copyWith(
+          failed: failed,
+          uncertainSince: uncertain ? row.createdAt : null,
+          clearUncertain: !uncertain,
+        );
+      }
+    }
+    final message = ChatMessage(
+      id: -row.sequence,
+      role: 'you',
+      text: row.text,
+      time: '现在',
+      timestamp: row.createdAt,
+      retainOnRefresh: true,
+      requestId: row.requestId,
+      quotedText: row.replyTo?.text,
+      quotedLabel: row.replyTo == null ? null : 'reply',
+      retryReplyTo: row.replyTo,
+      attachments: row.files,
+      uploadNote: row.caption,
+      failed: failed,
+      uncertainSince: uncertain ? row.createdAt : null,
+    );
+    sent.add(message);
+    return message;
+  }
+
+  void _requestOutboxDrain() {
+    if (_session.disposed || _accessToken == null) return;
+    if (_session.initialSync != null || _session.refresh != null) {
+      _drainRequested = true;
+      return;
+    }
+    _drainRequested = true;
+    if (_drainGeneration != null) return;
+    unawaited(_drainOutbox(_captureScope(_session.generation)));
+  }
+
+  Future<void> _drainOutbox(SessionScope scope) async {
+    final generation = scope.generation;
+    _drainGeneration = generation;
+    try {
+      do {
+        _drainRequested = false;
+        while (_scopeStillLive(generation, scope) && _accessToken != null) {
+          final rows = await _outbox.readScope(_outboxScope(scope));
+          if (!_scopeStillLive(generation, scope) || rows.isEmpty) break;
+          final row = rows.first;
+          if (row.state != OutboxState.queued) break;
+          await _executeOutgoing(row, scope);
+        }
+      } while (_drainRequested && _scopeStillLive(generation, scope));
+    } catch (_) {
+      _reportOutboxError(scope);
+    } finally {
+      _drainGeneration = null;
+      if (_drainRequested) _requestOutboxDrain();
+    }
+  }
+
+  Future<void> _executeOutgoing(OutboxEntry row, SessionScope scope) async {
+    final generation = scope.generation;
+    final token = _accessToken;
+    if (token == null) return;
+    if (!await _outbox.setState(row, OutboxState.sending)) return;
+    row = row.withState(OutboxState.sending);
+    if (!_scopeStillLive(generation, scope)) {
+      await _outbox.setState(row, OutboxState.queued);
+      return;
+    }
+    final user = _renderOutgoing(row);
     final anchor = ChatMessage(
       role: 'reasoning',
       text: '',
       time: _nowLabel(),
-      requestId: boundRequestId,
+      requestId: row.requestId,
     );
-    var dropAnchor = false;
     sent.add(anchor);
+    sending = true;
+    himTyping = true;
+    backendError = null;
+    _replyClocks[row.requestId] = Stopwatch()..start();
+    while (_replyClocks.length > 200) {
+      _replyClocks.remove(_replyClocks.keys.first);
+    }
     notifyListeners();
+
+    var dispatched = false;
+    var confirmed = false;
     try {
-      final response = await _scopedChatCall(
+      final response = await _withLiveGrant(
         scope: scope,
         generation: generation,
-        requestId: boundRequestId,
-        call: (grant) => _sendChatAttempt(
-          text: text,
-          token: _accessToken!,
-          replyTo: replyTo,
-          grant: grant,
-          requestId: boundRequestId,
-        ),
+        call: (grant) {
+          if (grant.ownerId != scope.owner ||
+              grant.charId != scope.charId ||
+              grant.domain != 'reality' ||
+              token != _accessToken) {
+            throw const BackendException('session_scope_stale');
+          }
+          dispatched = true;
+          final backend = _backend();
+          return row.files.isEmpty
+              ? backend.sendChat(
+                  row.text,
+                  token: token,
+                  replyTo: row.replyTo,
+                  requestId: row.requestId,
+                  sessionId: grant.sessionId,
+                  voiceReceipt: row.voiceReceipt,
+                )
+              : backend.uploadFiles(
+                  files: row.files,
+                  token: token,
+                  message: row.caption,
+                  requestId: row.requestId,
+                  sessionId: grant.sessionId,
+                );
+        },
       );
-      if (!_scopeStillLive(generation, scope)) return;
-      await _applyChatResponse(
-        response: response,
-        userId: userId,
-        anchor: anchor,
-      );
-    } on BackendException catch (e) {
-      if (!_scopeStillLive(generation, scope)) return;
-      final uncertain = _isUncertainOutcome(e);
-      dropAnchor = true;
-      if (!uncertain) backendError = e.message;
-      if (e.isSessionNotFound) _onPresenceSessionInvalid?.call();
-      _markSendFailed(userId, uncertain: uncertain);
-      /*
-        ChatMessage(
-          role: 'him',
-          text: '（手机端暂时连不上后端：${e.message}）',
-          time: _nowLabel(),
-        ),
-      ); */
-    } catch (e) {
-      if (_session.isStale(generation) ||
-          !scope.matchesLive(
-            generation: _session.generation,
-            origin: _deliveryOrigin(),
-            owner: _deliveryOwner(),
-            charId: _deliveryCharId(),
-          )) {
+      if (response.criticalWritten == false) {
+        throw const BackendException(
+          'execution_outcome_unknown',
+          statusCode: 503,
+        );
+      }
+      await _outbox.setState(row, null);
+      confirmed = true;
+      if (!_scopeStillLive(generation, scope)) {
+        final live = _captureScope(_session.generation);
+        if (!_session.disposed && _outboxScope(live) == row.scope) {
+          _outboxStates.remove(row.requestId);
+          _settleSend(requestId: row.requestId);
+          unawaited(loadHistory(reconcileLocal: true));
+        }
         return;
       }
-      dropAnchor = true;
-      _markSendFailed(userId, uncertain: true);
-      /* sent.add(
-        ChatMessage(role: 'him', text: '（手机端遇到一个未预期错误：$e）', time: _nowLabel()),
-      ); */
-    } finally {
-      if (_session.isCurrent(generation)) {
-        final live = scope.matchesLive(
-          generation: _session.generation,
-          origin: _deliveryOrigin(),
-          owner: _deliveryOwner(),
-          charId: _deliveryCharId(),
-        );
-        if (live && (dropAnchor || backendError != null)) {
-          sent.removeWhere((m) => m.id == anchor.id);
+      _outboxStates.remove(row.requestId);
+      await _applyChatResponse(
+        response: response,
+        userId: user.id,
+        anchor: anchor,
+      );
+    } catch (error) {
+      if (confirmed) return;
+      final status = error is BackendException ? error.statusCode : null;
+      final state =
+          status == 401 || status == 403 || status == 413 || status == 422
+          ? OutboxState.blocked
+          : !dispatched ||
+                (error is BackendException && error.isSessionNotFound)
+          ? OutboxState.retryableFailed
+          : OutboxState.outcomeUnknown;
+      bool changed;
+      try {
+        changed = await _outbox.setState(row, state);
+      } catch (_) {
+        if (_scopeStillLive(generation, scope)) {
+          _renderOutgoing(row.withState(OutboxState.outcomeUnknown));
         }
+        rethrow;
+      }
+      if (changed &&
+          _scopeStillLive(generation, scope) &&
+          !_acceptedRequestIds.contains(row.requestId)) {
+        _renderOutgoing(row.withState(state));
+        if (state != OutboxState.outcomeUnknown && error is BackendException) {
+          backendError = error.message;
+        }
+      }
+    } finally {
+      if (_scopeStillLive(generation, scope)) {
+        if (!confirmed) sent.removeWhere((m) => m.id == anchor.id);
         sending = false;
         himTyping = false;
         notifyListeners();
-        // Always reconcile: after a timeout the server may have finished.
-        if (live) {
-          unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
-        }
-        if (live && _pendingSends.isNotEmpty) {
-          final next = _pendingSends.removeAt(0);
-          send(next.text, replyToOverride: next.replyTo);
-        }
-        if (live) _flushHistoryRefresh();
+        unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
+        _flushHistoryRefresh();
       }
+    }
+  }
+
+  Future<void> _confirmOutbox(String requestId, SessionScope scope) async {
+    try {
+      final rows = await _outbox.readScope(_outboxScope(scope));
+      final row = rows.where((row) => row.requestId == requestId).firstOrNull;
+      if (row == null || !await _outbox.setState(row, null)) return;
+      if (!_scopeStillLive(scope.generation, scope)) return;
+      _outboxStates.remove(requestId);
+      notifyListeners();
+      _requestOutboxDrain();
+    } catch (_) {
+      _reportOutboxError(scope);
     }
   }
 
@@ -930,52 +1106,8 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// How long an unknown-outcome send may stay "confirming" before it is
-  /// shown as failed with a retry button.
-  Duration uncertainWindow = const Duration(minutes: 5);
-
   /// Injectable clock for tests.
   DateTime Function() clock = DateTime.now;
-
-  /// Outcome unknown (timeout / network): the server may still finish the
-  /// turn. Only the exact message is touched; there is no "latest message"
-  /// fallback.
-  void _markSendFailed(int userId, {bool uncertain = false}) {
-    for (final store in [sent, history]) {
-      final index = store.indexWhere((item) => item.id == userId);
-      if (index < 0) continue;
-      if (_acceptedRequestIds.contains(store[index].requestId)) return;
-      store[index] = uncertain
-          ? store[index].copyWith(uncertainSince: clock())
-          : store[index].copyWith(failed: true, clearUncertain: true);
-    }
-    _scheduleUncertainExpiry();
-  }
-
-  void _scheduleUncertainExpiry() {
-    _uncertainTimer?.cancel();
-    final deadlines =
-        [...sent, ...history]
-            .where((m) => m.uncertain)
-            .map((m) => m.uncertainSince!.add(uncertainWindow))
-            .toList()
-          ..sort();
-    if (deadlines.isEmpty || _session.disposed) return;
-    final remaining = deadlines.first.difference(clock());
-    _uncertainTimer = Timer(
-      remaining.isNegative ? Duration.zero : remaining,
-      () {
-        if (_session.disposed) return;
-        expireUncertain();
-        _scheduleUncertainExpiry();
-      },
-    );
-  }
-
-  /// A BackendException with no HTTP status (timeout, socket) or an
-  /// in-flight/unknown-outcome reply means the server may have the message.
-  static bool _isUncertainOutcome(BackendException e) =>
-      e.statusCode == null || e.isInFlight || e.isOutcomeUnknown;
 
   /// Clears failed/uncertain state on a delivered message, by local id or by
   /// the request_id the server echoed. Returns true if anything changed.
@@ -988,6 +1120,9 @@ class ChatController extends ChangeNotifier {
         ].where((m) => m.id == userId).firstOrNull?.requestId;
     if (accepted != null && accepted.isNotEmpty) {
       _acceptedRequestIds.add(accepted);
+      if (_outboxStates.containsKey(accepted)) {
+        unawaited(_confirmOutbox(accepted, _captureScope(_session.generation)));
+      }
       while (_acceptedRequestIds.length > 200) {
         _acceptedRequestIds.remove(_acceptedRequestIds.first);
       }
@@ -1008,23 +1143,6 @@ class ChatController extends ChangeNotifier {
         }
       }
     }
-    return changed;
-  }
-
-  /// Uncertain sends not reconciled within [uncertainWindow] become failed.
-  bool expireUncertain() {
-    final now = clock();
-    var changed = false;
-    for (final list in [sent, history]) {
-      for (var i = 0; i < list.length; i++) {
-        final since = list[i].uncertainSince;
-        if (since != null && now.difference(since) >= uncertainWindow) {
-          list[i] = list[i].copyWith(failed: true, clearUncertain: true);
-          changed = true;
-        }
-      }
-    }
-    if (changed) notifyListeners();
     return changed;
   }
 
@@ -1163,7 +1281,7 @@ class ChatController extends ChangeNotifier {
           sent,
         );
       }
-      expireUncertain();
+
       final older = history
           .where(
             (m) =>
@@ -1440,9 +1558,14 @@ class ChatController extends ChangeNotifier {
       var settled = false;
       for (final message in messages) {
         final rid = message.requestId;
-        if (rid != null && _settleSend(requestId: rid)) settled = true;
+        if (rid != null &&
+            message.charId == _deliveryCharId() &&
+            message.userId == _deliveryOwner() &&
+            _settleSend(requestId: rid)) {
+          settled = true;
+        }
       }
-      if (expireUncertain()) settled = true;
+
       if (settled) notifyListeners();
       final scope = _captureScope(generation);
       final fresh = <MobilePollMessage>[];
@@ -1676,98 +1799,20 @@ class ChatController extends ChangeNotifier {
   Future<void> uploadFiles(
     List<PickedUploadFile> files, {
     required String preview,
-    required String failureLabel,
     String message = '',
-    ChatMessage? retryOf,
   }) async {
-    final token = _accessToken;
-    if (sending || token == null || files.isEmpty) return;
-    final generation = _session.generation;
-    final scope = _captureScope(generation);
-    sending = true;
-    himTyping = true;
-    backendError = null;
-    final outgoing =
-        retryOf?.copyWith(
-          failed: false,
-          clearUncertain: true,
-          time: _nowLabel(),
-        ) ??
-        ChatMessage(
-          role: 'you',
-          text: preview,
-          time: '现在',
-          attachments: List.unmodifiable(files),
-          uploadNote: message,
-        );
-    if (retryOf == null) {
-      sent.add(outgoing);
-    } else {
-      final index = sent.indexWhere((item) => item.id == retryOf.id);
-      if (index < 0) {
-        sending = false;
-        himTyping = false;
-        return;
-      }
-      sent[index] = outgoing;
-    }
-    final boundRequestId = _bindOutgoingRequestId(
-      outgoing.id,
-      requestId: outgoing.requestId,
+    if (_accessToken == null || files.isEmpty) return;
+    await _enqueueOutgoing(
+      preview,
+      files: [
+        for (final file in files)
+          PickedUploadFile(
+            name: file.name,
+            bytes: Uint8List.fromList(file.bytes),
+          ),
+      ],
+      caption: message,
     );
-    final anchor = ChatMessage(
-      role: 'reasoning',
-      text: '',
-      time: _nowLabel(),
-      requestId: boundRequestId,
-    );
-    var dropAnchor = false;
-    sent.add(anchor);
-    notifyListeners();
-    scrollToBottom();
-    try {
-      final response = await _scopedChatCall(
-        scope: scope,
-        generation: generation,
-        requestId: boundRequestId,
-        call: (grant) => _backend().uploadFiles(
-          files: files,
-          token: token,
-          channel: 'mobile',
-          message: message,
-          sessionId: grant.sessionId,
-          requestId: boundRequestId,
-        ),
-      );
-      if (!_scopeStillLive(generation, scope)) return;
-      await _applyChatResponse(
-        response: response,
-        userId: outgoing.id,
-        anchor: anchor,
-      );
-    } on BackendException catch (e) {
-      if (!_scopeStillLive(generation, scope)) return;
-      final uncertain = _isUncertainOutcome(e);
-      dropAnchor = true;
-      if (!uncertain) backendError = e.message;
-      if (e.isSessionNotFound) _onPresenceSessionInvalid?.call();
-      _markSendFailed(outgoing.id, uncertain: uncertain);
-    } catch (e) {
-      if (!_scopeStillLive(generation, scope)) return;
-      dropAnchor = true;
-      _markSendFailed(outgoing.id, uncertain: true);
-    } finally {
-      if (_session.isCurrent(generation)) {
-        if (dropAnchor || backendError != null) {
-          sent.removeWhere((m) => m.id == anchor.id);
-        }
-        sending = false;
-        himTyping = false;
-        notifyListeners();
-        unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
-        _flushHistoryRefresh();
-      }
-    }
   }
 
   Future<void> _appendReply(
@@ -1912,7 +1957,8 @@ class ChatController extends ChangeNotifier {
           !identical(scrollController.position, position)) {
         return;
       }
-      if (position.isScrollingNotifier.value || position.pixels < pixels - 0.5) {
+      if (position.isScrollingNotifier.value ||
+          position.pixels < pixels - 0.5) {
         markUnread();
         return;
       }
@@ -2340,7 +2386,7 @@ class ChatController extends ChangeNotifier {
   @override
   void dispose() {
     _session.markDisposed();
-    _uncertainTimer?.cancel();
+
     pausePolling();
     unawaited(_networkSubscription?.cancel());
     _canonicalMedia.clear();

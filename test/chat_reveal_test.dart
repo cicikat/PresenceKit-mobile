@@ -18,6 +18,7 @@ void main() {
       settings: const SettingsStore(store),
       relay: const RelayStatusService(store),
       deliveryCharId: () => 'char-a',
+      deliveryOwner: () => 'owner',
       resolvePresenceSession: ({required String charId, bool force = false}) async =>
           PresenceSessionGrant(
             sessionId: 'sess-$charId',
@@ -52,6 +53,7 @@ void main() {
       settings: const SettingsStore(store),
       relay: const RelayStatusService(store),
       deliveryCharId: () => 'char-a',
+      deliveryOwner: () => 'owner',
       resolvePresenceSession: ({required String charId, bool force = false}) async =>
           PresenceSessionGrant(
             sessionId: 'sess-$charId',
@@ -110,6 +112,7 @@ void main() {
       settings: const SettingsStore(store),
       relay: const RelayStatusService(store),
       deliveryCharId: () => 'char-a',
+      deliveryOwner: () => 'owner',
       resolvePresenceSession: ({required String charId, bool force = false}) async =>
           PresenceSessionGrant(
             sessionId: 'sess-$charId',
@@ -191,6 +194,7 @@ class _LongReplyBackend extends BackendClient {
     required String token,
     ReplyTarget? replyTo,
     String? sessionId,
+    String? voiceReceipt,
     String? requestId,
   }) async =>
       BackendChatResponse.fromJson({
