@@ -634,9 +634,9 @@ class AppSettingsStore {
       return await PlatformSettingsChannel.channel.invokeMethod<bool>(
             'getBackgroundNotificationsEnabled',
           ) ??
-          true;
+          false;
     } on PlatformException {
-      return true;
+      return false;
     }
   }
 

@@ -86,7 +86,7 @@ class MainActivity : FlutterActivity() {
         prefs.edit().putBoolean("mobileAppInForeground", false).apply()
         val backendBaseUrl = prefs.getString("backendBaseUrl", null)?.trim().orEmpty()
             .ifEmpty { "http://127.0.0.1:8080" }
-        if (prefs.getBoolean("backgroundNotificationsEnabled", true) &&
+        if (prefs.getBoolean("backgroundNotificationsEnabled", false) &&
             BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             BackendSecurityPolicy.isAllowedBaseUrl(backendBaseUrl, prefs)
         ) {
@@ -333,7 +333,7 @@ class MainActivity : FlutterActivity() {
                     }
                     "deleteDreamBackground" -> { dreamBackgroundFile().delete(); result.success(null) }
                     "getBackgroundNotificationsEnabled" -> {
-                        result.success(prefs.getBoolean("backgroundNotificationsEnabled", true))
+                        result.success(prefs.getBoolean("backgroundNotificationsEnabled", false))
                     }
                     "setBackgroundNotificationsEnabled" -> {
                         val value = call.argument<Boolean>("value") ?: true
@@ -983,7 +983,7 @@ class MainActivity : FlutterActivity() {
 
     private fun shouldRunRelayService(prefs: android.content.SharedPreferences): Boolean {
         val relayBaseUrl = BackendSecurityPolicy.relayBaseUrl(prefs) ?: return false
-        return prefs.getBoolean("backgroundNotificationsEnabled", true) &&
+        return prefs.getBoolean("backgroundNotificationsEnabled", false) &&
             BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             BackendSecurityPolicy.relayTopic(prefs) != null &&
             BackendSecurityPolicy.isAllowedRelayUrl(relayBaseUrl, prefs)
