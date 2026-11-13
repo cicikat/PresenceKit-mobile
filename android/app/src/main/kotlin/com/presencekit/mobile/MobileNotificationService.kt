@@ -95,7 +95,7 @@ class MobileNotificationService : Service() {
         val token = BackendSecurityPolicy.adminToken(this, prefs)
         val baseUrl = backendBaseUrl()
         val gateError = when {
-            scheduledOneShot && !prefs.getBoolean("backgroundNotificationsEnabled", true) ->
+            scheduledOneShot && !prefs.getBoolean("backgroundNotificationsEnabled", false) ->
                 "background notifications disabled"
             token.isBlank() -> "token invalid: missing credential"
             baseUrl == null || !BackendSecurityPolicy.isAllowedBaseUrl(baseUrl, prefs) ->
@@ -480,7 +480,7 @@ class MobileNotificationService : Service() {
     private fun shouldScheduleSupplementalPoll(): Boolean {
         val prefs = servicePrefs()
         val baseUrl = backendBaseUrl()
-        return prefs.getBoolean("backgroundNotificationsEnabled", true) &&
+        return prefs.getBoolean("backgroundNotificationsEnabled", false) &&
             BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             baseUrl != null &&
             BackendSecurityPolicy.isAllowedBaseUrl(baseUrl, prefs)

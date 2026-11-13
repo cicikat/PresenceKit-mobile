@@ -41,7 +41,7 @@ class CapabilitySettingsController extends ChangeNotifier {
   final String? Function() _extraBackendError;
 
   bool _disposed = false;
-  bool backgroundNotifications = true;
+  bool backgroundNotifications = false;
   bool stickerEnabled = false;
   bool autoPlayVoice = false;
 
