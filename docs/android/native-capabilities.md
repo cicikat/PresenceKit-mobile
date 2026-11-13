@@ -268,3 +268,6 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 
 
 315: 新安装默认关闭后台常驻接收。已保存的开关继续生效，可在能力设置开启兼容接收。
+
+
+317 system alerts use the Firebase receiver with auto-init off until consent and notification permission. Flavor-local google-services.json is ignored by Git. FCM uses HTTPS or loopback for backend registration and body recovery.

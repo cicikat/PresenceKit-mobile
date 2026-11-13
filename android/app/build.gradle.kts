@@ -5,6 +5,16 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") apply false
+}
+
+val firebaseConfigs = listOf("google-services.json", "src/dev/google-services.json", "src/prod/google-services.json")
+if (firebaseConfigs.any { file(it).isFile }) {
+    apply(plugin = "com.google.gms.google-services")
+    // Allow the unconfigured flavor to remain usable for local/CI builds.
+    extensions.configure<com.google.gms.googleservices.GoogleServicesPlugin.GoogleServicesPluginConfig> {
+        missingGoogleServicesStrategy = com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy.WARN
+    }
 }
 
 // android/key.properties and the keystore it references are local/CI secrets.
@@ -94,6 +104,9 @@ flutter {
 }
 
 dependencies {
+    implementation("com.google.firebase:firebase-messaging:24.1.2")
+    implementation("com.google.android.gms:play-services-base:18.1.0")
+    implementation("androidx.work:work-runtime:2.10.5")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.16")
     androidTestImplementation("androidx.test:runner:1.6.2")

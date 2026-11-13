@@ -489,3 +489,6 @@ current：Reality真实对话统一canonical历史，结构化活动按引用查
 
 ## 294 生成图验收（observe，2026-11-09）
 已接通生成图片显示、放大、失败重试和保存，兼容已有文本产物。真实图像服务与实际原生窗口/Android真机文件选择器尚未验收；相关回归、构建与隔离UI结果不能替代设备验收。后端配置入口为模型连接与分工中的图像生成。
+
+
+317 (observe): FCM on the target ROM, screen-off, Doze, provider latency and Google Play services availability await physical device measurements. Missing Firebase configuration is shown in capability settings; compatibility reception can be enabled there.

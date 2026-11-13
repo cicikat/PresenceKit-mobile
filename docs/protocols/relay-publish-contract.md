@@ -241,3 +241,6 @@ iOS 客户端不自持 ntfy SSE，而由 APNs 唤醒并投递；后端的消息�
 - [x] Android `decodeRelayMessage` 已切换为 signal → `/mobile/poll?after=<lastSeq>`，
   不再从中继 payload 读取 `content` 或直接投递。
 - [ ] iOS APNs 传输适配器与 device token 注册接口？
+
+
+317 selects FCM for eligible proactive rows after queue persistence; with no matching active device registration, the existing configured ntfy relay is still eligible. FCM payload carries type, message ID, seq, installation, generation and send time. It carries no chat body. FCM acceptance and Android posting are separate trace events.

@@ -98,6 +98,66 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @fcmCompatibilityTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'兼容接收'**
+  String get fcmCompatibilityTitle;
+
+  /// No description provided for @fcmCompatibilityDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'开启后，接收消息时会显示一条常驻通知。'**
+  String get fcmCompatibilityDescription;
+
+  /// No description provided for @fcmTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统消息提醒（推荐）'**
+  String get fcmTitle;
+
+  /// No description provided for @fcmUnconfigured.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前版本未配置系统提醒，可以在下方开启兼容接收。'**
+  String get fcmUnconfigured;
+
+  /// No description provided for @fcmUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'这部手机的 Google Play 服务不可用，可以在下方开启兼容接收。'**
+  String get fcmUnavailable;
+
+  /// No description provided for @fcmPermissionRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'请在手机设置中允许通知。'**
+  String get fcmPermissionRequired;
+
+  /// No description provided for @fcmRegistered.
+  ///
+  /// In zh, this message translates to:
+  /// **'退到后台后也可以接收消息提醒。'**
+  String get fcmRegistered;
+
+  /// No description provided for @fcmOff.
+  ///
+  /// In zh, this message translates to:
+  /// **'开启后可以接收消息提醒，无需让应用一直运行。'**
+  String get fcmOff;
+
+  /// No description provided for @fcmWaiting.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统消息提醒暂时未连通。'**
+  String get fcmWaiting;
+
+  /// No description provided for @fcmLastDelay.
+  ///
+  /// In zh, this message translates to:
+  /// **'上次提醒约用时 {seconds} 秒。'**
+  String fcmLastDelay(int seconds);
+
   /// No description provided for @artifactUnsupported.
   ///
   /// In zh, this message translates to:
@@ -1379,13 +1439,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackgroundNotificationsTitle.
   ///
   /// In zh, this message translates to:
-  /// **'后台通知'**
+  /// **'兼容接收'**
   String get settingsBackgroundNotificationsTitle;
 
   /// No description provided for @settingsBackgroundNotificationsSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'离开应用后继续接收消息'**
+  /// **'开启后会显示一条常驻通知'**
   String get settingsBackgroundNotificationsSubtitle;
 
   /// No description provided for @settingsNotificationTestTitle.

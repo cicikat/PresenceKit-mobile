@@ -62,6 +62,8 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
+        FcmPush.foreground = true
+        FcmPush.refresh(this)
         val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean("mobileAppInForeground", true).apply()
         stopService(Intent(this, MobileNotificationService::class.java))
@@ -72,16 +74,24 @@ class MainActivity : FlutterActivity() {
 
     override fun onStop() {
         super.onStop()
+        FcmPush.foreground = false
         val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean("mobileAppInForeground", false).apply()
         val backendBaseUrl = prefs.getString("backendBaseUrl", null)?.trim().orEmpty()
             .ifEmpty { "http://127.0.0.1:8080" }
-        if (prefs.getBoolean("backgroundNotificationsEnabled", false) &&
+        if (!FcmPush.enabled(prefs) && prefs.getBoolean("backgroundNotificationsEnabled", false) &&
             BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             BackendSecurityPolicy.isAllowedBaseUrl(backendBaseUrl, prefs)
         ) {
             startMobileNotificationService()
         }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        FcmPush.refresh(this)
     }
 
     private fun recordNotificationOpen(intent: Intent?) {
@@ -128,6 +138,7 @@ class MainActivity : FlutterActivity() {
                                 prefs.getString("backendBaseUrl", null).orEmpty(),
                             )
                             val next = BackendSecurityPolicy.originFor(value)
+                            if (previous != next && FcmPush.enabled(prefs)) FcmPush.disconnect(this)
                             prefs.edit().putString("backendBaseUrl", value).apply()
                             if (previous != next) {
                                 MobileDeliveryStateStore.of(prefs).clearCursorForScopeChange()
@@ -142,6 +153,8 @@ class MainActivity : FlutterActivity() {
                     }
                     "setAdminToken" -> {
                         val value = call.argument<String>("value").orEmpty().trim()
+                        val previous = BackendSecurityPolicy.adminToken(this, prefs)
+                        if (previous != value && FcmPush.enabled(prefs)) FcmPush.disconnect(this)
                         if (BackendSecurityPolicy.replaceAdminToken(this, prefs, value)) result.success(null)
                         else result.error("credential_write_failed", "Could not securely save credential", null)
                     }
@@ -151,6 +164,9 @@ class MainActivity : FlutterActivity() {
                     "setOwnerUserId" -> {
                         val value = call.argument<String>("value").orEmpty().trim()
                         val previous = BackendSecurityPolicy.ownerUserId(prefs)
+                        if (previous.isNotBlank() && previous != value && FcmPush.enabled(prefs)) {
+                            FcmPush.disconnect(this)
+                        }
                         if (value.isBlank()) {
                             prefs.edit().remove(BackendSecurityPolicy.OWNER_USER_ID_KEY).apply()
                         } else {
@@ -171,12 +187,21 @@ class MainActivity : FlutterActivity() {
                         )
                     }
                     "setSessionCharacterId" -> {
+                        val priorCharacter = sessionCharacterId(
+                            prefs, call.argument<String>("origin"), call.argument<String>("owner"),
+                        )
+                        val nextCharacter = call.argument<String>("characterId")
+                        val rebind = FcmPush.enabled(prefs) && priorCharacter != nextCharacter
+                        if (rebind) FcmPush.disconnect(this)
                         setSessionCharacterId(
                             prefs,
                             call.argument<String>("origin"),
                             call.argument<String>("owner"),
-                            call.argument<String>("characterId"),
+                            nextCharacter,
                         )
+                        if (rebind && !nextCharacter.isNullOrBlank()) {
+                            FcmPush.setEnabled(this, true, nextCharacter)
+                        }
                         result.success(null)
                     }
                     "getTrustedCleartextOrigins" -> {
@@ -327,6 +352,7 @@ class MainActivity : FlutterActivity() {
                     }
                     "setBackgroundNotificationsEnabled" -> {
                         val value = call.argument<Boolean>("value") ?: true
+                        if (value && FcmPush.enabled(prefs)) FcmPush.disconnect(this)
                         prefs.edit().putBoolean("backgroundNotificationsEnabled", value).apply()
                         if (!value) {
                             stopService(Intent(this, MobileNotificationService::class.java))
@@ -367,6 +393,17 @@ class MainActivity : FlutterActivity() {
                     }
                     "getBackgroundNotificationServiceStartError" -> {
                         result.success(prefs.getString("backgroundNotificationServiceStartError", null))
+                    }
+                    "getFcmPushStatus" -> result.success(FcmPush.status(this))
+                    "setFcmPushEnabled" -> {
+                        val enabled = call.argument<Boolean>("enabled") == true
+                        val changed = FcmPush.setEnabled(this, enabled, call.argument<String>("charId"))
+                        if (!changed) {
+                            result.error("push_unavailable", "System message alerts are unavailable", null)
+                            return
+                        }
+                        if (enabled && !areNotificationsEnabled()) requestNotificationPermission()
+                        result.success(null)
                     }
                     "getBackgroundPollStatus" -> {
                         result.success(
