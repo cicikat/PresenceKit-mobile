@@ -374,6 +374,7 @@ class MainActivity : FlutterActivity() {
                                 "lastBackgroundPollAt" to prefs.getLong("lastBackgroundPollAt", 0L),
                                 "pendingCount" to MobileDeliveryStateStore.of(prefs).pendingCount(),
                                 "pendingLimit" to MobileDeliveryStateStore.PENDING_CAP,
+                                "lastDeliveryStage" to prefs.getString("lastDeliveryStage", null),
                                 "lastBackgroundError" to
                                     prefs.getString("lastBackgroundError", null),
                             ),
