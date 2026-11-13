@@ -1,4 +1,13 @@
 {
+  "ambientLightTitle": "Light around my phone",
+  "ambientLightDescription": "Share how bright it is while the app is open.",
+  "ambientMotionTitle": "How my phone is resting",
+  "ambientMotionDescription": "Share whether the phone faces up, faces down, or stands upright.",
+  "ambientUsageTitle": "Recent screen activity",
+  "ambientUsageDescription": "Share screen time and supported games or media totals from the last hour.",
+  "ambientUnsupported": "Unavailable on this phone.",
+  "ambientOpenUsageAccess": "Allow usage access in system settings",
+  "ambientSettingFailed": "This setting could not be updated.",
   "artifactUnsupported": "This file type cannot be saved on this device",
   "artifactSaveUnavailable": "File saving is unavailable on this platform",
   "artifactSaved": "Saved",

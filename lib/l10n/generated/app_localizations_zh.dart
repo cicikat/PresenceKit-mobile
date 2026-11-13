@@ -9,6 +9,33 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get ambientLightTitle => '手机周围的光';
+
+  @override
+  String get ambientLightDescription => '打开应用时分享附近的明暗。';
+
+  @override
+  String get ambientMotionTitle => '手机的摆放姿势';
+
+  @override
+  String get ambientMotionDescription => '打开应用时分享手机朝上、朝下或竖立。';
+
+  @override
+  String get ambientUsageTitle => '最近的亮屏情况';
+
+  @override
+  String get ambientUsageDescription => '分享过去一小时的亮屏次数、时长和可识别的游戏或影音使用概览。';
+
+  @override
+  String get ambientUnsupported => '这部手机暂时无法读取。';
+
+  @override
+  String get ambientOpenUsageAccess => '在手机设置里允许查看使用情况';
+
+  @override
+  String get ambientSettingFailed => '这项设置暂时没能更新。';
+
+  @override
   String get artifactUnsupported => '此类型暂不支持保存到手机';
 
   @override

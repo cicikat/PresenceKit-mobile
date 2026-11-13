@@ -5,6 +5,8 @@ import 'package:flutter/widgets.dart';
 import '../models/screen_context.dart';
 import '../services/backend_client.dart';
 import '../services/device_services.dart';
+import '../services/platform_settings_channel.dart';
+import '../models/session_scope.dart';
 
 /// Coordinates local device capabilities; UI decides how to present [lastError].
 ///
@@ -16,12 +18,14 @@ class DeviceController extends ChangeNotifier {
     required ScreenSensorService screen,
     required BackendClient Function() backend,
     required String? Function() token,
+    String? Function()? character,
     bool Function()? restored,
     bool Function()? foreground,
   }) : _device = device,
        _screen = screen,
        _backend = backend,
        _token = token,
+       _character = character,
        _restored = restored ?? _alwaysTrue,
        _foreground = foreground ?? _alwaysTrue;
 
@@ -33,6 +37,10 @@ class DeviceController extends ChangeNotifier {
   final String? Function() _token;
   final bool Function() _restored;
   final bool Function() _foreground;
+  final String? Function()? _character;
+  PresenceSessionGrant? _ambientGrant;
+  bool _ambientBusy = false;
+  Timer? _ambientTimer;
   Timer? _screenTimer;
   Timer? _sensorTimer;
   bool screenUploadEnabled = false;
@@ -41,8 +49,7 @@ class DeviceController extends ChangeNotifier {
   int _generation = 0;
   bool _started = false;
   @visibleForTesting
-  bool get hasPeriodicTimers =>
-      _screenTimer != null || _sensorTimer != null;
+  bool get hasPeriodicTimers => _screenTimer != null || _sensorTimer != null;
 
   Future<void> restore() async {
     screenUploadEnabled = await _screen.loadUploadEnabled();
@@ -76,6 +83,13 @@ class DeviceController extends ChangeNotifier {
     stop();
     unawaited(pushScreenContext(silent: true));
     unawaited(pushSensorData());
+    if (PlatformSettingsChannel.available && _character != null) {
+      unawaited(pushAmbient());
+      _ambientTimer = Timer.periodic(
+        const Duration(seconds: 30),
+        (_) => unawaited(pushAmbient()),
+      );
+    }
     _screenTimer = Timer.periodic(
       const Duration(seconds: 45),
       (_) => unawaited(pushScreenContext(silent: true)),
@@ -87,6 +101,8 @@ class DeviceController extends ChangeNotifier {
   }
 
   void stop() {
+    _ambientTimer?.cancel();
+    _ambientTimer = null;
     _screenTimer?.cancel();
     _screenTimer = null;
     _sensorTimer?.cancel();
@@ -110,6 +126,7 @@ class DeviceController extends ChangeNotifier {
   }
 
   void invalidateForIdentityChange() {
+    _ambientGrant = null;
     _generation++;
     lastError = null;
     stop();
@@ -122,6 +139,54 @@ class DeviceController extends ChangeNotifier {
   /// Explicit user action only. Periodic sensor upload must never call this.
   Future<void> requestActivityPermission() =>
       _screen.requestActivityPermission();
+
+  Future<void> pushAmbient({String? cleared}) async {
+    final token = _token()?.trim();
+    final character = _character?.call();
+    if (!PlatformSettingsChannel.available ||
+        token == null ||
+        token.isEmpty ||
+        character == null ||
+        _disposed ||
+        (cleared == null && !_foreground())) {
+      return;
+    }
+    if (_ambientBusy && cleared == null) return;
+    final generation = _generation;
+    final backend = _backend();
+    final observedAt = DateTime.now().millisecondsSinceEpoch / 1000;
+    if (cleared == null) _ambientBusy = true;
+    try {
+      final observation = cleared == null
+          ? await PlatformSettingsChannel.deliveryCall<Map>('sampleAmbient')
+          : {
+              cleared: {'status': 'unavailable', 'observed_at': observedAt},
+            };
+      if (observation == null || observation.isEmpty) return;
+      var grant = _ambientGrant;
+      if (grant == null || grant.charId != character) {
+        grant = await backend.createPresenceSession(
+          token: token,
+          charId: character,
+        );
+      }
+      if (!_live(generation, token, backend) ||
+          _character?.call() != character ||
+          (cleared == null && !_foreground())) {
+        return;
+      }
+      _ambientGrant = grant;
+      await backend.pushAmbient(
+        token: token,
+        sessionId: grant.sessionId,
+        observation: Map<String, dynamic>.from(observation),
+      );
+    } catch (_) {
+      if (_live(generation, token, backend)) _ambientGrant = null;
+    } finally {
+      if (cleared == null) _ambientBusy = false;
+    }
+  }
 
   Future<void> pushSensorData() async {
     final token = _token()?.trim();

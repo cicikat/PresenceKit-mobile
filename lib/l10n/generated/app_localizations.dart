@@ -98,6 +98,60 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @ambientLightTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机周围的光'**
+  String get ambientLightTitle;
+
+  /// No description provided for @ambientLightDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开应用时分享附近的明暗。'**
+  String get ambientLightDescription;
+
+  /// No description provided for @ambientMotionTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机的摆放姿势'**
+  String get ambientMotionTitle;
+
+  /// No description provided for @ambientMotionDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开应用时分享手机朝上、朝下或竖立。'**
+  String get ambientMotionDescription;
+
+  /// No description provided for @ambientUsageTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'最近的亮屏情况'**
+  String get ambientUsageTitle;
+
+  /// No description provided for @ambientUsageDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'分享过去一小时的亮屏次数、时长和可识别的游戏或影音使用概览。'**
+  String get ambientUsageDescription;
+
+  /// No description provided for @ambientUnsupported.
+  ///
+  /// In zh, this message translates to:
+  /// **'这部手机暂时无法读取。'**
+  String get ambientUnsupported;
+
+  /// No description provided for @ambientOpenUsageAccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'在手机设置里允许查看使用情况'**
+  String get ambientOpenUsageAccess;
+
+  /// No description provided for @ambientSettingFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'这项设置暂时没能更新。'**
+  String get ambientSettingFailed;
+
   /// No description provided for @artifactUnsupported.
   ///
   /// In zh, this message translates to:
