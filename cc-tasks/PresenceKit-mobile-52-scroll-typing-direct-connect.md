@@ -17,7 +17,7 @@
 - [x] 恢复120秒本地等待气泡：正常完成、迟到结果、超时不重发及pause清理回归通过；远端running恢复BLOCKED，未新增后端接口。
 - [x] 只读核验现有HTTPS入口、DNS/TCP/TLS/HTTP/WS；报告docs/mobile/chat-follow-wait-direct-52.md记录公网/loopback、Fake-IP限制及配置/回滚计划。真实免VPN直连NOT RUN，生产修改未执行。
 - [x] 分析零问题、Flutter428项通过（含#51与协议回归）；Android本轮XML23项零失败/错误/跳过，工具命令超时/收尾错误另记质量报告；Dev APK成功，SHA256 DD0A8E559BADBB39DD128231F69C32C1B8367AD6A159B213405A47D0FD422490。真机/免VPN/安装NOT RUN。
-- [ ] 更新文档/known-issues/三仓总账，提交push并合并，记录SHA。
+- [x] 更新报告/known-issues/架构/质量/接入文档，提交8dfd63214178936fdd28f0a86e353425c5cff441已push；PR https://github.com/cicikat/PresenceKit-mobile/pull/7，合并及CI最终状态以该PR记录为准。后端三仓总账已局部同步在其工作树，因并行#313施工未混入提交/推送；生产和真机未完成项保持open/observe。
 
 1. 在手机仓库读取 `AGENTS.md`、`docs/mobile/chat-reliability-50.md`、`docs/mobile/ui-regression-51.md`，先记录 `git branch --show-current`、`git status --short`、`git log -5 --oneline`、当前 APK 版本与测试基线。这里可能有未推送/未合并代码：**以用户的当前工作树为施工基础，而不是以 GitHub main 的旧代码覆盖本地 #50/#51 成果**。
 2. 如有未提交文件，仅局部修改目标文件，先保留差异；不 reset、强制切换、清理 Outbox、覆盖配置、改签名证书，也不自动部署生产环境。不得以“先新建一条干净分支”为由违反用户要求。
