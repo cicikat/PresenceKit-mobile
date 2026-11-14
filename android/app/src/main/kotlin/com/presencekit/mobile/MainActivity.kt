@@ -44,6 +44,10 @@ class MainActivity : FlutterActivity() {
     private var pendingFilePickResult: MethodChannel.Result? = null
     private var pendingImagesPickResult: MethodChannel.Result? = null
     private var pendingPdfPickResult: MethodChannel.Result? = null
+    private val ambientSensors by lazy {
+        AmbientSensors(this, getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE))
+    }
+
     private val voiceRecorder by lazy { VoiceRecorder(this) }
     private var ttsPlayer: MediaPlayer? = null
     private var ttsAudioFile: File? = null
@@ -64,12 +68,18 @@ class MainActivity : FlutterActivity() {
         super.onResume()
         FcmPush.foreground = true
         FcmPush.refresh(this)
+        ambientSensors.refresh(true)
         val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean("mobileAppInForeground", true).apply()
         stopService(Intent(this, MobileNotificationService::class.java))
         MobileNotificationService.cancelScheduledFallback(this)
         prefs.edit().putBoolean("backgroundNotificationServiceRunning", false).apply()
         enterFullscreen()
+    }
+
+    override fun onPause() {
+        ambientSensors.refresh(false)
+        super.onPause()
     }
 
     override fun onStop() {
@@ -403,6 +413,22 @@ class MainActivity : FlutterActivity() {
                             return
                         }
                         if (enabled && !areNotificationsEnabled()) requestNotificationPermission()
+                        result.success(null)
+                    }
+                    "getAmbientSettings" -> result.success(ambientSensors.settings())
+                    "sampleAmbient" -> result.success(ambientSensors.sample())
+                    "setAmbientEnabled" -> {
+                        val kind = call.argument<String>("kind")
+                        val enabled = call.argument<Boolean>("enabled")
+                        if (kind !in listOf("light", "motion", "usage") || enabled == null) {
+                            result.error("INVALID_ARGUMENT", "Invalid ambient setting", null)
+                        } else {
+                            ambientSensors.setEnabled(requireNotNull(kind), enabled)
+                            result.success(null)
+                        }
+                    }
+                    "openUsageAccess" -> {
+                        startActivity(Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS))
                         result.success(null)
                     }
                     "getBackgroundPollStatus" -> {

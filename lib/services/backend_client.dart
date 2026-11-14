@@ -437,6 +437,21 @@ class BackendClient {
     }
   }
 
+  Future<void> pushAmbient({
+    required String token,
+    required String sessionId,
+    required Map<String, dynamic> observation,
+  }) async {
+    await _request(
+      '/sensor/ambient',
+      token: token,
+      method: 'POST',
+      sessionId: sessionId,
+      body: observation,
+      timeout: const Duration(seconds: 8),
+    );
+  }
+
   Future<PresenceSessionGrant> createPresenceSession({
     required String token,
     required String charId,

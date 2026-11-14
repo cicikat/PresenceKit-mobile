@@ -10,7 +10,8 @@ import 'package:flutter/services.dart';
 /// Chat appearance bytes/nightBytes hold independent day/night images; null clears that slot.
 /// Shared transport for the stable Android settings channel.
 /// getFcmPushStatus and setFcmPushEnabled expose system alert consent and state.
-/// getBackgroundPollStatus includes optional pendingCount/pendingLimit observations.
+/// getBackgroundPollStatus includes pendingCount, pendingLimit and lastDeliveryStage.
+/// getAmbientSettings/sampleAmbient/setAmbientEnabled/openUsageAccess use this channel.
 /// Appearance get/set includes local showToolActivity (default true).
 /// Appearance get/set includes independent Dream sizes (12-28), ARGB colors,
 /// showReasoning, expandReasoning and reasoningOpacity (0-1, default .85).

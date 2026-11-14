@@ -275,3 +275,4 @@ GET /activity/records（state.read）默认仅列来源元数据；指定 source
 
 
 317 uses /mobile/push/devices/self (PUT/DELETE), /mobile/push/devices/status (GET), and /mobile/push/message (GET exact ID/seq). The exact read does not advance the shared ACK cursor. All existing poll, ACK and history behavior remains compatible.
+314: 新增可选独立 REST /sensor/ambient；手机聊天、轮询与 ACK 报文维持现有契约。315-A 的 getBackgroundPollStatus 增加 lastDeliveryStage，供诊断使用。

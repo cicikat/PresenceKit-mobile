@@ -46,6 +46,36 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get ambientLightTitle => 'Light around my phone';
+
+  @override
+  String get ambientLightDescription =>
+      'Share how bright it is while the app is open.';
+
+  @override
+  String get ambientMotionTitle => 'How my phone is resting';
+
+  @override
+  String get ambientMotionDescription =>
+      'Share whether the phone faces up, faces down, or stands upright.';
+
+  @override
+  String get ambientUsageTitle => 'Recent screen activity';
+
+  @override
+  String get ambientUsageDescription =>
+      'Share screen time and supported games or media totals from the last hour.';
+
+  @override
+  String get ambientUnsupported => 'Unavailable on this phone.';
+
+  @override
+  String get ambientOpenUsageAccess => 'Allow usage access in system settings';
+
+  @override
+  String get ambientSettingFailed => 'This setting could not be updated.';
+
+  @override
   String get artifactUnsupported =>
       'This file type cannot be saved on this device';
 
