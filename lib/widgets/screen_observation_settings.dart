@@ -109,9 +109,13 @@ class _ScreenObservationSettingsState extends State<ScreenObservationSettings>
         ? context.l10n.screenObservationRequirements
         : context.l10n.screenObservationHint;
     if (_failed) {
-      return ListTile(
-        title: Text(context.l10n.screenObservationTitle),
-        subtitle: Text(subtitle),
+      return CapabilityRow(
+        c: widget.c,
+        icon: Icons.screenshot_rounded,
+        enabled: false,
+        actionLabel: '',
+        title: context.l10n.screenObservationTitle,
+        subtitle: subtitle,
         trailing: TextButton(
           onPressed: _busy ? null : () => _load(),
           child: Text(context.l10n.retryAction),

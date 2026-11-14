@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../controllers/fcm_push_controller.dart';
 import '../l10n/l10n.dart';
+import '../models/app_models.dart';
+import 'settings_editor_widgets.dart';
 
 class FcmPushSettings extends StatefulWidget {
   const FcmPushSettings({
     super.key,
     required this.character,
     required this.onChanged,
+    this.c,
   });
 
   final String? Function() character;
   final Future<void> Function(bool enabled) onChanged;
+  final YxPalette? c;
 
   @override
   State<FcmPushSettings> createState() => _FcmPushSettingsState();
@@ -57,24 +61,30 @@ class _FcmPushSettingsState extends State<FcmPushSettings>
         'off' => l.fcmOff,
         _ => l.fcmWaiting,
       };
-      return SwitchListTile(
-        title: Text(l.fcmTitle),
-        subtitle: Text(
-          delay == null || !_controller.enabled
-              ? detail
-              : '$detail\n${l.fcmLastDelay((delay / 1000).round())}',
+      final c =
+          widget.c ??
+          (Theme.of(context).brightness == Brightness.dark
+              ? YxPalette.dark
+              : YxPalette.light);
+      return SettingsRow(
+        c: c,
+        title: l.fcmTitle,
+        subtitle: delay == null || !_controller.enabled
+            ? detail
+            : '$detail\n${l.fcmLastDelay((delay / 1000).round())}',
+        child: Switch(
+          value: _controller.enabled,
+          onChanged:
+              _controller.busy ||
+                  (!_controller.enabled &&
+                      (state == 'unconfigured' ||
+                          state == 'play_services_unavailable'))
+              ? null
+              : (value) async {
+                  await _controller.setEnabled(value);
+                  if (mounted) await widget.onChanged(_controller.enabled);
+                },
         ),
-        value: _controller.enabled,
-        onChanged:
-            _controller.busy ||
-                (!_controller.enabled &&
-                    (state == 'unconfigured' ||
-                        state == 'play_services_unavailable'))
-            ? null
-            : (value) async {
-                await _controller.setEnabled(value);
-                if (mounted) await widget.onChanged(_controller.enabled);
-              },
       );
     },
   );

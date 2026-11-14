@@ -63,19 +63,14 @@ void main() {
     );
     expect(find.byType(Switch), findsNothing);
     fail = false;
-    await tester.tap(find.text('Retry'));
+    await tester.tap(find.byTooltip('Retry'));
     await tester.pumpAndSettle();
     expect(find.byType(Switch), findsNWidgets(3));
     expect(
       find.text('Battery at 72%. No additional permission needed.'),
       findsOneWidget,
     );
-    expect(
-      tester
-          .widget<SwitchListTile>(find.byType(SwitchListTile).first)
-          .onChanged,
-      isNull,
-    );
+    expect(tester.widget<Switch>(find.byType(Switch).first).onChanged, isNull);
   });
   testWidgets('unsupported platform remains visible', (tester) async {
     PlatformSettingsChannel.debugForceChannelAvailable = false;

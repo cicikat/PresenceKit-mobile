@@ -268,6 +268,75 @@ class YxAvatar extends StatelessWidget {
   }
 }
 
+/// The existing avatar frame with one inset, non-animated connection mark.
+class ChatConnectionAvatar extends StatelessWidget {
+  const ChatConnectionAvatar({
+    super.key,
+    required this.c,
+    required this.name,
+    required this.connected,
+    required this.onDetails,
+    this.imageBytes,
+    this.size = 32,
+    this.onDark = false,
+  });
+
+  final YxPalette c;
+  final String name;
+  final bool connected;
+  final VoidCallback onDetails;
+  final Uint8List? imageBytes;
+  final double size;
+  final bool onDark;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: context.l10n.chatConnectionDetails,
+    child: Tooltip(
+      message: context.l10n.chatConnectionDetails,
+      child: InkResponse(
+        key: const ValueKey('chat-delivery-details'),
+        onTap: onDetails,
+        radius: size / 2 + 8,
+        child: SizedBox.square(
+          dimension: size,
+          child: Stack(
+            children: [
+              YxAvatar(
+                c: c,
+                size: size,
+                onDark: onDark,
+                imageBytes: imageBytes,
+                text: name.isEmpty ? '' : name.characters.first,
+              ),
+              Positioned(
+                right: size * .12,
+                bottom: size * .12,
+                child: Container(
+                  key: const ValueKey('chat-connection-dot'),
+                  width: size * .28,
+                  height: size * .28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: connected
+                        ? const Color(0xFF48AD78)
+                        : const Color(0xFFD96969),
+                    border: Border.all(
+                      color: onDark ? c.characterDeep : c.surface,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class YxIconButton extends StatelessWidget {
   const YxIconButton({
     super.key,

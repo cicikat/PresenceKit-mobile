@@ -1,4 +1,5 @@
 import 'reference_typography.dart';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/app_models.dart';
@@ -24,6 +25,9 @@ class ReferenceLayoutShell extends StatelessWidget {
     required this.onToggleTheme,
     required this.dark,
     required this.child,
+    this.connected = false,
+    this.avatarBytes,
+    this.onDetails,
   });
   final DailyLayout layout;
   final AppRoute route;
@@ -35,6 +39,9 @@ class ReferenceLayoutShell extends StatelessWidget {
   final VoidCallback onToggleTheme;
   final bool dark;
   final Widget child;
+  final bool connected;
+  final Uint8List? avatarBytes;
+  final VoidCallback? onDetails;
   @override
   Widget build(BuildContext context) => ConversationPresentation(
     daily: layout,
@@ -51,6 +58,9 @@ class ReferenceLayoutShell extends StatelessWidget {
             onSettings: onSettings,
             onToggleTheme: onToggleTheme,
             dark: dark,
+            connected: connected,
+            avatarBytes: avatarBytes,
+            onDetails: onDetails,
           ),
         Expanded(child: child),
       ],
@@ -70,6 +80,9 @@ class ReferenceHeader extends StatelessWidget {
     required this.onSettings,
     required this.onToggleTheme,
     required this.dark,
+    this.connected = false,
+    this.avatarBytes,
+    this.onDetails,
   });
   final YxPalette c;
   final DailyLayout layout;
@@ -80,6 +93,9 @@ class ReferenceHeader extends StatelessWidget {
   final VoidCallback onSettings;
   final VoidCallback onToggleTheme;
   final bool dark;
+  final bool connected;
+  final Uint8List? avatarBytes;
+  final VoidCallback? onDetails;
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -121,16 +137,30 @@ class ReferenceHeader extends StatelessWidget {
                       size: 26,
                     ),
                   ),
+                if (route == AppRoute.chat) ...[
+                  ChatConnectionAvatar(
+                    c: c,
+                    name: name,
+                    connected: connected,
+                    imageBytes: avatarBytes,
+                    onDetails: onDetails ?? onSettings,
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        paper
+                        route == AppRoute.chat
+                            ? name
+                            : paper
                             ? l.referencePaperBrand
                             : layout == DailyLayout.noir
                             ? 'after.you'
                             : 'dear.you',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style:
                             referenceSerif(
                               c,
@@ -152,35 +182,42 @@ class ReferenceHeader extends StatelessWidget {
                               letterSpacing: paper ? 3 : -1,
                             ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        paper
-                            ? l.referencePaperSubtitle
-                            : l.referenceWindowSubtitle,
-                        style: paper
-                            ? referenceSerif(
-                                c,
-                                11,
-                                color: c.ink3,
-                                spacing: 1,
-                                latin: true,
-                                italic: true,
-                              )
-                            : referenceUiText(
-                                c,
-                                7,
-                                color: c.ink3,
-                                spacing: 1.5,
-                              ),
-                      ),
+                      if (route != AppRoute.chat) const SizedBox(height: 8),
+                      if (route != AppRoute.chat)
+                        Text(
+                          paper
+                              ? l.referencePaperSubtitle
+                              : l.referenceWindowSubtitle,
+                          style: paper
+                              ? referenceSerif(
+                                  c,
+                                  11,
+                                  color: c.ink3,
+                                  spacing: 1,
+                                  latin: true,
+                                  italic: true,
+                                )
+                              : referenceUiText(
+                                  c,
+                                  7,
+                                  color: c.ink3,
+                                  spacing: 1.5,
+                                ),
+                        ),
                     ],
                   ),
                 ),
                 IconButton(
                   onPressed: onToggleTheme,
-                  tooltip: dark ? l.switchToLightTooltip : l.switchToDarkTooltip,
+                  tooltip: dark
+                      ? l.switchToLightTooltip
+                      : l.switchToDarkTooltip,
                   icon: Icon(
-                    paper ? (dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded) : Icons.favorite,
+                    paper
+                        ? (dark
+                              ? Icons.light_mode_rounded
+                              : Icons.dark_mode_rounded)
+                        : Icons.favorite,
                     color: c.character,
                     size: paper ? 22 : 17,
                   ),

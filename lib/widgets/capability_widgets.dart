@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'screen_observation_settings.dart';
 import 'fcm_push_settings.dart';
 import 'ambient_permissions.dart';
+import 'settings_editor_widgets.dart';
 
 import '../app_constants.dart';
 import '../models/app_models.dart';
@@ -349,6 +350,7 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                   ),
                   if (widget.onAmbientChanged != null)
                     AmbientPermissions(
+                      c: c,
                       onChanged: widget.onAmbientChanged!,
                       readOnly: !widget.controlsOnly,
                     ),
@@ -408,22 +410,31 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                     ),
                   if (widget.controlsOnly && widget.pushCharacter != null) ...[
                     FcmPushSettings(
+                      c: c,
                       key: ValueKey(status.backgroundNotificationsEnabled),
                       character: widget.pushCharacter!,
                       onChanged: (enabled) =>
                           enabled && status.backgroundNotificationsEnabled
-                          ? _run(() => widget.onToggleBackgroundNotifications(false))
+                          ? _run(
+                              () =>
+                                  widget.onToggleBackgroundNotifications(false),
+                            )
                           : _run(() async {}),
                     ),
-                    SwitchListTile(
-                      title: Text(context.l10n.fcmCompatibilityTitle),
-                      subtitle: Text(context.l10n.fcmCompatibilityDescription),
-                      value: status.backgroundNotificationsEnabled,
-                      onChanged: _acting
-                          ? null
-                          : (value) => _run(
-                              () => widget.onToggleBackgroundNotifications(value),
-                            ),
+                    SettingsRow(
+                      c: c,
+                      title: context.l10n.fcmCompatibilityTitle,
+                      subtitle: context.l10n.fcmCompatibilityDescription,
+                      child: Switch(
+                        value: status.backgroundNotificationsEnabled,
+                        onChanged: _acting
+                            ? null
+                            : (value) => _run(
+                                () => widget.onToggleBackgroundNotifications(
+                                  value,
+                                ),
+                              ),
+                      ),
                     ),
                   ],
                   if (widget.controlsOnly && _developerDiagnostics) ...[
@@ -1474,7 +1485,11 @@ class CapabilityRow extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: c.surfaceEdge)),
           ),
-          child: constraints.maxWidth < 430
+          child:
+              (constraints.maxWidth < 360 ||
+                      MediaQuery.textScalerOf(context).scale(16) > 24) &&
+                  (onPressed != null ||
+                      trailing != null && trailing is! SizedBox)
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

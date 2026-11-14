@@ -2,11 +2,19 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
+import '../models/app_models.dart';
+import 'common_widgets.dart';
 
 /// Both edges work even when the conversation is shorter than the viewport.
 /// Observes the list's drag instead of competing with it for the gesture.
 class EdgeRefresh extends StatefulWidget {
-  const EdgeRefresh({super.key, required this.onRefresh, required this.child});
+  const EdgeRefresh({
+    super.key,
+    required this.onRefresh,
+    required this.child,
+    this.c,
+  });
+  final YxPalette? c;
   final Future<void> Function() onRefresh;
   final Widget child;
 
@@ -67,56 +75,67 @@ class _EdgeRefreshState extends State<EdgeRefresh> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        child: ClipRect(
-          child: Stack(
-            children: [
-              Transform.translate(
-                offset: Offset(0, _bottom ? -_pull : _pull),
-                child: widget.child,
-              ),
-              if (_pull > 0)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: _bottom ? null : 0,
-                  bottom: _bottom ? 0 : null,
-                  height: _pull,
-                  child: Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_refreshing)
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        else
-                          Icon(
-                            _pull >= _threshold
-                                ? Icons.refresh
-                                : (_bottom
-                                      ? Icons.arrow_upward
-                                      : Icons.arrow_downward),
-                            size: 18,
+  Widget build(BuildContext context) {
+    final c =
+        widget.c ??
+        (Theme.of(context).brightness == Brightness.dark
+            ? YxPalette.dark
+            : YxPalette.light);
+    return NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: ClipRect(
+        child: Stack(
+          children: [
+            Transform.translate(
+              offset: Offset(0, _bottom ? -_pull : _pull),
+              child: widget.child,
+            ),
+            if (_pull > 0)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: _bottom ? null : 0,
+                bottom: _bottom ? 0 : null,
+                height: _pull,
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_refreshing)
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: c.character,
                           ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _refreshing
-                              ? context.l10n.chatRefreshing
-                              : _pull >= _threshold
-                              ? context.l10n.chatReleaseRefresh
-                              : context.l10n.chatPullRefresh,
+                        )
+                      else
+                        Icon(
+                          _pull >= _threshold
+                              ? Icons.refresh
+                              : (_bottom
+                                    ? Icons.arrow_upward
+                                    : Icons.arrow_downward),
+                          size: 18,
+                          color: c.character,
                         ),
-                      ],
-                    ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _refreshing
+                            ? context.l10n.chatRefreshing
+                            : _pull >= _threshold
+                            ? context.l10n.chatReleaseRefresh
+                            : context.l10n.chatPullRefresh,
+                        style: mono(c, 12, color: c.ink2),
+                      ),
+                    ],
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 }

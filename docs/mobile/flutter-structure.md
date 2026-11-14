@@ -1,3 +1,7 @@
+## 手机 #51 顶栏与组件对齐（2026-11-14）
+
+五种聊天顶栏共用 `ChatConnectionAvatar`（内部复用 `YxAvatar`），从既有 mobileActive/mobileError 派生红绿点，点击头像进入投递详情。感知观察/编辑分别复用 CapabilityRow/SettingsRow；EdgeRefresh 接页面 palette。AppShell 仅传状态与回调；纯 UI，无跨端影响。[截图、连接语义与验收](ui-regression-51.md)。
+
 ## 手机 #49 感知设置（2026-11-14）
 
 AmbientPermissions 管理短期读取代际、错误与返回刷新，能力观察模式只读；ScreenObservationSettings 管理可取消读取期限、真实无障碍授权及失败重试。复用既有通道，不新增AppShell领域状态、后端真值或持久字段；[验收与open边界](device-permissions-relay-49.md)。
