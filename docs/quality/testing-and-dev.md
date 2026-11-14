@@ -1,3 +1,7 @@
+## 手机 #48 Kotlin跨盘缓存（2026-11-14）
+
+仓库级设置kotlin.incremental=false；原 `flutter build apk --release --flavor prod --build-name 1.3.0 --build-number 74` 连续成功（总88.19/34.17秒），另强制重编package_info_plus目标成功。三份完整日志中的different-roots/cache-close/daemon异常均0。APK包名/版本和历史证书核验一致，47,288,274字节，SHA-256 `836B07A013C170A4C961D8D3D60BADE888FAB269562556B42F334646C6CA04C8`。未安装/发布，无跨端影响；耗时取舍、日志与回滚见 [#48报告](kotlin-cross-drive-48.md)。
+
 ## 手机 #49 本地验证（2026-11-14）
 
 gen-l10n成功、analyze零问题、Flutter全量416项通过；Android通知/收件存储/回源恢复19项通过。Dev APK成功（Gradle20.0秒），SHA-256 `1CDFDBF3BC2CDEF4DDF817A0932901BEEBDF5D51D7583D948A60575CD4CFD1F3`。无设备，未安装/发布；权限往返、FCM/SSE/前后台/ROM通知仍NOT RUN。后端逐项effective/上报观测及running查询仍open，见 [#49报告](../mobile/device-permissions-relay-49.md)。
