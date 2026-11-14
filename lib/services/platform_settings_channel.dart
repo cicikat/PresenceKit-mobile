@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 /// legacy global slot, present id uses per-character prefs and avatar files.
 /// Chat appearance bytes/nightBytes hold independent day/night images; null clears that slot.
 /// Shared transport for the stable Android settings channel.
+/// getFcmPushStatus and setFcmPushEnabled expose system alert consent and state.
 /// getBackgroundPollStatus includes pendingCount, pendingLimit and lastDeliveryStage.
 /// getAmbientSettings/sampleAmbient/setAmbientEnabled/openUsageAccess use this channel.
 /// Appearance get/set includes local showToolActivity (default true).

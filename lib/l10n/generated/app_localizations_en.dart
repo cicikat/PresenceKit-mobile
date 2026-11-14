@@ -9,6 +9,43 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get fcmCompatibilityTitle => 'Compatibility reception';
+
+  @override
+  String get fcmCompatibilityDescription =>
+      'Keeps a persistent notification while receiving messages.';
+
+  @override
+  String get fcmTitle => 'System message alerts (recommended)';
+
+  @override
+  String get fcmUnconfigured =>
+      'System alerts are unavailable in this build. You can turn on compatibility reception below.';
+
+  @override
+  String get fcmUnavailable =>
+      'Google Play services is unavailable. You can turn on compatibility reception below.';
+
+  @override
+  String get fcmPermissionRequired =>
+      'Allow notifications in your phone settings to receive alerts.';
+
+  @override
+  String get fcmRegistered =>
+      'Ready to receive message alerts in the background.';
+
+  @override
+  String get fcmOff => 'Turn on to get alerts without keeping the app running.';
+
+  @override
+  String get fcmWaiting => 'System alerts haven’t connected yet.';
+
+  @override
+  String fcmLastDelay(int seconds) {
+    return 'Last alert arrived in about $seconds seconds.';
+  }
+
+  @override
   String get ambientLightTitle => 'Light around my phone';
 
   @override
@@ -750,11 +787,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotificationsSection => 'Notifications & proactivity';
 
   @override
-  String get settingsBackgroundNotificationsTitle => 'Background notifications';
+  String get settingsBackgroundNotificationsTitle => 'Compatibility reception';
 
   @override
   String get settingsBackgroundNotificationsSubtitle =>
-      'Live relay · Disconnect fallback · New message alerts';
+      'Uses a persistent notification for background reception';
 
   @override
   String get settingsNotificationTestTitle =>

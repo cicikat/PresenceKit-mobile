@@ -270,3 +270,5 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 314: 照度和重力监听仅随 Activity 的 onResume/onPause 生效。亮屏与分类汇总单独使用 Android 使用情况访问，默认关闭。分类仅纳入系统可见且明确分类的游戏与影音，包名不会进入上报。
 
 315: 新安装默认关闭后台常驻接收。已保存的开关继续生效，可在能力设置开启兼容接收。
+
+317 system alerts use the Firebase receiver with auto-init off until consent and notification permission. Flavor-local google-services.json is ignored by Git. FCM uses HTTPS or loopback for backend registration and body recovery.

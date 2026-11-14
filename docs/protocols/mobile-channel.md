@@ -274,4 +274,5 @@ GET /activity/records（state.read）默认仅列来源元数据；指定 source
 桌面使用 preview_chat_image IPC 返回data URL，下载使用原保存对话框；手机复用ChatImage全屏缩放，saveChatImage(name,mime,bytes) 经AppSettingsStore/PlatformSettingsChannel/MainActivity通道调用系统ACTION_CREATE_DOCUMENT保存二进制图片，不新增存储权限或后台服务。模型密钥、默认连接、角色白名单与用户prompt约束由后端管理面统一配置，客户端不复制设置。真实图像服务/原生窗口/真机保存器验收为observe。
 
 
+317 uses /mobile/push/devices/self (PUT/DELETE), /mobile/push/devices/status (GET), and /mobile/push/message (GET exact ID/seq). The exact read does not advance the shared ACK cursor. All existing poll, ACK and history behavior remains compatible.
 314: 新增可选独立 REST /sensor/ambient；手机聊天、轮询与 ACK 报文维持现有契约。315-A 的 getBackgroundPollStatus 增加 lastDeliveryStage，供诊断使用。

@@ -790,6 +790,7 @@ class _CompanionAppState extends State<CompanionApp>
       backgroundColor: Colors.transparent,
       builder: (context) => CapabilitySheet(
         controlsOnly: controlsOnly,
+        pushCharacter: () => _currentCharacterId,
         c: c,
         onLoadStatus: _capabilitySettings.loadStatus,
         onAmbientChanged: (kind, enabled) =>

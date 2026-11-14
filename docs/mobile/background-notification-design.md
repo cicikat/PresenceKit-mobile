@@ -56,3 +56,6 @@
 
 - 当前安全边界：可以打开美团/淘宝、切到购物车、显示确认悬浮窗；不自动支付。
 - 永远不自动点击支付、提交订单、确认收货、解绑银行卡等高风险动作。
+
+
+317 adds opt-in system alerts with data-only Firebase Messaging. The receiver posts a generic alert, then one bounded WorkManager job fetches that exact row into the existing native inbox. On Android 12+ the job can be expedited; on earlier versions it is ordinary work. Opening the notification uses the existing foreground backlog reconciliation. Compatibility reception and system alerts are mutually exclusive.

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'screen_observation_settings.dart';
+import 'fcm_push_settings.dart';
 import 'ambient_permissions.dart';
 
 import '../app_constants.dart';
@@ -19,6 +20,7 @@ class CapabilitySheet extends StatefulWidget {
     super.key,
     required this.c,
     this.controlsOnly = false,
+    this.pushCharacter,
     required this.onLoadStatus,
     this.onAmbientChanged,
     required this.onRequestNotifications,
@@ -54,6 +56,7 @@ class CapabilitySheet extends StatefulWidget {
 
   final YxPalette c;
   final bool controlsOnly;
+  final String? Function()? pushCharacter;
   final Future<CapabilityStatus> Function() onLoadStatus;
   final Future<void> Function(String kind, bool enabled)? onAmbientChanged;
   final Future<void> Function() onRequestNotifications;
@@ -400,6 +403,26 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                       onChanged: (value) =>
                           setState(() => _developerDiagnostics = value),
                     ),
+                  if (widget.controlsOnly && widget.pushCharacter != null) ...[
+                    FcmPushSettings(
+                      key: ValueKey(status.backgroundNotificationsEnabled),
+                      character: widget.pushCharacter!,
+                      onChanged: (enabled) =>
+                          enabled && status.backgroundNotificationsEnabled
+                          ? _run(() => widget.onToggleBackgroundNotifications(false))
+                          : _run(() async {}),
+                    ),
+                    SwitchListTile(
+                      title: Text(context.l10n.fcmCompatibilityTitle),
+                      subtitle: Text(context.l10n.fcmCompatibilityDescription),
+                      value: status.backgroundNotificationsEnabled,
+                      onChanged: _acting
+                          ? null
+                          : (value) => _run(
+                              () => widget.onToggleBackgroundNotifications(value),
+                            ),
+                    ),
+                  ],
                   if (widget.controlsOnly && _developerDiagnostics) ...[
                     ScreenContextDebugCard(
                       c: c,

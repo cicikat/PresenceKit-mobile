@@ -9,6 +9,38 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get fcmCompatibilityTitle => '兼容接收';
+
+  @override
+  String get fcmCompatibilityDescription => '开启后，接收消息时会显示一条常驻通知。';
+
+  @override
+  String get fcmTitle => '系统消息提醒（推荐）';
+
+  @override
+  String get fcmUnconfigured => '当前版本未配置系统提醒，可以在下方开启兼容接收。';
+
+  @override
+  String get fcmUnavailable => '这部手机的 Google Play 服务不可用，可以在下方开启兼容接收。';
+
+  @override
+  String get fcmPermissionRequired => '请在手机设置中允许通知。';
+
+  @override
+  String get fcmRegistered => '退到后台后也可以接收消息提醒。';
+
+  @override
+  String get fcmOff => '开启后可以接收消息提醒，无需让应用一直运行。';
+
+  @override
+  String get fcmWaiting => '系统消息提醒暂时未连通。';
+
+  @override
+  String fcmLastDelay(int seconds) {
+    return '上次提醒约用时 $seconds 秒。';
+  }
+
+  @override
   String get ambientLightTitle => '手机周围的光';
 
   @override
@@ -707,10 +739,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsNotificationsSection => '通知与主动性';
 
   @override
-  String get settingsBackgroundNotificationsTitle => '后台通知';
+  String get settingsBackgroundNotificationsTitle => '兼容接收';
 
   @override
-  String get settingsBackgroundNotificationsSubtitle => '离开应用后继续接收消息';
+  String get settingsBackgroundNotificationsSubtitle => '开启后会显示一条常驻通知';
 
   @override
   String get settingsNotificationTestTitle => '通知闸门测试模式（仅调试）';
