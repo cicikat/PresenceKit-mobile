@@ -1,3 +1,7 @@
+## 手机 #52 等待恢复与直连（open / observe）
+
+current：发送显式跟随、真实手势/惯性阅读意图、布局合并跟随及120秒本地等待已实现，Flutter428项通过。open：手机缺scoped只读running证据，跨进程恢复BLOCKED；生产`/ws/mobile`公网与loopback匿名Upgrade均404，需核查部署/路由/鉴权拒绝行为。observe：Windows代理/Fake-IP仍启用，当前TLS成功不代表免VPN；无设备，Wi-Fi/移动网络/后台/杀进程/安装均NOT RUN。证据、配置计划与回滚见 [#52报告](mobile/chat-follow-wait-direct-52.md)。未修改生产网络或后端运行代码。
+
 ## 手机 #49 感知观测与设备验证（open / observe）
 
 current：设置中的设备感知入口、失败可见/重试/授权返回刷新、普通能力页只读、常驻通知同文字去重已落地。open：尚无逐项硬件支持→OS授权→本机意愿→后端effective→最近成功上报/错误的统一观测；尤其运动授权不等于计步硬件支持，本机读数不等于上报成功。后续需后端只读观测及手机消费闭环。observe：真实Android权限往返、SSE/FCM、前后台10次、ROM通知、日志/录屏与升级均NOT RUN。证据及三面检查见 [#49报告](mobile/device-permissions-relay-49.md)。

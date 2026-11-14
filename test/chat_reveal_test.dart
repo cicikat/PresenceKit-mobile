@@ -7,9 +7,12 @@ import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
 import 'package:presencekit_mobile/services/device_services.dart';
 import 'package:presencekit_mobile/widgets/chat_widgets.dart';
+import 'package:presencekit_mobile/widgets/anchored_chat_list.dart';
 
 void main() {
-  testWidgets('skip exposes every remaining segment and releases sending', (tester) async {
+  testWidgets('skip exposes every remaining segment and releases sending', (
+    tester,
+  ) async {
     const store = AppSettingsStore();
     final backend = _LongReplyBackend();
     final controller = ChatController(
@@ -19,13 +22,14 @@ void main() {
       relay: const RelayStatusService(store),
       deliveryCharId: () => 'char-a',
       deliveryOwner: () => 'owner',
-      resolvePresenceSession: ({required String charId, bool force = false}) async =>
-          PresenceSessionGrant(
-            sessionId: 'sess-$charId',
-            charId: charId,
-            ownerId: 'owner',
-            domain: 'reality',
-          ),
+      resolvePresenceSession:
+          ({required String charId, bool force = false}) async =>
+              PresenceSessionGrant(
+                sessionId: 'sess-$charId',
+                charId: charId,
+                ownerId: 'owner',
+                domain: 'reality',
+              ),
     );
     controller.send('hello');
     await tester.pump();
@@ -54,25 +58,31 @@ void main() {
       relay: const RelayStatusService(store),
       deliveryCharId: () => 'char-a',
       deliveryOwner: () => 'owner',
-      resolvePresenceSession: ({required String charId, bool force = false}) async =>
-          PresenceSessionGrant(
-            sessionId: 'sess-$charId',
-            charId: charId,
-            ownerId: 'owner',
-            domain: 'reality',
-          ),
+      resolvePresenceSession:
+          ({required String charId, bool force = false}) async =>
+              PresenceSessionGrant(
+                sessionId: 'sess-$charId',
+                charId: charId,
+                ownerId: 'owner',
+                domain: 'reality',
+              ),
     );
-    await tester.pumpWidget(MaterialApp(
-      home: ListenableBuilder(
-        listenable: controller,
-        builder: (context, child) => ListView.builder(
-          controller: controller.scrollController,
-          itemExtent: 60,
-          itemCount: 60 + controller.sent.length,
-          itemBuilder: (context, index) => Text('row $index'),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ListenableBuilder(
+          listenable: controller,
+          builder: (context, child) => AnchoredChatList(
+            controller: controller.scrollController,
+            rowIds: List<Object>.generate(
+              60 + controller.sent.length,
+              (i) => i,
+            ),
+            itemBuilder: (context, index) =>
+                SizedBox(height: 60, child: Text('row $index')),
+          ),
         ),
       ),
-    ));
+    );
     controller.scrollController.jumpTo(
       controller.scrollController.position.maxScrollExtent,
     );
@@ -83,17 +93,25 @@ void main() {
     await tester.pump();
     expect(controller.sent.where((m) => m.role == 'him').length, 1);
 
-    final position = controller.scrollController.position;
-    position.jumpTo(position.maxScrollExtent - 200);
-    await tester.pump();
-    final readingPosition = position.pixels;
+    await tester.drag(find.byType(AnchoredChatList), const Offset(0, 220));
+    await tester.pump(const Duration(milliseconds: 600));
+    final visible = tester.widgetList<Text>(find.byType(Text)).firstWhere((
+      text,
+    ) {
+      final y = tester.getTopLeft(find.text(text.data!)).dy;
+      return y >= 0 && y < 500;
+    }).data!;
+    final readingPosition = tester.getTopLeft(find.text(visible)).dy;
     final unreadBefore = controller.unreadHimCount;
     await tester.pump(const Duration(seconds: 6));
     await tester.pump(const Duration(seconds: 6));
     await tester.pump();
 
     expect(controller.sent.where((m) => m.role == 'him').length, 3);
-    expect(position.pixels, closeTo(readingPosition, 0.5));
+    expect(
+      tester.getTopLeft(find.text(visible)).dy,
+      closeTo(readingPosition, 2),
+    );
     expect(controller.showJumpToLatest, isTrue);
     expect(controller.unreadHimCount, unreadBefore + 2);
     await tester.pumpWidget(const SizedBox());
@@ -113,13 +131,14 @@ void main() {
       relay: const RelayStatusService(store),
       deliveryCharId: () => 'char-a',
       deliveryOwner: () => 'owner',
-      resolvePresenceSession: ({required String charId, bool force = false}) async =>
-          PresenceSessionGrant(
-            sessionId: 'sess-$charId',
-            charId: charId,
-            ownerId: 'owner',
-            domain: 'reality',
-          ),
+      resolvePresenceSession:
+          ({required String charId, bool force = false}) async =>
+              PresenceSessionGrant(
+                sessionId: 'sess-$charId',
+                charId: charId,
+                ownerId: 'owner',
+                domain: 'reality',
+              ),
     );
     final message = ChatMessage(
       role: 'him',
@@ -187,7 +206,11 @@ void main() {
 }
 
 class _LongReplyBackend extends BackendClient {
-  _LongReplyBackend() : super(baseUrl: 'http://127.0.0.1:8080', settingsStore: const AppSettingsStore());
+  _LongReplyBackend()
+    : super(
+        baseUrl: 'http://127.0.0.1:8080',
+        settingsStore: const AppSettingsStore(),
+      );
   @override
   Future<BackendChatResponse> sendChat(
     String message, {
@@ -196,11 +219,12 @@ class _LongReplyBackend extends BackendClient {
     String? sessionId,
     String? voiceReceipt,
     String? requestId,
-  }) async =>
-      BackendChatResponse.fromJson({
-        'reply': '${'A' * 5000}\n\nSecond\n\nThird',
-        'turn_id': 'canonical',
-      });
+  }) async => BackendChatResponse.fromJson({
+    'reply': '${'A' * 5000}\n\nSecond\n\nThird',
+    'turn_id': 'canonical',
+  });
   @override
-  Future<MobileActivationResult> deactivateMobile({required String token}) async => MobileActivationResult.fromJson({'ok': true, 'active': false});
+  Future<MobileActivationResult> deactivateMobile({
+    required String token,
+  }) async => MobileActivationResult.fromJson({'ok': true, 'active': false});
 }

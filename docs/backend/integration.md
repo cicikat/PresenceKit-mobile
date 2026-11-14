@@ -1,3 +1,7 @@
+## 手机 #52 接入取证（2026-11-15，open / observe）
+
+本地恢复最多120秒等待动画，不作为后端running证据，不新增wire字段/接口。生产现有HTTPS入口的匿名/mobile/poll与/mobile/realtime为401；/ws/mobile公网及loopback匿名Upgrade均404，不能仅修反代或复用desktop端点。未改生产配置。免VPN真实网络和scoped运行态恢复未完成；[分层证据及配置/回滚计划](../mobile/chat-follow-wait-direct-52.md)。
+
 ## 手机 #50 执行状态依赖（2026-11-14，open）
 
 本轮未改后端运行代码或 mobile wire。手机保留未知请求，不以 HTTP 在途或 WS ready 推断 running；手动检查使用现有只读补读。后端 `/desktop/chat/requests/{request_id}` 是桌面合同，手机未调用。建议独立手机只读 scoped 查询的鉴权、枚举、过期及兼容降级见 [#50 报告](../mobile/chat-reliability-50.md)；接口未实现，不声称三点恢复完成。本机 skipped/status_code 仅改变私有 Outbox 观察与明确解堵，不改 inbox ACK、TTL 或最终投影。

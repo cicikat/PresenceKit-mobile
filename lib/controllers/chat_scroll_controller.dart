@@ -9,15 +9,20 @@ class ChatScrollController extends ScrollController {
   bool following = true;
   bool _pending = false;
   bool _disposed = false;
+  bool _followScheduled = false;
+  int _intent = 0;
+  static const nearBottom = 80.0;
 
   GlobalKey rowKey(Object id) => _keys.putIfAbsent(id, () => GlobalKey());
   bool keeps(Object id) => _anchors.any((anchor) => anchor.id == id);
 
   void stopFollowing() {
+    if (following) _intent++;
     following = false;
   }
 
   void follow() {
+    _intent++;
     following = true;
     _anchors.clear();
     _pending = false;
@@ -26,6 +31,38 @@ class ChatScrollController extends ScrollController {
   void reset() {
     follow();
     _keys.clear();
+  }
+
+  /// Only a user gesture and its inertia change reading intent. Layout,
+  /// keyboard and our own corrections never count as leaving the conversation.
+  void handleUserDrag(ScrollMetrics metrics, double delta) {
+    if (delta < -0.5) {
+      stopFollowing();
+    } else if (delta > 0 && metrics.extentAfter <= nearBottom) {
+      if (!following) follow();
+    }
+  }
+
+  /// One coalesced layout follower, also called when lazy sliver estimates or
+  /// the viewport change. A later reading gesture invalidates the queued work.
+  void followAfterLayout() {
+    if (_disposed || !following || _followScheduled) return;
+    _followScheduled = true;
+    final intent = _intent;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _followScheduled = false;
+      if (_disposed || !following || !hasClients) return;
+      if (intent != _intent) {
+        followAfterLayout();
+        return;
+      }
+      final view = position;
+      if (!view.hasContentDimensions || view.extentAfter <= .5) return;
+      jumpTo(view.maxScrollExtent);
+      // Lazy rows may revise the extent after the jump.
+      followAfterLayout();
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   void preserveBeforeLayout() {

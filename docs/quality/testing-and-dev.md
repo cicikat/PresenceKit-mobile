@@ -1,3 +1,9 @@
+## 手机 #52 跟随、等待与直连（2026-11-15）
+
+最终Flutter全量428项通过，`flutter analyze --no-pub`零问题；含#51五顶栏/连接点/日夜/权限/大字回归和协议fixture。Android本轮XML：MobileDeliveryStateStore14、SettingsChannelDelivery5、MobileNotificationDelivery2、BackendSecurityPolicy2，共23项，failures/errors/skipped均0（本机2026-11-15 02:38写入）。Gradle命令经历60/120秒工具超时及一次进程收尾错误，最终测试报告实际已生成；不将命令错误本身计为通过。
+
+Dev APK构建成功，Gradle73.4秒；`build/app/outputs/flutter-apk/app-dev-debug.apk` SHA-256 `DD0A8E559BADBB39DD128231F69C32C1B8367AD6A159B213405A47D0FD422490`。无连接设备，未安装/发布；滚动/后台/杀进程/网络/VPN关闭直连NOT RUN，远端running恢复BLOCKED。无新增跨端运行契约；[根因、合成用例和网络证据/回滚计划](../mobile/chat-follow-wait-direct-52.md)。
+
 ## 手机 #51 UI 回归（2026-11-14）
 
 `flutter analyze --no-pub` 零问题；Flutter 全量425项通过，UI/权限/结构定向14项通过。Dev APK构建成功（Gradle24.9秒），SHA-256 `D1F1C842E6C7F1FE794A5F241D2343678786C6E497A0503214DB521D87FAA012`。日夜与五种顶栏离屏截图已检查，320px/1.8倍字无布局异常；无连接设备，真机、权限往返、切网及安装升级仍NOT RUN，未安装/发布。纯UI，无跨端影响；[报告与前后截图](../mobile/ui-regression-51.md)。

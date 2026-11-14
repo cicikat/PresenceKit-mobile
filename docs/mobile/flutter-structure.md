@@ -1,3 +1,7 @@
+## 手机 #52 跟随与等待（2026-11-15）
+
+ChatScrollController合并布局跟随任务并用意图代际隔离旧回调；AnchoredChatList只将真实手势及惯性识别为阅读意图，保留真实消息锚点。ChatController发送显式follow，独立维护最多120秒的本地请求等待，复用原typing投影和uncertain详情。暂停/换scope/dispose收束，不从HTTP/WS推断远端running；AppShell无新增领域状态。跨端契约无变更，后端只读running和真实直连仍open；[证据与边界](chat-follow-wait-direct-52.md)。
+
 ## 手机 #51 顶栏与组件对齐（2026-11-14）
 
 五种聊天顶栏共用 `ChatConnectionAvatar`（内部复用 `YxAvatar`），从既有 mobileActive/mobileError 派生红绿点，点击头像进入投递详情。感知观察/编辑分别复用 CapabilityRow/SettingsRow；EdgeRefresh 接页面 palette。AppShell 仅传状态与回调；纯 UI，无跨端影响。[截图、连接语义与验收](ui-regression-51.md)。

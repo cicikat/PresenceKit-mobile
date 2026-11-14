@@ -7,7 +7,9 @@ void main() {
     'app_shell structure debt does not grow past the current controller baseline',
     () {
       final source = File('lib/pages/app_shell.dart').readAsStringSync();
-      final lineCount = '\n'.allMatches(source).length + 1;
+      final lineCount = File(
+        'lib/pages/app_shell.dart',
+      ).readAsLinesSync().length;
 
       expect(
         source.contains('_prepareSessionAndStartSync()'),
@@ -17,7 +19,8 @@ void main() {
       expect(
         source.indexOf('await _loadPromptAssets()'),
         lessThan(source.indexOf('_startBackendSync();')),
-        reason: 'Do not start chat history before the session character is ready.',
+        reason:
+            'Do not start chat history before the session character is ready.',
       );
       expect(
         lineCount,
