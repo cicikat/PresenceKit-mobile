@@ -9,6 +9,59 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get chatOutboxSkipped => 'Kept for checking · later messages may send';
+
+  @override
+  String get chatOutboxSkip => 'Keep this and continue';
+
+  @override
+  String get chatOutboxLocalOnly =>
+      'This only changes messages saved on this phone. It does not cancel a request on the server. A reply may still arrive later. Continue?';
+
+  @override
+  String get chatAuthRequired =>
+      'Update your access token in settings, then retry.';
+
+  @override
+  String get chatPermissionRequired =>
+      'This token cannot send messages. Check its permissions before retrying.';
+
+  @override
+  String get chatAttachmentTooLarge =>
+      'This attachment is too large. Remove this pending item and send a smaller file.';
+
+  @override
+  String get chatPayloadNeedsChange =>
+      'This message needs changing. Remove this pending item and edit it before sending again.';
+
+  @override
+  String get chatConnectionDetails => 'Connection and pending messages';
+
+  @override
+  String get chatConnectionUnstable => 'Connection needs checking';
+
+  @override
+  String get chatRequestEvidenceUnavailable =>
+      'Pending messages are saved on this phone. This server cannot confirm whether a pending request is still running. Checking reads replies without sending again.';
+
+  @override
+  String chatRealtimeDetails(String state) {
+    return 'Foreground reception: $state';
+  }
+
+  @override
+  String chatPendingCount(int count) {
+    return 'Pending messages · $count';
+  }
+
+  @override
+  String get chatQueuePaused =>
+      'An earlier message needs attention. Later messages stay on this phone until you check it, remove it, or choose to continue.';
+
+  @override
+  String get chatCopyDeliveryDetails => 'Copy delivery details';
+
+  @override
   String get fcmCompatibilityTitle => 'Compatibility reception';
 
   @override

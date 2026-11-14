@@ -1,3 +1,9 @@
+## 手机 #50 请求执行证据与设备验收（open / observe）
+
+open：手机 final_only 尚无 scoped 只读 running 查询；HTTP/WS 连通不能证明执行中，重启 unknown 不自动重发。后端已有 desktop request endpoint 不能直接给手机复用。安全接口依赖与降级见 [#50 报告](mobile/chat-reliability-50.md)。本机新增 skipped 与 status_code 可在既有 Outbox 快照及详情观测；skipped 不撤回服务器请求，旧版不识别该枚举，降级前须处理并备份。
+
+observe：锚点与队列自动化使用合成数据；真实手机、长工具、网络/VPN、杀进程和正式升级未运行。感知及通知收尾跟踪手机 #49；不得将构建/测试通过标作真机闭环。
+
 ## 工单 308 · Android 真机投递验收（observe）
 
 待连接设备运行五连发、断网及 Wi-Fi/移动网络/VPN 切换、后台唤醒、杀进程和附件混发。

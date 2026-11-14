@@ -9,6 +9,54 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get chatOutboxSkipped => '已保留待确认 · 后续消息可继续发送';
+
+  @override
+  String get chatOutboxSkip => '保留这条，继续后续';
+
+  @override
+  String get chatOutboxLocalOnly =>
+      '这只会调整本机保存的待发消息，不会撤回服务器上的请求。这条消息之后仍可能收到回复。要继续吗？';
+
+  @override
+  String get chatAuthRequired => '请先在设置中更新访问凭据，再重试。';
+
+  @override
+  String get chatPermissionRequired => '当前凭据没有发送权限，请调整权限后重试。';
+
+  @override
+  String get chatAttachmentTooLarge => '附件太大，请移出这条待发消息，换小一些的文件再发送。';
+
+  @override
+  String get chatPayloadNeedsChange => '这条消息需要调整，请移出待发后修改再发送。';
+
+  @override
+  String get chatConnectionDetails => '连接与待发消息';
+
+  @override
+  String get chatConnectionUnstable => '连接需要检查';
+
+  @override
+  String get chatRequestEvidenceUnavailable =>
+      '待发消息已保存在本机。当前服务器无法确认未决消息是否仍在处理。检查只会读取回复，不会重新发送。';
+
+  @override
+  String chatRealtimeDetails(String state) {
+    return '前台接收：$state';
+  }
+
+  @override
+  String chatPendingCount(int count) {
+    return '待发消息 · $count';
+  }
+
+  @override
+  String get chatQueuePaused => '前面的消息需要处理，后续消息暂存在本机。可以先检查、移出，或明确选择继续后续。';
+
+  @override
+  String get chatCopyDeliveryDetails => '复制发送详情';
+
+  @override
   String get fcmCompatibilityTitle => '兼容接收';
 
   @override

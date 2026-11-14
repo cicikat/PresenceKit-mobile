@@ -12,9 +12,14 @@ class _ForegroundSettingsStore extends AppSettingsStore {
   final bool classic;
 
   @override
-  Future<String?> loadCustomThemePalette() async => classic ? const ThemePresetSnapshot(
-    lightThemePresetId: null, darkThemePresetId: null, themeMode: 'system', presets: [],
-  ).toJsonString() : null;
+  Future<String?> loadCustomThemePalette() async => classic
+      ? const ThemePresetSnapshot(
+          lightThemePresetId: null,
+          darkThemePresetId: null,
+          themeMode: 'system',
+          presets: [],
+        ).toJsonString()
+      : null;
 
   final String baseUrl;
   final List<String> events = [];
@@ -255,7 +260,10 @@ void main() {
   testWidgets('chat status shows emotion without a retired affection display', (
     tester,
   ) async {
-    final settings = _ForegroundSettingsStore('http://127.0.0.1:8080', classic: true);
+    final settings = _ForegroundSettingsStore(
+      'http://127.0.0.1:8080',
+      classic: true,
+    );
     final backend = _ForegroundBackendClient(
       settings,
       chatResponse: BackendChatResponse.fromJson(const {
@@ -279,10 +287,17 @@ void main() {
     await tester.tap(find.byIcon(Icons.send_rounded));
     await tester.pump(const Duration(seconds: 1));
 
-    for (var i = 0; i < 12 && find.text('后端已接入 · gentle').evaluate().isEmpty; i++) {
+    for (
+      var i = 0;
+      i < 12 && find.text('status reply').evaluate().isEmpty;
+      i++
+    ) {
       await tester.pump(const Duration(milliseconds: 500));
     }
-    expect(find.text('后端已接入 · gentle'), findsOneWidget);
+    expect(find.text('后端已接入 · gentle'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('chat-delivery-details')));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('gentle'), findsOneWidget);
     expect(find.textContaining('好感'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());

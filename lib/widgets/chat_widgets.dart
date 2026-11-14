@@ -1233,6 +1233,7 @@ class YouMessage extends StatefulWidget {
     this.uncertain = false,
     this.deliveryLabel,
     this.onRemoveOutgoing,
+    this.onDeliveryDetails,
     this.onRetry,
     this.onReply,
     this.showDateDivider = false,
@@ -1254,6 +1255,7 @@ class YouMessage extends StatefulWidget {
   final bool uncertain;
   final String? deliveryLabel;
   final VoidCallback? onRemoveOutgoing;
+  final VoidCallback? onDeliveryDetails;
   final VoidCallback? onRetry;
   final VoidCallback? onReply;
   final bool showDateDivider;
@@ -1544,27 +1546,24 @@ class _YouMessageState extends State<YouMessage> {
                           author: widget.quotedAuthor,
                         )
                       : _QuoteBar(c: c, text: widget.quotedText!, dark: true),
-                if (widget.deliveryLabel != null || (widget.uncertain && !widget.failed))
+                if (widget.deliveryLabel != null ||
+                    widget.uncertain ||
+                    widget.failed)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      widget.deliveryLabel ?? context.l10n.chatConfirming,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: c.userBubbleText.withValues(alpha: 0.6),
+                    child: InkWell(
+                      onTap: widget.onDeliveryDetails ?? widget.onRetry,
+                      child: Text(
+                        widget.deliveryLabel ??
+                            (widget.failed
+                                ? context.l10n.chatSendFailed
+                                : context.l10n.chatConfirming),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: c.userBubbleText.withValues(alpha: 0.6),
+                        ),
                       ),
                     ),
-                  ),
-                if (widget.failed || widget.uncertain)
-                  TextButton.icon(
-                    onPressed: widget.onRetry,
-                    icon: const Icon(Icons.refresh_rounded, size: 14),
-                    label: Text(widget.uncertain ? context.l10n.chatOutboxCheck : context.l10n.chatRetry),
-                  ),
-                if (widget.onRemoveOutgoing != null)
-                  TextButton(
-                    onPressed: widget.onRemoveOutgoing,
-                    child: Text(context.l10n.chatOutboxRemove),
                   ),
               ],
             ),

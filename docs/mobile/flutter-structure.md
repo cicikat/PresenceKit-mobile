@@ -1,3 +1,7 @@
+## 手机 #50 聊天恢复与视口（2026-11-14）
+
+ChatScrollController + AnchoredChatList 统一真实消息坐标与用户跟随意图，替代全列表高度差补偿；ChatDeliveryDetails 承接本机队列与连接操作。原 ID/载荷快照、scope、ACK 链保留；显式 skipped 和 HTTP 原因由既有 Outbox 存储/详情观测。AppShell 无新增领域状态。后端 running 证据仍 open，不能以 HTTP/WS 假造三点；[根因、依赖与三面闭环](chat-reliability-50.md)。
+
 ## R2 手机实时订阅（工单43）
 
 新领域控制器 `lib/controllers/mobile_realtime_controller.dart` 管理前台WS、连接代际、有限心跳/带抖动退避和HTTP历史补收；`lib/services/mobile_realtime_socket.dart` 持有升级/socket资源。BackendClient仍统一鉴权、可信origin与HTTP预算；取消只影响收件，不误伤发送。ChatController只组合订阅、复用原逐段协调器和失败/不确定状态；AppShell无新增Timer或领域状态。传输默认final_only，业务真值仍在后端。

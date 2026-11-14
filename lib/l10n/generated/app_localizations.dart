@@ -98,6 +98,90 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @chatOutboxSkipped.
+  ///
+  /// In zh, this message translates to:
+  /// **'已保留待确认 · 后续消息可继续发送'**
+  String get chatOutboxSkipped;
+
+  /// No description provided for @chatOutboxSkip.
+  ///
+  /// In zh, this message translates to:
+  /// **'保留这条，继续后续'**
+  String get chatOutboxSkip;
+
+  /// No description provided for @chatOutboxLocalOnly.
+  ///
+  /// In zh, this message translates to:
+  /// **'这只会调整本机保存的待发消息，不会撤回服务器上的请求。这条消息之后仍可能收到回复。要继续吗？'**
+  String get chatOutboxLocalOnly;
+
+  /// No description provided for @chatAuthRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先在设置中更新访问凭据，再重试。'**
+  String get chatAuthRequired;
+
+  /// No description provided for @chatPermissionRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前凭据没有发送权限，请调整权限后重试。'**
+  String get chatPermissionRequired;
+
+  /// No description provided for @chatAttachmentTooLarge.
+  ///
+  /// In zh, this message translates to:
+  /// **'附件太大，请移出这条待发消息，换小一些的文件再发送。'**
+  String get chatAttachmentTooLarge;
+
+  /// No description provided for @chatPayloadNeedsChange.
+  ///
+  /// In zh, this message translates to:
+  /// **'这条消息需要调整，请移出待发后修改再发送。'**
+  String get chatPayloadNeedsChange;
+
+  /// No description provided for @chatConnectionDetails.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接与待发消息'**
+  String get chatConnectionDetails;
+
+  /// No description provided for @chatConnectionUnstable.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接需要检查'**
+  String get chatConnectionUnstable;
+
+  /// No description provided for @chatRequestEvidenceUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'待发消息已保存在本机。当前服务器无法确认未决消息是否仍在处理。检查只会读取回复，不会重新发送。'**
+  String get chatRequestEvidenceUnavailable;
+
+  /// No description provided for @chatRealtimeDetails.
+  ///
+  /// In zh, this message translates to:
+  /// **'前台接收：{state}'**
+  String chatRealtimeDetails(String state);
+
+  /// No description provided for @chatPendingCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'待发消息 · {count}'**
+  String chatPendingCount(int count);
+
+  /// No description provided for @chatQueuePaused.
+  ///
+  /// In zh, this message translates to:
+  /// **'前面的消息需要处理，后续消息暂存在本机。可以先检查、移出，或明确选择继续后续。'**
+  String get chatQueuePaused;
+
+  /// No description provided for @chatCopyDeliveryDetails.
+  ///
+  /// In zh, this message translates to:
+  /// **'复制发送详情'**
+  String get chatCopyDeliveryDetails;
+
   /// No description provided for @fcmCompatibilityTitle.
   ///
   /// In zh, this message translates to:

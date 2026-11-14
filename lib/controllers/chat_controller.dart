@@ -20,6 +20,7 @@ import 'chat_history_reconciliation.dart';
 import '../models/chat_history_display.dart';
 import 'chat_session_coordinator.dart';
 import 'mobile_realtime_controller.dart';
+import 'chat_scroll_controller.dart';
 
 enum ChatDeliverySource { initialSync, catchUp, live }
 
@@ -97,7 +98,14 @@ class ChatController extends ChangeNotifier {
   String? pendingHandoffError;
   String? _boundDeliveryOrigin;
   String? _boundDeliveryOwner;
-  final ScrollController scrollController = ScrollController();
+  final ChatScrollController scrollController = ChatScrollController();
+
+  @override
+  void notifyListeners() {
+    scrollController.preserveBeforeLayout();
+    super.notifyListeners();
+  }
+
   final List<ChatMessage> history = [];
   final List<ChatMessage> sent = [];
   final List<String> _availableDates = [];
@@ -126,6 +134,11 @@ class ChatController extends ChangeNotifier {
   final Map<String, String> _recentIdsByFingerprint = {};
   final MobileOutboxStore _outbox;
   final Map<String, OutboxState> _outboxStates = {};
+  final Map<String, OutboxEntry> _outboxRows = {};
+  final Map<String, Future<bool>> _enqueueEvents = {};
+  List<OutboxEntry> get pendingOutgoing =>
+      _outboxRows.values.toList()
+        ..sort((a, b) => a.sequence.compareTo(b.sequence));
   int? _drainGeneration;
   bool _drainRequested = false;
   String? outboxError;
@@ -491,6 +504,10 @@ class ChatController extends ChangeNotifier {
 
     _messageQueue.clear();
     _outboxStates.clear();
+    _outboxRows.clear();
+    scrollController.reset();
+    showJumpToLatest = false;
+    unreadHimCount = 0;
     replyTarget = null;
     outboxError = null;
     if (_revealWake?.isCompleted == false) _revealWake!.complete();
@@ -558,7 +575,8 @@ class ChatController extends ChangeNotifier {
         return;
       }
       if (row.state != OutboxState.retryableFailed &&
-          row.state != OutboxState.blocked) {
+          !(row.state == OutboxState.blocked &&
+              (row.statusCode == 401 || row.statusCode == 403))) {
         return;
       }
       if (await _outbox.setState(row, OutboxState.queued) &&
@@ -585,11 +603,29 @@ class ChatController extends ChangeNotifier {
         return;
       }
       _outboxStates.remove(row.requestId);
+      _outboxRows.remove(row.requestId);
       for (final list in [sent, history]) {
         list.removeWhere((item) => item.id == message.id);
       }
       notifyListeners();
       _requestOutboxDrain();
+    } catch (_) {
+      _reportOutboxError(scope);
+    }
+  }
+
+  /// Explicit user decision; retain the request for later receipt reconciliation.
+  Future<void> skipOutgoing(ChatMessage message) async {
+    final scope = _captureScope(_session.generation);
+    final row = _outboxRows[message.requestId];
+    if (row == null || row.state == OutboxState.sending) return;
+    try {
+      if (await _outbox.setState(row, OutboxState.skipped) &&
+          _scopeStillLive(scope.generation, scope)) {
+        _renderOutgoing(row.withState(OutboxState.skipped));
+        notifyListeners();
+        _requestOutboxDrain();
+      }
     } catch (_) {
       _reportOutboxError(scope);
     }
@@ -834,6 +870,36 @@ class ChatController extends ChangeNotifier {
     List<PickedUploadFile> files = const [],
     String caption = '',
     String? voiceReceipt,
+  }) {
+    // Coalesce only callbacks for the same in-flight durable UI event. Once
+    // committed, deliberately sending the same content again remains possible.
+    final key = jsonEncode([
+      _outboxScope(_captureScope(_session.generation)),
+      text,
+      replyTo?.toJson(),
+      caption,
+      voiceReceipt,
+      for (final file in files) [file.name, base64Encode(file.bytes)],
+    ]);
+    return _enqueueEvents.putIfAbsent(key, () {
+      return _persistOutgoing(
+        text,
+        replyTo: replyTo,
+        files: files,
+        caption: caption,
+        voiceReceipt: voiceReceipt,
+      ).whenComplete(() {
+        _enqueueEvents.remove(key);
+      });
+    });
+  }
+
+  Future<bool> _persistOutgoing(
+    String text, {
+    ReplyTarget? replyTo,
+    List<PickedUploadFile> files = const [],
+    String caption = '',
+    String? voiceReceipt,
   }) async {
     final scope = _captureScope(_session.generation);
     final requestId = mintRequestId();
@@ -856,7 +922,7 @@ class ChatController extends ChangeNotifier {
       outboxError = null;
       _renderOutgoing(row);
       notifyListeners();
-      scrollToBottom();
+      if (scrollController.following) scrollToBottom();
       _requestOutboxDrain();
       return true;
     } catch (_) {
@@ -887,6 +953,7 @@ class ChatController extends ChangeNotifier {
 
   ChatMessage _renderOutgoing(OutboxEntry row) {
     _outboxStates[row.requestId] = row.state;
+    _outboxRows[row.requestId] = row;
     final uncertain = row.state == OutboxState.outcomeUnknown;
     final failed =
         row.state == OutboxState.blocked ||
@@ -944,7 +1011,10 @@ class ChatController extends ChangeNotifier {
         while (_scopeStillLive(generation, scope) && _accessToken != null) {
           final rows = await _outbox.readScope(_outboxScope(scope));
           if (!_scopeStillLive(generation, scope) || rows.isEmpty) break;
-          final row = rows.first;
+          // Only an explicit user skip can release ordering past an unknown.
+          final active = rows.where((row) => row.state != OutboxState.skipped);
+          if (active.isEmpty) break;
+          final row = active.first;
           if (row.state != OutboxState.queued) break;
           await _executeOutgoing(row, scope);
         }
@@ -976,7 +1046,8 @@ class ChatController extends ChangeNotifier {
     );
     sent.add(anchor);
     sending = true;
-    himTyping = true;
+    // An open HTTP request does not prove server-side execution.
+    himTyping = false;
     backendError = null;
     _replyClocks[row.requestId] = Stopwatch()..start();
     while (_replyClocks.length > 200) {
@@ -1029,12 +1100,14 @@ class ChatController extends ChangeNotifier {
         final live = _captureScope(_session.generation);
         if (!_session.disposed && _outboxScope(live) == row.scope) {
           _outboxStates.remove(row.requestId);
+          _outboxRows.remove(row.requestId);
           _settleSend(requestId: row.requestId);
           unawaited(loadHistory(reconcileLocal: true));
         }
         return;
       }
       _outboxStates.remove(row.requestId);
+      _outboxRows.remove(row.requestId);
       await _applyChatResponse(
         response: response,
         userId: user.id,
@@ -1052,7 +1125,7 @@ class ChatController extends ChangeNotifier {
           : OutboxState.outcomeUnknown;
       bool changed;
       try {
-        changed = await _outbox.setState(row, state);
+        changed = await _outbox.setState(row, state, statusCode: status);
       } catch (_) {
         if (_scopeStillLive(generation, scope)) {
           _renderOutgoing(row.withState(OutboxState.outcomeUnknown));
@@ -1062,7 +1135,7 @@ class ChatController extends ChangeNotifier {
       if (changed &&
           _scopeStillLive(generation, scope) &&
           !_acceptedRequestIds.contains(row.requestId)) {
-        _renderOutgoing(row.withState(state));
+        _renderOutgoing(row.withState(state, statusCode: status));
         if (state != OutboxState.outcomeUnknown && error is BackendException) {
           backendError = error.message;
         }
@@ -1086,6 +1159,7 @@ class ChatController extends ChangeNotifier {
       if (row == null || !await _outbox.setState(row, null)) return;
       if (!_scopeStillLive(scope.generation, scope)) return;
       _outboxStates.remove(requestId);
+      _outboxRows.remove(requestId);
       notifyListeners();
       _requestOutboxDrain();
     } catch (_) {
@@ -1376,11 +1450,6 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    final position = scrollController.hasClients
-        ? scrollController.position
-        : null;
-    final oldMax = position?.maxScrollExtent ?? 0;
-    final oldPixels = position?.pixels ?? 0;
     loadingMoreHistory = true;
     historyError = null;
     notifyListeners();
@@ -1404,17 +1473,6 @@ class ChatController extends ChangeNotifier {
       _loadedDates.insert(0, _availableDates[targetIndex]);
       noMoreHistory = targetIndex >= _availableDates.length - 1;
       notifyListeners();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!scrollController.hasClients) return;
-        final compensated =
-            scrollController.position.maxScrollExtent - oldMax + oldPixels;
-        scrollController.jumpTo(
-          compensated.clamp(
-            scrollController.position.minScrollExtent,
-            scrollController.position.maxScrollExtent,
-          ),
-        );
-      });
     } on BackendException catch (e) {
       historyError = e.message;
     } catch (e) {
@@ -1945,7 +2003,9 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     }
 
-    if (position.extentAfter > 32 || position.isScrollingNotifier.value) {
+    if (!scrollController.following ||
+        position.extentAfter > 32 ||
+        position.isScrollingNotifier.value) {
       markUnread();
       return;
     }
@@ -1957,7 +2017,8 @@ class ChatController extends ChangeNotifier {
           !identical(scrollController.position, position)) {
         return;
       }
-      if (position.isScrollingNotifier.value ||
+      if (!scrollController.following ||
+          position.isScrollingNotifier.value ||
           position.pixels < pixels - 0.5) {
         markUnread();
         return;
@@ -2315,7 +2376,8 @@ class ChatController extends ChangeNotifier {
     final distanceFromBottom = position.maxScrollExtent - pixels;
     final previousPixels = _lastScrollPixels;
     _lastScrollPixels = pixels;
-    if (distanceFromBottom <= 32) {
+    if (distanceFromBottom <= 1 && position.isScrollingNotifier.value) {
+      scrollController.follow();
       if (showJumpToLatest || unreadHimCount != 0) {
         showJumpToLatest = false;
         unreadHimCount = 0;
@@ -2324,10 +2386,11 @@ class ChatController extends ChangeNotifier {
     } else if (!showJumpToLatest &&
         previousPixels != null &&
         pixels < previousPixels - 0.5) {
+      scrollController.stopFollowing();
       showJumpToLatest = true;
       notifyListeners();
     }
-    if (position.pixels < 200) {
+    if (position.extentBefore < 200) {
       final total = history.length + sent.length;
       if (!_revealOlder(total)) unawaited(loadOlderHistory());
     }
@@ -2335,31 +2398,16 @@ class ChatController extends ChangeNotifier {
 
   bool _revealOlder(int total) {
     if (visibleMessageLimit >= total) return false;
-    final position = scrollController.hasClients
-        ? scrollController.position
-        : null;
-    final oldMax = position?.maxScrollExtent ?? 0;
-    final oldPixels = position?.pixels ?? 0;
     visibleMessageLimit = math.min(
       total,
       visibleMessageLimit + visibleMessageStep,
     );
     notifyListeners();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!scrollController.hasClients) return;
-      final compensated =
-          scrollController.position.maxScrollExtent - oldMax + oldPixels;
-      scrollController.jumpTo(
-        compensated.clamp(
-          scrollController.position.minScrollExtent,
-          scrollController.position.maxScrollExtent,
-        ),
-      );
-    });
     return true;
   }
 
   void scrollToBottom({bool animate = true}) {
+    scrollController.follow();
     if (showJumpToLatest) {
       showJumpToLatest = false;
       unreadHimCount = 0;
@@ -2367,7 +2415,9 @@ class ChatController extends ChangeNotifier {
     }
     final generation = _session.generation;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_session.isCurrent(generation) || !scrollController.hasClients) {
+      if (!_session.isCurrent(generation) ||
+          !scrollController.hasClients ||
+          !scrollController.following) {
         return;
       }
       final target = scrollController.position.maxScrollExtent;
