@@ -25,10 +25,12 @@ class AnchoredChatList extends StatefulWidget {
 class _AnchoredChatListState extends State<AnchoredChatList> {
   final _center = UniqueKey();
   Object? _pivot;
+  bool _userScrollActive = false;
 
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
+    controller.followAfterLayout();
     final rowIds = widget.rowIds;
     final pivot = controller.rebaseBeforeLayout(rowIds);
     _pivot = pivot ?? _pivot;
@@ -46,61 +48,71 @@ class _AnchoredChatListState extends State<AnchoredChatList> {
     final padding = (widget.padding ?? EdgeInsets.zero).resolve(
       Directionality.of(context),
     );
-    return NotificationListener<UserScrollNotification>(
+    return NotificationListener<ScrollMetricsNotification>(
       onNotification: (event) {
-        if (event.depth == 0) {
-          if (event.metrics.extentAfter <= 1) {
-            controller.follow();
-          } else {
-            controller.stopFollowing();
-          }
-        }
+        if (event.depth == 0) controller.followAfterLayout();
         return false;
       },
-      child: CustomScrollView(
-        controller: controller,
-        physics: widget.physics,
-        cacheExtent: widget.cacheExtent,
-        center: _center,
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.only(
-              left: padding.left,
-              right: padding.right,
-              bottom: padding.top,
-            ),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, i) => row(context, split - 1 - i),
-                childCount: split,
-                findChildIndexCallback: (key) {
-                  final index = indices[key];
-                  return index != null && index < split
-                      ? split - 1 - index
-                      : null;
-                },
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (event) {
+          if (event.depth != 0) return false;
+          if (event is ScrollStartNotification && event.dragDetails != null) {
+            _userScrollActive = true;
+          } else if (event is ScrollUpdateNotification &&
+              (_userScrollActive || event.dragDetails != null)) {
+            controller.handleUserDrag(event.metrics, event.scrollDelta ?? 0);
+          } else if (event is ScrollEndNotification) {
+            _userScrollActive = false;
+          }
+          return false;
+        },
+        child: CustomScrollView(
+          controller: controller,
+          physics: widget.physics,
+          cacheExtent: widget.cacheExtent,
+          center: _center,
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.only(
+                left: padding.left,
+                right: padding.right,
+                bottom: padding.top,
+              ),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) => row(context, split - 1 - i),
+                  childCount: split,
+                  findChildIndexCallback: (key) {
+                    final index = indices[key];
+                    return index != null && index < split
+                        ? split - 1 - index
+                        : null;
+                  },
+                ),
               ),
             ),
-          ),
-          SliverPadding(
-            key: _center,
-            padding: EdgeInsets.only(
-              left: padding.left,
-              right: padding.right,
-              bottom: padding.bottom,
-            ),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, i) => row(context, split + i),
-                childCount: rowIds.length - split,
-                findChildIndexCallback: (key) {
-                  final index = indices[key];
-                  return index != null && index >= split ? index - split : null;
-                },
+            SliverPadding(
+              key: _center,
+              padding: EdgeInsets.only(
+                left: padding.left,
+                right: padding.right,
+                bottom: padding.bottom,
+              ),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) => row(context, split + i),
+                  childCount: rowIds.length - split,
+                  findChildIndexCallback: (key) {
+                    final index = indices[key];
+                    return index != null && index >= split
+                        ? index - split
+                        : null;
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

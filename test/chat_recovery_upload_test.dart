@@ -236,7 +236,10 @@ void main() {
   late _Backend backend;
   late ChatController controller;
   late String character;
-  ChatController buildController() => ChatController(
+  ChatController buildController({
+    Duration waitTimeout = const Duration(seconds: 120),
+  }) => ChatController(
+    localWaitTimeout: waitTimeout,
     backend: () => backend,
     token: () => 'test-token',
     settings: SettingsStore(settings),
@@ -267,6 +270,54 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
   }
+
+  test('52-A1 B1 B2: send follows, bounded wait never resends', () async {
+    controller.dispose();
+    controller = buildController(
+      waitTimeout: const Duration(milliseconds: 200),
+    );
+    backend.offline = false;
+    backend.sendGate = Completer<void>();
+    controller.scrollController.stopFollowing();
+    await controller.send('wait');
+    await settle();
+    expect(controller.scrollController.following, isTrue);
+    expect(controller.himTyping, isTrue);
+    expect(backend.chats, 1);
+    // History hydration may relocate the pending bubble while HTTP is in flight.
+    final user = controller.sent.singleWhere((m) => m.role == 'you');
+    controller.sent.remove(user);
+    controller.history.add(user);
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    expect(controller.himTyping, isFalse);
+    expect(
+      controller.history.singleWhere((m) => m.role == 'you').uncertain,
+      isTrue,
+    );
+    expect(backend.chats, 1);
+    backend.sendGate!.complete();
+    await settle();
+    expect(controller.himTyping, isFalse);
+    expect(backend.chats, 1);
+  });
+
+  test('52-B3: pause ends local wait without replay', () async {
+    backend.offline = false;
+    backend.sendGate = Completer<void>();
+    await controller.send('pause');
+    await settle();
+    expect(controller.himTyping, isTrue);
+    controller.pausePolling();
+    expect(controller.himTyping, isFalse);
+    expect(
+      controller.sent.singleWhere((m) => m.role == 'you').uncertain,
+      isTrue,
+    );
+    backend.sendGate!.complete();
+    await settle();
+    expect(controller.himTyping, isFalse);
+    expect(backend.chats, 1);
+  });
 
   test(
     'five queued inputs appear with distinct identities while A is in flight',

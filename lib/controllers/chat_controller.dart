@@ -44,6 +44,7 @@ class ChatController extends ChangeNotifier {
     void Function()? onPresenceSessionInvalid,
     String? Function()? presenceBindError,
     Stream<void>? networkChanges,
+    this.localWaitTimeout = const Duration(seconds: 120),
   }) : _backend = backend,
        _token = token,
        _settings = settings,
@@ -239,11 +240,45 @@ class ChatController extends ChangeNotifier {
     if (fresh.isNotEmpty) _followIncoming(fresh.length);
   }
 
-  double? _lastScrollPixels;
   bool get sending => _session.sending;
   set sending(bool value) => _session.sending = value;
-  bool get himTyping => _session.himTyping;
+  // Local bounded waiting is presentation, never evidence of remote running.
+  Timer? _localWaitTimer;
+  final Duration localWaitTimeout;
+  String? _localWaitRequest;
+  bool get himTyping => _session.himTyping || _localWaitRequest != null;
   set himTyping(bool value) => _session.himTyping = value;
+
+  void _endLocalWait({String? requestId, bool uncertain = false}) {
+    final active = _localWaitRequest;
+    if (active == null || (requestId != null && requestId != active)) return;
+    _localWaitTimer?.cancel();
+    _localWaitTimer = null;
+    _localWaitRequest = null;
+    if (uncertain) {
+      for (final list in [sent, history]) {
+        for (var i = 0; i < list.length; i++) {
+          final message = list[i];
+          if (message.role == 'you' && message.requestId == active) {
+            list[i] = message.copyWith(uncertainSince: clock());
+          }
+        }
+      }
+    }
+  }
+
+  void _beginLocalWait(String requestId, int generation) {
+    _endLocalWait();
+    _localWaitRequest = requestId;
+    _localWaitTimer = Timer(localWaitTimeout, () {
+      if (!_session.isCurrent(generation) || _localWaitRequest != requestId) {
+        return;
+      }
+      _endLocalWait(requestId: requestId, uncertain: true);
+      notifyListeners();
+    });
+  }
+
   bool loadingHistory = false;
   bool loadingMoreHistory = false;
   bool noMoreHistory = false;
@@ -370,6 +405,10 @@ class ChatController extends ChangeNotifier {
   }
 
   void pausePolling() {
+    final waiting = _localWaitRequest != null || _session.himTyping;
+    _endLocalWait(uncertain: true);
+    himTyping = false;
+    if (waiting && !_session.disposed) notifyListeners();
     _pollingEnabled = false;
     _cancelReceiveWork();
   }
@@ -388,7 +427,9 @@ class ChatController extends ChangeNotifier {
 
   Future<void> catchUpFromNotification() async {
     await refreshConnection();
-    if (!_session.disposed) scrollToBottom();
+    if (!_session.disposed && scrollController.following) {
+      scrollController.followAfterLayout();
+    }
   }
 
   Future<void> _replayPendingEnvelopes() async {
@@ -920,9 +961,12 @@ class ChatController extends ChangeNotifier {
       );
       if (!_scopeStillLive(scope.generation, scope)) return true;
       outboxError = null;
+      scrollController.follow();
+      showJumpToLatest = false;
+      unreadHimCount = 0;
       _renderOutgoing(row);
       notifyListeners();
-      if (scrollController.following) scrollToBottom();
+      scrollController.followAfterLayout();
       _requestOutboxDrain();
       return true;
     } catch (_) {
@@ -1046,8 +1090,8 @@ class ChatController extends ChangeNotifier {
     );
     sent.add(anchor);
     sending = true;
-    // An open HTTP request does not prove server-side execution.
     himTyping = false;
+    _beginLocalWait(row.requestId, generation);
     backendError = null;
     _replyClocks[row.requestId] = Stopwatch()..start();
     while (_replyClocks.length > 200) {
@@ -1108,6 +1152,7 @@ class ChatController extends ChangeNotifier {
       }
       _outboxStates.remove(row.requestId);
       _outboxRows.remove(row.requestId);
+      _endLocalWait(requestId: row.requestId);
       await _applyChatResponse(
         response: response,
         userId: user.id,
@@ -1144,6 +1189,7 @@ class ChatController extends ChangeNotifier {
       if (_scopeStillLive(generation, scope)) {
         if (!confirmed) sent.removeWhere((m) => m.id == anchor.id);
         sending = false;
+        _endLocalWait(requestId: row.requestId);
         himTyping = false;
         notifyListeners();
         unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
@@ -1193,6 +1239,7 @@ class ChatController extends ChangeNotifier {
           ...history,
         ].where((m) => m.id == userId).firstOrNull?.requestId;
     if (accepted != null && accepted.isNotEmpty) {
+      _endLocalWait(requestId: accepted);
       _acceptedRequestIds.add(accepted);
       if (_outboxStates.containsKey(accepted)) {
         unawaited(_confirmOutbox(accepted, _captureScope(_session.generation)));
@@ -2003,28 +2050,11 @@ class ChatController extends ChangeNotifier {
       notifyListeners();
     }
 
-    if (!scrollController.following ||
-        position.extentAfter > 32 ||
-        position.isScrollingNotifier.value) {
+    if (!scrollController.following) {
       markUnread();
       return;
     }
-    final generation = _session.generation;
-    final pixels = position.pixels;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_session.isCurrent(generation) ||
-          !scrollController.hasClients ||
-          !identical(scrollController.position, position)) {
-        return;
-      }
-      if (!scrollController.following ||
-          position.isScrollingNotifier.value ||
-          position.pixels < pixels - 0.5) {
-        markUnread();
-        return;
-      }
-      if (position.extentAfter > 0) position.jumpTo(position.maxScrollExtent);
-    });
+    scrollController.followAfterLayout();
   }
 
   List<String> _splitSegments(String text) {
@@ -2372,21 +2402,13 @@ class ChatController extends ChangeNotifier {
   void _handleScroll() {
     if (!scrollController.hasClients) return;
     final position = scrollController.position;
-    final pixels = position.pixels;
-    final distanceFromBottom = position.maxScrollExtent - pixels;
-    final previousPixels = _lastScrollPixels;
-    _lastScrollPixels = pixels;
-    if (distanceFromBottom <= 1 && position.isScrollingNotifier.value) {
-      scrollController.follow();
+    if (scrollController.following) {
       if (showJumpToLatest || unreadHimCount != 0) {
         showJumpToLatest = false;
         unreadHimCount = 0;
         notifyListeners();
       }
-    } else if (!showJumpToLatest &&
-        previousPixels != null &&
-        pixels < previousPixels - 0.5) {
-      scrollController.stopFollowing();
+    } else if (!showJumpToLatest) {
       showJumpToLatest = true;
       notifyListeners();
     }
@@ -2413,24 +2435,7 @@ class ChatController extends ChangeNotifier {
       unreadHimCount = 0;
       notifyListeners();
     }
-    final generation = _session.generation;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_session.isCurrent(generation) ||
-          !scrollController.hasClients ||
-          !scrollController.following) {
-        return;
-      }
-      final target = scrollController.position.maxScrollExtent;
-      if (animate) {
-        scrollController.animateTo(
-          target,
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
-        );
-      } else {
-        scrollController.jumpTo(target);
-      }
-    });
+    scrollController.followAfterLayout();
   }
 
   @override
