@@ -347,8 +347,11 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                         ? null
                         : () => _run(widget.onRequestAccessibility),
                   ),
-                  if (widget.controlsOnly && widget.onAmbientChanged != null)
-                    AmbientPermissions(onChanged: widget.onAmbientChanged!),
+                  if (widget.onAmbientChanged != null)
+                    AmbientPermissions(
+                      onChanged: widget.onAmbientChanged!,
+                      readOnly: !widget.controlsOnly,
+                    ),
                   CapabilityRow(
                     c: c,
                     icon: Icons.directions_walk_rounded,

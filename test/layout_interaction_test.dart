@@ -128,7 +128,7 @@ void main() {
       await tester.pumpWidget(page(layout));
       expect(find.text('keep this draft'), findsOneWidget);
       await tester.ensureVisible(find.text('Enter dream'));
-      await tester.drag(find.byType(ListView), const Offset(0, -180));
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -180));
       await tester.pump();
       await tester.tap(find.text('Enter dream'));
       expect(routed, AppRoute.dream);

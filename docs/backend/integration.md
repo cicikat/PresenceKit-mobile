@@ -1,3 +1,7 @@
+## 手机 #50 执行状态依赖（2026-11-14，open）
+
+本轮未改后端运行代码或 mobile wire。手机保留未知请求，不以 HTTP 在途或 WS ready 推断 running；手动检查使用现有只读补读。后端 `/desktop/chat/requests/{request_id}` 是桌面合同，手机未调用。建议独立手机只读 scoped 查询的鉴权、枚举、过期及兼容降级见 [#50 报告](../mobile/chat-reliability-50.md)；接口未实现，不声称三点恢复完成。本机 skipped/status_code 仅改变私有 Outbox 观察与明确解堵，不改 inbox ACK、TTL 或最终投影。
+
 ## 手机前台实时连接 R2（2026-10-25，工单43）
 
 本地接入独立 `/ws/mobile`：Bearer、X-Presence-Session、随机 X-Presence-Client；服务端按现有 chat 权限与会话固定owner/char/domain，逐帧复核，ready/final/ping/pong。当前固定 final_only，持久成功后 msg_id=turn_id；从不把桌面临时stream id或chunk序号当最终身份。既有POST生成链与全局ACK不变，WS不ACK。

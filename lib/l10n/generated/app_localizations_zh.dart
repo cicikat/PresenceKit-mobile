@@ -9,6 +9,54 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get chatOutboxSkipped => '已保留待确认 · 后续消息可继续发送';
+
+  @override
+  String get chatOutboxSkip => '保留这条，继续后续';
+
+  @override
+  String get chatOutboxLocalOnly =>
+      '这只会调整本机保存的待发消息，不会撤回服务器上的请求。这条消息之后仍可能收到回复。要继续吗？';
+
+  @override
+  String get chatAuthRequired => '请先在设置中更新访问凭据，再重试。';
+
+  @override
+  String get chatPermissionRequired => '当前凭据没有发送权限，请调整权限后重试。';
+
+  @override
+  String get chatAttachmentTooLarge => '附件太大，请移出这条待发消息，换小一些的文件再发送。';
+
+  @override
+  String get chatPayloadNeedsChange => '这条消息需要调整，请移出待发后修改再发送。';
+
+  @override
+  String get chatConnectionDetails => '连接与待发消息';
+
+  @override
+  String get chatConnectionUnstable => '连接需要检查';
+
+  @override
+  String get chatRequestEvidenceUnavailable =>
+      '待发消息已保存在本机。当前服务器无法确认未决消息是否仍在处理。检查只会读取回复，不会重新发送。';
+
+  @override
+  String chatRealtimeDetails(String state) {
+    return '前台接收：$state';
+  }
+
+  @override
+  String chatPendingCount(int count) {
+    return '待发消息 · $count';
+  }
+
+  @override
+  String get chatQueuePaused => '前面的消息需要处理，后续消息暂存在本机。可以先检查、移出，或明确选择继续后续。';
+
+  @override
+  String get chatCopyDeliveryDetails => '复制发送详情';
+
+  @override
   String get fcmCompatibilityTitle => '兼容接收';
 
   @override
@@ -66,6 +114,36 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ambientSettingFailed => '这项设置暂时没能更新。';
+
+  @override
+  String get settingsDeviceSensingTitle => '设备感知与权限';
+
+  @override
+  String get settingsDeviceSensingSubtitle => '查看感知能力，管理授权与后台接收。';
+
+  @override
+  String get ambientLocalPermissionHint =>
+      '这里管理手机授权与分享意愿；是否接收由服务端设置决定。开启不代表已成功上报。';
+
+  @override
+  String get ambientReadFailed => '暂时无法读取感知设置，请重试。';
+
+  @override
+  String get ambientPlatformUnavailable => '此设备暂不支持这些感知设置。';
+
+  @override
+  String get ambientStateUnknown => '暂时无法确认状态。';
+
+  @override
+  String get ambientBatteryTitle => '手机电量';
+
+  @override
+  String ambientBatteryReading(int percent) {
+    return '当前电量 $percent%，无需额外授权。';
+  }
+
+  @override
+  String get ambientUsagePermissionMissing => '还未允许查看使用情况，可在手机设置中授权。';
 
   @override
   String get artifactUnsupported => '此类型暂不支持保存到手机';

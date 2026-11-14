@@ -1,3 +1,17 @@
+## 手机 #48 Kotlin跨盘缓存（2026-11-14）
+
+仓库级设置kotlin.incremental=false；原 `flutter build apk --release --flavor prod --build-name 1.3.0 --build-number 74` 连续成功（总88.19/34.17秒），另强制重编package_info_plus目标成功。三份完整日志中的different-roots/cache-close/daemon异常均0。APK包名/版本和历史证书核验一致，47,288,274字节，SHA-256 `836B07A013C170A4C961D8D3D60BADE888FAB269562556B42F334646C6CA04C8`。未安装/发布，无跨端影响；耗时取舍、日志与回滚见 [#48报告](kotlin-cross-drive-48.md)。
+
+## 手机 #49 本地验证（2026-11-14）
+
+gen-l10n成功、analyze零问题、Flutter全量416项通过；Android通知/收件存储/回源恢复19项通过。Dev APK成功（Gradle20.0秒），SHA-256 `1CDFDBF3BC2CDEF4DDF817A0932901BEEBDF5D51D7583D948A60575CD4CFD1F3`。无设备，未安装/发布；权限往返、FCM/SSE/前后台/ROM通知仍NOT RUN。后端逐项effective/上报观测及running查询仍open，见 [#49报告](../mobile/device-permissions-relay-49.md)。
+
+## 手机 #50 本地验证（2026-11-14）
+
+`flutter analyze --no-pub` 零问题；`flutter test --no-pub --reporter compact` 全量411项通过。覆盖队列重复回调/skip/422、1/10/50条并发到达的锚点及删除回退、各主题/大字/键盘/草稿和原收件契约。`flutter build apk --debug --flavor dev --no-pub` 成功（75.9秒），`build/app/outputs/flutter-apk/app-dev-debug.apk`，SHA-256 `37512AD9998A0F9A054FFB12B964ED41D23D5336EE190AA3384B14098E4BBD28`。本次构建复现 package_info_plus C: Pub Cache 与 D: 项目的 Kotlin different roots 异常，daemon fallback 后成功；由手机 #48 独立处理。
+
+无连接设备，未安装、未正式发布；50-01～50-14 真机/日志/升级全部 NOT RUN。手机 running 接口仍 open，权限与通知由 #49 收尾。详见 [#50 根因及依赖](../mobile/chat-reliability-50.md)。
+
 ## 手机前台实时 R2（2026-10-25，工单43）
 
 Flutter相关124项通过；最后request/turn绑定及WS成功即停止生成指示的收尾后，R2/发送恢复/揭示/协调器49项再次通过；最终flutter analyze零问题。最终 `flutter build apk --debug --flavor dev --no-pub` 成功，产物 `build/app/outputs/flutter-apk/app-dev-debug.apk`，SHA-256 `30E5060FA6CDC5B9E5EAD38807BF9B0DD938F8EFE8E712E5622D9AB379F96C3C`。证据日志 `build/review/mobile-r2/`：flutter-tests.log、final-tests.log、analyze.log、dev-build.log；管理面实际fragment/JS的隔离浏览器开关截图 admin-realtime-enabled.png。

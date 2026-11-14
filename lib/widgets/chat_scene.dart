@@ -13,6 +13,8 @@ import '../controllers/voice_input_controller.dart';
 import '../models/app_models.dart';
 import '../l10n/l10n.dart';
 import 'chat_widgets.dart';
+import 'chat_delivery_details.dart';
+import 'anchored_chat_list.dart';
 import 'common_widgets.dart';
 import 'edge_refresh.dart';
 import 'reasoning_widgets.dart';
@@ -93,40 +95,15 @@ class ChatScene extends StatelessWidget {
           OutboxState.outcomeUnknown => l10n.chatOutboxUnknown,
           OutboxState.blocked => l10n.chatOutboxBlocked,
           OutboxState.retryableFailed => l10n.chatSendFailed,
+          OutboxState.skipped => l10n.chatOutboxSkipped,
           null => null,
         };
-    Future<void> removeOutgoing(ChatMessage message) async {
-      final remove = await showDialog<bool>(
-        context: context,
-        builder: (dialog) => AlertDialog(
-          title: Text(l10n.chatOutboxRemove),
-          content: Text(l10n.chatOutboxRemoveDetail),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialog),
-              child: Text(l10n.cancelAction),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialog, true),
-              child: Text(l10n.chatOutboxRemove),
-            ),
-          ],
-        ),
-      );
-      if (remove == true && context.mounted) {
-        await controller.removeFromOutbox(message);
-      }
-    }
+    void outgoingDetails() => showChatDeliveryDetails(context, controller);
 
     final backendBusy = controller.sending;
     final himTyping = controller.himTyping;
-    final backendError = controller.backendError;
-    final loadingHistory = controller.loadingHistory;
     final loadingMoreHistory = controller.loadingMoreHistory;
     final historyLoaded = controller.historyLoaded;
-    final historyError = controller.historyError;
-    final lastBackendReply = controller.lastBackendReply;
-    final mobileReceivedCount = controller.mobileReceivedCount;
     final historyMessages = controller.history;
     final sentMessages = controller.sent;
     final visibleMessageLimit = controller.visibleMessageLimit;
@@ -168,41 +145,17 @@ class ChatScene extends StatelessWidget {
       if (hiddenMessageCount > 0)
         MetaLine(c: c, text: l10n.chatHiddenOlder(hiddenMessageCount)),
       if (classic) MetaLine(c: c, text: todayLine),
-      if (loadingHistory) MetaLine(c: c, text: l10n.chatLoadingHistory),
       if (historyLoaded && historyMessages.isEmpty)
         MetaLine(c: c, text: l10n.chatEmptyHistory),
-      if (historyError != null)
-        MetaLine(
-          c: c,
-          text: l10n.chatHistoryError(
-            localizeSessionScopeError(l10n, historyError),
-          ),
-        ),
-      if (controller.outboxError != null)
-        MetaLine(
-          c: c,
-          text: controller.outboxError == 'corrupt'
-              ? l10n.chatOutboxCorrupt
-              : l10n.chatOutboxStorageError,
-        ),
-      if (backendBusy) MetaLine(c: c, text: l10n.chatWaitingReply),
-      if (backendError != null)
-        MetaLine(
-          c: c,
-          text: l10n.chatBackendError(
-            localizeSessionScopeError(l10n, backendError),
-          ),
-        ),
-      if (controller.mobileError != null)
-        MetaLine(c: c, text: l10n.chatBackendError(controller.mobileError!)),
-      if (classic && lastBackendReply != null && backendError == null)
-        MetaLine(c: c, text: l10n.chatBackendStatus(lastBackendReply.emotion)),
-      if (classic && mobileReceivedCount > 0)
-        MetaLine(c: c, text: l10n.chatMobileReceived(mobileReceivedCount)),
       SizedBox(height: hasReferenceShell(layout) ? 0 : 14),
     ];
-    final itemCount =
-        metaItems.length + visibleMessageCount + (himTyping ? 1 : 0);
+    final rowIds = <Object>[
+      for (var i = 0; i < metaItems.length; i++) 'meta-$i',
+      for (final message
+          in historyMessages.followedBy(sentMessages).skip(hiddenMessageCount))
+        message.id,
+      if (himTyping) 'typing',
+    ];
     return Stack(
       children: [
         Column(
@@ -259,7 +212,7 @@ class ChatScene extends StatelessWidget {
                     SnackBar(
                       content: Text(
                         error != null
-                            ? l10n.chatBackendError(error)
+                            ? l10n.chatRefreshUnavailable
                             : controller.mobileActive
                             ? l10n.chatRefreshComplete
                             : l10n.chatRefreshUnavailable,
@@ -267,7 +220,7 @@ class ChatScene extends StatelessWidget {
                     ),
                   );
                 },
-                child: ListView.builder(
+                child: AnchoredChatList(
                   physics: const AlwaysScrollableScrollPhysics(
                     parent: ClampingScrollPhysics(),
                   ),
@@ -295,7 +248,7 @@ class ChatScene extends StatelessWidget {
                         : 25,
                     messenger ? 14 : 92,
                   ),
-                  itemCount: itemCount,
+                  rowIds: rowIds,
                   itemBuilder: (context, index) {
                     if (index < metaItems.length) return metaItems[index];
                     final messageIndex = index - metaItems.length;
@@ -448,8 +401,8 @@ class ChatScene extends StatelessWidget {
                                   failed: m.failed,
                                   uncertain: m.uncertain,
                                   deliveryLabel: deliveryLabel(m),
-                                  onRemoveOutgoing: m.failed || m.uncertain
-                                      ? () => removeOutgoing(m)
+                                  onDeliveryDetails: deliveryLabel(m) != null
+                                      ? outgoingDetails
                                       : null,
                                   onRetry: () => controller.retryMessage(m),
                                   onReply: () => controller.setReplyTarget(m),
@@ -522,6 +475,34 @@ class ChatScene extends StatelessWidget {
               onVoiceRecordCancel: onVoiceRecordCancel,
             ),
           ],
+        ),
+        Positioned(
+          top: externalHeader
+              ? 0
+              : topInset + (classic && !prefs.infoStrip ? 10 : 58),
+          right: 12,
+          child: Material(
+            color: c.surface,
+            borderRadius: BorderRadius.circular(18),
+            child: TextButton.icon(
+              key: const ValueKey('chat-delivery-details'),
+              onPressed: outgoingDetails,
+              icon: Icon(
+                controller.outboxError != null
+                    ? Icons.error_outline
+                    : Icons.info_outline,
+                size: 16,
+              ),
+              label: Text(
+                controller.pendingOutgoing.isNotEmpty
+                    ? l10n.chatPendingCount(controller.pendingOutgoing.length)
+                    : controller.mobileError != null ||
+                          controller.historyError != null
+                    ? l10n.chatConnectionUnstable
+                    : l10n.chatConnectionDetails,
+              ),
+            ),
+          ),
         ),
         if (classic && !prefs.infoStrip)
           Positioned(

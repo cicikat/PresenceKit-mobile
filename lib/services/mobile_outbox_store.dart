@@ -5,7 +5,14 @@ import 'package:crypto/crypto.dart';
 import '../models/app_models.dart';
 import '../models/screen_context.dart';
 
-enum OutboxState { queued, sending, outcomeUnknown, retryableFailed, blocked }
+enum OutboxState {
+  queued,
+  sending,
+  outcomeUnknown,
+  retryableFailed,
+  blocked,
+  skipped,
+}
 
 class OutboxEntry {
   OutboxEntry({
@@ -19,6 +26,7 @@ class OutboxEntry {
     this.caption = '',
     this.voiceReceipt,
     this.state = OutboxState.queued,
+    this.statusCode,
   });
 
   final String requestId;
@@ -31,8 +39,9 @@ class OutboxEntry {
   final String caption;
   final String? voiceReceipt;
   final OutboxState state;
+  final int? statusCode;
 
-  OutboxEntry withState(OutboxState value) => OutboxEntry(
+  OutboxEntry withState(OutboxState value, {int? statusCode}) => OutboxEntry(
     requestId: requestId,
     scope: scope,
     sequence: sequence,
@@ -43,6 +52,7 @@ class OutboxEntry {
     caption: caption,
     voiceReceipt: voiceReceipt,
     state: value,
+    statusCode: statusCode ?? this.statusCode,
   );
 
   Map<String, Object?> _wirePayload() => {
@@ -66,6 +76,7 @@ class OutboxEntry {
       'payload_digest': _digest(payload),
       ...payload,
       'state': state.name,
+      'status_code': statusCode,
     };
   }
 
@@ -100,6 +111,7 @@ class OutboxEntry {
       caption: json['caption'] as String,
       voiceReceipt: json['voice_receipt'] as String?,
       state: state == OutboxState.sending ? OutboxState.outcomeUnknown : state,
+      statusCode: json['status_code'] as int?,
     );
     if (_digest(row._wirePayload()) != json['payload_digest']) {
       throw const FormatException('outbox_payload_digest');
@@ -195,6 +207,7 @@ class MobileOutboxStore {
     OutboxEntry row,
     OutboxState? state, {
     bool requireCurrent = false,
+    int? statusCode,
   }) => _run((rows) async {
     final index = rows.indexWhere(
       (candidate) =>
@@ -208,7 +221,7 @@ class MobileOutboxStore {
     if (state == null) {
       next.removeAt(index);
     } else {
-      next[index] = row.withState(state);
+      next[index] = row.withState(state, statusCode: statusCode);
     }
     await _commit(next, _sequence);
     return true;
