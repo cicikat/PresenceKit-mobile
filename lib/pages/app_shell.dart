@@ -182,6 +182,7 @@ class _CompanionAppState extends State<CompanionApp>
       screen: _screenService,
       backend: () => _backend,
       token: () => _adminToken,
+      character: () => _currentCharacterId,
       restored: () => _restoreComplete,
       foreground: () =>
           _lifecycle == AppLifecycleState.resumed ||
@@ -791,6 +792,8 @@ class _CompanionAppState extends State<CompanionApp>
         controlsOnly: controlsOnly,
         c: c,
         onLoadStatus: _capabilitySettings.loadStatus,
+        onAmbientChanged: (kind, enabled) =>
+            _deviceController.pushAmbient(cleared: enabled ? null : kind),
         onRequestNotifications: _deviceService.requestNotificationPermission,
         onRequestIgnoreBatteryOptimizations:
             _deviceService.requestIgnoreBatteryOptimizations,

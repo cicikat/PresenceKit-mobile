@@ -95,7 +95,7 @@ class MobileNotificationService : Service() {
         val token = BackendSecurityPolicy.adminToken(this, prefs)
         val baseUrl = backendBaseUrl()
         val gateError = when {
-            scheduledOneShot && !prefs.getBoolean("backgroundNotificationsEnabled", true) ->
+            scheduledOneShot && !prefs.getBoolean("backgroundNotificationsEnabled", false) ->
                 "background notifications disabled"
             token.isBlank() -> "token invalid: missing credential"
             baseUrl == null || !BackendSecurityPolicy.isAllowedBaseUrl(baseUrl, prefs) ->
@@ -159,7 +159,7 @@ class MobileNotificationService : Service() {
             showMessageNotification(content, null)
             return
         }
-        deliverBackgroundMessage(content, behavior, null)
+        deliverBackgroundMessage(null, content, behavior, null)
     }
 
     private fun startConsumerCoordinator(startId: Int) {
@@ -324,7 +324,8 @@ class MobileNotificationService : Service() {
 
     private fun consumeRelayEvent(rawData: String, generation: Int) {
         if (pollGeneration.get() != generation || consumerSource != ConsumerSource.RELAY) return
-        decodeRelayMessage(rawData) ?: return
+        val signal = decodeRelayMessage(rawData) ?: return
+        MobileDeliveryTrace.mark(servicePrefs(), signal, "wake_received")
         servicePrefs().edit().putLong("lastRelayDeliveredAt", System.currentTimeMillis()).apply()
         // Relay is wake-only. Even legacy payloads containing content must return to the
         // authenticated backend so message bodies never become a relay delivery path.
@@ -479,7 +480,7 @@ class MobileNotificationService : Service() {
     private fun shouldScheduleSupplementalPoll(): Boolean {
         val prefs = servicePrefs()
         val baseUrl = backendBaseUrl()
-        return prefs.getBoolean("backgroundNotificationsEnabled", true) &&
+        return prefs.getBoolean("backgroundNotificationsEnabled", false) &&
             BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             baseUrl != null &&
             BackendSecurityPolicy.isAllowedBaseUrl(baseUrl, prefs)
@@ -601,7 +602,9 @@ class MobileNotificationService : Service() {
             for (batch in 0 until 10) {
                 val lastAckedSeq = store.lastAckedSeq()
                 val afterQuery = if (lastAckedSeq == null) "" else "&after=$lastAckedSeq"
+                val pollStartedAt = System.currentTimeMillis()
                 val body = pollJson("$baseUrl/mobile/poll?limit=50$afterQuery", token)
+                val pollFinishedAt = System.currentTimeMillis()
                 val decoded = JSONObject(body)
                 if (!decoded.optBoolean("ok") || !decoded.optBoolean("active")) {
                     throw IOException(decoded.optString("error", "mobile channel is not active"))
@@ -622,6 +625,8 @@ class MobileNotificationService : Service() {
                         break
                     }
                     val item = messages.optJSONObject(i) ?: continue
+                    MobileDeliveryTrace.mark(prefs, item, "poll_started", pollStartedAt)
+                    MobileDeliveryTrace.mark(prefs, item, "poll_received", pollFinishedAt)
                     consumeMobileMessage(item, "poll")
                     if (item.has("seq") && !item.isNull("seq")) {
                         val seq = item.optLong("seq", Long.MIN_VALUE)
@@ -640,6 +645,10 @@ class MobileNotificationService : Service() {
                         throw IOException(ack.optString("error", "mobile acknowledgement failed"))
                     }
                     store.advanceAck(batchMaxSeq)
+                    for (index in 0 until messages.length()) {
+                        val item = messages.optJSONObject(index) ?: continue
+                        MobileDeliveryTrace.mark(prefs, item, "ack_received")
+                    }
                 }
                 if (messages.length() < 50 || pollGeneration.get() != gen) break
             }
@@ -813,11 +822,13 @@ class MobileNotificationService : Service() {
         val owner = BackendSecurityPolicy.ownerUserId(prefs).ifBlank { null }
         if (!store.acceptIncoming(item, origin, owner)) {
             if (id.isNotEmpty()) {
-                Log.d(tag, "skipping already-seen $source message id=$id")
+                Log.d(tag, "skipping already-seen $source message")
             }
             return false
         }
+        MobileDeliveryTrace.mark(prefs, item, "inbox_committed")
         if (content.isNotEmpty()) deliverBackgroundMessage(
+            item,
             content,
             item.optJSONObject("behavior"),
             item.optString("char_id").trim().ifEmpty { null },
@@ -944,15 +955,25 @@ class MobileNotificationService : Service() {
             .build()
 
     private fun deliverBackgroundMessage(
+        item: JSONObject?,
         content: String,
         behavior: JSONObject?,
         charId: String?,
     ) {
         val overlay = overlayRequestFor(behavior)
         if (overlay != null && showBehaviorOverlay(content, overlay)) {
+            if (item != null) MobileDeliveryTrace.mark(servicePrefs(), item, "overlay_shown")
             return
         }
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val blocked = notificationPermissionError() != null ||
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            manager.getNotificationChannel(messageChannelId)?.importance == NotificationManager.IMPORTANCE_NONE
         handleIncomingMessage(content, charId)
+        if (item != null) MobileDeliveryTrace.mark(
+            servicePrefs(), item, "notification_submitted",
+            outcome = if (blocked) "blocked_by_settings" else "ok",
+        )
     }
 
     private fun handleIncomingMessage(content: String, charId: String?) {

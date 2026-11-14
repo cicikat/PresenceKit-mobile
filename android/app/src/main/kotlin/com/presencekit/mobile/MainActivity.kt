@@ -44,6 +44,10 @@ class MainActivity : FlutterActivity() {
     private var pendingFilePickResult: MethodChannel.Result? = null
     private var pendingImagesPickResult: MethodChannel.Result? = null
     private var pendingPdfPickResult: MethodChannel.Result? = null
+    private val ambientSensors by lazy {
+        AmbientSensors(this, getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE))
+    }
+
     private val voiceRecorder by lazy { VoiceRecorder(this) }
     private var ttsPlayer: MediaPlayer? = null
     private var ttsAudioFile: File? = null
@@ -62,6 +66,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
+        ambientSensors.refresh(true)
         val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean("mobileAppInForeground", true).apply()
         stopService(Intent(this, MobileNotificationService::class.java))
@@ -70,13 +75,18 @@ class MainActivity : FlutterActivity() {
         enterFullscreen()
     }
 
+    override fun onPause() {
+        ambientSensors.refresh(false)
+        super.onPause()
+    }
+
     override fun onStop() {
         super.onStop()
         val prefs = getSharedPreferences(BackendSecurityPolicy.PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean("mobileAppInForeground", false).apply()
         val backendBaseUrl = prefs.getString("backendBaseUrl", null)?.trim().orEmpty()
             .ifEmpty { "http://127.0.0.1:8080" }
-        if (prefs.getBoolean("backgroundNotificationsEnabled", true) &&
+        if (prefs.getBoolean("backgroundNotificationsEnabled", false) &&
             BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             BackendSecurityPolicy.isAllowedBaseUrl(backendBaseUrl, prefs)
         ) {
@@ -323,7 +333,7 @@ class MainActivity : FlutterActivity() {
                     }
                     "deleteDreamBackground" -> { dreamBackgroundFile().delete(); result.success(null) }
                     "getBackgroundNotificationsEnabled" -> {
-                        result.success(prefs.getBoolean("backgroundNotificationsEnabled", true))
+                        result.success(prefs.getBoolean("backgroundNotificationsEnabled", false))
                     }
                     "setBackgroundNotificationsEnabled" -> {
                         val value = call.argument<Boolean>("value") ?: true
@@ -368,12 +378,29 @@ class MainActivity : FlutterActivity() {
                     "getBackgroundNotificationServiceStartError" -> {
                         result.success(prefs.getString("backgroundNotificationServiceStartError", null))
                     }
+                    "getAmbientSettings" -> result.success(ambientSensors.settings())
+                    "sampleAmbient" -> result.success(ambientSensors.sample())
+                    "setAmbientEnabled" -> {
+                        val kind = call.argument<String>("kind")
+                        val enabled = call.argument<Boolean>("enabled")
+                        if (kind !in listOf("light", "motion", "usage") || enabled == null) {
+                            result.error("INVALID_ARGUMENT", "Invalid ambient setting", null)
+                        } else {
+                            ambientSensors.setEnabled(requireNotNull(kind), enabled)
+                            result.success(null)
+                        }
+                    }
+                    "openUsageAccess" -> {
+                        startActivity(Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                        result.success(null)
+                    }
                     "getBackgroundPollStatus" -> {
                         result.success(
                             mapOf(
                                 "lastBackgroundPollAt" to prefs.getLong("lastBackgroundPollAt", 0L),
                                 "pendingCount" to MobileDeliveryStateStore.of(prefs).pendingCount(),
                                 "pendingLimit" to MobileDeliveryStateStore.PENDING_CAP,
+                                "lastDeliveryStage" to prefs.getString("lastDeliveryStage", null),
                                 "lastBackgroundError" to
                                     prefs.getString("lastBackgroundError", null),
                             ),
@@ -956,7 +983,7 @@ class MainActivity : FlutterActivity() {
 
     private fun shouldRunRelayService(prefs: android.content.SharedPreferences): Boolean {
         val relayBaseUrl = BackendSecurityPolicy.relayBaseUrl(prefs) ?: return false
-        return prefs.getBoolean("backgroundNotificationsEnabled", true) &&
+        return prefs.getBoolean("backgroundNotificationsEnabled", false) &&
             BackendSecurityPolicy.adminToken(this, prefs).isNotBlank() &&
             BackendSecurityPolicy.relayTopic(prefs) != null &&
             BackendSecurityPolicy.isAllowedRelayUrl(relayBaseUrl, prefs)

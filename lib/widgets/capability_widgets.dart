@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'screen_observation_settings.dart';
+import 'ambient_permissions.dart';
 
 import '../app_constants.dart';
 import '../models/app_models.dart';
@@ -19,6 +20,7 @@ class CapabilitySheet extends StatefulWidget {
     required this.c,
     this.controlsOnly = false,
     required this.onLoadStatus,
+    this.onAmbientChanged,
     required this.onRequestNotifications,
     required this.onRequestIgnoreBatteryOptimizations,
     required this.onRequestOverlay,
@@ -53,6 +55,7 @@ class CapabilitySheet extends StatefulWidget {
   final YxPalette c;
   final bool controlsOnly;
   final Future<CapabilityStatus> Function() onLoadStatus;
+  final Future<void> Function(String kind, bool enabled)? onAmbientChanged;
   final Future<void> Function() onRequestNotifications;
   final Future<void> Function() onRequestIgnoreBatteryOptimizations;
   final Future<void> Function() onRequestOverlay;
@@ -341,6 +344,8 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                         ? null
                         : () => _run(widget.onRequestAccessibility),
                   ),
+                  if (widget.controlsOnly && widget.onAmbientChanged != null)
+                    AmbientPermissions(onChanged: widget.onAmbientChanged!),
                   CapabilityRow(
                     c: c,
                     icon: Icons.directions_walk_rounded,
