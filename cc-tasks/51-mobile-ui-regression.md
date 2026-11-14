@@ -18,6 +18,6 @@
 - [x] D 刷新文字使用页面ink2、图标/进度使用页面character。证据：ui_regression_51_test日夜刷新进度与颜色断言通过；chat_interaction_regression_test上下沿刷新原用例通过。前后截图见build/review/ui-51/；实际设备未验收。
 - [x] E 导出修改后22张截图并逐格检查；定向14项、全量425项通过，analyze零问题，dev APK成功（24.9秒），SHA-256 D1F1C842E6C7F1FE794A5F241D2343678786C6E497A0503214DB521D87FAA012。证据：docs/mobile/ui-regression-51.md、ui-51/before.png与after.png。无设备，真机/权限往返/切网/安装升级NOT RUN。
 - [x] F 文档与CRLF/diff检查。证据：docs/mobile/ui-regression-51.md记录组件/调用链/风险；普通与ignore-cr-at-eol统计一致（419增/277删），git diff --check通过，改动文本工作区CRLF。
-- [ ] G 独立提交、push并创建PR；记录SHA/URL。main远端尚缺既有5个提交，基础改动与#51分层交付，#51以2fe2cab为基线。
+- [x] G 独立提交dee8dc21ff8f48d44537771bfcd23675c691c7e7已push；PR https://github.com/cicikat/PresenceKit-mobile/pull/6 。main远端尚缺既有5个提交，基础改动另建前置PR https://github.com/cicikat/PresenceKit-mobile/pull/5 ，#51以2fe2cab为基线。已用gh核对PR6只含#51的20个文件；PR5合入后需将PR6 base改main。
 
 用户提供了真机现象描述，本会话没有可读取的原截图附件；前后对比采用同一Flutter离屏fixture，实际ROM/设备效果仍须真机复核。桌面参考仅视觉原则，不复制桌面实现。
