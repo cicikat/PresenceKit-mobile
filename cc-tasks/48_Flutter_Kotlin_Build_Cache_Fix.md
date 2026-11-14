@@ -5,7 +5,7 @@
 - [x] A：已核对Flutter3.32.0/Dart3.8.0、Kotlin2.1.0、AGP8.7.3、Gradle8.12、Java21.0.10；项目D盘、Pub Cache C盘。#50 dev构建真实复现different-roots/daemon异常，fallback后成功。当前无kotlin.incremental设置；AA1/AA3沿普通Flutter CLI构建，未找到CI工作流。
 - [x] B：android/gradle.properties:6设置kotlin.incremental=false。对全仓开发者/CI生效，可能增加Kotlin重编耗时；不禁daemon、不迁全局缓存。工具链/盘符调整后可移除这三行回滚，需重新验证。
 - [x] C：pub get成功；原prod release连续两次退出0（88.19/34.17秒），强制目标重编10任务执行成功（24秒）。三份日志异常计数全0；包名/1.3.0+74/历史证书、大小及SHA-256已核验，见docs/quality/kotlin-cross-drive-48.md。
-- [ ] D：文档已更新；待换行检查与独立提交。无跨端影响。
+- [x] D：文档及CRLF检查通过，git diff --check通过，普通/忽略CR统计一致；独立提交d93564e。无跨端影响。
 
 - **项目**：PresenceKit Mobile（现工作目录可能仍名为 `D:\ai\Emerald-mobile`，以实际仓库为准）
 - **优先级**：P2 / 构建稳定性
@@ -98,7 +98,7 @@ flutter build apk --release --flavor prod --build-name 1.3.0 --build-number 74
 - [x] 验收三份完整日志中该三类异常计数均0。
 - [x] 未改动运行数据、业务逻辑、依赖版本或签名配置；仅构建配置和文档，无跨端影响。
 - [x] #48报告给出变更、命令、结果、性能取舍及移除三行回滚办法。
-- [ ] 如按仓库正常流程需要提交代码，独立 commit/PR，不混入其他工单。
+- [x] 独立提交d93564e，仅#48配置、工单及构建文档；未push或发布。
 
 ## 六、回报格式
 

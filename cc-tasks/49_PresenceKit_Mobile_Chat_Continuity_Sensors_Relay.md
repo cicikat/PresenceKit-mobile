@@ -3,7 +3,7 @@
 ## 本轮施工清单（2026-11-14）
 
 - [x] A/C 与 B 安全降级由 #50 提交 `4030849` 覆盖；411 项全量测试通过。恢复 running 三点仍 open，见 docs/mobile/chat-reliability-50.md。
-- [x] D 本机入口与失败恢复：settings_widgets.dart:304 明确入口；ambient_permissions.dart 保留未知/不支持/失败与重试，普通能力页只读，系统设置可授权；screen_observation_settings.dart 增加期限、重试和恢复刷新。首轮 Flutter 定向8项通过；电量补充后待最终全量。后端逐项 effective/最近上报观测仍 open，未用本地开关冒充。
+- [x] D 本机入口与失败恢复：settings_widgets.dart:304 明确入口；ambient_permissions.dart 保留未知/不支持/失败与重试，普通能力页只读，系统设置可授权；screen_observation_settings.dart 增加期限、重试和恢复刷新。首轮Flutter定向8项、最终全量416项通过；已提交f430e95。后端逐项effective/最近上报观测仍open，未用本地开关冒充。
 - [x] E：MobileNotificationService.kt 同文案去重、重复 start 不重置等待文字，复用既有60秒断线宽限；销毁后拒绝迟到更新。Android MobileNotificationDeliveryTest 2 + MobileDeliveryStateStoreTest 14 + MobilePullRecoveryTest 3 = 19项通过（2026-11-14）。真实设备10次切换仍NOT RUN。
 - [x] 文档与三面检查：docs/mobile/device-permissions-relay-49.md；gen-l10n成功，analyze零问题、全量416通过、Android19通过、dev APK成功（20.0秒），哈希见报告。完整感知观测/running接口仍open，不能将本单标作全部体验验收完成。
 - [ ] 设备权限往返、SSE/FCM/前后台10次、logcat与录屏：NOT RUN，无连接设备。
