@@ -129,6 +129,9 @@ class ConversationHeader extends StatelessWidget {
     required this.onToggleTheme,
     required this.dark,
     this.onRoute,
+    this.connected = false,
+    this.avatarBytes,
+    this.onDetails,
   });
   final YxPalette c;
   final String name;
@@ -138,6 +141,9 @@ class ConversationHeader extends StatelessWidget {
   final VoidCallback onToggleTheme;
   final bool dark;
   final ValueChanged<AppRoute>? onRoute;
+  final bool connected;
+  final Uint8List? avatarBytes;
+  final VoidCallback? onDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -173,6 +179,14 @@ class ConversationHeader extends StatelessWidget {
                     ),
                     tooltip: l.drawerTooltip,
                   ),
+                  ChatConnectionAvatar(
+                    c: c,
+                    name: name,
+                    connected: connected,
+                    imageBytes: avatarBytes,
+                    onDetails: onDetails ?? onSettings,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       name,

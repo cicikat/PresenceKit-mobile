@@ -299,14 +299,19 @@ class SettingsPage extends StatelessWidget {
                       onChanged: onAutoPlayVoiceChanged,
                     ),
                   ),
-                  ListTile(
-                    title: Text(
-                      l10n.settingsDeviceSensingTitle,
-                      style: _settingsSectionTitleStyle(c),
-                    ),
-                    subtitle: Text(l10n.settingsDeviceSensingSubtitle),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                  InkWell(
                     onTap: onOpenSystemControls,
+                    child: SettingsRow(
+                      c: c,
+                      title: l10n.settingsDeviceSensingTitle,
+                      subtitle: l10n.settingsDeviceSensingSubtitle,
+                      child: YxIconButton(
+                        c: c,
+                        icon: Icons.chevron_right_rounded,
+                        onPressed: () => onOpenSystemControls?.call(),
+                        tooltip: l10n.settingsDeviceSensingTitle,
+                      ),
+                    ),
                   ),
                   ScreenObservationSettings(c: c),
                 ],

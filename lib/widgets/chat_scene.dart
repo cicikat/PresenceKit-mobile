@@ -13,7 +13,6 @@ import '../controllers/voice_input_controller.dart';
 import '../models/app_models.dart';
 import '../l10n/l10n.dart';
 import 'chat_widgets.dart';
-import 'chat_delivery_details.dart';
 import 'anchored_chat_list.dart';
 import 'common_widgets.dart';
 import 'edge_refresh.dart';
@@ -99,6 +98,7 @@ class ChatScene extends StatelessWidget {
           null => null,
         };
     void outgoingDetails() => showChatDeliveryDetails(context, controller);
+    final connected = controller.mobileActive && controller.mobileError == null;
 
     final backendBusy = controller.sending;
     final himTyping = controller.himTyping;
@@ -122,7 +122,6 @@ class ChatScene extends StatelessWidget {
       MaterialLocalizations.of(context).formatFullDate(now),
       TimeOfDay.fromDateTime(now).format(context),
     );
-    final topInset = MediaQuery.paddingOf(context).top;
     final classic = layout == DailyLayout.classic;
     final messenger = layout == DailyLayout.messenger;
     final window = layout == DailyLayout.reverie || layout == DailyLayout.noir;
@@ -171,6 +170,9 @@ class ChatScene extends StatelessWidget {
                 onSettings: onOpenSettings,
                 onToggleTheme: onToggleTheme,
                 dark: dark,
+                connected: connected,
+                avatarBytes: profileAvatarBytes,
+                onDetails: outgoingDetails,
               )
             else if (!classic && !hasReferenceShell(layout))
               ConversationHeader(
@@ -182,8 +184,11 @@ class ChatScene extends StatelessWidget {
                 onToggleTheme: onToggleTheme,
                 dark: dark,
                 onRoute: onRoute,
+                connected: connected,
+                avatarBytes: profileAvatarBytes,
+                onDetails: outgoingDetails,
               )
-            else if (classic && prefs.infoStrip)
+            else if (classic)
               ChatTopBar(
                 c: dark
                     ? c.copyWith(
@@ -199,10 +204,13 @@ class ChatScene extends StatelessWidget {
                 onToggleTheme: onToggleTheme,
                 onOpenDrawer: onOpenDrawer,
                 onOpenSettings: onOpenSettings,
+                connected: connected,
+                onDetails: outgoingDetails,
               ),
             Expanded(
               key: const ValueKey('daily-timeline'),
               child: EdgeRefresh(
+                c: c,
                 onRefresh: () async {
                   await controller.refreshConnection();
                   if (!context.mounted) return;
@@ -234,11 +242,7 @@ class ChatScene extends StatelessWidget {
                         : window
                         ? 22
                         : 25,
-                    hasReferenceShell(layout)
-                        ? 0
-                        : !classic || prefs.infoStrip
-                        ? 14
-                        : topInset + 58,
+                    hasReferenceShell(layout) ? 0 : 14,
                     messenger
                         ? messengerCssPixels(context, 12)
                         : classic
@@ -476,40 +480,6 @@ class ChatScene extends StatelessWidget {
             ),
           ],
         ),
-        Positioned(
-          top: externalHeader
-              ? 0
-              : topInset + (classic && !prefs.infoStrip ? 10 : 58),
-          right: 12,
-          child: Material(
-            color: c.surface,
-            borderRadius: BorderRadius.circular(18),
-            child: TextButton.icon(
-              key: const ValueKey('chat-delivery-details'),
-              onPressed: outgoingDetails,
-              icon: Icon(
-                controller.outboxError != null
-                    ? Icons.error_outline
-                    : Icons.info_outline,
-                size: 16,
-              ),
-              label: Text(
-                controller.pendingOutgoing.isNotEmpty
-                    ? l10n.chatPendingCount(controller.pendingOutgoing.length)
-                    : controller.mobileError != null ||
-                          controller.historyError != null
-                    ? l10n.chatConnectionUnstable
-                    : l10n.chatConnectionDetails,
-              ),
-            ),
-          ),
-        ),
-        if (classic && !prefs.infoStrip)
-          Positioned(
-            top: topInset + 10,
-            left: 12,
-            child: FloatingDrawerButton(c: c, onOpenDrawer: onOpenDrawer),
-          ),
         if (showJumpToLatest)
           Positioned(
             left: 0,

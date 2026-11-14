@@ -1,3 +1,7 @@
+## 手机 #51 UI 回归（2026-11-14）
+
+`flutter analyze --no-pub` 零问题；Flutter 全量425项通过，UI/权限/结构定向14项通过。Dev APK构建成功（Gradle24.9秒），SHA-256 `D1F1C842E6C7F1FE794A5F241D2343678786C6E497A0503214DB521D87FAA012`。日夜与五种顶栏离屏截图已检查，320px/1.8倍字无布局异常；无连接设备，真机、权限往返、切网及安装升级仍NOT RUN，未安装/发布。纯UI，无跨端影响；[报告与前后截图](../mobile/ui-regression-51.md)。
+
 ## 手机 #48 Kotlin跨盘缓存（2026-11-14）
 
 仓库级设置kotlin.incremental=false；原 `flutter build apk --release --flavor prod --build-name 1.3.0 --build-number 74` 连续成功（总88.19/34.17秒），另强制重编package_info_plus目标成功。三份完整日志中的different-roots/cache-close/daemon异常均0。APK包名/版本和历史证书核验一致，47,288,274字节，SHA-256 `836B07A013C170A4C961D8D3D60BADE888FAB269562556B42F334646C6CA04C8`。未安装/发布，无跨端影响；耗时取舍、日志与回滚见 [#48报告](kotlin-cross-drive-48.md)。

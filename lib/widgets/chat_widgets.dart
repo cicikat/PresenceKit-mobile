@@ -5,6 +5,7 @@ import '../models/ui_layout.dart';
 import 'conversation_presentation.dart';
 import 'dart:math' as math;
 export 'chat_scene.dart';
+export 'chat_delivery_details.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -113,6 +114,8 @@ class ChatTopBar extends StatelessWidget {
     required this.onToggleTheme,
     required this.onOpenDrawer,
     required this.onOpenSettings,
+    this.connected = false,
+    this.onDetails,
   });
 
   final YxPalette c;
@@ -124,6 +127,8 @@ class ChatTopBar extends StatelessWidget {
   final VoidCallback onToggleTheme;
   final VoidCallback onOpenDrawer;
   final VoidCallback onOpenSettings;
+  final bool connected;
+  final VoidCallback? onDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -142,62 +147,27 @@ class ChatTopBar extends StatelessWidget {
                 tooltip: context.l10n.drawerTooltip,
               ),
               const SizedBox(width: 8),
-              YxAvatar(
+              ChatConnectionAvatar(
                 c: c,
                 onDark: true,
                 size: 32,
                 imageBytes: profileAvatarBytes,
-                text: profileDisplayName.characters.first,
+                name: profileDisplayName,
+                connected: connected,
+                onDetails: onDetails ?? onOpenSettings,
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      profileDisplayName,
-                      style: serif(
-                        c,
-                        18,
-                        color: c.characterOn,
-                        weight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        LiveDot(color: presence.dotColor ?? c.characterOn),
-                        const SizedBox(width: 6),
-                        Text(
-                          presence.status,
-                          style: mono(
-                            c,
-                            10,
-                            color: c.characterOn.withValues(alpha: 0.78),
-                          ),
-                        ),
-                        Text(
-                          ' · ',
-                          style: mono(
-                            c,
-                            10,
-                            color: c.characterOn.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            presence.subline,
-                            overflow: TextOverflow.ellipsis,
-                            style: mono(
-                              c,
-                              10,
-                              color: c.characterOn.withValues(alpha: 0.72),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                child: Text(
+                  profileDisplayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: serif(
+                    c,
+                    18,
+                    color: c.characterOn,
+                    weight: FontWeight.w500,
+                  ),
                 ),
               ),
               YxIconButton(
@@ -219,27 +189,6 @@ class ChatTopBar extends StatelessWidget {
               ),
             ],
           ),
-          if (prefs.infoStrip) ...[
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  YxTag(c: c, text: presence.mood, variant: 'solid'),
-                  YxTag(c: c, text: presence.activity, variant: 'warm'),
-                  YxTag(
-                    c: c.copyWith(
-                      ink2: c.characterOn,
-                      ink4: c.characterOn.withValues(alpha: .35),
-                    ),
-                    text: presence.timeband,
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
