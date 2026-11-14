@@ -296,6 +296,60 @@ abstract class AppLocalizations {
   /// **'这项设置暂时没能更新。'**
   String get ambientSettingFailed;
 
+  /// No description provided for @settingsDeviceSensingTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'设备感知与权限'**
+  String get settingsDeviceSensingTitle;
+
+  /// No description provided for @settingsDeviceSensingSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'查看感知能力，管理授权与后台接收。'**
+  String get settingsDeviceSensingSubtitle;
+
+  /// No description provided for @ambientLocalPermissionHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'这里管理手机授权与分享意愿；是否接收由服务端设置决定。开启不代表已成功上报。'**
+  String get ambientLocalPermissionHint;
+
+  /// No description provided for @ambientReadFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法读取感知设置，请重试。'**
+  String get ambientReadFailed;
+
+  /// No description provided for @ambientPlatformUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'此设备暂不支持这些感知设置。'**
+  String get ambientPlatformUnavailable;
+
+  /// No description provided for @ambientStateUnknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法确认状态。'**
+  String get ambientStateUnknown;
+
+  /// No description provided for @ambientBatteryTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机电量'**
+  String get ambientBatteryTitle;
+
+  /// No description provided for @ambientBatteryReading.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前电量 {percent}%，无需额外授权。'**
+  String ambientBatteryReading(int percent);
+
+  /// No description provided for @ambientUsagePermissionMissing.
+  ///
+  /// In zh, this message translates to:
+  /// **'还未允许查看使用情况，可在手机设置中授权。'**
+  String get ambientUsagePermissionMissing;
+
   /// No description provided for @artifactUnsupported.
   ///
   /// In zh, this message translates to:

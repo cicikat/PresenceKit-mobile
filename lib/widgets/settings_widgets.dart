@@ -301,9 +301,10 @@ class SettingsPage extends StatelessWidget {
                   ),
                   ListTile(
                     title: Text(
-                      l10n.settingsPermissionsTitle,
+                      l10n.settingsDeviceSensingTitle,
                       style: _settingsSectionTitleStyle(c),
                     ),
+                    subtitle: Text(l10n.settingsDeviceSensingSubtitle),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: onOpenSystemControls,
                   ),

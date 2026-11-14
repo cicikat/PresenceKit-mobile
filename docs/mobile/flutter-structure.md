@@ -1,3 +1,7 @@
+## 手机 #49 感知设置（2026-11-14）
+
+AmbientPermissions 管理短期读取代际、错误与返回刷新，能力观察模式只读；ScreenObservationSettings 管理可取消读取期限、真实无障碍授权及失败重试。复用既有通道，不新增AppShell领域状态、后端真值或持久字段；[验收与open边界](device-permissions-relay-49.md)。
+
 ## 手机 #50 聊天恢复与视口（2026-11-14）
 
 ChatScrollController + AnchoredChatList 统一真实消息坐标与用户跟随意图，替代全列表高度差补偿；ChatDeliveryDetails 承接本机队列与连接操作。原 ID/载荷快照、scope、ACK 链保留；显式 skipped 和 HTTP 原因由既有 Outbox 存储/详情观测。AppShell 无新增领域状态。后端 running 证据仍 open，不能以 HTTP/WS 假造三点；[根因、依赖与三面闭环](chat-reliability-50.md)。

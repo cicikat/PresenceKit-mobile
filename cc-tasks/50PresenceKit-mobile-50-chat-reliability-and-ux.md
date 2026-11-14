@@ -7,7 +7,7 @@
 - [x] B：后端只读审计与安全降级已记录 `docs/mobile/chat-reliability-50.md`；手机 running 查询仍 open，未伪造生成证据。恢复三点未闭环。
 - [x] C：技术操作转入详情，固定叠放入口不占历史高度；`foreground_mobile_delivery_contract_test`、布局/导航回归通过，心情在详情保留。
 - [x] D：统一消息视口锚点及用户跟随意图；`chat_scroll_anchor_test.dart` 3 项通过：prepend/meta/append 1、10、50 条及锚点删除回退，坐标容差 ≤2px；真机仍 NOT RUN。
-- [ ] E：感知读取失败可见、设置入口、原生通知去重与宽限；由手机 #49 收尾，未完成前不勾选。
+- [x] E 本机修复：手机 #49 已实现感知失败可见/重试/返回刷新、明确设置入口、常驻通知去重与既有60秒宽限；Flutter416、Android19通过，详见 docs/mobile/device-permissions-relay-49.md。逐项后端观测与真机仍open/NOT RUN。
 - [x] 文档与三面闭环见 #50 报告；analyze 零问题、全量411通过、dev APK构建成功，哈希见 testing-and-dev。Kotlin fallback 噪声独立跟踪 #48。
 - [ ] 50-01～50-14 真机体验与正式原位升级：NOT RUN（无设备）。
 

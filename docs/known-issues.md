@@ -1,3 +1,7 @@
+## 手机 #49 感知观测与设备验证（open / observe）
+
+current：设置中的设备感知入口、失败可见/重试/授权返回刷新、普通能力页只读、常驻通知同文字去重已落地。open：尚无逐项硬件支持→OS授权→本机意愿→后端effective→最近成功上报/错误的统一观测；尤其运动授权不等于计步硬件支持，本机读数不等于上报成功。后续需后端只读观测及手机消费闭环。observe：真实Android权限往返、SSE/FCM、前后台10次、ROM通知、日志/录屏与升级均NOT RUN。证据及三面检查见 [#49报告](mobile/device-permissions-relay-49.md)。
+
 ## 手机 #50 请求执行证据与设备验收（open / observe）
 
 open：手机 final_only 尚无 scoped 只读 running 查询；HTTP/WS 连通不能证明执行中，重启 unknown 不自动重发。后端已有 desktop request endpoint 不能直接给手机复用。安全接口依赖与降级见 [#50 报告](mobile/chat-reliability-50.md)。本机新增 skipped 与 status_code 可在既有 Outbox 快照及详情观测；skipped 不撤回服务器请求，旧版不识别该枚举，降级前须处理并备份。

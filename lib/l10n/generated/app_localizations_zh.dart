@@ -116,6 +116,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ambientSettingFailed => '这项设置暂时没能更新。';
 
   @override
+  String get settingsDeviceSensingTitle => '设备感知与权限';
+
+  @override
+  String get settingsDeviceSensingSubtitle => '查看感知能力，管理授权与后台接收。';
+
+  @override
+  String get ambientLocalPermissionHint =>
+      '这里管理手机授权与分享意愿；是否接收由服务端设置决定。开启不代表已成功上报。';
+
+  @override
+  String get ambientReadFailed => '暂时无法读取感知设置，请重试。';
+
+  @override
+  String get ambientPlatformUnavailable => '此设备暂不支持这些感知设置。';
+
+  @override
+  String get ambientStateUnknown => '暂时无法确认状态。';
+
+  @override
+  String get ambientBatteryTitle => '手机电量';
+
+  @override
+  String ambientBatteryReading(int percent) {
+    return '当前电量 $percent%，无需额外授权。';
+  }
+
+  @override
+  String get ambientUsagePermissionMissing => '还未允许查看使用情况，可在手机设置中授权。';
+
+  @override
   String get artifactUnsupported => '此类型暂不支持保存到手机';
 
   @override

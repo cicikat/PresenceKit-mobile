@@ -1,3 +1,7 @@
+## 手机 #49 常驻通知去重（2026-11-14）
+
+MobileNotificationService 对最后成功渲染文字串行去重，重复start不重置为等待状态，销毁后不接受迟到更新；短断线沿既有60秒宽限，持续不可用仍展示fallback。真实消息频道、FCM/SSE所有权、poll/inbox/ACK及权限不变。系统设置感知入口明确、失败可重试；屏幕观察读取实际无障碍授权并随恢复刷新。Android相关19项、Flutter全量416项通过，真机NOT RUN；逐项后端effective/最近上报观测仍open。详见 [#49报告](../mobile/device-permissions-relay-49.md)。
+
 ## 2026-10-24 R0/R1 完整消息交接
 
 前台收件统一8秒打开阶段/总期限、取消与receive epoch，连续wait=25/limit=50补拉；原生网络epoch只负责恢复信号。所有poll信封先写原pending inbox再服务端ACK。新增settings `peekPendingMobileEnvelopes`（非删除）与 `ackPendingMobileEnvelopes`（origin/owner/charId下精确id+seq），legacy consume保留；新完整metadata不主动执行行为。既有getBackgroundPollStatus继续只读数量/上限，无新服务端真值或开关。后台回源失败保留signal并1秒起、上限30秒退避；网络恢复即补拉，15分钟alarm保留为系统补偿。完整字段/三面/未验收边界见 [可靠消息收件](../mobile/reliable-message-delivery.md)。

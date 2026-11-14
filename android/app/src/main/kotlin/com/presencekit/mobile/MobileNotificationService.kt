@@ -51,6 +51,7 @@ class MobileNotificationService : Service() {
     @Volatile private var relaySignalPollPending = false
     @Volatile private var fallbackPollScheduled = false
     @Volatile private var foregroundStarted = false
+    private var lastForegroundText: String? = null
     @Volatile private var timeoutTriggered = false
     // scope 配错（403）对同一 token 重试没有意义，只会刷后端审计日志并可能触发 429；
     // 记住这次判定为 scope 不足的 token，同一 token 下跳过后续真实请求，直到用户换 token。
@@ -526,6 +527,10 @@ class MobileNotificationService : Service() {
     }
 
     override fun onDestroy() {
+        synchronized(this) {
+            foregroundStarted = false
+            lastForegroundText = null
+        }
         Log.d(tag, "service destroyed")
         isServiceRunning = false
         running = false
@@ -930,14 +935,15 @@ class MobileNotificationService : Service() {
         NotificationChannels.ensure(this)
     }
 
+    @Synchronized
     private fun ensureForeground(text: String) {
         if (foregroundStarted) {
-            updateForegroundNotification(text)
             return
         }
         foregroundStarted = true
         servicePrefs().edit().putBoolean("backgroundNotificationServiceRunning", true).apply()
         startForeground(foregroundId, buildForegroundNotification(text))
+        lastForegroundText = text
     }
 
     private fun buildForegroundNotification(text: String) =
@@ -1097,10 +1103,13 @@ class MobileNotificationService : Service() {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)
     }
 
+    @Synchronized
     private fun updateForegroundNotification(text: String) {
-        if (!foregroundStarted) return
+        if (!foregroundStarted || lastForegroundText == text) return
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(foregroundId, buildForegroundNotification(text))
+        lastForegroundText = text
+        Log.d(tag, "foreground notification state changed")
     }
 
     // Title for a background message. Prefer the envelope speaker (`char_id`)

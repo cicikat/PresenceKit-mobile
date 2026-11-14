@@ -129,6 +129,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ambientSettingFailed => 'This setting could not be updated.';
 
   @override
+  String get settingsDeviceSensingTitle => 'Device sensing and permissions';
+
+  @override
+  String get settingsDeviceSensingSubtitle =>
+      'Review sensing, permissions, and background delivery.';
+
+  @override
+  String get ambientLocalPermissionHint =>
+      'These controls manage phone consent and sharing. Server settings decide what is accepted. Enabling does not confirm a successful upload.';
+
+  @override
+  String get ambientReadFailed =>
+      'Could not read sensing settings. Please retry.';
+
+  @override
+  String get ambientPlatformUnavailable =>
+      'These sensing settings are unavailable on this device.';
+
+  @override
+  String get ambientStateUnknown => 'Status is currently unavailable.';
+
+  @override
+  String get ambientBatteryTitle => 'Phone battery';
+
+  @override
+  String ambientBatteryReading(int percent) {
+    return 'Battery at $percent%. No additional permission needed.';
+  }
+
+  @override
+  String get ambientUsagePermissionMissing =>
+      'Usage access has not been granted. Allow it in system settings.';
+
+  @override
   String get artifactUnsupported =>
       'This file type cannot be saved on this device';
 
