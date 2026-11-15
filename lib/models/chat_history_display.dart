@@ -19,7 +19,7 @@
 String historyVisibleText(String text) => text
     .replaceFirst(
       RegExp(
-        r'\r?\n[ \t]*\\?>[ \t]+speaker:(?:user|assistant)(?:[ \t]+(?:turn_id|emotion|intensity|trigger):\S+)+[ \t]*$',
+        r'\r?\n[ \t]*\\?>[ \t]+speaker:(?:user|assistant)(?:[ \t]+(?:turn_id|emotion|intensity|trigger|source|modality|asr_low):\S+)*[ \t]*$',
       ),
       '',
     )

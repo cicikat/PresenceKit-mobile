@@ -16,6 +16,13 @@ void main() {
     expect(entry.assistant, 'answer');
     expect(entry.assistantDisplayText, 'display');
     expect(entry.turnId, 'canonical');
+    expect(
+      historyVisibleText(
+        'voice\n> speaker:user source:mobile modality:voice asr_low:1',
+      ),
+      'voice',
+    );
+    expect(historyVisibleText('text\n> speaker:user'), 'text');
   });
   test('terminal writer footer is hidden without dropping normal quotes', () {
     expect(

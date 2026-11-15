@@ -21,3 +21,5 @@
 - 当前结果：手机95 tests passed、analyze零问题、dev debug APK通过；桌面80 tests passed、ChatPanel浏览器回归通过，构建通过。三端真实设备/修改后生产部署未运行。
 
 提交及交付记录（CI/合并状态以远端为准）：手机 c0c39f6 / PR #12；桌面119102e / PR #8；后端诊断dc50f32、修复e361d88 / PR #20，均已push。工作区他人的未提交文档/工单保留。相关自动化已通过；真实设备与修改后生产验收仍未运行，条目5历史报文缺口仍partial。
+
+收尾边界复核：后端863fa28收紧块尾判定，普通 > turn_id 引用不误删（历史14项通过）；桌面5fbef54、手机同单覆盖无ID、source/modality/asr_low语音尾注（桌面80项、手机95项通过），最终dev debug APK已重新构建。
