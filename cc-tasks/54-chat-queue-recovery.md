@@ -13,7 +13,7 @@ b513d87 的持久队列只处理 queued 队首，失败或未知结果永久阻�
 - [x] C 恢复交互：明确失败直接重试；等待过久/未知在消息旁提供可发现的恢复入口，查询与继续发送不冒充重发；兼容五种布局、中英文本、引用/附件与草稿。复核并整合 #53 既有修改。
 - [x] D 覆盖超时/500/422、多条排队、重启、迟到回执、重复点击、切换身份与 UI 回归；串行运行本地化生成、格式、测试、分析和 dev APK 构建，逐项记录结果。
 - [x] E 同步结构、接口/协议、已知问题及后端跨仓总账，记录管理面/桌面/手机三面检查、现存观测和真实设备边界；无新端点不得宣称远端状态可查询。
-- [ ] F 核对 CRLF 与差异，仅提交本次文件；验收通过后小步提交并 push，已有 PR 按保护规则直接合并。记录提交与 CI 结果。
+- [x] F 核对 CRLF 与差异，仅提交本次文件；验收通过后小步提交并 push，已有 PR 按保护规则直接合并。记录提交与 CI 结果。
 - [ ] G 真机最新包升级、真实弱网/后端往返、后台/杀进程验收；无设备或未获发布范围则标 not-run，不用自动测试替代。
 
 ## 边界
@@ -30,3 +30,9 @@ G 当前 partial/not-run：adb 发现设备81cf19c2；只读核对正式包com.p
 D 最终证据：gen-l10n成功；analyze零问题；标准全量437通过；最终UI/五布局渲染40通过；Dev debug APK成功（72.7秒），SHA-256 DC816BBB3BAFF8DEC9D45C39908C13C25EE16AA9BEECF99534A5047413C945FB。已记录一次无关Dream偶发失败及完整原日志，没有删测或改Dream。
 
 代码定位：lib/controllers/chat_controller.dart:602（可重试条件）、:1059（调度）、:1149（期限）、:1233（迟到成功）；lib/widgets/chat_widgets.dart:1317（直接操作）、:1523（自然等待反馈）；test/chat_recovery_upload_test.dart 的54用例与test/layout_render_test.dart五布局恢复场景。总账文档独立提交517eae4，后端PR18已合并（01b5ba3），原工作区其它修改保留。
+
+F 交付证据：手机修复提交61da5f6，PR8当前head CI flutter通过，已合并为1e4c5360e559f148141e00ab66d98b9db7f58d0f，git ls-remote核对main一致；手机普通/忽略CR差异逐文件相同，git diff --check通过。后端总账517eae4经双版本全量/浏览器/离线检查合并PR18（01b5ba3），合并后Tests与offline-evals均成功。原后端工作区未提交内容未混入。
+
+反向验收：临时仅撤销queued筛选，54: unknown check never replays A and new input still sends真实业务断言Expected 2 / Actual 1失败；恢复代码后同一用例通过。失败日志build/chat-recovery-54-red.log；施工代码已恢复且工作区干净。
+
+G 保持not-run：dev APK已提供；正式包1.3.0+77尚未替换，新包真实弱网/后台/升级/后端往返未验收，不对外发行。
