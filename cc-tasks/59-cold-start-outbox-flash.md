@@ -2,7 +2,7 @@
 
 - [x] 延迟真实历史响应，复现连接时只有旧本机unknown气泡的中间帧；验收监听每次controller通知，不能只查最终画面。
 - [x] 恢复的unknown仅进入投递诊断，主聊天只沿真实回执恢复；保留新排队、当前会话失败、诊断操作与迟到回复。验收启动阻塞/失败、刷新、重启、后续发送与scope测试。
-- [ ] 分析、全量回归、同签名build83升级和冷启动过程核对；逐项记录实际证据，提交push并合并。
+- [x] 分析、全量回归、同签名build83升级和两轮冷启动过程核对；实现164dbbc/66e2ddc，PR16交付，最终合并状态以远端为准。
 
 用户复测推翻58的首屏结论：build82清后台后，连接一瞬间只有旧未发送用户气泡，随后才被真实历史替换。58只核对历史加载后的稳定帧，不能证明启动无闪现。本单不删除持久载荷、不重放未知请求、不改后端数据。
 复现证据：test/chat_recovery_upload_test.dart的59 delayed history在旧实现下于历史gate释放前失败（Expected empty，Actual ChatMessage）；修复后通过，且监听所有controller通知的frames均不含旧unknown。build/mobile59-red.log与mobile59-green.log。
@@ -12,6 +12,12 @@
 
 真机旧包复现：build82冷启动连续抓8帧，build/mobile59-before-4.png明确出现3条02:34/04:43/04:46旧单用户消息；前几帧为空，后续帧已是真实新回复。这证明问题在过渡帧，上次稳定截图不足以验收。截图含私人正文仅留本地build，不提交。
 
-- [ ] 用户补充：回到最新消息按钮缩小并下移；保留点击与未读提示。验收既有滚动/交互回归、真机输入框和键盘相邻位置。纯样式布局，无跨端影响。
+- [x] 用户补充：回到最新消息按钮缩小并下移；保留点击与未读提示。验收既有滚动/交互回归、真机输入框和键盘相邻位置。纯样式布局，无跨端影响。
 
 补充按钮实施：圆形视觉42→32dp，箭头24→20dp，透明内边距使点击范围保留48dp；触区bottom92→70dp（圆面底边实际下移14dp），未读数保留并贴近图标，阴影收小。23项既有交互/布局/滚动锚点测试通过；最终分析零问题。纯UI，无跨端影响；物理输入框/键盘检查待最终包。功能实现全量460项已通过；按钮加入后执行相关23项回归，不新增镜像参数测试。
+
+最终验收：全量460项通过（mobile59-full.log），按钮加入后交互/布局/滚动锚点23项通过（mobile59-ui.log），最终analyze零问题。最终prod release构建128.6秒；APK dist/release/PresenceKit-mobile-v1.3.0-build83.apk，SHA-256 D5A722D77A52CFB1E8EB0E6F7213BA00D77DE4B67F74BD62D7D98D6BC77603E4；signer与既有安装包相同，apksigner/aapt均通过，adb install -r成功；手机dumpsys与侧栏均1.3.0+83。未对外发布。
+
+真机过程：新包两轮强停冷启动分别连续抓10/8帧，按文件hash分组后检查所有不同应用画面；均从空白等待进入真实历史，未再捕获旧包frame4中的3条孤立旧消息。证据build/mobile59-after-*.png与mobile59-repeat-*.png；与全部controller通知测试一起验证中间过程，不只查末帧。当前设备/网络范围外的OEM/弱网/完整旧历史逐页仍not-run。
+
+按钮真机：build/mobile59-button.png、mobile59-button-keyboard.png，32dp圆面在输入框上方，键盘弹出后也未遮住输入框；实点回到底部，mobile59-jump-click.xml已出现最新16:47回复。未发送消息、未修改后端数据；私人截图留本地build，不提交。
