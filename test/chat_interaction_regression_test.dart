@@ -36,6 +36,39 @@ Future<Uint8List> picture() async {
 
 void main() {
   testWidgets(
+    '55: queued long press cancels; sent messages keep existing menu only',
+    (tester) async {
+      var cancelled = 0;
+      Widget message(bool queued) => app(
+        Scaffold(
+          body: YouMessage(
+            c: YxPalette.light,
+            time: '12:00',
+            text: 'queued message',
+            prefs: const YxPrefs(),
+            onCancelSend: queued ? () => cancelled++ : null,
+          ),
+        ),
+      );
+      await tester.pumpWidget(message(true));
+      await tester.longPress(find.text('queued message'));
+      await tester.pumpAndSettle();
+      expect(find.text('Copy'), findsOneWidget);
+      expect(find.text('Cancel sending'), findsOneWidget);
+      await tester.tap(find.text('Cancel sending'));
+      await tester.pumpAndSettle();
+      expect(cancelled, 1);
+      await tester.pumpWidget(message(false));
+      await tester.longPress(find.text('queued message'));
+      await tester.pumpAndSettle();
+      expect(find.text('Cancel sending'), findsNothing);
+      expect(find.text('Copy'), findsOneWidget);
+      await tester.tapAt(const Offset(4, 4));
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
     'failed message icon retries directly and retains delivery details',
     (tester) async {
       var retries = 0;

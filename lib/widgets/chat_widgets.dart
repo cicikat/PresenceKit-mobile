@@ -257,13 +257,14 @@ class MetaLine extends StatelessWidget {
   }
 }
 
-enum ChatBubbleAction { copy, selectAll, reply }
+enum ChatBubbleAction { copy, selectAll, reply, cancelSend }
 
 /// 长按气泡弹出的复制/全选/回复菜单；回复仅对角色气泡传 [showReply]=true。
 Future<ChatBubbleAction?> showChatBubbleMenu({
   required BuildContext context,
   required Offset position,
   required bool showReply,
+  bool showCancelSend = false,
 }) {
   FocusManager.instance.primaryFocus?.unfocus();
   final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -275,6 +276,11 @@ Future<ChatBubbleAction?> showChatBubbleMenu({
       Offset.zero & overlay.size,
     ),
     items: [
+      if (showCancelSend)
+        PopupMenuItem(
+          value: ChatBubbleAction.cancelSend,
+          child: Text(context.l10n.chatCancelSend),
+        ),
       PopupMenuItem(
         value: ChatBubbleAction.copy,
         child: Text(context.l10n.copyAction),
@@ -581,6 +587,9 @@ class _HimMessageState extends State<HimMessage> {
         break;
       case ChatBubbleAction.reply:
         widget.onReply?.call();
+        break;
+      case ChatBubbleAction.cancelSend:
+        // Only outgoing queued bubbles offer this action.
         break;
     }
   }
@@ -1181,6 +1190,7 @@ class YouMessage extends StatefulWidget {
     this.failed = false,
     this.uncertain = false,
     this.deliveryLabel,
+    this.onCancelSend,
     this.onRemoveOutgoing,
     this.onDeliveryDetails,
     this.onRetry,
@@ -1203,6 +1213,7 @@ class YouMessage extends StatefulWidget {
   final bool failed;
   final bool uncertain;
   final String? deliveryLabel;
+  final VoidCallback? onCancelSend;
   final VoidCallback? onRemoveOutgoing;
   final VoidCallback? onDeliveryDetails;
   final VoidCallback? onRetry;
@@ -1225,6 +1236,7 @@ class _YouMessageState extends State<YouMessage> {
       context: context,
       position: globalPosition,
       showReply: widget.onReply != null,
+      showCancelSend: widget.onCancelSend != null,
     );
     if (!mounted || action == null) return;
     switch (action) {
@@ -1236,6 +1248,9 @@ class _YouMessageState extends State<YouMessage> {
         break;
       case ChatBubbleAction.reply:
         widget.onReply?.call();
+        break;
+      case ChatBubbleAction.cancelSend:
+        widget.onCancelSend?.call();
         break;
     }
   }
@@ -1354,7 +1369,8 @@ class _YouMessageState extends State<YouMessage> {
                 if (widget.showHeader && !letter && !window && !messenger)
                   const SizedBox(height: 4),
                 GestureDetector(
-                  onLongPressStart: attachment == null
+                  onLongPressStart:
+                      attachment == null || widget.onCancelSend != null
                       ? (details) =>
                             unawaited(_handleLongPress(details.globalPosition))
                       : null,
@@ -1521,10 +1537,7 @@ class _YouMessageState extends State<YouMessage> {
                             (widget.failed
                                 ? context.l10n.chatSendFailed
                                 : context.l10n.chatReplyDelayed),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: c.ink2,
-                        ),
+                        style: TextStyle(fontSize: 12, color: c.ink2),
                       ),
                     ),
                   ),

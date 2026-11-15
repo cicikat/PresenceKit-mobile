@@ -46,6 +46,7 @@ class ChatController extends ChangeNotifier {
     Stream<void>? networkChanges,
     this.localWaitTimeout = const Duration(seconds: 120),
     this.outgoingAttemptTimeout = const Duration(seconds: 120),
+    this.queueWaitTimeout = const Duration(minutes: 1),
   }) : _backend = backend,
        _token = token,
        _settings = settings,
@@ -247,6 +248,9 @@ class ChatController extends ChangeNotifier {
   Timer? _localWaitTimer;
   final Duration localWaitTimeout;
   final Duration outgoingAttemptTimeout;
+  final Duration queueWaitTimeout;
+  Timer? _queueExpiryTimer;
+  final _preDispatchStops = <String, Completer<BackendChatResponse>>{};
   String? _localWaitRequest;
   bool get himTyping => _session.himTyping || _localWaitRequest != null;
   set himTyping(bool value) => _session.himTyping = value;
@@ -537,6 +541,12 @@ class ChatController extends ChangeNotifier {
 
   Future<void> resetForConnectionChange({bool restart = true}) async {
     _session.beginEpoch();
+    for (final stop in _preDispatchStops.values) {
+      if (!stop.isCompleted) {
+        stop.completeError(StateError('outbox_scope_changed'));
+      }
+    }
+    _queueExpiryTimer?.cancel();
     pausePolling();
     realtime.stop(reset: true);
     _session.initialSync = null;
@@ -602,7 +612,8 @@ class ChatController extends ChangeNotifier {
   bool canRetryMessage(ChatMessage message) {
     final row = _outboxRows[message.requestId];
     return row != null &&
-        (row.state == OutboxState.retryableFailed ||
+        (row.locallyStopped ||
+            row.state == OutboxState.retryableFailed ||
             (row.state == OutboxState.blocked &&
                 (row.statusCode == 401 || row.statusCode == 403)));
   }
@@ -625,14 +636,16 @@ class ChatController extends ChangeNotifier {
         await refreshConnection();
         return;
       }
-      if (row.state != OutboxState.retryableFailed &&
+      if (!row.locallyStopped &&
+          row.state != OutboxState.retryableFailed &&
           !(row.state == OutboxState.blocked &&
               (row.statusCode == 401 || row.statusCode == 403))) {
         return;
       }
-      if (await _outbox.setState(row, OutboxState.queued) &&
+      final queuedAt = clock();
+      if (await _outbox.setState(row, OutboxState.queued, queuedAt: queuedAt) &&
           _scopeStillLive(scope.generation, scope)) {
-        _renderOutgoing(row.withState(OutboxState.queued));
+        _renderOutgoing(row.withState(OutboxState.queued, queuedAt: queuedAt));
         _requestOutboxDrain();
       }
     } catch (_) {
@@ -653,8 +666,12 @@ class ChatController extends ChangeNotifier {
           !_scopeStillLive(scope.generation, scope)) {
         return;
       }
+      _preDispatchStops[row.requestId]?.completeError(
+        StateError('outbox_stopped'),
+      );
       _outboxStates.remove(row.requestId);
       _outboxRows.remove(row.requestId);
+      _scheduleQueueExpiry();
       for (final list in [sent, history]) {
         list.removeWhere((item) => item.id == message.id);
       }
@@ -673,6 +690,9 @@ class ChatController extends ChangeNotifier {
     try {
       if (await _outbox.setState(row, OutboxState.skipped) &&
           _scopeStillLive(scope.generation, scope)) {
+        _preDispatchStops[row.requestId]?.completeError(
+          StateError('outbox_stopped'),
+        );
         _renderOutgoing(row.withState(OutboxState.skipped));
         notifyListeners();
         _requestOutboxDrain();
@@ -985,12 +1005,90 @@ class ChatController extends ChangeNotifier {
     }
   }
 
+  bool canCancelMessage(ChatMessage message) =>
+      deliveryState(message) == OutboxState.queued;
+
+  Future<void> cancelQueuedMessage(ChatMessage message) async {
+    final row = _outboxRows[message.requestId];
+    if (row == null || row.state != OutboxState.queued) return;
+    final scope = _captureScope(_session.generation);
+    try {
+      await _stopQueued(row, OutboxState.cancelled, scope);
+    } catch (_) {
+      _reportOutboxError(scope);
+    }
+  }
+
+  Future<void> _stopQueued(
+    OutboxEntry row,
+    OutboxState state,
+    SessionScope scope,
+  ) async {
+    if (!_scopeStillLive(scope.generation, scope)) return;
+    if (await _outbox.setState(row, state)) {
+      _preDispatchStops[row.requestId]?.completeError(
+        StateError('outbox_stopped'),
+      );
+      if (_scopeStillLive(scope.generation, scope)) {
+        _renderOutgoing(row.withState(state));
+        notifyListeners();
+        _requestOutboxDrain();
+      }
+    }
+  }
+
+  bool _queueExpired(OutboxEntry row) =>
+      !clock().isBefore(row.queuedAt.add(queueWaitTimeout));
+
+  void _scheduleQueueExpiry({bool afterError = false}) {
+    _queueExpiryTimer?.cancel();
+    if (_session.disposed) return;
+    final scope = _captureScope(_session.generation);
+    final rows =
+        _outboxRows.values
+            .where(
+              (row) =>
+                  row.scope == _outboxScope(scope) &&
+                  row.state == OutboxState.queued,
+            )
+            .toList()
+          ..sort((a, b) => a.queuedAt.compareTo(b.queuedAt));
+    if (rows.isEmpty) return;
+    final delay = rows.first.queuedAt.add(queueWaitTimeout).difference(clock());
+    _queueExpiryTimer = Timer(
+      afterError
+          ? const Duration(seconds: 5)
+          : (delay.isNegative ? Duration.zero : delay),
+      () async {
+        var failed = false;
+        try {
+          for (final row in rows) {
+            if (_queueExpired(row)) {
+              await _stopQueued(row, OutboxState.expired, scope);
+            }
+          }
+        } catch (_) {
+          failed = true;
+          if (!_session.disposed) _reportOutboxError(scope);
+        } finally {
+          _scheduleQueueExpiry(afterError: failed);
+        }
+      },
+    );
+  }
+
   Future<void> _restoreOutbox(int generation) async {
     final scope = _captureScope(generation);
     try {
       final rows = await _outbox.readScope(_outboxScope(scope));
       if (!_scopeStillLive(generation, scope)) return;
-      for (final row in rows) {
+      for (var row in rows) {
+        if (row.state == OutboxState.queued && _queueExpired(row)) {
+          if (await _outbox.setState(row, OutboxState.expired)) {
+            row = row.withState(OutboxState.expired);
+          }
+        }
+        if (!_scopeStillLive(generation, scope)) return;
         if (_acceptedRequestIds.contains(row.requestId)) continue;
         _renderOutgoing(
           row.state == OutboxState.sending && !sending
@@ -1008,10 +1106,12 @@ class ChatController extends ChangeNotifier {
   ChatMessage _renderOutgoing(OutboxEntry row) {
     _outboxStates[row.requestId] = row.state;
     _outboxRows[row.requestId] = row;
+    _scheduleQueueExpiry();
     final uncertain = row.state == OutboxState.outcomeUnknown;
     final failed =
         row.state == OutboxState.blocked ||
-        row.state == OutboxState.retryableFailed;
+        row.state == OutboxState.retryableFailed ||
+        row.locallyStopped;
     for (final list in [sent, history]) {
       final i = list.indexWhere(
         (message) =>
@@ -1086,12 +1186,12 @@ class ChatController extends ChangeNotifier {
     final generation = scope.generation;
     final token = _accessToken;
     if (token == null) return;
-    if (!await _outbox.setState(row, OutboxState.sending)) return;
-    row = row.withState(OutboxState.sending);
-    if (!_scopeStillLive(generation, scope)) {
-      await _outbox.setState(row, OutboxState.queued);
+    if (_queueExpired(row)) {
+      await _stopQueued(row, OutboxState.expired, scope);
       return;
     }
+    final stop = Completer<BackendChatResponse>();
+    _preDispatchStops[row.requestId] = stop;
     final user = _renderOutgoing(row);
     final anchor = ChatMessage(
       role: 'reasoning',
@@ -1117,7 +1217,7 @@ class ChatController extends ChangeNotifier {
       final pending = _withLiveGrant(
         scope: scope,
         generation: generation,
-        call: (grant) {
+        call: (grant) async {
           if (expired ||
               grant.ownerId != scope.owner ||
               grant.charId != scope.charId ||
@@ -1125,6 +1225,23 @@ class ChatController extends ChangeNotifier {
               token != _accessToken) {
             throw const BackendException('session_scope_stale');
           }
+          if (!dispatched) {
+            if (_queueExpired(row)) {
+              await _stopQueued(row, OutboxState.expired, scope);
+              throw StateError('outbox_stopped');
+            }
+            if (!await _outbox.setState(row, OutboxState.sending)) {
+              throw StateError('outbox_stopped');
+            }
+            row = row.withState(OutboxState.sending);
+            if (expired || !_scopeStillLive(generation, scope)) {
+              await _outbox.setState(row, OutboxState.retryableFailed);
+              throw StateError('outbox_stopped');
+            }
+            _renderOutgoing(row);
+            notifyListeners();
+          }
+          _preDispatchStops.remove(row.requestId);
           dispatched = true;
           final backend = _backend();
           return row.files.isEmpty
@@ -1145,7 +1262,7 @@ class ChatController extends ChangeNotifier {
                 );
         },
       );
-      final response = await pending.timeout(
+      final response = await Future.any([pending, stop.future]).timeout(
         outgoingAttemptTimeout,
         onTimeout: () {
           expired = true;
@@ -1218,6 +1335,8 @@ class ChatController extends ChangeNotifier {
         }
       }
     } finally {
+      expired = true;
+      _preDispatchStops.remove(row.requestId);
       if (_scopeStillLive(generation, scope)) {
         if (!confirmed) sent.removeWhere((m) => m.id == anchor.id);
         sending = false;
@@ -2505,6 +2624,10 @@ class ChatController extends ChangeNotifier {
   @override
   void dispose() {
     _session.markDisposed();
+    _queueExpiryTimer?.cancel();
+    for (final stop in _preDispatchStops.values) {
+      if (!stop.isCompleted) stop.completeError(StateError('outbox_disposed'));
+    }
 
     pausePolling();
     unawaited(_networkSubscription?.cancel());

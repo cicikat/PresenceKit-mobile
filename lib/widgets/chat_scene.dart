@@ -89,6 +89,8 @@ class ChatScene extends StatelessWidget {
     final l10n = context.l10n;
     String? deliveryLabel(ChatMessage message) =>
         switch (controller.deliveryState(message)) {
+          OutboxState.expired => l10n.chatQueueExpired,
+          OutboxState.cancelled => l10n.chatSendCancelled,
           OutboxState.queued => l10n.chatOutboxQueued,
           OutboxState.sending =>
             message.uncertain ? l10n.chatReplyDelayed : l10n.chatOutboxSending,
@@ -416,6 +418,9 @@ class ChatScene extends StatelessWidget {
                                       ? () => controller.retryMessage(m)
                                       : m.uncertain
                                       ? controller.refreshConnection
+                                      : null,
+                                  onCancelSend: controller.canCancelMessage(m)
+                                      ? () => controller.cancelQueuedMessage(m)
                                       : null,
                                   onReply: () => controller.setReplyTarget(m),
                                   showDateDivider:

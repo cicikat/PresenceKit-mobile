@@ -1,3 +1,7 @@
+## 手机 #55 未发送消息期限与取消（2026-11-15）
+
+本机 queued 从 queued_at（旧快照回退 created_at）起满一分钟转 expired，长按取消转 cancelled；两者保留失败气泡及载荷，但退出自动发送和100条有效队列容量。已派发等待回复不受此期限影响。重启先清过期项，手动重试刷新排队时间；取消和派发原子互斥。无 mobile wire、后端设置或桌面功能变更，复用本机投递详情观察。完整三面检查、兼容和64MiB存储边界见 [#55说明](../mobile/chat-queue-deadline-55.md)。
+
 ## 手机发送恢复修订（2026-11-15，#54）
 
 手机 Outbox v1 不变；失败/未知条目留存对账，后续 queued 按序继续。单次本机发送期限120秒；超时不代表后端取消，未知不自动重发。HTTP 迟到结果、WS/poll/history 继续按原 scoped request_id 去重；鉴权、session、mobile wire、ACK/cursor/TTL、后台通知不变。人工查询只补读现有消息，未接入 mobile request 状态端点。此规则覆盖旧文档中“未知阻塞后续”和“未知请求由用户同ID重发”的描述；只有明确可重试失败复用原ID/载荷。管理面、桌面无新设置。详见 [恢复边界](../mobile/chat-queue-recovery-54.md)。

@@ -1,3 +1,7 @@
+## 手机 #55 必跑发送回归
+
+修改聊天调度、会话准备、Outbox或消息菜单后，须运行 flutter test test/chat_recovery_upload_test.dart test/mobile_outbox_deadline_test.dart test/chat_interaction_regression_test.dart，并通过既有CI全量flutter test。59秒仍排队、60秒未发即失败、已派发等待不失败、重启不补发、取消与派发只能有一个成功均为验收约束。细节见 mobile/chat-queue-deadline-55.md。
+
 ## 手机 #54 发送队列恢复验证（2026-11-15）
 
 flutter gen-l10n成功；最终flutter analyze --no-pub零问题。标准Flutter全量437项通过（build/chat-recovery-54-tests.log），最终界面交互/五布局渲染40项通过（build/chat-recovery-54-ui.log）。控制器与布局渲染定向63项通过；覆盖失败/未知不阻挡后续、120秒本机期限（测试注入短期限）、迟到成功/失败、旧scope、旧控制器快照保护、原队列重启、422不可机械重试、附件快照和原请求去重。五布局恢复状态截图已检查，深浅主题查询图标/文字可见，320px/1.4倍字/键盘与草稿保留回归通过。

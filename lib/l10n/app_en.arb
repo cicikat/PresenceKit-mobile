@@ -1,4 +1,7 @@
 {
+  "chatCancelSend": "Cancel sending",
+  "chatQueueExpired": "Waited too long. Not sent.",
+  "chatSendCancelled": "Sending cancelled",
   "chatReplyDelayed": "Still waiting for a reply. You can keep chatting.",
   "chatCheckReply": "Check for a reply",
   "chatDeliveryActions": "View options",
