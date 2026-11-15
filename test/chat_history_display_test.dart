@@ -27,7 +27,7 @@ void main() {
   test('terminal writer footer is hidden without dropping normal quotes', () {
     expect(
       historyVisibleText(
-        '我觉得你好像有点不一样了\n> speaker:user turn_id:1043484516_1794717917531',
+        '我觉得你好像有点不一样了\n> speaker:user turn_id:fixture-user-turn',
       ),
       '我觉得你好像有点不一样了',
     );
