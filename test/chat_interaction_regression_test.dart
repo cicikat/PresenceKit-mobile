@@ -35,6 +35,34 @@ Future<Uint8List> picture() async {
 }
 
 void main() {
+  testWidgets('delivery state copy and refresh controls stay outside bubbles', (
+    tester,
+  ) async {
+    for (final label in [
+      'Sending',
+      'Queued',
+      'Waited too long, not sent',
+      'Cancelled',
+    ]) {
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: YouMessage(
+              c: YxPalette.light,
+              time: '12:00',
+              text: 'message',
+              prefs: const YxPrefs(),
+              deliveryLabel: label,
+              uncertain: true,
+            ),
+          ),
+        ),
+      );
+      expect(find.text(label), findsNothing);
+      expect(find.byIcon(Icons.refresh_rounded), findsNothing);
+      expect(find.text('message'), findsOneWidget);
+    }
+  });
   testWidgets(
     '55: queued long press cancels; sent messages keep existing menu only',
     (tester) async {
@@ -97,16 +125,15 @@ void main() {
       await tester.tap(retry);
       expect(retries, 1);
       expect(details, 0);
-      await tester.tap(find.text('Send failed'));
-      expect(details, 1);
+      expect(find.text('Send failed'), findsNothing);
+      expect(find.byIcon(Icons.refresh_rounded), findsNothing);
       await tester.pumpWidget(message(failed: false));
       expect(find.byIcon(Icons.error), findsNothing);
       await tester.pumpWidget(message(failed: false, uncertain: true));
       expect(find.byIcon(Icons.error), findsNothing);
-      final check = find.byTooltip('Check for a reply');
-      expect(check, findsOneWidget);
-      await tester.tap(check);
-      expect(retries, 2);
+      expect(find.byTooltip('Check for a reply'), findsNothing);
+      expect(find.byIcon(Icons.refresh_rounded), findsNothing);
+      expect(retries, 1);
       expect(tester.takeException(), isNull);
     },
   );

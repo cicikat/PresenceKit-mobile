@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../l10n/l10n.dart';
 import 'chat_artifact.dart';
+import 'chat_history_display.dart';
 import 'screen_context.dart';
 import 'tool_activity.dart';
 
@@ -1116,7 +1117,7 @@ class ChatLogEntry {
           ? json['request_id'] as String
           : null,
       assistantDisplayText: json['assistant_display_text'] is String
-          ? json['assistant_display_text'] as String
+          ? historyVisibleText(json['assistant_display_text'] as String)
           : null,
       mediaRefs: rawRefs is List
           ? rawRefs
@@ -1132,8 +1133,8 @@ class ChatLogEntry {
           : const [],
       artifacts: ChatArtifact.parseList(json['artifacts']),
       time: (json['time'] ?? '').toString(),
-      user: (json['user'] ?? '').toString(),
-      assistant: (json['assistant'] ?? '').toString(),
+      user: historyVisibleText((json['user'] ?? '').toString()),
+      assistant: historyVisibleText((json['assistant'] ?? '').toString()),
     );
   }
 

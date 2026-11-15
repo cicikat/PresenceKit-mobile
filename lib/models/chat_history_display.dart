@@ -14,3 +14,13 @@
   }
   return (text: raw, quote: null);
 }
+
+/// Remove only a terminal legacy writer footer, never inline quoted text.
+String historyVisibleText(String text) => text
+    .replaceFirst(
+      RegExp(
+        r'\r?\n[ \t]*\\?>[ \t]+speaker:(?:user|assistant)(?:[ \t]+(?:turn_id|emotion|intensity|trigger):\S+)+[ \t]*$',
+      ),
+      '',
+    )
+    .trimRight();
