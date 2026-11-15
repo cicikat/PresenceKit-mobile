@@ -996,6 +996,9 @@ class ChatController extends ChangeNotifier {
       showJumpToLatest = false;
       unreadHimCount = 0;
       _renderOutgoing(row);
+      if (_localWaitRequest == null) {
+        _beginLocalWait(row.requestId, scope.generation);
+      }
       notifyListeners();
       scrollController.followAfterLayout();
       _requestOutboxDrain();
@@ -1032,10 +1035,26 @@ class ChatController extends ChangeNotifier {
       );
       if (_scopeStillLive(scope.generation, scope)) {
         _renderOutgoing(row.withState(state));
+        if (_localWaitRequest == row.requestId) {
+          _endLocalWait(requestId: row.requestId);
+          _beginNextQueuedWait(scope);
+        }
         notifyListeners();
         _requestOutboxDrain();
       }
     }
+  }
+
+  void _beginNextQueuedWait(SessionScope scope) {
+    final next = _outboxRows.values
+        .where(
+          (row) =>
+              row.scope == _outboxScope(scope) &&
+              row.state == OutboxState.queued &&
+              !_queueExpired(row),
+        )
+        .firstOrNull;
+    if (next != null) _beginLocalWait(next.requestId, scope.generation);
   }
 
   bool _queueExpired(OutboxEntry row) =>
@@ -1091,6 +1110,22 @@ class ChatController extends ChangeNotifier {
         }
         if (!_scopeStillLive(generation, scope)) return;
         if (_acceptedRequestIds.contains(row.requestId)) continue;
+        if (row.hiddenOnRestore) {
+          if (!_scopeStillLive(generation, scope)) return;
+          // Retain the terminal identity for receipt reconciliation,
+          // but never resurrect retired local bubbles on refresh or restart.
+          _outboxRows[row.requestId] = row;
+          _outboxStates[row.requestId] = row.state;
+          for (final list in [sent, history]) {
+            list.removeWhere(
+              (m) =>
+                  m.requestId == row.requestId &&
+                  (m.role == 'you' || m.role == 'reasoning'),
+            );
+          }
+          _endLocalWait(requestId: row.requestId);
+          continue;
+        }
         _renderOutgoing(
           row.state == OutboxState.sending && !sending
               ? row.withState(OutboxState.outcomeUnknown)
@@ -1342,6 +1377,7 @@ class ChatController extends ChangeNotifier {
         if (!confirmed) sent.removeWhere((m) => m.id == anchor.id);
         sending = false;
         _endLocalWait(requestId: row.requestId);
+        if (_pollingEnabled) _beginNextQueuedWait(scope);
         himTyping = false;
         notifyListeners();
         unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
@@ -2484,7 +2520,9 @@ class ChatController extends ChangeNotifier {
             toolActivity: entry.toolActivity,
             timestamp: entry.timestamp,
           ),
-        if (entry.user.trim().isNotEmpty)
+        if (entry.user.trim().isNotEmpty &&
+            !(entry.assistant.trim().isEmpty &&
+                _outboxRows[entry.requestId]?.hiddenOnRestore == true))
           ChatMessage(
             role: 'you',
             text: historyUserDisplay(entry.user).text,

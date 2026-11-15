@@ -3,6 +3,23 @@ import 'package:presencekit_mobile/models/chat_history_display.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
 
 void main() {
+  test(
+    '57: terminal footer whitespace and compact quote variants stay hidden',
+    () {
+      for (final footer in [
+        '\n> speaker:user turn_id:fixture-turn\n\n',
+        '\r\n>speaker:user turn_id:fixture-turn  \r\n',
+        '\n> speaker:user turn_id:fixture-turn\t\n',
+      ]) {
+        expect(historyVisibleText('original$footer'), 'original');
+      }
+      expect(historyVisibleText('>speaker:user turn_id:fixture-turn\n'), '');
+      expect(
+        historyVisibleText('ordinary >speaker:user example'),
+        'ordinary >speaker:user example',
+      );
+    },
+  );
   test('history JSON hides writer footer and retains canonical identity', () {
     final entry = ChatLogEntry.fromJson({
       'time': '12:00',

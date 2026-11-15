@@ -17,9 +17,10 @@
 
 /// Remove only a terminal legacy writer footer, never inline quoted text.
 String historyVisibleText(String text) => text
+    .trimRight()
     .replaceFirst(
       RegExp(
-        r'\r?\n[ \t]*\\?>[ \t]+speaker:(?:user|assistant)(?:[ \t]+(?:turn_id|emotion|intensity|trigger|source|modality|asr_low):\S+)*[ \t]*$',
+        r'(?:^|\r?\n)[ \t]*\\?>[ \t]*speaker:(?:user|assistant)(?:[ \t]+(?:turn_id|emotion|intensity|trigger|source|modality|asr_low):\S+)*[ \t]*$',
       ),
       '',
     )
