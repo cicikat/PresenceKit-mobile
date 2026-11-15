@@ -1,3 +1,7 @@
+## 工单59 冷启动旧unknown闪现（2026-11-15，observe）
+
+用户确认build82清后台重进仍先显示旧的单用户消息，再刷新真实历史；58只检查稳定帧，不能作为无闪现证据。已用历史gate阻塞复现并修复本机unknown恢复投影，监听每次controller通知，不以最终列表掩盖中间帧。原持久未知结果保留投递诊断与迟到对账，不自动发送；build83同签名覆盖后，两轮冷启动连续10/8帧均未再捕获旧气泡，侧栏版本、输入框/键盘及回到底部实点已核对；完整OEM/弱网矩阵仍observe。过程证据见[工单59](../cc-tasks/59-cold-start-outbox-flash.md)。
+
 ## 正式构建脚本版本比较（2026-11-15，open）
 
 按规则先将pubspec更新为1.3.0+82后，build_release.ps1:289因传入versionCode等于pubspec而拒绝构建，错误为“must be greater than ... (82)”。本次采用相同prod release签名构建并独立核验metadata/certificate/安装，未放宽签名gate。建议独立修复版本比较：允许构建pubspec所声明的新版本，同时保留安装版本递增和已有产物禁止覆盖。

@@ -43,58 +43,61 @@ class JumpToLatestButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(999),
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: c.characterDeep,
-            shape: BoxShape.circle,
-            border: Border.all(color: c.characterOn.withValues(alpha: 0.38)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.22),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned.fill(
-                child: Center(
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: c.characterOn,
-                    size: 24,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: c.characterDeep,
+              shape: BoxShape.circle,
+              border: Border.all(color: c.characterOn.withValues(alpha: 0.38)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  child: Center(
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: c.characterOn,
+                      size: 20,
+                    ),
                   ),
                 ),
-              ),
-              if (unreadCount > 0)
-                Positioned(
-                  right: -18,
-                  top: -12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: c.warn,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '$unreadCount',
-                      style: mono(
-                        c,
-                        9,
-                        color: c.characterOn,
-                        weight: FontWeight.w700,
+                if (unreadCount > 0)
+                  Positioned(
+                    right: -10,
+                    top: -7,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: c.warn,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$unreadCount',
+                        style: mono(
+                          c,
+                          9,
+                          color: c.characterOn,
+                          weight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

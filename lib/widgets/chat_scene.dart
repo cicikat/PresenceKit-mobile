@@ -497,7 +497,7 @@ class ChatScene extends StatelessWidget {
           Positioned(
             left: 0,
             right: 0,
-            bottom: 92,
+            bottom: 70,
             child: Center(
               child: JumpToLatestButton(
                 c: c,
