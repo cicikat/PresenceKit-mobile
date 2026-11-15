@@ -13,3 +13,7 @@ open：scoped只读请求执行状态端点仍未完成，复用既有本机投�
 自动验收：全量448项通过（build/chat-queue-55-full.log）；故意把一分钟改为61秒后，60秒用例按预期失败：Expected expired / Actual queued（build/chat-queue-55-red.log），已恢复正式60秒规则。此红/绿验证证明该用例能拦截期限回归。既有CI的flutter test自动运行这些测试。
 
 flutter analyze --no-pub 零问题；flutter build apk --debug --flavor dev 成功，Gradle28.7秒。开发APK位于build/app/outputs/flutter-apk/app-dev-debug.apk；未安装、未正式发布，真机行为仍not-run。
+
+最终开发APK SHA-256：5B4F878F6BD8E8B008BDDA23BDF62A317D16294E0BFF79B0A21A0E7FEFBEF82E。实现提交1563864、即时重排队刷新与第448项回归提交e53f144；跨仓总账提交1a5eacd，经后端PR19全部检查后合并c28ff0d2cb7467dfd4a1855ad2a45016186a0711。
+
+手机PR10的最新flutter CI通过（1分49秒），已合并至main：1d82e954325230bf0a2c3926acaa737107e06e46。真机验收条目继续保持not-run。

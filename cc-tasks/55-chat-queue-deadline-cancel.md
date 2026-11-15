@@ -6,5 +6,5 @@
 - [x] 实现一分钟排队到期、重启清理、手动重试重新计时，保留失败消息与附件。证据：55: queued B expires at 60s、expiry during session preparation、legacy expired queue 三项已通过。
 - [x] 实现排队消息长按取消发送和中英文文案，验证取消与发送竞争。证据：55: queued cancel persists、cancelling a pending session bind 与 queued long press cancels 已通过；gen-l10n 完成。
 - [x] 完成控制器、存储、界面回归与分析、构建；同步诊断和接口文档。证据：全量448项通过（build/chat-queue-55-full.log），analyze零问题；dev debug APK构建通过（28.7秒）。已同步AGENTS/CLAUDE、结构/集成/协议/已知问题/测试文档与跨仓总账；详情复制包含queued_at。故意改为61秒时60秒测试失败，已恢复60秒。
-- [ ] 提交推送并按必需检查合并，记录证据。
+- [x] 提交推送并按必需检查合并，记录证据。手机提交1563864/e53f144经PR10最新flutter检查通过后合并1d82e954325230bf0a2c3926acaa737107e06e46；跨仓总账1a5eacd已通过全部检查，经后端PR19合并c28ff0d2cb7467dfd4a1855ad2a45016186a0711。
 - [ ] 真机验收：积压一分钟、后台恢复、取消与重复点击（not-run，自动测试不代替真机）。
