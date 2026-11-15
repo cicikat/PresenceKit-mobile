@@ -98,6 +98,24 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @chatReplyDelayed.
+  ///
+  /// In zh, this message translates to:
+  /// **'回复还没收到，可以继续发送'**
+  String get chatReplyDelayed;
+
+  /// No description provided for @chatCheckReply.
+  ///
+  /// In zh, this message translates to:
+  /// **'查看回复'**
+  String get chatCheckReply;
+
+  /// No description provided for @chatDeliveryActions.
+  ///
+  /// In zh, this message translates to:
+  /// **'查看处理方式'**
+  String get chatDeliveryActions;
+
   /// No description provided for @chatOutboxSkipped.
   ///
   /// In zh, this message translates to:
@@ -173,7 +191,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatQueuePaused.
   ///
   /// In zh, this message translates to:
-  /// **'前面的消息需要处理，后续消息暂存在本机。可以先检查、移出，或明确选择继续后续。'**
+  /// **'有些消息还需要处理，不影响继续发送。'**
   String get chatQueuePaused;
 
   /// No description provided for @chatCopyDeliveryDetails.
@@ -1411,6 +1429,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'发送失败'**
   String get chatSendFailed;
+
+  /// No description provided for @chatSendFailedRetry.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送失败，点击重新发送'**
+  String get chatSendFailedRetry;
 
   /// No description provided for @chatUnreadCount.
   ///

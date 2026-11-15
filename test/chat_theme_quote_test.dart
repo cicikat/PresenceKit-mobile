@@ -132,6 +132,7 @@ void main() {
     testWidgets('${layout.name} quotes and waiting use its own presentation', (
       tester,
     ) async {
+      var retries = 0;
       await tester.pumpWidget(
         MaterialApp(
           locale: const Locale('en'),
@@ -151,12 +152,22 @@ void main() {
                       prefs: YxPrefs(),
                       profileDisplayName: 'Companion',
                     ),
-                    const YouMessage(
+                    YouMessage(
                       c: YxPalette.light,
                       time: '12:00',
                       text: 'my reply',
                       quotedText: '<b>user quote</b>',
-                      prefs: YxPrefs(),
+                      prefs: const YxPrefs(),
+                      failed: true,
+                      onRetry: () => retries++,
+                    ),
+                    YouMessage(
+                      c: YxPalette.light,
+                      time: '12:01',
+                      text: 'waiting reply',
+                      prefs: const YxPrefs(),
+                      uncertain: true,
+                      onRetry: () => retries++,
                     ),
                     ReplyPreviewBar(
                       c: YxPalette.light,
@@ -181,6 +192,11 @@ void main() {
       expect(find.text('assistant quote'), findsOneWidget);
       expect(find.text('user quote'), findsOneWidget);
       expect(find.text('preview quote'), findsOneWidget);
+      await tester.tap(find.byTooltip('Send failed. Tap to resend'));
+      expect(retries, 1);
+      await tester.ensureVisible(find.byTooltip('Check for a reply'));
+      await tester.tap(find.byTooltip('Check for a reply'));
+      expect(retries, 2);
       final classicStripes = tester
           .widgetList<Container>(find.byType(Container))
           .where((container) {

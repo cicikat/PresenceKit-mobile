@@ -1,3 +1,17 @@
+## 手机 #54 发送队列与恢复（2026-11-15，current / open / observe）
+
+current：本机按顺序发送 queued 条目，保留失败/未知原记录但不再阻挡后续。每次尝试最多等待120秒，释放本机发送槽，原请求不自动重发；迟到 HTTP 成功及既有 WS/poll/history 仍按 scoped request_id 对账。失败消息旁可直接重试；未知显示查询回复入口；413/422 等需改载荷的消息打开处理方式，不展示无效重试。复用 Outbox v1 状态与投递详情，不新增开关、权限、持久字段或 wire 字段。
+
+三面闭环：管理面继续拥有后端能力/effective/执行真值，无新配置；桌面不消费本机发送调度，无需同步设置；手机输入→原子落盘→scoped chat/upload→HTTP/WS/poll/history→消息展示保持原 ID、载荷、鉴权和回执去重。poll/ACK/cursor/TTL、通知、原生服务、草稿、引用及附件路径保留。普通请求仍串行；超时仅结束本机等待，不是取消远端执行，也不保证未知请求与后续请求的远端完成顺序。
+
+open：手机仍缺安全 scoped 只读请求状态端点；查询只是补读已有消息，不能保证查到 running/failed，也不能把未知请求重新执行作为恢复手段。本机未完成条目仍受既有100条/64MiB容量限制，需要用户在详情处理长期遗留条目。observe：真实手机弱网、后台/杀进程、旧包升级与真实后端往返尚未验收。施工与测试证据见 [工单54](../../cc-tasks/54-chat-queue-recovery.md)。
+
+## 手机 #53 发送失败重试（2026-11-15）
+
+`YouMessage` 在失败消息旁显示红色感叹号，48px 点击区域，双语 tooltip；点击直接调用 `ChatController.retryMessage`，原失败文字仍打开投递详情。沿用 Outbox 原 request_id、文字/引用/附件快照与串行发送，不修改输入框草稿。成功后由既有状态收束隐藏图标。结果未知仍保留补读规则，不标成明确发送失败。
+
+65 项定向回归通过（聊天交互、主题、恢复/附件、本地化），包含失败图标回调、成功/未知无图标、各布局、重复点击及原请求去重；`flutter analyze --no-pub` 零问题。真机触摸与真实网络未验收。无跨端影响：无新增接口、状态、权限、配置或 Android 后台变更。工单见 [53](../../cc-tasks/53-chat-failed-retry.md)。
+
 ## 手机 #52 跟随与等待（2026-11-15）
 
 ChatScrollController合并布局跟随任务并用意图代际隔离旧回调；AnchoredChatList只将真实手势及惯性识别为阅读意图，保留真实消息锚点。ChatController发送显式follow，独立维护最多120秒的本地请求等待，复用原typing投影和uncertain详情。暂停/换scope/dispose收束，不从HTTP/WS推断远端running；AppShell无新增领域状态。跨端契约无变更，后端只读running和真实直连仍open；[证据与边界](chat-follow-wait-direct-52.md)。

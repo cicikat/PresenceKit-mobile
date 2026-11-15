@@ -9,6 +9,16 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get chatReplyDelayed =>
+      'Still waiting for a reply. You can keep chatting.';
+
+  @override
+  String get chatCheckReply => 'Check for a reply';
+
+  @override
+  String get chatDeliveryActions => 'View options';
+
+  @override
   String get chatOutboxSkipped => 'Kept for checking · later messages may send';
 
   @override
@@ -56,7 +66,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatQueuePaused =>
-      'An earlier message needs attention. Later messages stay on this phone until you check it, remove it, or choose to continue.';
+      'Some messages need attention. You can keep chatting.';
 
   @override
   String get chatCopyDeliveryDetails => 'Copy delivery details';
@@ -757,6 +767,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatSendFailed => 'Send failed';
+
+  @override
+  String get chatSendFailedRetry => 'Send failed. Tap to resend';
 
   @override
   String chatUnreadCount(Object count) {
