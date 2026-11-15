@@ -35,6 +35,75 @@ Future<Uint8List> picture() async {
 }
 
 void main() {
+  testWidgets(
+    'failed message icon retries directly and retains delivery details',
+    (tester) async {
+      var retries = 0;
+      var details = 0;
+      Widget message({required bool failed, bool uncertain = false}) => app(
+        Scaffold(
+          body: YouMessage(
+            c: YxPalette.light,
+            time: '12:00',
+            text: 'send this again',
+            prefs: const YxPrefs(),
+            failed: failed,
+            uncertain: uncertain,
+            deliveryLabel: failed ? 'Send failed' : null,
+            onRetry: () => retries++,
+            onDeliveryDetails: () => details++,
+          ),
+        ),
+      );
+      await tester.pumpWidget(message(failed: true));
+      final retry = find.byTooltip('Send failed. Tap to resend');
+      expect(retry, findsOneWidget);
+      final icon = tester.widget<Icon>(find.byIcon(Icons.error));
+      expect(icon.color, const Color(0xFFE53935));
+      expect(tester.getSize(retry).width, greaterThanOrEqualTo(48));
+      await tester.tap(retry);
+      expect(retries, 1);
+      expect(details, 0);
+      await tester.tap(find.text('Send failed'));
+      expect(details, 1);
+      await tester.pumpWidget(message(failed: false));
+      expect(find.byIcon(Icons.error), findsNothing);
+      await tester.pumpWidget(message(failed: false, uncertain: true));
+      expect(find.byIcon(Icons.error), findsNothing);
+      final check = find.byTooltip('Check for a reply');
+      expect(check, findsOneWidget);
+      await tester.tap(check);
+      expect(retries, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    '54: payload rejection offers usable options instead of a dead retry',
+    (tester) async {
+      var opened = 0;
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: YouMessage(
+              c: YxPalette.light,
+              time: '12:00',
+              text: 'rejected',
+              prefs: const YxPrefs(),
+              failed: true,
+              onDeliveryDetails: () => opened++,
+            ),
+          ),
+        ),
+      );
+      final action = find.byTooltip('View options');
+      expect(action, findsOneWidget);
+      await tester.tap(action);
+      expect(opened, 1);
+      expect(find.byTooltip('Send failed. Tap to resend'), findsNothing);
+    },
+  );
+
   testWidgets('own reply and select all do not reopen composer keyboard', (
     tester,
   ) async {

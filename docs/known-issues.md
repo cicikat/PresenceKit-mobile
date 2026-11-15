@@ -1,3 +1,15 @@
+## Dream 预设恢复偶发失败（2026-11-15，open）
+
+手机#54最终全量（开启LAYOUT_REVIEW）出现1次既有 dream_appearance_test 的 two flow themes restore independent presets and day/night colors 失败：Unknown dream preset，位置 DreamAppearanceController.select:46；此前标准全量436项通过，失败用例单独重跑通过。本单未改Dream生产代码或该测试。save使用DateTime.now().microsecondsSinceEpoch构造ID，疑似快速连续保存时ID碰撞，尚未独立证实；建议另单注入时钟/ID生成器复现并保证唯一性，不以重试隐藏失败。日志 build/chat-recovery-54-export-tests.log；此处为自动测试偶发缺口，未据此认定真机已丢失预设。
+
+## 手机 #54 发送队列与恢复（2026-11-15，current / open / observe）
+
+current：本机按顺序发送 queued 条目，保留失败/未知原记录但不再阻挡后续。每次尝试最多等待120秒，释放本机发送槽，原请求不自动重发；迟到 HTTP 成功及既有 WS/poll/history 仍按 scoped request_id 对账。失败消息旁可直接重试；未知显示查询回复入口；413/422 等需改载荷的消息打开处理方式，不展示无效重试。复用 Outbox v1 状态与投递详情，不新增开关、权限、持久字段或 wire 字段。
+
+三面闭环：管理面继续拥有后端能力/effective/执行真值，无新配置；桌面不消费本机发送调度，无需同步设置；手机输入→原子落盘→scoped chat/upload→HTTP/WS/poll/history→消息展示保持原 ID、载荷、鉴权和回执去重。poll/ACK/cursor/TTL、通知、原生服务、草稿、引用及附件路径保留。普通请求仍串行；超时仅结束本机等待，不是取消远端执行，也不保证未知请求与后续请求的远端完成顺序。
+
+open：手机仍缺安全 scoped 只读请求状态端点；查询只是补读已有消息，不能保证查到 running/failed，也不能把未知请求重新执行作为恢复手段。本机未完成条目仍受既有100条/64MiB容量限制，需要用户在详情处理长期遗留条目。observe：真实手机弱网、后台/杀进程、旧包升级与真实后端往返尚未验收。施工与测试证据见 [工单54](../cc-tasks/54-chat-queue-recovery.md)。
+
 ## 手机 #52 等待恢复与直连（open / observe）
 
 current：发送显式跟随、真实手势/惯性阅读意图、布局合并跟随及120秒本地等待已实现，Flutter428项通过。open：手机缺scoped只读running证据，跨进程恢复BLOCKED；生产`/ws/mobile`公网与loopback匿名Upgrade均404，需核查部署/路由/鉴权拒绝行为。observe：Windows代理/Fake-IP仍启用，当前TLS成功不代表免VPN；无设备，Wi-Fi/移动网络/后台/杀进程/安装均NOT RUN。证据、配置计划与回滚见 [#52报告](mobile/chat-follow-wait-direct-52.md)。未修改生产网络或后端运行代码。

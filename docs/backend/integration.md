@@ -1,3 +1,7 @@
+## 手机发送恢复修订（2026-11-15，#54）
+
+手机 Outbox v1 不变；失败/未知条目留存对账，后续 queued 按序继续。单次本机发送期限120秒；超时不代表后端取消，未知不自动重发。HTTP 迟到结果、WS/poll/history 继续按原 scoped request_id 去重；鉴权、session、mobile wire、ACK/cursor/TTL、后台通知不变。人工查询只补读现有消息，未接入 mobile request 状态端点。此规则覆盖旧文档中“未知阻塞后续”和“未知请求由用户同ID重发”的描述；只有明确可重试失败复用原ID/载荷。管理面、桌面无新设置。详见 [恢复边界](../mobile/chat-queue-recovery-54.md)。
+
 ## 手机 #52 接入取证（2026-11-15，open / observe）
 
 本地恢复最多120秒等待动画，不作为后端running证据，不新增wire字段/接口。生产现有HTTPS入口的匿名/mobile/poll与/mobile/realtime为401；/ws/mobile公网及loopback匿名Upgrade均404，不能仅修反代或复用desktop端点。未改生产配置。免VPN真实网络和scoped运行态恢复未完成；[分层证据及配置/回滚计划](../mobile/chat-follow-wait-direct-52.md)。

@@ -195,6 +195,23 @@ void main() {
         await capture(tester, 'messenger-dark');
       }
 
+      controller.history.addAll([
+        ChatMessage(role: 'you', text: '这条没有发出去', time: '20:20', failed: true),
+        ChatMessage(
+          role: 'you',
+          text: '刚才那条回复还没收到',
+          time: '20:21',
+          uncertainSince: DateTime.now(),
+        ),
+      ]);
+      await tester.pumpWidget(app(scene(), c));
+      controller.scrollToBottom();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      expect(find.byTooltip('查看回复'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await capture(tester, '${layout.name}-recovery');
+
       tester.view.physicalSize = const Size(320, 700);
       AppTypography.scale = 1.4;
       profileName = '一个很长很长的自定义角色备注名称';

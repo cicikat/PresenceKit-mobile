@@ -45,6 +45,7 @@ class ChatController extends ChangeNotifier {
     String? Function()? presenceBindError,
     Stream<void>? networkChanges,
     this.localWaitTimeout = const Duration(seconds: 120),
+    this.outgoingAttemptTimeout = const Duration(seconds: 120),
   }) : _backend = backend,
        _token = token,
        _settings = settings,
@@ -245,6 +246,7 @@ class ChatController extends ChangeNotifier {
   // Local bounded waiting is presentation, never evidence of remote running.
   Timer? _localWaitTimer;
   final Duration localWaitTimeout;
+  final Duration outgoingAttemptTimeout;
   String? _localWaitRequest;
   bool get himTyping => _session.himTyping || _localWaitRequest != null;
   set himTyping(bool value) => _session.himTyping = value;
@@ -595,6 +597,14 @@ class ChatController extends ChangeNotifier {
   void setReplyTarget(ChatMessage message) {
     replyTarget = message;
     notifyListeners();
+  }
+
+  bool canRetryMessage(ChatMessage message) {
+    final row = _outboxRows[message.requestId];
+    return row != null &&
+        (row.state == OutboxState.retryableFailed ||
+            (row.state == OutboxState.blocked &&
+                (row.statusCode == 401 || row.statusCode == 403)));
   }
 
   void retryMessage(ChatMessage message) {
@@ -1055,11 +1065,12 @@ class ChatController extends ChangeNotifier {
         while (_scopeStillLive(generation, scope) && _accessToken != null) {
           final rows = await _outbox.readScope(_outboxScope(scope));
           if (!_scopeStillLive(generation, scope) || rows.isEmpty) break;
-          // Only an explicit user skip can release ordering past an unknown.
-          final active = rows.where((row) => row.state != OutboxState.skipped);
-          if (active.isEmpty) break;
-          final row = active.first;
-          if (row.state != OutboxState.queued) break;
+          // Unresolved attempts retain their identity for reconciliation, but
+          // must not hold unrelated, later input hostage. Never replay them.
+          final row = rows
+              .where((row) => row.state == OutboxState.queued)
+              .firstOrNull;
+          if (row == null) break;
           await _executeOutgoing(row, scope);
         }
       } while (_drainRequested && _scopeStillLive(generation, scope));
@@ -1101,12 +1112,14 @@ class ChatController extends ChangeNotifier {
 
     var dispatched = false;
     var confirmed = false;
+    var expired = false;
     try {
-      final response = await _withLiveGrant(
+      final pending = _withLiveGrant(
         scope: scope,
         generation: generation,
         call: (grant) {
-          if (grant.ownerId != scope.owner ||
+          if (expired ||
+              grant.ownerId != scope.owner ||
               grant.charId != scope.charId ||
               grant.domain != 'reality' ||
               token != _accessToken) {
@@ -1132,12 +1145,31 @@ class ChatController extends ChangeNotifier {
                 );
         },
       );
+      final response = await pending.timeout(
+        outgoingAttemptTimeout,
+        onTimeout: () {
+          expired = true;
+          // The remote operation may still finish. Retain its original ID and
+          // consume its late result without keeping the sending slot occupied.
+          unawaited(
+            pending.then<void>(
+              (response) =>
+                  _reconcileLateOutgoing(response, row, scope, user, anchor),
+              onError: (Object error, StackTrace stack) {},
+            ),
+          );
+          throw TimeoutException('mobile_send_wait_expired');
+        },
+      );
       if (response.criticalWritten == false) {
         throw const BackendException(
           'execution_outcome_unknown',
           statusCode: 503,
         );
       }
+      // A replacement controller may already own a newer persisted snapshot.
+      // Leave reconciliation to it rather than committing this disposed cache.
+      if (_session.disposed) return;
       await _outbox.setState(row, null);
       confirmed = true;
       if (!_scopeStillLive(generation, scope)) {
@@ -1159,7 +1191,7 @@ class ChatController extends ChangeNotifier {
         anchor: anchor,
       );
     } catch (error) {
-      if (confirmed) return;
+      if (confirmed || _session.disposed) return;
       final status = error is BackendException ? error.statusCode : null;
       final state =
           status == 401 || status == 403 || status == 413 || status == 422
@@ -1195,6 +1227,38 @@ class ChatController extends ChangeNotifier {
         unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
         _flushHistoryRefresh();
       }
+    }
+  }
+
+  Future<void> _reconcileLateOutgoing(
+    BackendChatResponse response,
+    OutboxEntry row,
+    SessionScope scope,
+    ChatMessage user,
+    ChatMessage anchor,
+  ) async {
+    if (_session.disposed || response.criticalWritten == false) return;
+    try {
+      await _outbox.setState(row, null);
+      if (_session.disposed) return;
+      final live = _captureScope(_session.generation);
+      if (_outboxScope(live) != row.scope) return;
+      final accepted = _acceptedRequestIds.contains(row.requestId);
+      _outboxStates.remove(row.requestId);
+      _outboxRows.remove(row.requestId);
+      _settleSend(requestId: row.requestId);
+      if (_scopeStillLive(scope.generation, scope) && !accepted) {
+        await _applyChatResponse(
+          response: response,
+          userId: user.id,
+          anchor: anchor,
+        );
+      } else {
+        notifyListeners();
+        unawaited(loadHistory(reconcileLocal: true));
+      }
+    } catch (_) {
+      _reportOutboxError(scope);
     }
   }
 

@@ -1314,6 +1314,20 @@ class _YouMessageState extends State<YouMessage> {
             ? MainAxisAlignment.start
             : MainAxisAlignment.end,
         children: [
+          if (widget.failed || widget.uncertain)
+            IconButton(
+              tooltip: widget.failed
+                  ? widget.onRetry != null
+                        ? context.l10n.chatSendFailedRetry
+                        : context.l10n.chatDeliveryActions
+                  : context.l10n.chatCheckReply,
+              onPressed: widget.onRetry ?? widget.onDeliveryDetails,
+              icon: widget.failed
+                  ? const Icon(Icons.error, color: Color(0xFFE53935))
+                  : Icon(Icons.refresh_rounded, color: c.ink2),
+              iconSize: 22,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            ),
           Flexible(
             child: Column(
               crossAxisAlignment: letter
@@ -1506,10 +1520,10 @@ class _YouMessageState extends State<YouMessage> {
                         widget.deliveryLabel ??
                             (widget.failed
                                 ? context.l10n.chatSendFailed
-                                : context.l10n.chatConfirming),
+                                : context.l10n.chatReplyDelayed),
                         style: TextStyle(
                           fontSize: 12,
-                          color: c.userBubbleText.withValues(alpha: 0.6),
+                          color: c.ink2,
                         ),
                       ),
                     ),

@@ -9,6 +9,15 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get chatReplyDelayed => '回复还没收到，可以继续发送';
+
+  @override
+  String get chatCheckReply => '查看回复';
+
+  @override
+  String get chatDeliveryActions => '查看处理方式';
+
+  @override
   String get chatOutboxSkipped => '已保留待确认 · 后续消息可继续发送';
 
   @override
@@ -51,7 +60,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get chatQueuePaused => '前面的消息需要处理，后续消息暂存在本机。可以先检查、移出，或明确选择继续后续。';
+  String get chatQueuePaused => '有些消息还需要处理，不影响继续发送。';
 
   @override
   String get chatCopyDeliveryDetails => '复制发送详情';
@@ -701,6 +710,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatSendFailed => '发送失败';
+
+  @override
+  String get chatSendFailedRetry => '发送失败，点击重新发送';
 
   @override
   String chatUnreadCount(Object count) {

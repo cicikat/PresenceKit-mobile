@@ -1,3 +1,11 @@
+## 手机 #54 发送队列恢复验证（2026-11-15）
+
+flutter gen-l10n成功；最终flutter analyze --no-pub零问题。标准Flutter全量437项通过（build/chat-recovery-54-tests.log），最终界面交互/五布局渲染40项通过（build/chat-recovery-54-ui.log）。控制器与布局渲染定向63项通过；覆盖失败/未知不阻挡后续、120秒本机期限（测试注入短期限）、迟到成功/失败、旧scope、旧控制器快照保护、原队列重启、422不可机械重试、附件快照和原请求去重。五布局恢复状态截图已检查，深浅主题查询图标/文字可见，320px/1.4倍字/键盘与草稿保留回归通过。
+
+Dev debug APK构建成功（Gradle72.7秒），build/app/outputs/flutter-apk/app-dev-debug.apk，SHA-256 DC816BBB3BAFF8DEC9D45C39908C13C25EE16AA9BEECF99534A5047413C945FB。adb仅只读核对手机正式包1.3.0+77；未覆盖安装或正式发行，真实弱网/后台/杀进程/升级/真实后端往返not-run。
+
+一次开启截图导出的全量出现既有Dream预设Unknown dream preset（436通过/1失败），失败用例单独与随后标准全量均通过；原失败日志保留为build/chat-recovery-54-export-tests.log，未删测/跳过/修改Dream代码，疑似ID时间戳碰撞已记known-issues。无后端/桌面运行代码、设置、权限或wire字段变更；[行为与剩余依赖](../mobile/chat-queue-recovery-54.md)，[逐项工单](../../cc-tasks/54-chat-queue-recovery.md)。
+
 ## 手机 #52 跟随、等待与直连（2026-11-15）
 
 最终Flutter全量428项通过，`flutter analyze --no-pub`零问题；含#51五顶栏/连接点/日夜/权限/大字回归和协议fixture。Android本轮XML：MobileDeliveryStateStore14、SettingsChannelDelivery5、MobileNotificationDelivery2、BackendSecurityPolicy2，共23项，failures/errors/skipped均0（本机2026-11-15 02:38写入）。Gradle命令经历60/120秒工具超时及一次进程收尾错误，最终测试报告实际已生成；不将命令错误本身计为通过。

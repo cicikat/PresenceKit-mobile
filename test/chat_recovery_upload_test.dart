@@ -238,8 +238,11 @@ void main() {
   late String character;
   ChatController buildController({
     Duration waitTimeout = const Duration(seconds: 120),
+    Duration attemptTimeout = const Duration(seconds: 120),
+    Future<void> Function()? beforeGrant,
   }) => ChatController(
     localWaitTimeout: waitTimeout,
+    outgoingAttemptTimeout: attemptTimeout,
     backend: () => backend,
     token: () => 'test-token',
     settings: SettingsStore(settings),
@@ -248,13 +251,15 @@ void main() {
     deliveryOwner: () => 'owner',
     deliveryCharId: () => character,
     resolvePresenceSession:
-        ({required String charId, bool force = false}) async =>
-            PresenceSessionGrant(
-              sessionId: 'sess-$charId',
-              charId: charId,
-              ownerId: 'owner',
-              domain: 'reality',
-            ),
+        ({required String charId, bool force = false}) async {
+          await beforeGrant?.call();
+          return PresenceSessionGrant(
+            sessionId: 'sess-$charId',
+            charId: charId,
+            ownerId: 'owner',
+            domain: 'reality',
+          );
+        },
   );
 
   setUp(() {
@@ -300,6 +305,220 @@ void main() {
     expect(controller.himTyping, isFalse);
     expect(backend.chats, 1);
   });
+
+  test('54: expired A releases B and late A does not end B waiting', () async {
+    controller.dispose();
+    controller = buildController(
+      attemptTimeout: const Duration(milliseconds: 300),
+    );
+    backend.offline = false;
+    final aGate = Completer<void>();
+    final bGate = Completer<void>();
+    backend.sendGate = aGate;
+    await controller.send('A');
+    await settle();
+    final a = controller.sent.singleWhere((m) => m.role == 'you');
+    backend.sendGate = bGate;
+    await controller.send('B');
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await settle();
+    expect(backend.chats, 2);
+    expect(controller.deliveryState(a), OutboxState.outcomeUnknown);
+    expect(controller.sending, isTrue);
+    expect(controller.himTyping, isTrue);
+    aGate.complete();
+    await settle();
+    expect(controller.sending, isTrue);
+    expect(controller.himTyping, isTrue);
+    expect(controller.deliveryState(a), isNull);
+    expect(controller.pendingOutgoing.single.text, 'B');
+    expect(
+      controller.sent.where((m) => m.role == 'him' && m.text == 'echo:A'),
+      hasLength(1),
+    );
+    bGate.complete();
+    await settle();
+    expect(controller.pendingOutgoing, isEmpty);
+    expect(controller.sending, isFalse);
+    expect(
+      backend.sentRequestIds.where((id) => id == a.requestId),
+      hasLength(1),
+    );
+  });
+
+  test('54: late A error cannot overwrite successful B', () async {
+    controller.dispose();
+    controller = buildController(
+      attemptTimeout: const Duration(milliseconds: 120),
+    );
+    backend.offline = false;
+    final gate = Completer<void>();
+    backend.sendGate = gate;
+    await controller.send('A');
+    await settle();
+    backend.sendGate = null;
+    await controller.send('B');
+    await Future<void>.delayed(const Duration(milliseconds: 170));
+    await settle();
+    backend.networkDown = true;
+    gate.complete();
+    await settle();
+    expect(backend.chats, 2);
+    final users = controller.sent.where((m) => m.role == 'you');
+    expect(users.singleWhere((m) => m.text == 'A').uncertain, isTrue);
+    final b = users.singleWhere((m) => m.text == 'B');
+    expect(b.failed || b.uncertain, isFalse);
+    expect(controller.sending, isFalse);
+  });
+
+  test(
+    '54: expired A late success stays out of a new character scope',
+    () async {
+      controller.dispose();
+      controller = buildController(
+        attemptTimeout: const Duration(milliseconds: 100),
+      );
+      backend.offline = false;
+      final gate = Completer<void>();
+      backend.sendGate = gate;
+      await controller.send('A');
+      await settle();
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      character = 'char-b';
+      await controller.resetForConnectionChange(restart: false);
+      backend.sendGate = null;
+      await controller.send('B');
+      await settle();
+      gate.complete();
+      await settle();
+      expect(
+        [
+          ...controller.history,
+          ...controller.sent,
+        ].any((m) => m.text == 'A' || m.text == 'echo:A'),
+        isFalse,
+      );
+      expect(controller.sent.any((m) => m.text == 'echo:B'), isTrue);
+      expect(controller.pendingOutgoing, isEmpty);
+    },
+  );
+
+  test('54: unknown check never replays A and new input still sends', () async {
+    backend.offline = false;
+    backend.dropCompletedResponse = true;
+    await controller.send('A');
+    await settle();
+    final a = controller.sent.singleWhere((m) => m.role == 'you');
+    controller.retryMessage(a);
+    controller.retryMessage(a);
+    await controller.send('B');
+    await settle();
+    expect(backend.chats, 2);
+    expect(
+      backend.sentRequestIds.where((id) => id == a.requestId),
+      hasLength(1),
+    );
+    expect(controller.pendingOutgoing.single.requestId, a.requestId);
+  });
+
+  test(
+    '54: expired session bind never dispatches its old input later',
+    () async {
+      controller.dispose();
+      final gate = Completer<void>();
+      var first = true;
+      controller = buildController(
+        attemptTimeout: const Duration(milliseconds: 100),
+        beforeGrant: () async {
+          if (first) {
+            first = false;
+            await gate.future;
+          }
+        },
+      );
+      backend.offline = false;
+      await controller.send('A');
+      await settle();
+      final a = controller.sent.singleWhere((m) => m.role == 'you');
+      await controller.send('B');
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      await settle();
+      expect(backend.chats, 1);
+      expect(controller.deliveryState(a), OutboxState.retryableFailed);
+      gate.complete();
+      await settle();
+      expect(backend.chats, 1);
+      expect(controller.sent.any((m) => m.text == 'echo:A'), isFalse);
+      expect(controller.sent.any((m) => m.text == 'echo:B'), isTrue);
+    },
+  );
+
+  test(
+    '54: failed attachment does not block later text or lose its snapshot',
+    () async {
+      backend.offline = true;
+      final bytes = Uint8List.fromList([1, 2, 3]);
+      await controller.uploadFiles(
+        [PickedUploadFile(name: 'photo.png', bytes: bytes)],
+        preview: 'photo',
+        message: 'caption',
+      );
+      await settle();
+      backend.offline = false;
+      await controller.send('next');
+      await settle();
+      expect(backend.chats, 1);
+      final row = controller.pendingOutgoing.single;
+      expect(row.state, OutboxState.outcomeUnknown);
+      expect(row.files.single.bytes, bytes);
+      expect(row.caption, 'caption');
+      final a = controller.sent.singleWhere(
+        (m) => m.role == 'you' && m.text == 'photo',
+      );
+      controller.retryMessage(a);
+      await settle();
+      expect(backend.uploads, 1);
+    },
+  );
+
+  test(
+    '54: disposed attempt cannot overwrite a replacement controller snapshot',
+    () async {
+      controller.dispose();
+      controller = buildController(
+        attemptTimeout: const Duration(milliseconds: 100),
+      );
+      backend.offline = false;
+      final aGate = Completer<void>();
+      backend.sendGate = aGate;
+      await controller.send('A');
+      await settle();
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      await settle();
+      controller.dispose();
+      controller = buildController();
+      await controller.start();
+      await settle();
+      final bGate = Completer<void>();
+      backend.sendGate = bGate;
+      await controller.send('B');
+      await settle();
+      final snapshot = settings.outboxSnapshot;
+      aGate.complete();
+      await settle();
+      expect(settings.outboxSnapshot, snapshot);
+      expect(
+        controller.pendingOutgoing.any(
+          (r) => r.text == 'B' && r.state == OutboxState.sending,
+        ),
+        isTrue,
+      );
+      expect(controller.sent.any((m) => m.text == 'echo:A'), isFalse);
+      bGate.complete();
+      await settle();
+      expect(controller.sent.any((m) => m.text == 'echo:B'), isTrue);
+    },
+  );
 
   test('52-B3: pause ends local wait without replay', () async {
     backend.offline = false;
@@ -372,7 +591,11 @@ void main() {
       final a = controller.sent.singleWhere((m) => m.role == 'you');
       await controller.send('B');
       await settle();
-      expect(backend.chats, 1);
+      expect(backend.chats, 2);
+      expect(
+        controller.pendingOutgoing.single.state,
+        OutboxState.outcomeUnknown,
+      );
       await controller.skipOutgoing(a);
       await settle();
       expect(
@@ -405,7 +628,7 @@ void main() {
   );
 
   test(
-    'payload rejection cannot be mechanically retried or drain successors',
+    'payload rejection cannot be retried but does not block successors',
     () async {
       backend.offline = false;
       backend.rejectionStatus = 422;
@@ -417,8 +640,9 @@ void main() {
       controller.retryMessage(message);
       await controller.send('next');
       await settle();
-      expect(backend.chats, 1);
-      expect(controller.pendingOutgoing, hasLength(2));
+      expect(backend.chats, 2);
+      expect(controller.pendingOutgoing, hasLength(1));
+      expect(controller.canRetryMessage(message), isFalse);
       await controller.skipOutgoing(message);
       await settle();
       expect(backend.chats, 2);
@@ -426,54 +650,58 @@ void main() {
   );
 
   test(
-    'restart checks the original request before draining its persisted successors',
+    'restart drains legacy persisted successors without replaying the unknown head',
     () async {
       backend.offline = false;
       backend.dropCompletedResponse = true;
       await controller.send('A');
-      await controller.send('B');
-      await controller.send('C');
       await settle();
-      final ids = controller.sent
-          .where((m) => m.role == 'you')
-          .map((m) => m.requestId!)
-          .toList();
-      expect(backend.sentRequestIds, [ids.first]);
-      expect(controller.sent.first.uncertain, isTrue);
+      final a = controller.pendingOutgoing.single;
       controller.dispose();
-
+      final store = MobileOutboxStore(
+        settings.loadChatOutbox,
+        settings.saveChatOutbox,
+      );
+      for (final text in ['B', 'C']) {
+        await store.enqueue(
+          (sequence) => OutboxEntry(
+            requestId: 'legacy-$text',
+            scope: a.scope,
+            sequence: sequence,
+            createdAt: DateTime.now(),
+            text: text,
+          ),
+        );
+      }
       controller = buildController();
       await controller.start();
       await settle();
-      expect(
-        controller.sent.where((m) => m.role == 'you').map((m) => m.requestId),
-        ids,
-      );
-      expect(backend.sentRequestIds, [ids.first]);
-
-      backend.day = ChatLogDay.fromJson({
-        'date': '2026-11-12',
-        'entries': [
-          {
-            'time': '12:00',
-            'user': 'A',
-            'assistant': 'echo:A',
-            'turn_id': 'turn-1',
-            'request_id': ids.first,
-          },
-        ],
-      });
-      await controller.refreshConnection();
-      await settle();
-      expect(backend.sentRequestIds, ids);
+      expect(backend.sentRequestIds, [a.requestId, 'legacy-B', 'legacy-C']);
       expect(backend.chatExecutions, 3);
-      final visible = [...controller.history, ...controller.sent];
       expect(
-        visible.where((m) => m.role == 'you' && m.text == 'A'),
-        hasLength(1),
+        controller.pendingOutgoing.single.state,
+        OutboxState.outcomeUnknown,
       );
+      backend.pollMessages = [
+        MobilePollMessage.fromJson({
+          'id': 'late-A',
+          'seq': 1,
+          'content': 'echo:A',
+          'user_id': 'owner',
+          'char_id': 'char-a',
+          'request_id': a.requestId,
+        }),
+      ];
+      await controller.pollMobile();
+      await controller.pollMobile();
+      await settle();
+      expect(controller.pendingOutgoing, isEmpty);
+      expect(backend.chats, 3);
       expect(
-        visible.where((m) => m.role == 'him' && m.text == 'echo:A'),
+        [
+          ...controller.history,
+          ...controller.sent,
+        ].where((m) => m.role == 'him' && m.text == 'echo:A'),
         hasLength(1),
       );
     },
@@ -1274,6 +1502,7 @@ void main() {
     expect(failed.requestId, startsWith('req_'));
     backend.offline = false;
     backend.authRejected = false;
+    controller.retryMessage(failed);
     controller.retryMessage(failed);
     for (var i = 0; i < 20; i++) {
       await Future<void>.delayed(Duration.zero);
