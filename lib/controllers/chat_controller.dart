@@ -138,6 +138,7 @@ class ChatController extends ChangeNotifier {
   final MobileOutboxStore _outbox;
   final Map<String, OutboxState> _outboxStates = {};
   final Map<String, OutboxEntry> _outboxRows = {};
+  final Set<String> _restoredUnknownRequestIds = {};
   final Map<String, Future<bool>> _enqueueEvents = {};
   List<OutboxEntry> get pendingOutgoing =>
       _outboxRows.values.toList()
@@ -148,6 +149,17 @@ class ChatController extends ChangeNotifier {
 
   OutboxState? deliveryState(ChatMessage message) =>
       _outboxStates[message.requestId];
+
+  ChatMessage? messageForOutgoing(String requestId) {
+    final visible = history
+        .followedBy(sent)
+        .where((m) => m.role == 'you' && m.requestId == requestId)
+        .firstOrNull;
+    if (visible != null) return visible;
+    final row = _outboxRows[requestId];
+    return row == null ? null : _outgoingMessage(row);
+  }
+
   Timer? _pollTimer;
   StreamSubscription<void>? _networkSubscription;
   BackendClient? _receivingBackend;
@@ -558,6 +570,7 @@ class ChatController extends ChangeNotifier {
     _messageQueue.clear();
     _outboxStates.clear();
     _outboxRows.clear();
+    _restoredUnknownRequestIds.clear();
     scrollController.reset();
     showJumpToLatest = false;
     unreadHimCount = 0;
@@ -694,7 +707,13 @@ class ChatController extends ChangeNotifier {
         _preDispatchStops[row.requestId]?.completeError(
           StateError('outbox_stopped'),
         );
-        _renderOutgoing(row.withState(OutboxState.skipped));
+        final skipped = row.withState(OutboxState.skipped);
+        if (_restoredUnknownRequestIds.contains(row.requestId)) {
+          _outboxRows[row.requestId] = skipped;
+          _outboxStates[row.requestId] = skipped.state;
+        } else {
+          _renderOutgoing(skipped);
+        }
         notifyListeners();
         _requestOutboxDrain();
       }
@@ -1110,7 +1129,15 @@ class ChatController extends ChangeNotifier {
         }
         if (!_scopeStillLive(generation, scope)) return;
         if (_acceptedRequestIds.contains(row.requestId)) continue;
-        if (row.hiddenOnRestore) {
+        final restoredUnknown =
+            (row.state == OutboxState.outcomeUnknown ||
+                (row.state == OutboxState.sending && !sending)) &&
+            (_restoredUnknownRequestIds.contains(row.requestId) ||
+                !history.followedBy(sent).any(
+                  (m) => m.role == 'you' && m.requestId == row.requestId,
+                ));
+        if (restoredUnknown) _restoredUnknownRequestIds.add(row.requestId);
+        if (row.hiddenOnRestore || restoredUnknown) {
           if (!_scopeStillLive(generation, scope)) return;
           // Retain the terminal identity for receipt reconciliation,
           // but never resurrect retired local bubbles on refresh or restart.
@@ -1140,6 +1167,7 @@ class ChatController extends ChangeNotifier {
   }
 
   ChatMessage _renderOutgoing(OutboxEntry row) {
+    _restoredUnknownRequestIds.remove(row.requestId);
     _outboxStates[row.requestId] = row.state;
     _outboxRows[row.requestId] = row;
     _scheduleQueueExpiry();
@@ -1161,25 +1189,29 @@ class ChatController extends ChangeNotifier {
         );
       }
     }
-    final message = ChatMessage(
-      id: -row.sequence,
-      role: 'you',
-      text: row.text,
-      time: '现在',
-      timestamp: row.createdAt,
-      retainOnRefresh: true,
-      requestId: row.requestId,
-      quotedText: row.replyTo?.text,
-      quotedLabel: row.replyTo == null ? null : 'reply',
-      retryReplyTo: row.replyTo,
-      attachments: row.files,
-      uploadNote: row.caption,
-      failed: failed,
-      uncertainSince: uncertain ? row.createdAt : null,
-    );
+    final message = _outgoingMessage(row);
     sent.add(message);
     return message;
   }
+
+  ChatMessage _outgoingMessage(OutboxEntry row) => ChatMessage(
+    id: -row.sequence,
+    role: 'you',
+    text: row.text,
+    time: '现在',
+    timestamp: row.createdAt,
+    retainOnRefresh: true,
+    requestId: row.requestId,
+    quotedText: row.replyTo?.text,
+    quotedLabel: row.replyTo == null ? null : 'reply',
+    retryReplyTo: row.replyTo,
+    attachments: row.files,
+    uploadNote: row.caption,
+    failed: row.hiddenOnRestore && row.state != OutboxState.skipped,
+    uncertainSince: row.state == OutboxState.outcomeUnknown
+        ? row.createdAt
+        : null,
+  );
 
   void _requestOutboxDrain() {
     if (_session.disposed || _accessToken == null) return;
@@ -1461,6 +1493,7 @@ class ChatController extends ChangeNotifier {
     if (accepted != null && accepted.isNotEmpty) {
       _endLocalWait(requestId: accepted);
       _acceptedRequestIds.add(accepted);
+      _restoredUnknownRequestIds.remove(accepted);
       if (_outboxStates.containsKey(accepted)) {
         unawaited(_confirmOutbox(accepted, _captureScope(_session.generation)));
       }
@@ -2523,7 +2556,8 @@ class ChatController extends ChangeNotifier {
         if (entry.user.trim().isNotEmpty &&
             !entry.legacyUserOnly &&
             !(entry.assistant.trim().isEmpty &&
-                _outboxRows[entry.requestId]?.hiddenOnRestore == true))
+                (_outboxRows[entry.requestId]?.hiddenOnRestore == true ||
+                    _restoredUnknownRequestIds.contains(entry.requestId))))
           ChatMessage(
             role: 'you',
             text: historyUserDisplay(entry.user).text,

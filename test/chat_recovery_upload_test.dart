@@ -56,6 +56,7 @@ class _Backend extends BackendClient {
   String? caption;
   List<PickedUploadFile>? uploaded;
   Completer<void>? gate;
+  Completer<void>? historyGate;
   Completer<void>? sendGate;
   Completer<void>? pollGate;
   bool pollFailure = false;
@@ -104,7 +105,10 @@ class _Backend extends BackendClient {
     required String token,
     String? sessionId,
     String? characterId,
-  }) async => day!;
+  }) async {
+    await historyGate?.future;
+    return day!;
+  }
 
   @override
   Future<MobileActivationResult> activateMobile({required String token}) async {
@@ -275,6 +279,132 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
   }
+
+  test(
+    '59: restored unknown never flashes before or after delayed history',
+    () async {
+      await controller.send('old unconfirmed');
+      await settle();
+      final request = controller.pendingOutgoing.single.requestId;
+      expect(
+        controller.pendingOutgoing.single.state,
+        OutboxState.outcomeUnknown,
+      );
+      controller.dispose();
+      controller = buildController();
+      backend.offline = false;
+      backend.historyGate = Completer<void>();
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-11-15',
+        'entries': [
+          {
+            'time': '03:44',
+            'user': 'old unconfirmed',
+            'assistant': '',
+            'request_id': request,
+          },
+          {
+            'time': '16:38',
+            'user': 'latest question',
+            'assistant': 'latest real reply',
+            'request_id': 'new-request',
+          },
+        ],
+      });
+      final frames = <List<String>>[];
+      controller.addListener(
+        () => frames.add(
+          [
+            ...controller.history,
+            ...controller.sent,
+          ].map((m) => m.text).toList(),
+        ),
+      );
+      final starting = controller.start();
+      await settle();
+      expect(controller.pendingOutgoing.single.requestId, request);
+      expect(controller.sent, isEmpty, reason: 'No stale-only startup frame');
+      expect(controller.history, isEmpty);
+      backend.historyGate!.complete();
+      await starting;
+      await settle();
+      expect(frames.any((frame) => frame.contains('old unconfirmed')), isFalse);
+      expect(
+        controller.history.map((m) => m.text),
+        contains('latest real reply'),
+      );
+      expect(
+        controller.pendingOutgoing.single.state,
+        OutboxState.outcomeUnknown,
+      );
+      final calls = backend.chats;
+      final diagnostic = controller.messageForOutgoing(request)!;
+      expect(diagnostic.uncertain, isTrue);
+      expect(diagnostic.text, 'old unconfirmed');
+      expect(controller.sent, isEmpty);
+      await controller.refreshConnection();
+      await settle();
+      expect(frames.any((frame) => frame.contains('old unconfirmed')), isFalse);
+      expect(backend.chats, calls);
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-11-15',
+        'entries': [
+          {
+            'time': '03:44',
+            'user': 'old unconfirmed',
+            'assistant': 'late real reply',
+            'request_id': request,
+          },
+        ],
+      });
+      await controller.loadHistory(reconcileLocal: true);
+      await settle();
+      expect(
+        controller.history.map((m) => m.text),
+        containsAll(['old unconfirmed', 'late real reply']),
+      );
+      expect(controller.pendingOutgoing, isEmpty);
+    },
+  );
+
+  test(
+    '59: offline restart keeps unknown diagnostic actions without a bubble',
+    () async {
+      await controller.send('offline unknown');
+      await settle();
+      final request = controller.pendingOutgoing.single.requestId;
+      controller.dispose();
+      controller = buildController();
+      final frames = <List<String>>[];
+      controller.addListener(
+        () => frames.add(
+          [
+            ...controller.history,
+            ...controller.sent,
+          ].map((m) => m.text).toList(),
+        ),
+      );
+      await controller.start();
+      await settle();
+      expect(frames.every((frame) => frame.isEmpty), isTrue);
+      expect(
+        controller.pendingOutgoing.single.state,
+        OutboxState.outcomeUnknown,
+      );
+      final calls = backend.chats;
+      await controller.skipOutgoing(controller.messageForOutgoing(request)!);
+      await settle();
+      expect(controller.pendingOutgoing.single.state, OutboxState.skipped);
+      expect(controller.sent, isEmpty);
+      await controller.removeFromOutbox(
+        controller.messageForOutgoing(request)!,
+      );
+      await settle();
+      expect(controller.pendingOutgoing, isEmpty);
+      expect(controller.messageForOutgoing(request), isNull);
+      expect(backend.chats, calls);
+    },
+  );
 
   test(
     '57: waiting starts while initial activation still holds the queue',

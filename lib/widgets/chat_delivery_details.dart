@@ -94,13 +94,9 @@ Future<void> showChatDeliveryDetails(
               for (final row in rows)
                 Builder(
                   builder: (context) {
-                    final message = controller.history
-                        .followedBy(controller.sent)
-                        .where(
-                          (m) =>
-                              m.role == 'you' && m.requestId == row.requestId,
-                        )
-                        .firstOrNull;
+                    final message = controller.messageForOutgoing(
+                      row.requestId,
+                    );
                     return Card(
                       child: Padding(
                         padding: const EdgeInsets.all(12),
