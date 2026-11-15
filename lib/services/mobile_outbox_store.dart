@@ -39,6 +39,12 @@ class OutboxEntry {
   final DateTime queuedAt;
   bool get locallyStopped =>
       state == OutboxState.expired || state == OutboxState.cancelled;
+  // Terminal local failures stay available to diagnostics, not the next chat view.
+  bool get hiddenOnRestore =>
+      locallyStopped ||
+      state == OutboxState.blocked ||
+      state == OutboxState.retryableFailed ||
+      state == OutboxState.skipped;
   final String text;
   final ReplyTarget? replyTo;
   final List<PickedUploadFile> files;
@@ -209,7 +215,7 @@ class MobileOutboxStore {
 
   Future<OutboxEntry> enqueue(OutboxEntry Function(int) create) =>
       _run((rows) async {
-        if (rows.where((row) => !row.locallyStopped).length >= maxEntries) {
+        if (rows.where((row) => !row.hiddenOnRestore).length >= maxEntries) {
           throw StateError('outbox_capacity');
         }
         final row = create(_sequence + 1);
@@ -238,8 +244,8 @@ class MobileOutboxStore {
       return false;
     }
     if (state == OutboxState.queued &&
-        rows[index].locallyStopped &&
-        rows.where((row) => !row.locallyStopped).length >= maxEntries) {
+        rows[index].hiddenOnRestore &&
+        rows.where((row) => !row.hiddenOnRestore).length >= maxEntries) {
       throw StateError('outbox_capacity');
     }
     final next = [...rows];

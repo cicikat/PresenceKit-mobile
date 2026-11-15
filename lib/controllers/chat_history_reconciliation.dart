@@ -63,7 +63,9 @@ List<ChatMessage> reconcileChatHistory(
       result[found] = ChatMessage(
         id: item.id,
         role: item.role,
-        text: keepRich ? item.text : remote[found].text,
+        // The local outgoing payload is authoritative for the user's words.
+        // A correlated history echo may carry legacy writer metadata.
+        text: item.role == 'you' || keepRich ? item.text : remote[found].text,
         time: remote[found].time,
         dateKey: remote[found].dateKey,
         displayText: item.displayText ?? remote[found].displayText,

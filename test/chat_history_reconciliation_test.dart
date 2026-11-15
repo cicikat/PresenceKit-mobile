@@ -19,6 +19,37 @@ ChatMessage message(
 );
 
 void main() {
+  test(
+    '57: failed outgoing original survives a correlated corrupt history echo',
+    () {
+      final original = ChatMessage(
+        role: 'you',
+        text: 'original draft',
+        time: '12:00',
+        requestId: 'fixture-request',
+        failed: true,
+      );
+      final sent = [original];
+      final result = reconcileChatHistory(
+        [
+          ChatMessage(
+            role: 'you',
+            text: '>speaker:user turn_id:fixture-turn',
+            time: '12:00',
+            requestId: 'fixture-request',
+          ),
+        ],
+        [],
+        sent,
+        sent,
+      );
+      expect(result.single.text, 'original draft');
+      expect(result.single.failed, isTrue);
+      expect(result.single.requestId, 'fixture-request');
+      expect(sent, isEmpty);
+    },
+  );
+
   test('a partial log cannot swallow the second identical paragraph of a turn', () {
     final prior = [
       for (var i = 0; i < 2; i++) ChatMessage(

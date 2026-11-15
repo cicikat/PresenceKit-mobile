@@ -26,13 +26,19 @@ void main() {
   );
 
   test(
-    '55: expired/cancelled records preserve payload but release all 100 queue slots',
+    '57: retired failures and local stops release all 100 queue slots',
     () async {
       for (var i = 0; i < MobileOutboxStore.maxEntries; i++) {
         final row = await enqueue('old-$i');
         await store.setState(
           row,
-          i.isEven ? OutboxState.expired : OutboxState.cancelled,
+          [
+            OutboxState.expired,
+            OutboxState.cancelled,
+            OutboxState.blocked,
+            OutboxState.retryableFailed,
+            OutboxState.skipped,
+          ][i % 5],
         );
       }
       for (var i = 0; i < MobileOutboxStore.maxEntries; i++) {

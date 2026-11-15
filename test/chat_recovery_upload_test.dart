@@ -276,6 +276,105 @@ void main() {
     }
   }
 
+  test(
+    '57: waiting starts while initial activation still holds the queue',
+    () async {
+      backend.offline = false;
+      backend.gate = Completer<void>();
+      final starting = controller.start();
+      await settle();
+      await controller.send('queued now');
+      await settle();
+      expect(backend.chats, 0);
+      expect(controller.himTyping, isTrue);
+      final queued = controller.sent.singleWhere((m) => m.role == 'you');
+      await controller.cancelQueuedMessage(queued);
+      await settle();
+      expect(controller.himTyping, isFalse);
+      backend.gate!.complete();
+      await starting;
+      await settle();
+      expect(backend.chats, 0);
+    },
+  );
+
+  test(
+    '57: failed rows stay hidden across refresh and restart, late confirmed replies survive',
+    () async {
+      backend.offline = false;
+      backend.rejectionStatus = 422;
+      await controller.send('failed draft');
+      await settle();
+      expect(
+        controller.sent.singleWhere((m) => m.role == 'you').failed,
+        isTrue,
+      );
+      final failedRequest = controller.sent
+          .singleWhere((m) => m.role == 'you')
+          .requestId!;
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-11-15',
+        'entries': [
+          {
+            'time': '12:00',
+            'user': 'failed draft\n>speaker:user turn_id:fixture-turn\n',
+            'assistant': '',
+            'request_id': failedRequest,
+          },
+        ],
+      });
+      await controller.refreshConnection();
+      await settle();
+      expect(
+        [
+          ...controller.sent,
+          ...controller.history,
+        ].where((m) => m.role == 'you'),
+        isEmpty,
+      );
+      final before = backend.chats;
+      controller.dispose();
+      controller = buildController();
+      await controller.start();
+      await settle();
+      expect(
+        [
+          ...controller.sent,
+          ...controller.history,
+        ].where((m) => m.role == 'you'),
+        isEmpty,
+      );
+      expect(backend.chats, before);
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-11-15',
+        'entries': [
+          {
+            'time': '12:00',
+            'user': 'failed draft',
+            'assistant': 'confirmed late reply',
+            'request_id': failedRequest,
+            'turn_id': 'fixture-turn',
+          },
+        ],
+      });
+      await controller.loadHistory(reconcileLocal: true);
+      await settle();
+      expect(
+        controller.history.where((m) => m.role == 'him').single.text,
+        'confirmed late reply',
+      );
+      expect(
+        controller.history.where((m) => m.role == 'you').single.text,
+        'failed draft',
+      );
+      backend.rejectionStatus = null;
+      await controller.send('failed draft');
+      await settle();
+      expect(backend.chats, before + 1);
+      expect(backend.sentRequestIds.last, isNot(failedRequest));
+    },
+  );
+
   testWidgets(
     '55: queued B expires at 60s while sent A still waits; fresh C drains',
     (tester) async {
@@ -372,10 +471,7 @@ void main() {
       await tester.pump();
       expect(backend.chats, 1);
       expect(controller.pendingOutgoing.single.state, OutboxState.cancelled);
-      expect(
-        controller.sent.singleWhere((m) => m.text == 'cancel B').failed,
-        isTrue,
-      );
+      expect(controller.sent.where((m) => m.text == 'cancel B'), isEmpty);
       controller.dispose();
       await tester.pump();
       controller = buildController();
@@ -408,7 +504,7 @@ void main() {
   );
 
   testWidgets(
-    '55: legacy expired queue is discarded on restart, never sent, retry has a fresh minute',
+    '57: legacy expired queue stays hidden on restart and new input still sends',
     (tester) async {
       controller.dispose();
       controller = buildController();
@@ -427,13 +523,16 @@ void main() {
       await controller.start();
       await tester.pump();
       expect(backend.chats, 1);
-      final b = controller.sent.singleWhere((m) => m.text == 'old B');
-      expect(controller.deliveryState(b), OutboxState.expired);
-      controller.retryMessage(b);
+      expect(controller.sent.where((m) => m.text == 'old B'), isEmpty);
+      expect(
+        controller.pendingOutgoing.singleWhere((m) => m.text == 'old B').state,
+        OutboxState.expired,
+      );
+      await controller.send('fresh B');
       await tester.pump();
       expect(backend.chats, 2);
       expect(
-        controller.pendingOutgoing.where((r) => r.text == 'old B'),
+        controller.pendingOutgoing.where((r) => r.text == 'fresh B'),
         isEmpty,
       );
       controller.dispose();
