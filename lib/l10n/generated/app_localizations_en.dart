@@ -9,6 +9,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get chatCancelSend => 'Cancel sending';
+
+  @override
+  String get chatQueueExpired => 'Waited too long. Not sent.';
+
+  @override
+  String get chatSendCancelled => 'Sending cancelled';
+
+  @override
   String get chatReplyDelayed =>
       'Still waiting for a reply. You can keep chatting.';
 

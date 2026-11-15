@@ -12,6 +12,8 @@ enum OutboxState {
   retryableFailed,
   blocked,
   skipped,
+  expired,
+  cancelled,
 }
 
 class OutboxEntry {
@@ -21,18 +23,22 @@ class OutboxEntry {
     required this.sequence,
     required this.createdAt,
     required this.text,
+    DateTime? queuedAt,
     this.replyTo,
     this.files = const [],
     this.caption = '',
     this.voiceReceipt,
     this.state = OutboxState.queued,
     this.statusCode,
-  });
+  }) : queuedAt = queuedAt ?? createdAt;
 
   final String requestId;
   final String scope;
   final int sequence;
   final DateTime createdAt;
+  final DateTime queuedAt;
+  bool get locallyStopped =>
+      state == OutboxState.expired || state == OutboxState.cancelled;
   final String text;
   final ReplyTarget? replyTo;
   final List<PickedUploadFile> files;
@@ -41,11 +47,16 @@ class OutboxEntry {
   final OutboxState state;
   final int? statusCode;
 
-  OutboxEntry withState(OutboxState value, {int? statusCode}) => OutboxEntry(
+  OutboxEntry withState(
+    OutboxState value, {
+    int? statusCode,
+    DateTime? queuedAt,
+  }) => OutboxEntry(
     requestId: requestId,
     scope: scope,
     sequence: sequence,
     createdAt: createdAt,
+    queuedAt: queuedAt ?? this.queuedAt,
     text: text,
     replyTo: replyTo,
     files: files,
@@ -73,6 +84,7 @@ class OutboxEntry {
       'scope': scope,
       'local_seq': sequence,
       'created_at': createdAt.toUtc().toIso8601String(),
+      'queued_at': queuedAt.toUtc().toIso8601String(),
       'payload_digest': _digest(payload),
       ...payload,
       'state': state.name,
@@ -91,6 +103,9 @@ class OutboxEntry {
       scope: json['scope'] as String,
       sequence: json['local_seq'] as int,
       createdAt: DateTime.parse(json['created_at'] as String),
+      queuedAt: DateTime.parse(
+        (json['queued_at'] ?? json['created_at']) as String,
+      ),
       text: json['text'] as String,
       replyTo: quote == null
           ? null
@@ -194,7 +209,9 @@ class MobileOutboxStore {
 
   Future<OutboxEntry> enqueue(OutboxEntry Function(int) create) =>
       _run((rows) async {
-        if (rows.length >= maxEntries) throw StateError('outbox_capacity');
+        if (rows.where((row) => !row.locallyStopped).length >= maxEntries) {
+          throw StateError('outbox_capacity');
+        }
         final row = create(_sequence + 1);
         await _commit([...rows, row], row.sequence);
         return row;
@@ -208,20 +225,32 @@ class MobileOutboxStore {
     OutboxState? state, {
     bool requireCurrent = false,
     int? statusCode,
+    DateTime? queuedAt,
   }) => _run((rows) async {
     final index = rows.indexWhere(
       (candidate) =>
           candidate.scope == row.scope && candidate.requestId == row.requestId,
     );
     if (index < 0) return false;
-    if ((requireCurrent || state != null) && rows[index].state != row.state) {
+    if ((requireCurrent || state != null) &&
+        (rows[index].state != row.state ||
+            rows[index].queuedAt != row.queuedAt)) {
       return false;
+    }
+    if (state == OutboxState.queued &&
+        rows[index].locallyStopped &&
+        rows.where((row) => !row.locallyStopped).length >= maxEntries) {
+      throw StateError('outbox_capacity');
     }
     final next = [...rows];
     if (state == null) {
       next.removeAt(index);
     } else {
-      next[index] = row.withState(state, statusCode: statusCode);
+      next[index] = row.withState(
+        state,
+        statusCode: statusCode,
+        queuedAt: queuedAt,
+      );
     }
     await _commit(next, _sequence);
     return true;

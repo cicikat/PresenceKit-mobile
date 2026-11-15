@@ -1,4 +1,7 @@
 {
+  "chatCancelSend": "取消发送",
+  "chatQueueExpired": "等待太久，未发送",
+  "chatSendCancelled": "已取消发送",
   "chatReplyDelayed": "回复还没收到，可以继续发送",
   "chatCheckReply": "查看回复",
   "chatDeliveryActions": "查看处理方式",

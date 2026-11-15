@@ -9,6 +9,15 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get chatCancelSend => '取消发送';
+
+  @override
+  String get chatQueueExpired => '等待太久，未发送';
+
+  @override
+  String get chatSendCancelled => '已取消发送';
+
+  @override
   String get chatReplyDelayed => '回复还没收到，可以继续发送';
 
   @override

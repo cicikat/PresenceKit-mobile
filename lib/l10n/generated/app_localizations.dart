@@ -98,6 +98,24 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @chatCancelSend.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消发送'**
+  String get chatCancelSend;
+
+  /// No description provided for @chatQueueExpired.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待太久，未发送'**
+  String get chatQueueExpired;
+
+  /// No description provided for @chatSendCancelled.
+  ///
+  /// In zh, this message translates to:
+  /// **'已取消发送'**
+  String get chatSendCancelled;
+
   /// No description provided for @chatReplyDelayed.
   ///
   /// In zh, this message translates to:

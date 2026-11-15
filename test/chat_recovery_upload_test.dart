@@ -276,6 +276,203 @@ void main() {
     }
   }
 
+  testWidgets(
+    '55: queued B expires at 60s while sent A still waits; fresh C drains',
+    (tester) async {
+      controller.dispose();
+      controller = buildController();
+      backend.offline = false;
+      backend.sendGate = Completer<void>();
+      controller.clock = tester.binding.clock.now;
+      await controller.send('A');
+      await tester.pump();
+      await controller.send('B');
+      await tester.pump();
+      expect(backend.chats, 1);
+      await tester.pump(const Duration(seconds: 59));
+      expect(controller.pendingOutgoing.last.state, OutboxState.queued);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(controller.pendingOutgoing.first.state, OutboxState.sending);
+      expect(controller.pendingOutgoing.last.state, OutboxState.expired);
+      expect(controller.sent.singleWhere((m) => m.text == 'B').failed, isTrue);
+      expect(backend.chats, 1);
+      backend.sendGate!.complete();
+      await tester.pump();
+      await controller.send('C');
+      await tester.pump();
+      expect(backend.chats, 2);
+      expect(controller.pendingOutgoing.single.state, OutboxState.expired);
+      expect(
+        controller.sent.where((m) => m.role == 'him').map((m) => m.text),
+        containsAll(['echo:A', 'echo:C']),
+      );
+      controller.dispose();
+      await tester.pump();
+      controller = buildController();
+    },
+  );
+
+  testWidgets(
+    '55: expiry during session preparation frees slot and late grant never sends',
+    (tester) async {
+      controller.dispose();
+      final gate = Completer<void>();
+      controller = buildController(beforeGrant: () => gate.future);
+      controller.clock = tester.binding.clock.now;
+      backend.offline = false;
+      await controller.send('not dispatched');
+      await tester.pump();
+      expect(backend.chats, 0);
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pump();
+      expect(controller.pendingOutgoing.single.state, OutboxState.expired);
+      expect(controller.sending, isFalse);
+      gate.complete();
+      await tester.pump();
+      expect(backend.chats, 0);
+      final old = controller.sent.singleWhere((m) => m.role == 'you');
+      controller.retryMessage(old);
+      await tester.pump();
+      expect(backend.chats, 1);
+      expect(controller.pendingOutgoing, isEmpty);
+      controller.dispose();
+      await tester.pump();
+      controller = buildController();
+    },
+  );
+
+  testWidgets(
+    '55: queued cancel persists and cannot cancel an already dispatched message',
+    (tester) async {
+      controller.dispose();
+      controller = buildController();
+      controller.clock = tester.binding.clock.now;
+      backend.offline = false;
+      backend.sendGate = Completer<void>();
+      await controller.send('sent A');
+      await tester.pump();
+      await controller.send('cancel B');
+      await tester.pump();
+      final a = controller.sent.singleWhere((m) => m.text == 'sent A');
+      final b = controller.sent.singleWhere((m) => m.text == 'cancel B');
+      expect(controller.canCancelMessage(a), isFalse);
+      expect(controller.canCancelMessage(b), isTrue);
+      await controller.cancelQueuedMessage(a);
+      await controller.cancelQueuedMessage(b);
+      await controller.cancelQueuedMessage(b);
+      await tester.pump();
+      expect(controller.pendingOutgoing.last.state, OutboxState.cancelled);
+      backend.sendGate!.complete();
+      await tester.pump();
+      controller.dispose();
+      controller = buildController();
+      controller.clock = tester.binding.clock.now;
+      await controller.start();
+      await tester.pump();
+      expect(backend.chats, 1);
+      expect(controller.pendingOutgoing.single.state, OutboxState.cancelled);
+      expect(
+        controller.sent.singleWhere((m) => m.text == 'cancel B').failed,
+        isTrue,
+      );
+      controller.dispose();
+      await tester.pump();
+      controller = buildController();
+    },
+  );
+
+  testWidgets(
+    '55: cancelling a pending session bind releases it without a late send',
+    (tester) async {
+      controller.dispose();
+      final gate = Completer<void>();
+      controller = buildController(beforeGrant: () => gate.future);
+      controller.clock = tester.binding.clock.now;
+      backend.offline = false;
+      await controller.send('cancel before send');
+      await tester.pump();
+      await controller.cancelQueuedMessage(
+        controller.sent.singleWhere((m) => m.role == 'you'),
+      );
+      await tester.pump();
+      expect(controller.sending, isFalse);
+      expect(controller.pendingOutgoing.single.state, OutboxState.cancelled);
+      gate.complete();
+      await tester.pump();
+      expect(backend.chats, 0);
+      controller.dispose();
+      await tester.pump();
+      controller = buildController();
+    },
+  );
+
+  testWidgets(
+    '55: legacy expired queue is discarded on restart, never sent, retry has a fresh minute',
+    (tester) async {
+      controller.dispose();
+      controller = buildController();
+      controller.clock = tester.binding.clock.now;
+      backend.offline = false;
+      backend.sendGate = Completer<void>();
+      await controller.send('A');
+      await tester.pump();
+      await controller.send('old B');
+      await tester.pump();
+      controller.dispose();
+      backend.sendGate!.complete();
+      controller = buildController();
+      controller.clock = () =>
+          tester.binding.clock.now().add(const Duration(minutes: 2));
+      await controller.start();
+      await tester.pump();
+      expect(backend.chats, 1);
+      final b = controller.sent.singleWhere((m) => m.text == 'old B');
+      expect(controller.deliveryState(b), OutboxState.expired);
+      controller.retryMessage(b);
+      await tester.pump();
+      expect(backend.chats, 2);
+      expect(
+        controller.pendingOutgoing.where((r) => r.text == 'old B'),
+        isEmpty,
+      );
+      controller.dispose();
+      await tester.pump();
+      controller = buildController();
+    },
+  );
+
+  testWidgets(
+    '55: retry behind a sent message updates the visible queue immediately',
+    (tester) async {
+      controller.dispose();
+      controller = buildController();
+      controller.clock = tester.binding.clock.now;
+      backend.offline = false;
+      backend.sendGate = Completer<void>();
+      await controller.send('A');
+      await tester.pump();
+      await controller.send('B');
+      await tester.pump();
+      await tester.pump(const Duration(minutes: 1));
+      final b = controller.sent.singleWhere((m) => m.text == 'B');
+      expect(controller.deliveryState(b), OutboxState.expired);
+      var notifications = 0;
+      controller.addListener(() => notifications++);
+      controller.retryMessage(b);
+      await tester.pump();
+      expect(controller.deliveryState(b), OutboxState.queued);
+      expect(notifications, greaterThan(0));
+      expect(backend.chats, 1);
+      backend.sendGate!.complete();
+      await tester.pump();
+      expect(backend.chats, 2);
+      controller.dispose();
+      await tester.pump();
+      controller = buildController();
+    },
+  );
+
   test('52-A1 B1 B2: send follows, bounded wait never resends', () async {
     controller.dispose();
     controller = buildController(

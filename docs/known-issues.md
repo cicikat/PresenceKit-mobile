@@ -1,3 +1,7 @@
+## 手机 #55 未发送消息期限与取消（2026-11-15）
+
+本机 queued 从 queued_at（旧快照回退 created_at）起满一分钟转 expired，长按取消转 cancelled；两者保留失败气泡及载荷，但退出自动发送和100条有效队列容量。已派发等待回复不受此期限影响。重启先清过期项，手动重试刷新排队时间；取消和派发原子互斥。无 mobile wire、后端设置或桌面功能变更，复用本机投递详情观察。open：手机scoped只读执行状态端点仍缺；observe：真机后台恢复和旧包升级未验收。完整三面检查、兼容和64MiB存储边界见 [#55说明](mobile/chat-queue-deadline-55.md)。
+
 ## Dream 预设恢复偶发失败（2026-11-15，open）
 
 手机#54最终全量（开启LAYOUT_REVIEW）出现1次既有 dream_appearance_test 的 two flow themes restore independent presets and day/night colors 失败：Unknown dream preset，位置 DreamAppearanceController.select:46；此前标准全量436项通过，失败用例单独重跑通过。本单未改Dream生产代码或该测试。save使用DateTime.now().microsecondsSinceEpoch构造ID，疑似快速连续保存时ID碰撞，尚未独立证实；建议另单注入时钟/ID生成器复现并保证唯一性，不以重试隐藏失败。日志 build/chat-recovery-54-export-tests.log；此处为自动测试偶发缺口，未据此认定真机已丢失预设。

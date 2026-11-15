@@ -20,6 +20,8 @@ Future<void> showChatDeliveryDetails(
           final l = context.l10n;
           final rows = controller.pendingOutgoing;
           String label(OutboxEntry row) => switch (row.state) {
+            OutboxState.expired => l.chatQueueExpired,
+            OutboxState.cancelled => l.chatSendCancelled,
             OutboxState.queued => l.chatOutboxQueued,
             OutboxState.sending => l.chatOutboxSending,
             OutboxState.outcomeUnknown => l.chatOutboxUnknown,
@@ -77,7 +79,11 @@ Future<void> showChatDeliveryDetails(
                 icon: const Icon(Icons.refresh),
                 label: Text(l.chatOutboxCheck),
               ),
-              Text(l.chatPendingCount(rows.length)),
+              Text(
+                l.chatPendingCount(
+                  rows.where((row) => !row.locallyStopped).length,
+                ),
+              ),
               if (rows.any(
                 (row) =>
                     row.state == OutboxState.outcomeUnknown ||
@@ -121,7 +127,9 @@ Future<void> showChatDeliveryDetails(
                                     child: Text(l.chatOutboxCheck),
                                   ),
                                 if (message != null &&
-                                    (row.state == OutboxState.retryableFailed ||
+                                    (row.locallyStopped ||
+                                        row.state ==
+                                            OutboxState.retryableFailed ||
                                         (row.state == OutboxState.blocked &&
                                             (row.statusCode == 401 ||
                                                 row.statusCode == 403))))
@@ -131,8 +139,16 @@ Future<void> showChatDeliveryDetails(
                                     child: Text(l.chatRetry),
                                   ),
                                 if (message != null &&
+                                    row.state == OutboxState.queued)
+                                  TextButton(
+                                    onPressed: () =>
+                                        controller.cancelQueuedMessage(message),
+                                    child: Text(l.chatCancelSend),
+                                  ),
+                                if (message != null &&
                                     row.state != OutboxState.sending &&
-                                    row.state != OutboxState.skipped)
+                                    row.state != OutboxState.skipped &&
+                                    !row.locallyStopped)
                                   TextButton(
                                     onPressed: () async {
                                       if (await confirm(l.chatOutboxSkip)) {
@@ -158,7 +174,7 @@ Future<void> showChatDeliveryDetails(
                                   onPressed: () => Clipboard.setData(
                                     ClipboardData(
                                       text:
-                                          'request_id=${row.requestId}; state=${row.state.name}; http=${row.statusCode ?? '-'}',
+                                          'request_id=${row.requestId}; state=${row.state.name}; queued_at=${row.queuedAt.toUtc().toIso8601String()}; http=${row.statusCode ?? '-'}',
                                     ),
                                   ),
                                   icon: const Icon(
