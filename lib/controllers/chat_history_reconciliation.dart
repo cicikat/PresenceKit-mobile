@@ -28,7 +28,30 @@ List<ChatMessage> reconcileChatHistory(
           if (live) sent.removeWhere((m) => m.id == item.id);
           continue;
         }
-        if (!(live ? i < lastMatch : item.retainOnRefresh)) continue;
+        // Restored unknown requests have a durable local creation time. When
+        // newer history exists, park them at that time rather than leaving
+        // them in `sent`, which renders after the entire server transcript.
+        int? restoredSlot;
+        if (item.role == 'you' && item.uncertain && item.requestId != null) {
+          for (var j = 0; j < remote.length; j++) {
+            final row = remote[j];
+            final clock = RegExp(
+              r'^\d{2}:\d{2}',
+            ).firstMatch(row.time)?.group(0);
+            final time = row.dateKey == null || clock == null
+                ? null
+                : DateTime.tryParse('${row.dateKey}T$clock:59.999');
+            if (time != null && time.isAfter(item.timestamp)) {
+              restoredSlot = j;
+              break;
+            }
+          }
+        }
+        if (!(live
+            ? i < lastMatch || restoredSlot != null
+            : item.retainOnRefresh)) {
+          continue;
+        }
         retainedIds.add(item.id);
         int? next;
         int? preceding;
@@ -45,7 +68,9 @@ List<ChatMessage> reconcileChatHistory(
           }
         }
         final slot =
-            next ?? (preceding == null ? remote.length : preceding + 1);
+            restoredSlot ??
+            next ??
+            (preceding == null ? remote.length : preceding + 1);
         insertions
             .putIfAbsent(slot, () => [])
             .add(item.settled().copyWith(retainOnRefresh: true));

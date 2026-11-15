@@ -299,6 +299,60 @@ void main() {
   );
 
   test(
+    '58: legacy user-only history never returns as a normal bubble',
+    () async {
+      backend.offline = false;
+      backend.day = ChatLogDay.fromJson({
+        'date': '2026-11-15',
+        'entries': [
+          {
+            'time': '03:44',
+            'user': 'old draft\n> speaker:user turn_id:old',
+            'assistant': '',
+          },
+          {'time': '12:00', 'user': 'normal unanswered', 'assistant': ''},
+          {
+            'time': '12:01',
+            'user': 'confirmed\n> speaker:user turn_id:ok',
+            'assistant': 'reply',
+          },
+          {
+            'time': '12:02',
+            'user': 'identified\n> speaker:user turn_id:pending',
+            'assistant': '',
+            'request_id': 'pending',
+          },
+          {
+            'time': '12:03',
+            'user': 'ordinary quote\n> speaker:user\nmore',
+            'assistant': '',
+          },
+        ],
+      });
+      await controller.start();
+      await settle();
+      expect(
+        controller.history.where((m) => m.role == 'you').map((m) => m.text),
+        [
+          'normal unanswered',
+          'confirmed',
+          'identified',
+          'ordinary quote\n> speaker:user\nmore',
+        ],
+      );
+      await controller.refreshConnection();
+      await settle();
+      expect(controller.history.any((m) => m.text == 'old draft'), isFalse);
+      controller.dispose();
+      controller = buildController();
+      await controller.start();
+      await settle();
+      expect(controller.history.any((m) => m.text == 'old draft'), isFalse);
+      expect(backend.chats, 0);
+    },
+  );
+
+  test(
     '57: failed rows stay hidden across refresh and restart, late confirmed replies survive',
     () async {
       backend.offline = false;

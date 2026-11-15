@@ -3,6 +3,34 @@ import 'package:presencekit_mobile/models/chat_history_display.dart';
 import 'package:presencekit_mobile/models/app_models.dart';
 
 void main() {
+  test('58: only uncorrelated empty legacy writer blocks are retired', () {
+    final orphan = {
+      'time': '03:44',
+      'user': 'draft\n> speaker:user turn_id:old',
+      'assistant': '',
+    };
+    expect(ChatLogEntry.fromJson(orphan).legacyUserOnly, isTrue);
+    for (final extra in <Map<String, dynamic>>[
+      {'assistant': 'reply'},
+      {'request_id': 'request'},
+      {'turn_id': 'turn'},
+      {
+        'media_refs': [
+          {'filename': 'image.png'},
+        ],
+      },
+      {'user': 'quote\n> speaker:user\nmore'},
+      {'user': 'plain user-only'},
+      {'user': 'quote\n> speaker:user\n> speaker:assistant'},
+    ]) {
+      expect(
+        ChatLogEntry.fromJson({...orphan, ...extra}).legacyUserOnly,
+        isFalse,
+        reason: extra.toString(),
+      );
+    }
+  });
+
   test(
     '57: terminal footer whitespace and compact quote variants stay hidden',
     () {

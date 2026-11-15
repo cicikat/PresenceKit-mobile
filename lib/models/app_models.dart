@@ -1081,6 +1081,7 @@ class ChatMediaRef {
 
 class ChatLogEntry {
   const ChatLogEntry({
+    this.legacyUserOnly = false,
     this.timestamp,
     this.userTimestamp,
     this.entryKind = '',
@@ -1097,7 +1098,22 @@ class ChatLogEntry {
 
   factory ChatLogEntry.fromJson(Map<String, dynamic> json) {
     final rawRefs = json['media_refs'];
+    final rawUser = (json['user'] ?? '').toString();
+    final assistant = historyVisibleText((json['assistant'] ?? '').toString());
     return ChatLogEntry(
+      // Old servers emit orphan writer blocks without a correlator. Preserve
+      // that evidence before display cleanup removes the terminal footer.
+      // This is a view projection, never a claim about remote execution.
+      legacyUserOnly:
+          assistant.trim().isEmpty &&
+          (json['request_id'] ?? '').toString().isEmpty &&
+          (json['turn_id'] ?? '').toString().isEmpty &&
+          json['tool_activity'] == null &&
+          (rawRefs is! List || rawRefs.isEmpty) &&
+          ChatArtifact.parseList(json['artifacts']).isEmpty &&
+          RegExp(
+            r'(?:^|\r?\n)[ \t]*\\?>[ \t]*speaker:user(?:[ \t]+(?:turn_id|emotion|intensity|trigger|source|modality|asr_low):\S+)*[ \t]*$',
+          ).hasMatch(rawUser.trimRight()),
       timestamp: json['ts'] is num
           ? DateTime.fromMillisecondsSinceEpoch(
               ((json['ts'] as num) * 1000).round(),
@@ -1133,8 +1149,8 @@ class ChatLogEntry {
           : const [],
       artifacts: ChatArtifact.parseList(json['artifacts']),
       time: (json['time'] ?? '').toString(),
-      user: historyVisibleText((json['user'] ?? '').toString()),
-      assistant: historyVisibleText((json['assistant'] ?? '').toString()),
+      user: historyVisibleText(rawUser),
+      assistant: assistant,
     );
   }
 
@@ -1143,6 +1159,7 @@ class ChatLogEntry {
   final String? assistantDisplayText;
   final List<ChatMediaRef> mediaRefs;
   final List<ChatArtifact> artifacts;
+  final bool legacyUserOnly;
   final String entryKind;
   final DateTime? timestamp;
   final DateTime? userTimestamp;

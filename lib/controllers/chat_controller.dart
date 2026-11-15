@@ -2521,6 +2521,7 @@ class ChatController extends ChangeNotifier {
             timestamp: entry.timestamp,
           ),
         if (entry.user.trim().isNotEmpty &&
+            !entry.legacyUserOnly &&
             !(entry.assistant.trim().isEmpty &&
                 _outboxRows[entry.requestId]?.hiddenOnRestore == true))
           ChatMessage(
