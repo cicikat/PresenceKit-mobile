@@ -1,7 +1,41 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/models/chat_history_display.dart';
+import 'package:presencekit_mobile/models/app_models.dart';
 
 void main() {
+  test('history JSON hides writer footer and retains canonical identity', () {
+    final entry = ChatLogEntry.fromJson({
+      'time': '12:00',
+      'turn_id': 'canonical',
+      'user': 'question\n> speaker:user turn_id:user-turn',
+      'assistant': 'answer\n> speaker:assistant turn_id:canonical',
+      'assistant_display_text':
+          'display\n> speaker:assistant turn_id:canonical',
+    });
+    expect(entry.user, 'question');
+    expect(entry.assistant, 'answer');
+    expect(entry.assistantDisplayText, 'display');
+    expect(entry.turnId, 'canonical');
+    expect(
+      historyVisibleText(
+        'voice\n> speaker:user source:mobile modality:voice asr_low:1',
+      ),
+      'voice',
+    );
+    expect(historyVisibleText('text\n> speaker:user'), 'text');
+  });
+  test('terminal writer footer is hidden without dropping normal quotes', () {
+    expect(
+      historyVisibleText(
+        '我觉得你好像有点不一样了\n> speaker:user turn_id:fixture-user-turn',
+      ),
+      '我觉得你好像有点不一样了',
+    );
+    expect(
+      historyVisibleText('body\n> speaker:user turn_id:inside\nmore'),
+      'body\n> speaker:user turn_id:inside\nmore',
+    );
+  });
   test(
     'current exact and unverified reply envelopes recover multiline quotes',
     () {

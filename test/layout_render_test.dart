@@ -208,7 +208,11 @@ void main() {
       controller.scrollToBottom();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
-      expect(find.byTooltip('查看回复'), findsOneWidget);
+      expect(find.byTooltip('查看回复'), findsNothing);
+      expect(find.byIcon(Icons.refresh_rounded), findsNothing);
+      expect(find.byIcon(Icons.error), findsOneWidget);
+      expect(find.text('发送失败'), findsNothing);
+      expect(find.text('回复还没收到，可以继续发送'), findsNothing);
       expect(tester.takeException(), isNull);
       await capture(tester, '${layout.name}-recovery');
 

@@ -1329,17 +1329,13 @@ class _YouMessageState extends State<YouMessage> {
             ? MainAxisAlignment.start
             : MainAxisAlignment.end,
         children: [
-          if (widget.failed || widget.uncertain)
+          if (widget.failed)
             IconButton(
-              tooltip: widget.failed
-                  ? widget.onRetry != null
-                        ? context.l10n.chatSendFailedRetry
-                        : context.l10n.chatDeliveryActions
-                  : context.l10n.chatCheckReply,
+              tooltip: widget.onRetry != null
+                  ? context.l10n.chatSendFailedRetry
+                  : context.l10n.chatDeliveryActions,
               onPressed: widget.onRetry ?? widget.onDeliveryDetails,
-              icon: widget.failed
-                  ? const Icon(Icons.error, color: Color(0xFFE53935))
-                  : Icon(Icons.refresh_rounded, color: c.ink2),
+              icon: const Icon(Icons.error, color: Color(0xFFE53935)),
               iconSize: 22,
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             ),
@@ -1525,22 +1521,6 @@ class _YouMessageState extends State<YouMessage> {
                           author: widget.quotedAuthor,
                         )
                       : _QuoteBar(c: c, text: widget.quotedText!, dark: true),
-                if (widget.deliveryLabel != null ||
-                    widget.uncertain ||
-                    widget.failed)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: InkWell(
-                      onTap: widget.onDeliveryDetails ?? widget.onRetry,
-                      child: Text(
-                        widget.deliveryLabel ??
-                            (widget.failed
-                                ? context.l10n.chatSendFailed
-                                : context.l10n.chatReplyDelayed),
-                        style: TextStyle(fontSize: 12, color: c.ink2),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),

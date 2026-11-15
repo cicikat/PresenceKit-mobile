@@ -194,9 +194,11 @@ void main() {
       expect(find.text('preview quote'), findsOneWidget);
       await tester.tap(find.byTooltip('Send failed. Tap to resend'));
       expect(retries, 1);
-      await tester.ensureVisible(find.byTooltip('Check for a reply'));
-      await tester.tap(find.byTooltip('Check for a reply'));
-      expect(retries, 2);
+      expect(find.byTooltip('Check for a reply'), findsNothing);
+      expect(find.byIcon(Icons.refresh_rounded), findsNothing);
+      expect(find.text('Send failed'), findsNothing);
+      expect(find.byIcon(Icons.error), findsOneWidget);
+      expect(retries, 1);
       final classicStripes = tester
           .widgetList<Container>(find.byType(Container))
           .where((container) {
