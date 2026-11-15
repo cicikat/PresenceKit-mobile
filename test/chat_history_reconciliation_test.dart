@@ -20,6 +20,48 @@ ChatMessage message(
 
 void main() {
   test(
+    '58: restored unknown send keeps its old position before newer history',
+    () {
+      final old = ChatMessage(
+        role: 'you',
+        text: 'old unknown',
+        time: '03:44',
+        timestamp: DateTime(2026, 11, 15, 3, 44),
+        requestId: 'old-request',
+        uncertainSince: DateTime(2026, 11, 15, 3, 46),
+        retainOnRefresh: true,
+      );
+      final remote = [
+        ChatMessage(
+          role: 'you',
+          text: 'new question',
+          time: '14:00',
+          dateKey: '2026-11-15',
+        ),
+        ChatMessage(
+          role: 'him',
+          text: 'new reply',
+          time: '14:01',
+          dateKey: '2026-11-15',
+        ),
+      ];
+      final sent = [old];
+      final merged = reconcileChatHistory(remote, [], List.of(sent), sent);
+      expect(merged.map((m) => m.text), [
+        'old unknown',
+        'new question',
+        'new reply',
+      ]);
+      expect(sent, isEmpty);
+      expect(merged.first.uncertain, isTrue);
+      expect(merged.first.requestId, 'old-request');
+      final refreshed = reconcileChatHistory(remote, merged, [], sent);
+      expect(refreshed.map((m) => m.text), merged.map((m) => m.text));
+      expect(refreshed.first.uncertain, isTrue);
+    },
+  );
+
+  test(
     '57: failed outgoing original survives a correlated corrupt history echo',
     () {
       final original = ChatMessage(
