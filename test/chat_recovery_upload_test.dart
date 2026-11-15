@@ -442,6 +442,37 @@ void main() {
     },
   );
 
+  testWidgets(
+    '55: retry behind a sent message updates the visible queue immediately',
+    (tester) async {
+      controller.dispose();
+      controller = buildController();
+      controller.clock = tester.binding.clock.now;
+      backend.offline = false;
+      backend.sendGate = Completer<void>();
+      await controller.send('A');
+      await tester.pump();
+      await controller.send('B');
+      await tester.pump();
+      await tester.pump(const Duration(minutes: 1));
+      final b = controller.sent.singleWhere((m) => m.text == 'B');
+      expect(controller.deliveryState(b), OutboxState.expired);
+      var notifications = 0;
+      controller.addListener(() => notifications++);
+      controller.retryMessage(b);
+      await tester.pump();
+      expect(controller.deliveryState(b), OutboxState.queued);
+      expect(notifications, greaterThan(0));
+      expect(backend.chats, 1);
+      backend.sendGate!.complete();
+      await tester.pump();
+      expect(backend.chats, 2);
+      controller.dispose();
+      await tester.pump();
+      controller = buildController();
+    },
+  );
+
   test('52-A1 B1 B2: send follows, bounded wait never resends', () async {
     controller.dispose();
     controller = buildController(

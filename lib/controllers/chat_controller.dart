@@ -646,6 +646,7 @@ class ChatController extends ChangeNotifier {
       if (await _outbox.setState(row, OutboxState.queued, queuedAt: queuedAt) &&
           _scopeStillLive(scope.generation, scope)) {
         _renderOutgoing(row.withState(OutboxState.queued, queuedAt: queuedAt));
+        notifyListeners();
         _requestOutboxDrain();
       }
     } catch (_) {

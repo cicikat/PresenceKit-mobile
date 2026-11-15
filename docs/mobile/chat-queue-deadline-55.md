@@ -8,8 +8,8 @@
 
 open：scoped只读请求执行状态端点仍未完成，复用既有本机投递详情观察，不虚构后端查询端点。observe：真机后台/杀进程/旧包升级未验收。测试入口及证据见工单55。
 
-防回归：test/chat_recovery_upload_test.dart 的 55: 五项虚拟时钟用例覆盖59/60秒边界、发送后等待不淘汰、会话准备到期、取消持久化及重启补发隔离；test/mobile_outbox_deadline_test.dart 覆盖容量、原子取消/派发竞争、旧快照与重试代际；test/chat_interaction_regression_test.dart 覆盖长按入口及原复制菜单。原54队首恢复用例继续保留。CI的flutter test覆盖全部这些用例。
+防回归：test/chat_recovery_upload_test.dart 的 55: 六项虚拟时钟用例覆盖59/60秒边界、发送后等待不淘汰、会话准备到期、取消持久化及重启补发隔离；test/mobile_outbox_deadline_test.dart 覆盖容量、原子取消/派发竞争、旧快照与重试代际；test/chat_interaction_regression_test.dart 覆盖长按入口及原复制菜单。原54队首恢复用例继续保留。CI的flutter test覆盖全部这些用例。
 
-自动验收：全量447项通过（build/chat-queue-55-full.log）；故意把一分钟改为61秒后，60秒用例按预期失败：Expected expired / Actual queued（build/chat-queue-55-red.log），已恢复正式60秒规则。此红/绿验证证明该用例能拦截期限回归。既有CI的flutter test自动运行这些测试。
+自动验收：全量448项通过（build/chat-queue-55-full.log）；故意把一分钟改为61秒后，60秒用例按预期失败：Expected expired / Actual queued（build/chat-queue-55-red.log），已恢复正式60秒规则。此红/绿验证证明该用例能拦截期限回归。既有CI的flutter test自动运行这些测试。
 
-flutter analyze --no-pub 零问题；flutter build apk --debug --flavor dev 成功，Gradle31.2秒。开发APK位于build/app/outputs/flutter-apk/app-dev-debug.apk；未安装、未正式发布，真机行为仍not-run。
+flutter analyze --no-pub 零问题；flutter build apk --debug --flavor dev 成功，Gradle28.7秒。开发APK位于build/app/outputs/flutter-apk/app-dev-debug.apk；未安装、未正式发布，真机行为仍not-run。
