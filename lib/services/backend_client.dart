@@ -1813,6 +1813,25 @@ class BackendClient {
 
   static String _contentTypeForFile(String filename) {
     final lower = filename.toLowerCase();
+    const documentTypes = {
+      '.pdf': 'application/pdf',
+      '.csv': 'text/csv',
+      '.tsv': 'text/tab-separated-values',
+      '.xlsx':
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.pptx':
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      '.json': 'application/json',
+      '.jsonl': 'application/x-ndjson',
+      '.yaml': 'application/yaml',
+      '.yml': 'application/yaml',
+      '.html': 'text/html',
+      '.htm': 'text/html',
+      '.xml': 'application/xml',
+    };
+    for (final entry in documentTypes.entries) {
+      if (lower.endsWith(entry.key)) return entry.value;
+    }
     if (lower.endsWith('.md')) return 'text/markdown; charset=utf-8';
     if (lower.endsWith('.txt')) return 'text/plain; charset=utf-8';
     if (lower.endsWith('.docx')) {

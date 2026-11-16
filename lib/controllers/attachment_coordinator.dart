@@ -8,7 +8,36 @@ class AttachmentCoordinator {
   AttachmentCoordinator({required SettingsStore settings})
     : _settings = settings;
 
-  static const fileExtensions = ['.txt', '.md', '.docx'];
+  static const fileExtensions = [
+    '.txt',
+    '.md',
+    '.docx',
+    '.csv',
+    '.tsv',
+    '.xlsx',
+    '.pdf',
+    '.pptx',
+    '.json',
+    '.jsonl',
+    '.yaml',
+    '.yml',
+    '.xml',
+    '.log',
+    '.py',
+    '.js',
+    '.ts',
+    '.tsx',
+    '.jsx',
+    '.css',
+    '.sql',
+    '.sh',
+    '.ps1',
+    '.ini',
+    '.toml',
+    '.rst',
+    '.html',
+    '.htm',
+  ];
   static const imageExtensions = [
     '.jpg',
     '.jpeg',

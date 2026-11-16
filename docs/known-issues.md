@@ -539,3 +539,7 @@ current：Reality真实对话统一canonical历史，结构化活动按引用查
 
 317 (observe): FCM on the target ROM, screen-off, Doze, provider latency and Google Play services availability await physical device measurements. Missing Firebase configuration is shown in capability settings; compatibility reception can be enabled there.
 314 / 315 (observe): Android 真机仍需验证系统使用访问撤销、亮屏与亮度精度、姿态和功耗。现有 relay 路径可在通知测试模式下使用 adb logcat -s PresenceDelivery 采集阶段时间，Doze 与无常驻系统推送待真机实验。
+
+## 工单331 附件格式扩展（observe）
+
+新增多格式的本地校验和上传链已接入；真实安装版/手机文件提供器及真实模型效果未验收。扫描PDF和文档内图片尚不自动视觉识别，应上传页面图片。详见接口文档工单331。
