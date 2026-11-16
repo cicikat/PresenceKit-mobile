@@ -8,7 +8,9 @@
 | https://github.com/FridayKoi/WhereIsMyMoney | e29ae0315fd66605057cd86c29466bd0b048b8e0 / Apache-2.0 | service/PaymentNotificationListener.kt、ui/permissions/PermissionsScreen.kt、ui/import_screen/ImportViewModel.kt | 只读研究授权与手动纠错；不引入依赖或代码 |
 | https://github.com/Skybaby-T/AutoBook | 未独立确认许可证/版本 | 本轮不克隆、不采纳源码 | reject；OCR 不在 V1 范围 |
 
-SmartLedger 使用 Android minSdk 26、compile/target 35、JVM 17；AGP 8.7.3、Kotlin 2.0.21、KSP 1.0.27，Room 2.6.1、Compose BOM 2024.12.01、WorkManager 2.10.0；依赖来源为 Gradle Google/Maven Central。上游构建入口为 android Gradle 项目根的 `gradlew.bat assembleDebug testDebugUnitTest`，本轮仅审计、不构建第三方 App。实际解析直接依赖 Android Log 和 Double；DedupHelper 依赖 TransactionDao/Transaction/Category、CurrencyUtil 和协程 Mutex，不能原样抽入本项目。数据库入口 data/db/AppDatabase.kt 和 DAO 管理正式交易，监听在 onListenerConnected 启动 KeepAliveService，不采纳其保活策略。
+SmartLedger 使用 Android minSdk 26、compile/target 35、JVM 17；AGP 8.7.3、Kotlin 2.0.21、KSP 1.0.27，Room 2.6.1、Compose BOM 2024.12.01、WorkManager 2.10.0；依赖解析配置包含阿里云 Google/Central 镜像、Google、Maven Central，插件还含 Gradle Plugin Portal。上游构建入口为 Android Gradle 项目根的 `gradlew.bat assembleDebug testDebugUnitTest`，本轮仅审计、不构建第三方 App。实际解析直接依赖 Android Log 和 Double；DedupHelper 依赖 TransactionDao/Transaction/Category、CurrencyUtil 和协程 Mutex，不能原样抽入本项目。数据库入口 data/db/AppDatabase.kt 和 DAO 管理正式交易，监听在 onListenerConnected 启动 KeepAliveService，不采纳其保活策略。
+
+WhereIsMyMoney 为 minSdk26、target36，Compose/Lifecycle、navigation2.7.7、MPAndroidChart3.1.0、Apache POI5.2.5；依赖配置含腾讯/阿里镜像、Google/Maven Central及JitPack。其导入ViewModel通过 Apache POI 处理表格（不是独立本地OCR），授权页只研究交互，不复制监听中的全文调试日志。构建入口同为根目录 Gradle assembleDebug/testDebugUnitTest；本轮未构建、未运行其测试，不把依赖声明当运行验证。
 
 | 能力 | SmartLedger 实现 | WhereIsMyMoney 实现 | PresenceKit 取舍 |
 |---|---|---|---|

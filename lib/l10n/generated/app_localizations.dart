@@ -5622,6 +5622,282 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'{month}月{day}日 {time}'**
   String messengerTimestamp(int month, int day, String time);
+
+  /// No description provided for @financeWechat.
+  ///
+  /// In zh, this message translates to:
+  /// **'微信支付'**
+  String get financeWechat;
+
+  /// No description provided for @financeAlipay.
+  ///
+  /// In zh, this message translates to:
+  /// **'支付宝'**
+  String get financeAlipay;
+
+  /// No description provided for @financeBank.
+  ///
+  /// In zh, this message translates to:
+  /// **'银行通知'**
+  String get financeBank;
+
+  /// No description provided for @financeTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'自动记账'**
+  String get financeTitle;
+
+  /// No description provided for @financeEntryHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'支付通知、待确认记录与流水'**
+  String get financeEntryHint;
+
+  /// No description provided for @financeNotice.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅记录已经发生的支付，不会自动付款。通知可能缺失或折叠；没有通知时可手动记录。'**
+  String get financeNotice;
+
+  /// No description provided for @financeCollect.
+  ///
+  /// In zh, this message translates to:
+  /// **'收集支付通知'**
+  String get financeCollect;
+
+  /// No description provided for @financeChannels.
+  ///
+  /// In zh, this message translates to:
+  /// **'收集范围：微信支付、支付宝、工商银行、建设银行、招商银行。其他渠道请手动记录。'**
+  String get financeChannels;
+
+  /// No description provided for @financePermission.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知读取授权'**
+  String get financePermission;
+
+  /// No description provided for @financePermissionGranted.
+  ///
+  /// In zh, this message translates to:
+  /// **'已获得通知读取授权'**
+  String get financePermissionGranted;
+
+  /// No description provided for @financePermissionMissing.
+  ///
+  /// In zh, this message translates to:
+  /// **'尚未授权或授权已撤销，请前往系统设置开启。'**
+  String get financePermissionMissing;
+
+  /// No description provided for @financeDisabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'后端尚未开启记账，本机记录已保留。'**
+  String get financeDisabled;
+
+  /// No description provided for @financePaused.
+  ///
+  /// In zh, this message translates to:
+  /// **'收集已暂停，待发送记录保留在本机。'**
+  String get financePaused;
+
+  /// No description provided for @financeSynced.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务端已保存'**
+  String get financeSynced;
+
+  /// No description provided for @financeSavedCandidate.
+  ///
+  /// In zh, this message translates to:
+  /// **'候选已保存，尚未计入流水'**
+  String get financeSavedCandidate;
+
+  /// No description provided for @financePendingSync.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存在本机，等待同步'**
+  String get financePendingSync;
+
+  /// No description provided for @financeCandidates.
+  ///
+  /// In zh, this message translates to:
+  /// **'待确认与已忽略'**
+  String get financeCandidates;
+
+  /// No description provided for @financeLedger.
+  ///
+  /// In zh, this message translates to:
+  /// **'已确认流水'**
+  String get financeLedger;
+
+  /// No description provided for @financeManual.
+  ///
+  /// In zh, this message translates to:
+  /// **'手动记录'**
+  String get financeManual;
+
+  /// No description provided for @financeEdit.
+  ///
+  /// In zh, this message translates to:
+  /// **'修正'**
+  String get financeEdit;
+
+  /// No description provided for @financeAmount.
+  ///
+  /// In zh, this message translates to:
+  /// **'金额（元，CNY）'**
+  String get financeAmount;
+
+  /// No description provided for @financeInvalidAmount.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入大于零、最多两位小数的金额'**
+  String get financeInvalidAmount;
+
+  /// No description provided for @financeMerchant.
+  ///
+  /// In zh, this message translates to:
+  /// **'商户'**
+  String get financeMerchant;
+
+  /// No description provided for @financeMerchantMissing.
+  ///
+  /// In zh, this message translates to:
+  /// **'商户未知'**
+  String get financeMerchantMissing;
+
+  /// No description provided for @financeCategory.
+  ///
+  /// In zh, this message translates to:
+  /// **'分类'**
+  String get financeCategory;
+
+  /// No description provided for @financeCancel.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭'**
+  String get financeCancel;
+
+  /// No description provided for @financeSave.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存'**
+  String get financeSave;
+
+  /// No description provided for @financeConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认入账'**
+  String get financeConfirm;
+
+  /// No description provided for @financeIgnore.
+  ///
+  /// In zh, this message translates to:
+  /// **'忽略／撤销确认'**
+  String get financeIgnore;
+
+  /// No description provided for @financeDelete.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除记录'**
+  String get financeDelete;
+
+  /// No description provided for @financeIgnored.
+  ///
+  /// In zh, this message translates to:
+  /// **'已忽略，不计入流水'**
+  String get financeIgnored;
+
+  /// No description provided for @financeExpense.
+  ///
+  /// In zh, this message translates to:
+  /// **'支出'**
+  String get financeExpense;
+
+  /// No description provided for @financeIncome.
+  ///
+  /// In zh, this message translates to:
+  /// **'收入'**
+  String get financeIncome;
+
+  /// No description provided for @financeRefund.
+  ///
+  /// In zh, this message translates to:
+  /// **'退款'**
+  String get financeRefund;
+
+  /// No description provided for @financeTransfer.
+  ///
+  /// In zh, this message translates to:
+  /// **'转账／还款'**
+  String get financeTransfer;
+
+  /// No description provided for @financeUnknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'方向待确认'**
+  String get financeUnknown;
+
+  /// No description provided for @financeEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'这里还没有记录。通知不完整时可以手动添加。'**
+  String get financeEmpty;
+
+  /// No description provided for @financeThisMonth.
+  ///
+  /// In zh, this message translates to:
+  /// **'只看本月'**
+  String get financeThisMonth;
+
+  /// No description provided for @financeLocalMonth.
+  ///
+  /// In zh, this message translates to:
+  /// **'本机已同步的本月支出'**
+  String get financeLocalMonth;
+
+  /// No description provided for @financeLocalScope.
+  ///
+  /// In zh, this message translates to:
+  /// **'仅统计本机缓存中已确认且已同步的 CNY 支出，最多显示最近 1000 条；不含退款、转账和待确认项。'**
+  String get financeLocalScope;
+
+  /// No description provided for @financePossibleDuplicate.
+  ///
+  /// In zh, this message translates to:
+  /// **'可能与另一渠道的通知重复，请核对后只确认一笔。'**
+  String get financePossibleDuplicate;
+
+  /// No description provided for @financeMissingAmount.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知金额不完整，请补全后确认。'**
+  String get financeMissingAmount;
+
+  /// No description provided for @financeHistory.
+  ///
+  /// In zh, this message translates to:
+  /// **'来源与修改记录'**
+  String get financeHistory;
+
+  /// No description provided for @financeHistoryUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法读取修改记录，请连接后端后重试。'**
+  String get financeHistoryUnavailable;
+
+  /// No description provided for @financeRevision.
+  ///
+  /// In zh, this message translates to:
+  /// **'版本'**
+  String get financeRevision;
+
+  /// No description provided for @financeAcceptServer.
+  ///
+  /// In zh, this message translates to:
+  /// **'采用服务端版本'**
+  String get financeAcceptServer;
 }
 
 class _AppLocalizationsDelegate

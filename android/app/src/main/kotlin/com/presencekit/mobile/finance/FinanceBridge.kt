@@ -45,6 +45,11 @@ object FinanceBridge {
                                 require(id.matches(Regex("[A-Za-z0-9_-]+"))) { "invalid_record" }
                                 store.acceptServer(realm, sync.request(origin, owner, "/finance/candidates/$id").getJSONObject("record")); null
                             }
+                            "detail" -> {
+                                val id = call.argument<String>("id")!!
+                                require(id.matches(Regex("[A-Za-z0-9_-]+"))) { "invalid_record" }
+                                sync.request(origin, owner, "/finance/candidates/$id").toString()
+                            }
                             "sync" -> { val value = sync.run(origin, owner, manual = true); schedule(app); value.toString() }
                             else -> error("unsupported")
                         }
@@ -78,7 +83,15 @@ class FinanceJobService : JobService() {
                     }
                 }
             } catch (_: Exception) { retry = true }
-            if (!cancellation.get()) Handler(Looper.getMainLooper()).post { jobFinished(params, retry) }
+            if (!cancellation.get()) Handler(Looper.getMainLooper()).post {
+                jobFinished(params, retry)
+                if (!retry) FinanceBridge.executor.execute {
+                    runCatching {
+                        val (origin, owner) = FinanceAccess.current(this)
+                        FinanceStore(this).use { store -> if (store.next(FinanceAccess.realm(origin, owner)) != null) FinanceBridge.schedule(this) }
+                    }
+                }
+            }
         }
         return true
     }

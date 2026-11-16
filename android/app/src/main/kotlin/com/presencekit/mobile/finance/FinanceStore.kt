@@ -11,7 +11,7 @@ import java.util.UUID
 /** App-private minimal structured data; never stores notification bodies or credentials. */
 class FinanceStore(context: Context) : SQLiteOpenHelper(context, "finance_v1.db", null, 1), java.io.Closeable {
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("CREATE TABLE candidates(realm TEXT NOT NULL,id TEXT NOT NULL,event TEXT NOT NULL,data TEXT NOT NULL,revision INTEGER NOT NULL DEFAULT 0,operation TEXT,error TEXT,PRIMARY KEY(realm,id),UNIQUE(realm,event))")
+        db.execSQL("CREATE TABLE candidates(realm TEXT NOT NULL,id TEXT NOT NULL,event TEXT NOT NULL,data TEXT NOT NULL,occurred_at INTEGER NOT NULL,revision INTEGER NOT NULL DEFAULT 0,operation TEXT,error TEXT,PRIMARY KEY(realm,id),UNIQUE(realm,event))")
         db.execSQL("CREATE TABLE metadata(realm TEXT PRIMARY KEY,data TEXT NOT NULL)")
     }
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) { error("unsupported_schema") }
@@ -23,7 +23,7 @@ class FinanceStore(context: Context) : SQLiteOpenHelper(context, "finance_v1.db"
     fun setMeta(realm: String, data: JSONObject) { writableDatabase.insertWithOnConflict("metadata", null, ContentValues().apply { put("realm", realm); put("data", data.toString()) }, SQLiteDatabase.CONFLICT_REPLACE) }
     fun snapshot(realm: String): JSONObject {
         val rows = JSONArray()
-        readableDatabase.rawQuery("SELECT data,revision,operation,error FROM candidates WHERE realm=? ORDER BY rowid DESC LIMIT 1000", arrayOf(realm)).use {
+        readableDatabase.rawQuery("SELECT data,revision,operation,error FROM candidates WHERE realm=? ORDER BY occurred_at DESC,rowid DESC LIMIT 1000", arrayOf(realm)).use {
             while (it.moveToNext()) rows.put(JSONObject(it.getString(0)).put("revision", it.getInt(1)).put("sync_status", if (!it.isNull(3)) it.getString(3) else if (it.isNull(2)) "synced" else "pending"))
         }
         return JSONObject().put("records", rows).put("sync", meta(realm))
@@ -42,7 +42,7 @@ class FinanceStore(context: Context) : SQLiteOpenHelper(context, "finance_v1.db"
             }; result
         }
         if (suspect) record.getJSONArray("reason_codes").put("possible_duplicate")
-        db.insertOrThrow("candidates", null, ContentValues().apply { put("realm", realm); put("id", id); put("event", event); put("data", record.toString()); put("operation", operation(record, 0).toString()) })
+        db.insertOrThrow("candidates", null, ContentValues().apply { put("realm", realm); put("id", id); put("event", event); put("occurred_at", record.getLong("occurred_at")); put("data", record.toString()); put("operation", operation(record, 0).toString()) })
         id
     }
     private fun operation(record: JSONObject, revision: Int) = JSONObject().put("operation_id", UUID.randomUUID().toString()).put("candidate_id", record.getString("candidate_id")).put("base_revision", revision).put("record", JSONObject(record.toString()))
@@ -56,7 +56,7 @@ class FinanceStore(context: Context) : SQLiteOpenHelper(context, "finance_v1.db"
             require(record.optString("status") in setOf("candidate", "confirmed", "ignored", "duplicate", "deleted")) { "invalid_record" }
             require(record.optString("direction") in setOf("expense", "income", "refund", "transfer", "unknown")) { "invalid_record" }
             if (record.optString("status") == "confirmed") require(!record.isNull("amount_minor") && record.getLong("amount_minor") > 0 && record.optString("currency") == "CNY" && record.optString("direction") != "unknown") { "invalid_record" }
-            db.update("candidates", ContentValues().apply { put("data", record.toString()); if (it.isNull(2)) put("operation", operation(record, revision).toString()); putNull("error") }, "realm=? AND id=?", arrayOf(realm, id))
+            db.update("candidates", ContentValues().apply { put("data", record.toString()); if (it.isNull(2) || (!it.isNull(3) && it.getString(3) == "rejected")) put("operation", operation(record, revision).toString()); putNull("error") }, "realm=? AND id=?", arrayOf(realm, id))
         }
     }
     fun next(realm: String): JSONObject? = readableDatabase.rawQuery("SELECT operation FROM candidates WHERE realm=? AND operation IS NOT NULL AND error IS NULL ORDER BY rowid LIMIT 1", arrayOf(realm)).use { if (it.moveToFirst()) JSONObject(it.getString(0)) else null }
@@ -83,7 +83,7 @@ class FinanceStore(context: Context) : SQLiteOpenHelper(context, "finance_v1.db"
             db.rawQuery("SELECT operation,revision FROM candidates WHERE realm=? AND id=?", arrayOf(realm, id)).use {
                 if (it.moveToFirst()) {
                     if (it.isNull(0) && row.getInt("revision") >= it.getInt(1)) db.update("candidates", ContentValues().apply { put("data", row.toString()); put("revision", row.getInt("revision")) }, "realm=? AND id=?", arrayOf(realm, id))
-                } else db.insertOrThrow("candidates", null, ContentValues().apply { put("realm", realm); put("id", id); put("event", row.getString("source_event_key")); put("data", row.toString()); put("revision", row.getInt("revision")) })
+                } else db.insertOrThrow("candidates", null, ContentValues().apply { put("realm", realm); put("id", id); put("event", row.getString("source_event_key")); put("occurred_at", row.getLong("occurred_at")); put("data", row.toString()); put("revision", row.getInt("revision")) })
             }
         }
     }

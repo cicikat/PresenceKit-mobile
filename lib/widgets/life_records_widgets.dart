@@ -11,6 +11,8 @@ import '../l10n/l10n.dart';
 import '../models/app_models.dart';
 import '../models/life_record.dart';
 import 'common_widgets.dart';
+import '../controllers/finance_controller.dart';
+import 'finance_widgets.dart';
 
 String lifeCategory(AppLocalizations l, String value) => switch (value) {
   'diet' => l.lifeDiet,
@@ -341,6 +343,28 @@ class _LifeRecordsPageState extends State<LifeRecordsPage> {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    ListTile(
+                      leading: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                      ),
+                      title: Text(l.financeTitle),
+                      subtitle: Text(l.financeEntryHint),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => Theme(
+                            data: themed,
+                            child: FinancePage(
+                              c: widget.c,
+                              controller: FinanceController(
+                                origin: controller.origin,
+                                owner: controller.owner,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     Row(
                       children: [
                         Expanded(

@@ -42,6 +42,9 @@ if (releaseTaskRequested) {
 }
 
 android {
+    if (providers.gradleProperty("financeContract").isPresent) {
+        sourceSets.getByName("test").java.srcDir("src/financeContract/kotlin")
+    }
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }

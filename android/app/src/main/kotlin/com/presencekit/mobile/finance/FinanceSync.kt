@@ -9,6 +9,7 @@ import java.net.URL
 class FinanceHttpError(val status: Int) : Exception("http_$status")
 
 class FinanceSync(private val context: Context, private val store: FinanceStore,
+    private val tokenProvider: (() -> String)? = null,
     private val transport: ((String, JSONObject?) -> JSONObject)? = null) {
     fun check(origin: String, owner: String): String {
         require(FinanceAccess.current(context) == Pair(origin, owner)) { "account_changed" }
@@ -19,7 +20,7 @@ class FinanceSync(private val context: Context, private val store: FinanceStore,
     fun request(origin: String, owner: String, path: String, body: JSONObject? = null): JSONObject {
         check(origin, owner)
         transport?.let { return it(path, body) }
-        val token = BackendSecurityPolicy.adminToken(context, FinanceAccess.prefs(context))
+        val token = tokenProvider?.invoke() ?: BackendSecurityPolicy.adminToken(context, FinanceAccess.prefs(context))
         require(token.isNotBlank()) { "setup_required" }
         val connection = URL(origin + path).openConnection() as HttpURLConnection
         val deadline = deadlines.schedule({ connection.disconnect() }, 30, java.util.concurrent.TimeUnit.SECONDS)

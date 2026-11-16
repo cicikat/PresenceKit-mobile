@@ -36,6 +36,33 @@ class FinanceTest {
         assertTrue(PaymentParser.parse("com.tencent.mm", "微信支付", "支付成功16...元")!!.isNull("amount_minor"))
         assertTrue(PaymentParser.parse("com.tencent.mm", "微信支付", "支付成功16.123元")!!.isNull("amount_minor"))
     }
+    @Test fun sharedProtocolFixtureIsParsedWithoutFloatingPoint() {
+        val fixture = JSONObject(javaClass.getResourceAsStream("/finance-v1.json")!!.bufferedReader().use { it.readText() })
+        val input = fixture.getJSONObject("notification")
+        val parsed = PaymentParser.parse(input.getString("package"), input.getString("title"), input.getString("text"))!!
+        val expected = fixture.getJSONObject("operation").getJSONObject("record")
+        assertEquals(expected.getLong("amount_minor"), parsed.getLong("amount_minor"))
+        for (key in listOf("direction", "currency", "merchant")) assertEquals(expected.get(key), parsed.get(key))
+    }
+    @Test fun listenerEntryDeduplicatesUpdatesAndDropsSummaryOldAndRevoked() {
+        val at = System.currentTimeMillis() + 10
+        Settings.Secure.putString(context.contentResolver, "enabled_notification_listeners", android.content.ComponentName(context, PaymentNotificationListenerService::class.java).flattenToString())
+        FinanceAccess.setEnabled(context, realm, true)
+        val service = org.robolectric.Robolectric.buildService(PaymentNotificationListenerService::class.java).create().get()
+        fun event(id: Int, time: Long = at, summary: Boolean = false): android.service.notification.StatusBarNotification {
+            val notification = android.app.Notification.Builder(context, "fixture").setContentTitle("微信支付").setContentText("支付成功16.00元").setWhen(time).build()
+            if (summary) notification.flags = notification.flags or android.app.Notification.FLAG_GROUP_SUMMARY
+            return android.service.notification.StatusBarNotification("com.tencent.mm", "com.tencent.mm", id, "fixture", 1000, 1, 0, notification, android.os.Process.myUserHandle(), time)
+        }
+        service.onNotificationPosted(event(1)); service.onNotificationPosted(event(1))
+        service.onNotificationPosted(event(2, summary = true)); service.onNotificationPosted(event(3, time = at - 60000))
+        FinanceBridge.executor.submit {}.get()
+        FinanceStore(context).use { assertEquals(1, it.snapshot(realm).getJSONArray("records").length()) }
+        Settings.Secure.putString(context.contentResolver, "enabled_notification_listeners", "")
+        service.onNotificationPosted(event(4)); FinanceBridge.executor.submit {}.get()
+        FinanceStore(context).use { assertEquals(1, it.snapshot(realm).getJSONArray("records").length()) }
+        service.onDestroy()
+    }
     @Test fun eventDedupSurvivesReopenAndEqualPurchasesStaySeparate() {
         val id = FinanceStore(context).use { store ->
             val first = store.capture(realm, "event-one", record())
@@ -95,6 +122,28 @@ class FinanceTest {
             val op = store.next(realm)!!
             assertThrows(IllegalArgumentException::class.java) { store.acknowledge(realm, op, ack(op).put("operation_id", "wrong")) }
             assertNotNull(store.next(realm))
+        }
+    }
+    @Test fun serverFailuresAndDisabledCapabilityNeverAcknowledgeTheQueue() {
+        FinanceStore(context).use { store ->
+            store.capture(realm, "event", record().put("source_app", "manual"))
+            val operation = store.next(realm)!!.getString("operation_id")
+            for ((code, expected) in listOf(401 to "auth", 403 to "forbidden", 429 to "rate_limited", 500 to "offline")) {
+                val sync = FinanceSync(context, store) { path, _ ->
+                    if (path == "/finance/capabilities") JSONObject().put("schema_version", 1).put("effective", true)
+                    else throw FinanceHttpError(code)
+                }
+                assertEquals(expected, sync.run(origin, "owner", true).getString("status"))
+                assertEquals(operation, store.next(realm)!!.getString("operation_id"))
+            }
+            var uploads = 0
+            val disabled = FinanceSync(context, store) { _, body ->
+                if (body != null) uploads++
+                JSONObject().put("schema_version", 1).put("effective", false)
+            }
+            assertEquals("disabled", disabled.run(origin, "owner", true).getString("status"))
+            assertEquals(0, uploads)
+            assertEquals(operation, store.next(realm)!!.getString("operation_id"))
         }
     }
 }

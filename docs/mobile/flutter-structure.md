@@ -299,3 +299,6 @@ LifeRecordsController 的保存/连接/手动同步在 busy 期间合并为后�
 ## 参考排版（工单 31）
 
 `reference_typography` 将 A/E/C 的中文衬线体固定到内置 Noto Serif CJK SC，E/F 英文刊头使用 Libre Baskerville；F 主标题与信窗正文保持参考的无衬线体。来源、固定提交、校验值与 OFL 见 assets/fonts/README.md；自选字体继续优先。`LetterFlowText` 以真实首段富文本行边界环绕 96×105 插画，后续文本恢复全宽；逐字展示仍由原 AnimatedRevealText 管理。字号、行高、留白和气泡分别按各套 CSS，设置保留原折叠卡。无后端、协议与原生接口影响。
+# 330 自动记账
+
+生活记录页组合 `FinanceController` 与独立 `FinancePage`。服务门面 `finance_service.dart` 使用专用Channel，原生拥有持久队列与网络；页面生命周期刷新真实系统授权，控制器丢弃旧owner/origin结果，编辑器固定开启时的作用域。UI使用既有YxPalette/serif/Theme/卡片与中英文l10n，不在AppShell新增领域状态。参见 [实现和验收](auto-bookkeeping-330.md)。
