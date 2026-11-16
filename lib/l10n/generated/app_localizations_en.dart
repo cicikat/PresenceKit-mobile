@@ -1860,7 +1860,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachmentDocument => 'Document';
 
   @override
-  String get attachmentDocumentSubtitle => 'txt / md / docx · Up to 5 MB';
+  String get attachmentDocumentSubtitle =>
+      'PDF, Word, Excel, CSV, PPT, text & code · Up to 5 MB';
 
   @override
   String get attachmentImage => 'Images';
@@ -2068,7 +2069,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fileTypeUnsupported =>
-      'The backend currently supports txt / md / docx only';
+      'Choose PDF, DOCX, XLSX, CSV, PPTX, text or code files. Convert legacy Office files first.';
 
   @override
   String get fileTooLarge => 'The backend file limit is 5 MB';

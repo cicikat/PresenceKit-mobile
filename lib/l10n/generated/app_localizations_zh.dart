@@ -1761,7 +1761,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get attachmentDocument => '文档';
 
   @override
-  String get attachmentDocumentSubtitle => 'txt / md / docx · 5MB 内';
+  String get attachmentDocumentSubtitle =>
+      'PDF、Word、Excel、CSV、PPT、文本与代码 · 5MB 内';
 
   @override
   String get attachmentImage => '图片';
@@ -1959,7 +1960,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dreamStayAction => '留下';
 
   @override
-  String get fileTypeUnsupported => '后端当前只支持 txt / md / docx';
+  String get fileTypeUnsupported =>
+      '请选择 PDF、DOCX、XLSX、CSV、PPTX、文本或代码文件；旧版 Office 文件请先转换格式';
 
   @override
   String get fileTooLarge => '后端文件上限是 5MB';

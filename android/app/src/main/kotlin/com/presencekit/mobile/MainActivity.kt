@@ -1133,8 +1133,17 @@ class MainActivity : FlutterActivity() {
             putExtra(
                 Intent.EXTRA_MIME_TYPES,
                 arrayOf(
-                    "text/plain",
-                    "text/markdown",
+                    "text/*",
+                    "application/octet-stream",
+                    "application/pdf",
+                    "application/json",
+                    "application/xml",
+                    "application/yaml",
+                    "application/x-yaml",
+                    "application/javascript",
+                    "application/vnd.ms-excel",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 ),
             )

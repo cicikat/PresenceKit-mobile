@@ -3352,7 +3352,7 @@ abstract class AppLocalizations {
   /// No description provided for @attachmentDocumentSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'txt / md / docx · 5MB 内'**
+  /// **'PDF、Word、Excel、CSV、PPT、文本与代码 · 5MB 内'**
   String get attachmentDocumentSubtitle;
 
   /// No description provided for @attachmentImage.
@@ -3718,7 +3718,7 @@ abstract class AppLocalizations {
   /// No description provided for @fileTypeUnsupported.
   ///
   /// In zh, this message translates to:
-  /// **'后端当前只支持 txt / md / docx'**
+  /// **'请选择 PDF、DOCX、XLSX、CSV、PPTX、文本或代码文件；旧版 Office 文件请先转换格式'**
   String get fileTypeUnsupported;
 
   /// No description provided for @fileTooLarge.
