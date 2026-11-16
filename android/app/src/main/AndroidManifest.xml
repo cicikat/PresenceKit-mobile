@@ -54,6 +54,13 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Persistent SSE relay for receiving proactive messages" />
         </service>
+        <service android:name=".finance.PaymentNotificationListenerService"
+            android:label="@string/finance_listener_label"
+            android:exported="true" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
+        </service>
+        <service android:name=".finance.FinanceJobService" android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
         <service
             android:name=".FloatingBubbleService"
             android:exported="false" />
