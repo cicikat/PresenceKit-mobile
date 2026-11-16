@@ -448,6 +448,7 @@ GET /activity/records（state.read）默认仅列来源元数据；指定 source
 CSV按行保留空单元格、引号与换行；XLSX保留工作表和单元格地址，数字/日期以底层值呈现，公式以原文呈现且不执行；PPTX按页序提取正文和表格；PDF逐页提取文字。文档内图片、图表、PDF扫描页与版面尚无自动视觉识别，混合PDF对无文字页标记未读；全无文字返回422 `document_needs_ocr`，提示上传页面图片或转换为可搜索PDF。容器超限返回422 `document_container_too_large`；无效、加密或空正文返回既有 `file_parse_failed`。旧DOC/XLS/PPT需要转换；图片/语音继续走已有识别链。
 
 observe：真实安装版桌面、手机文件提供器/真机上传和真实模型阅读效果尚未验收；本地HTTP入口与浏览器IPC夹具分别验证各自边界，不能作为真实设备或生产验收。
+
 # 330 财务候选领域
 
 新增独立 finance_ingest scope（标准mobile profile包含）；客户端无admin要求。用户账本不带char_id，后端从凭据部署配置推导owner，不接受任意owner/char写入。通知原文不上传。专用 `/finance/capabilities`、`/finance/candidates/sync`、`/finance/candidates`、详情与历史合同见 [自动记账330](../mobile/auto-bookkeeping-330.md) 和后端 docs/finance-ingest.md。原 life-records/mobile-poll/ACK/聊天 wire 不变。关闭effective或401/403不算成功，409保留本机纠错；未知回执使用原operation_id重放。
