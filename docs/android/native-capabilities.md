@@ -273,6 +273,8 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 
 314: 照度和重力监听仅随 Activity 的 onResume/onPause 生效。亮屏与分类汇总单独使用 Android 使用情况访问，默认关闭。分类仅纳入系统可见且明确分类的游戏与影音，包名不会进入上报。
 
+2026-11-16 / 工单 60：修正 `AmbientSensors.sample()` 在 `buildMap` 内误遍历结果字典 `keys` 的问题；现显式遍历 `AmbientSensors.keys`，启用的来源会生成测量或明确的不可用事实。此前硬件监听正常也只返回空字典，Flutter 因而跳过整个上传。上传失败日志仅记录阶段、异常类型和 HTTP 状态码，不记录凭据、地址或观测值。前台限定、单项同意、使用情况权限、30 秒上传周期和后端 120 秒 TTL 均不变；后端与桌面无需改动，无协议变化。回归 `AmbientSensorsTest` 修复前失败（预期三项、实际空集合），修复后通过。
+
 315: 新安装默认关闭后台常驻接收。已保存的开关继续生效，可在能力设置开启兼容接收。
 
 317 system alerts use the Firebase receiver with auto-init off until consent and notification permission. Flavor-local google-services.json is ignored by Git. FCM uses HTTPS or loopback for backend registration and body recovery.
