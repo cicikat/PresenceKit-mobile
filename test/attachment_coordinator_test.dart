@@ -45,7 +45,7 @@ void main() {
 
   test('rejects unsupported and oversized files before upload', () {
     expect(
-      coordinator.validateFile(_file('notes.pdf', 10)),
+      coordinator.validateFile(_file('notes.exe', 10)),
       AttachmentValidationError.typeUnsupported,
     );
     expect(
@@ -55,6 +55,29 @@ void main() {
       AttachmentValidationError.tooLarge,
     );
     expect(coordinator.validateFile(_file('notes.md', 12)), isNull);
+  });
+
+  test('accepts structured documents and keeps size checks for new types', () {
+    for (final name in [
+      'ledger.CSV',
+      'table.tsv',
+      'book.xlsx',
+      'note.pdf',
+      'slides.pptx',
+      'data.json',
+      'config.yaml',
+      'page.html',
+      'script.py',
+    ]) {
+      expect(coordinator.validateFile(_file(name, 10)), isNull, reason: name);
+      expect(
+        coordinator.validateFile(
+          _file(name, AttachmentCoordinator.fileMaxBytes + 1),
+        ),
+        AttachmentValidationError.tooLarge,
+        reason: name,
+      );
+    }
   });
 
   test('rejects mixed image types and oversized images', () {
