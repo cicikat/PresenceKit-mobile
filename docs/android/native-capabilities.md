@@ -273,6 +273,13 @@ Flutter 不在页面中直接调用平台通道：`SettingsStore`、`VoiceServic
 
 314: 照度和重力监听仅随 Activity 的 onResume/onPause 生效。亮屏与分类汇总单独使用 Android 使用情况访问，默认关闭。分类仅纳入系统可见且明确分类的游戏与影音，包名不会进入上报。
 
+2026-11-16 / 工单 60：修正 `AmbientSensors.sample()` 在 `buildMap` 内误遍历结果字典 `keys` 的问题；现显式遍历 `AmbientSensors.keys`，启用的来源会生成测量或明确的不可用事实。此前硬件监听正常也只返回空字典，Flutter 因而跳过整个上传。上传失败日志仅记录阶段、异常类型和 HTTP 状态码，不记录凭据、地址或观测值。前台限定、单项同意、使用情况权限、30 秒上传周期和后端 120 秒 TTL 均不变；后端与桌面无需改动，无协议变化。回归 `AmbientSensorsTest` 修复前失败（预期三项、实际空集合），修复后通过。
+
 315: 新安装默认关闭后台常驻接收。已保存的开关继续生效，可在能力设置开启兼容接收。
 
 317 system alerts use the Firebase receiver with auto-init off until consent and notification permission. Flavor-local google-services.json is ignored by Git. FCM uses HTTPS or loopback for backend registration and body recovery.
+# 330 自动记账
+
+独立 `finance.PaymentNotificationListenerService`，不复用主动通知/无障碍服务。通知读取需要系统专用授权；默认关闭，本地开关按可信后端 origin + owner 隔离。精确包名范围：微信、支付宝、工商银行、建设银行、招商银行；不扫描应用列表，不读取短信。只处理开启后的新通知；汇总通知跳过，不在重连枚举旧通知。
+
+`presence_mobile/finance` 只承载状态、结构化候选、用户修改和同步，不承载 token 或通知全文。原文不落盘，App 私有 `finance_v1.db` 保存整数分、指纹、候选及稳定操作快照；不是额外整库加密。FinanceJobService/JobScheduler 持久任务负责有界重试，受 ROM/强停限制。关收集或撤通知权限后停止自动候选上传；手动条目可独立同步。未知/冲突保留队列，409 需选择服务端版本再编辑。卸载会清除未同步条目，换机先同步；不承诺实时或通知完整性。真机 Android14 权限、通知、后台/重启 NOT RUN。

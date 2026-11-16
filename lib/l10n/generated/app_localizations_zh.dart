@@ -2989,4 +2989,143 @@ class AppLocalizationsZh extends AppLocalizations {
   String messengerTimestamp(int month, int day, String time) {
     return '$month月$day日 $time';
   }
+
+  @override
+  String get financeWechat => '微信支付';
+
+  @override
+  String get financeAlipay => '支付宝';
+
+  @override
+  String get financeBank => '银行通知';
+
+  @override
+  String get financeTitle => '自动记账';
+
+  @override
+  String get financeEntryHint => '支付通知、待确认记录与流水';
+
+  @override
+  String get financeNotice => '仅记录已经发生的支付，不会自动付款。通知可能缺失或折叠；没有通知时可手动记录。';
+
+  @override
+  String get financeCollect => '收集支付通知';
+
+  @override
+  String get financeChannels => '收集范围：微信支付、支付宝、工商银行、建设银行、招商银行。其他渠道请手动记录。';
+
+  @override
+  String get financePermission => '通知读取授权';
+
+  @override
+  String get financePermissionGranted => '已获得通知读取授权';
+
+  @override
+  String get financePermissionMissing => '尚未授权或授权已撤销，请前往系统设置开启。';
+
+  @override
+  String get financeDisabled => '后端尚未开启记账，本机记录已保留。';
+
+  @override
+  String get financePaused => '收集已暂停，待发送记录保留在本机。';
+
+  @override
+  String get financeSynced => '服务端已保存';
+
+  @override
+  String get financeSavedCandidate => '候选已保存，尚未计入流水';
+
+  @override
+  String get financePendingSync => '保存在本机，等待同步';
+
+  @override
+  String get financeCandidates => '待确认与已忽略';
+
+  @override
+  String get financeLedger => '已确认流水';
+
+  @override
+  String get financeManual => '手动记录';
+
+  @override
+  String get financeEdit => '修正';
+
+  @override
+  String get financeAmount => '金额（元，CNY）';
+
+  @override
+  String get financeInvalidAmount => '请输入大于零、最多两位小数的金额';
+
+  @override
+  String get financeMerchant => '商户';
+
+  @override
+  String get financeMerchantMissing => '商户未知';
+
+  @override
+  String get financeCategory => '分类';
+
+  @override
+  String get financeCancel => '关闭';
+
+  @override
+  String get financeSave => '保存';
+
+  @override
+  String get financeConfirm => '确认入账';
+
+  @override
+  String get financeIgnore => '忽略／撤销确认';
+
+  @override
+  String get financeDelete => '删除记录';
+
+  @override
+  String get financeIgnored => '已忽略，不计入流水';
+
+  @override
+  String get financeExpense => '支出';
+
+  @override
+  String get financeIncome => '收入';
+
+  @override
+  String get financeRefund => '退款';
+
+  @override
+  String get financeTransfer => '转账／还款';
+
+  @override
+  String get financeUnknown => '方向待确认';
+
+  @override
+  String get financeEmpty => '这里还没有记录。通知不完整时可以手动添加。';
+
+  @override
+  String get financeThisMonth => '只看本月';
+
+  @override
+  String get financeLocalMonth => '本机已同步的本月支出';
+
+  @override
+  String get financeLocalScope =>
+      '仅统计本机缓存中已确认且已同步的 CNY 支出，最多显示最近 1000 条；不含退款、转账和待确认项。';
+
+  @override
+  String get financePossibleDuplicate => '可能与另一渠道的通知重复，请核对后只确认一笔。';
+
+  @override
+  String get financeMissingAmount => '通知金额不完整，请补全后确认。';
+
+  @override
+  String get financeHistory => '来源与修改记录';
+
+  @override
+  String get financeHistoryUnavailable => '暂时无法读取修改记录，请连接后端后重试。';
+
+  @override
+  String get financeRevision => '版本';
+
+  @override
+  String get financeAcceptServer => '采用服务端版本';
 }

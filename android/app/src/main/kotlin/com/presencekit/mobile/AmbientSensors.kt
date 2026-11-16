@@ -55,7 +55,7 @@ internal class AmbientSensors(context: Context, private val prefs: SharedPrefere
         if (!active) return emptyMap()
         val now = System.currentTimeMillis() / 1000.0
         return buildMap {
-            for (kind in keys) {
+            for (kind in AmbientSensors.keys) {
                 if (!enabled(kind)) continue
                 val fact = when (kind) {
                     "light" -> reading(kind, light, now)

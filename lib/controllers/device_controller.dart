@@ -156,6 +156,7 @@ class DeviceController extends ChangeNotifier {
     final backend = _backend();
     final observedAt = DateTime.now().millisecondsSinceEpoch / 1000;
     if (cleared == null) _ambientBusy = true;
+    var stage = 'sample';
     try {
       final observation = cleared == null
           ? await PlatformSettingsChannel.deliveryCall<Map>('sampleAmbient')
@@ -165,6 +166,7 @@ class DeviceController extends ChangeNotifier {
       if (observation == null || observation.isEmpty) return;
       var grant = _ambientGrant;
       if (grant == null || grant.charId != character) {
+        stage = 'session';
         grant = await backend.createPresenceSession(
           token: token,
           charId: character,
@@ -176,12 +178,17 @@ class DeviceController extends ChangeNotifier {
         return;
       }
       _ambientGrant = grant;
+      stage = 'upload';
       await backend.pushAmbient(
         token: token,
         sessionId: grant.sessionId,
         observation: Map<String, dynamic>.from(observation),
       );
-    } catch (_) {
+    } catch (error) {
+      final status = error is BackendException ? error.statusCode : null;
+      debugPrint(
+        '[ambient] failed stage=$stage type=${error.runtimeType} status=$status',
+      );
       if (_live(generation, token, backend)) _ambientGrant = null;
     } finally {
       if (cleared == null) _ambientBusy = false;

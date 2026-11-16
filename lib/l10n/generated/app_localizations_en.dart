@@ -3138,4 +3138,154 @@ class AppLocalizationsEn extends AppLocalizations {
   String messengerTimestamp(int month, int day, String time) {
     return '$month/$day $time';
   }
+
+  @override
+  String get financeWechat => 'WeChat Pay';
+
+  @override
+  String get financeAlipay => 'Alipay';
+
+  @override
+  String get financeBank => 'Bank notification';
+
+  @override
+  String get financeTitle => 'Bookkeeping';
+
+  @override
+  String get financeEntryHint =>
+      'Payment notifications, review and transactions';
+
+  @override
+  String get financeNotice =>
+      'Records past payments only. Notifications may be missing or grouped; add a manual entry when needed.';
+
+  @override
+  String get financeCollect => 'Collect payment notifications';
+
+  @override
+  String get financeChannels =>
+      'Sources: WeChat Pay, Alipay, ICBC, CCB and CMB. Add other payments manually.';
+
+  @override
+  String get financePermission => 'Notification access';
+
+  @override
+  String get financePermissionGranted => 'Notification access granted';
+
+  @override
+  String get financePermissionMissing =>
+      'Notification access is off. Enable it in system settings.';
+
+  @override
+  String get financeDisabled =>
+      'Bookkeeping is disabled on the server. Local records are kept.';
+
+  @override
+  String get financePaused =>
+      'Collection paused. Unsent records stay on this device.';
+
+  @override
+  String get financeSynced => 'Saved on server';
+
+  @override
+  String get financeSavedCandidate => 'Candidate saved; awaiting confirmation';
+
+  @override
+  String get financePendingSync => 'Saved on device; waiting to sync';
+
+  @override
+  String get financeCandidates => 'Review and ignored';
+
+  @override
+  String get financeLedger => 'Confirmed transactions';
+
+  @override
+  String get financeManual => 'Add manually';
+
+  @override
+  String get financeEdit => 'Edit';
+
+  @override
+  String get financeAmount => 'Amount (CNY)';
+
+  @override
+  String get financeInvalidAmount =>
+      'Enter a positive amount with up to two decimal places';
+
+  @override
+  String get financeMerchant => 'Merchant';
+
+  @override
+  String get financeMerchantMissing => 'Unknown merchant';
+
+  @override
+  String get financeCategory => 'Category';
+
+  @override
+  String get financeCancel => 'Close';
+
+  @override
+  String get financeSave => 'Save';
+
+  @override
+  String get financeConfirm => 'Confirm';
+
+  @override
+  String get financeIgnore => 'Ignore / undo confirmation';
+
+  @override
+  String get financeDelete => 'Delete record';
+
+  @override
+  String get financeIgnored => 'Ignored; excluded from transactions';
+
+  @override
+  String get financeExpense => 'Expense';
+
+  @override
+  String get financeIncome => 'Income';
+
+  @override
+  String get financeRefund => 'Refund';
+
+  @override
+  String get financeTransfer => 'Transfer / repayment';
+
+  @override
+  String get financeUnknown => 'Direction unknown';
+
+  @override
+  String get financeEmpty =>
+      'No records here yet. Add one manually if notifications are unavailable.';
+
+  @override
+  String get financeThisMonth => 'This month';
+
+  @override
+  String get financeLocalMonth => 'This month’s synced expenses on this device';
+
+  @override
+  String get financeLocalScope =>
+      'Counts confirmed, synced CNY expenses in this device cache only (up to 1,000 entries). Excludes refunds, transfers and candidates.';
+
+  @override
+  String get financePossibleDuplicate =>
+      'May duplicate another channel. Check before confirming both.';
+
+  @override
+  String get financeMissingAmount =>
+      'Amount is incomplete. Edit it before confirming.';
+
+  @override
+  String get financeHistory => 'Source and edit history';
+
+  @override
+  String get financeHistoryUnavailable =>
+      'Edit history is unavailable. Connect to the server and retry.';
+
+  @override
+  String get financeRevision => 'Revision';
+
+  @override
+  String get financeAcceptServer => 'Use server version';
 }
