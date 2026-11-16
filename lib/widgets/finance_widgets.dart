@@ -46,6 +46,14 @@ DateTime financeDate(Map<String, dynamic> row) =>
       isUtc: true,
     ).add(Duration(minutes: row['timezone_offset_minutes'] as int? ?? 0));
 
+String financeTimestamp(Map<String, dynamic> row) {
+  final offset = row['timezone_offset_minutes'] as int? ?? 0;
+  final absolute = offset.abs();
+  final zone =
+      '${offset < 0 ? '-' : '+'}${(absolute ~/ 60).toString().padLeft(2, '0')}:${(absolute % 60).toString().padLeft(2, '0')}';
+  return '${financeDate(row).toIso8601String().substring(0, 16).replaceFirst('T', ' ')} $zone';
+}
+
 class FinancePage extends StatefulWidget {
   const FinancePage({super.key, required this.c, required this.controller});
   final YxPalette c;
@@ -229,7 +237,7 @@ class _FinancePageState extends State<FinancePage> with WidgetsBindingObserver {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '${financeSource(l, row['source_app'])} · ${financeDate(row)}',
+                    '${financeSource(l, row['source_app'])} · ${financeTimestamp(row)}',
                   ),
                   ...(value['history'] as List).map(
                     (e) => ListTile(

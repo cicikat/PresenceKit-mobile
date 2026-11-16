@@ -38,7 +38,7 @@
 | 原生真实loopback HTTP→后端持久化、稳定回执与纠错 | PASS，FinanceBackendContractTest |
 | 后端权限/金额/并发事务/历史/备份登记/便携schema/依赖方向 | PASS，后端测试日志 |
 | 管理面默认关、保存/刷新、关闭及effective可见状态 | PASS，隔离服务浏览器实测 |
-| Android14真实微信/支付宝通知与权限往返 | NOT RUN，没有连接设备 |
+| Android14真实微信/支付宝通知与权限往返 | NOT RUN，首次无设备；后续已安装但通知权限未开启 |
 | 真机后台/强停/重启/断网与卸载换机 | NOT RUN |
 | 真实角色模型查询与生产部署 | NOT RUN |
 
@@ -51,3 +51,11 @@
 Android API28 Robolectric：FinanceTest 8、真实HTTP合同1、LifeRecords25、BackendSecurityPolicy2，共36项，零失败/错误/跳过（build/finance-native-live-final.log及XML）。最终合同使用真实注册的mobile profile测试凭据；capabilities允许，admin-only settings返回403，不要求手机持有admin。
 
 Dev APK：`build/app/outputs/flutter-apk/app-dev-debug.apk`，SHA256 `6D75D0BCB3D3C5446C0E357497A8AB6A7826C9698FE5BFD6A39972C0AAEBEB93`，构建168.7秒（build/finance-debug-apk.log）。没有安装、正式签名发行、改发行版本或生产部署。`adb devices`为空，真机项目保持NOT RUN。后端API核心已随PR24合入main，当前联调用独立loopback fixture，不代表VPS已启用。
+
+## 用户连接手机后的覆盖安装
+
+用户明确授权安装后，使用既有永久签名构建 `1.3.0+87` prod release，核验历史已安装APK与新包certificate SHA256均为 `1869b348d9e26f13d8213ff60933bcf933fe6e8779d13198f655a4d7c0791fae`。`adb install -r` 成功，系统包信息确认versionCode87/versionName1.3.0；原应用已启动，既有聊天记录仍存在。未卸载、未清除应用数据，未创建新密钥或发布GitHub Release。包位于 `dist/release/PresenceKit-mobile-v1.3.0-build87.apk`，SHA256 `1FA7CB82D8DEAFC4C9D3B29B7956AEA4E2A47C1800797D0763A23C7BA42F070E`（build/finance-build87-release.log，105.7秒）。
+
+build87 同时修正来源时间显示：原通知偏移必须显示为 +08:00/-05:00 等，不再把平移后的当地时间误标为UTC；跨月边界回归通过。最新analyze零问题，财务/生活记录/本地化31项通过（build/finance-build87-tests.log）。手机API35模拟器CI `43859169268`通过，但仍不替代支付App真通知。
+
+只读查询确认财务NotificationListener尚未获系统授权，收集仍默认关闭；没有通过ADB授予通知读取权。真实支付通知、权限往返、确认后真实手机→生产后端、后台/强停/重启及真实模型查询仍NOT RUN。未改生产服务配置。

@@ -99,6 +99,18 @@ Widget app(
 );
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'source timezone survives month boundary without a false UTC suffix',
+    () {
+      final row = <String, dynamic>{
+        'occurred_at': DateTime.utc(2026, 10, 31, 18).millisecondsSinceEpoch,
+        'timezone_offset_minutes': 480,
+      };
+      expect(financeTimestamp(row), '2026-11-01 02:00 +08:00');
+      row['timezone_offset_minutes'] = -300;
+      expect(financeTimestamp(row), '2026-10-31 13:00 -05:00');
+    },
+  );
   setUpAll(() async {
     if (const bool.fromEnvironment('FINANCE_CAPTURE')) {
       final font = await rootBundle.load(
