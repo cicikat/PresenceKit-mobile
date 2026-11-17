@@ -1,3 +1,20 @@
+## 第一轮手机环境主动行为（current / observe）
+
+R4投递回执补强：`/mobile/ack` 仍用chat scope与ack_seq，成功响应不变。
+后端先保存匹配owner/char/message ID的Autonomy持久收件回执再删队列；
+任一持久化失败明确503（mobile_ack_persistence_unavailable），保留信封供ACK重试。
+手机既有持久inbox→ACK→精确本地确认、相同ID去重继续有效，ACK不表示用户已读。
+无新手机字段、设置、权限或生成重试；真机/生产端到端仍未验证。
+
+GET/PATCH /sensor/ambient/policy 使用 mobile profile 与同token Reality session。
+读需 state.read+chat，写需 persona+sensor.write+chat；只写 enabled/light/motion/usage 布尔值。
+返回 char_id/configured/effective/reason_codes/source_status；授权默认关闭，独立于采集授权。
+DeviceController 绑定token、节点、角色和generation，拒绝角色切换期间的迟到响应/写入；
+服务端拒绝过期session后下次重建，不自动重发配置写入。
+设置页可编辑、能力页只读；后端决定DND/预算/冷却及是否发言。旧后端404时显示可重试错误。
+后台以现有会话发送三项 unavailable，不新开采样任务；离线时由120秒TTL兜底。
+原聊天poll/ACK与消息身份不变，桌面无新消费者。真机/生产端到端尚未验证。
+
 ## 手机 #57 失败后刷新与等待反馈（2026-11-15）
 
 消息成功写入本地发送队列即显示既有三点等待；这不表示服务端已执行。初始同步、刷新、会话准备及前一请求仍可使真实发出延后，保留串行、鉴权及一分钟未发出期限。取消、到期和等待超时会收束反馈。

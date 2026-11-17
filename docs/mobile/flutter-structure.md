@@ -1,5 +1,16 @@
 ## 工单59 冷启动恢复中间帧（2026-11-15）
 
+第一轮 F3：PhoneAmbientSettings 管理独立后端授权；CapabilitySheet 控制页可编辑、
+观察页只读，AppShell 仅注入回调。DeviceController 复用 Reality session、检查
+token/节点/角色/generation，后台仅尽力清除事实，不新增采集计时器或持久状态。
+BackendClient 封装 policy HTTP；失败不把开关当作已保存。见工单62与 backend/integration.md。
+
+第一轮 F2：AnimatedRevealText 完成后将 Markdown 助手正文交给 AssistantMarkdown，
+逐字期间保留既有安全文本；Dream 复用该入口。代码、列表、表格和引用在 live/poll/history
+分段时保持完整。远程 Markdown 图片只显示替代文字，外链仅允许显式无凭据 HTTP(S)，
+hl/big/sm 与代码字面量分别处理。原文、选择/复制、消息身份、贴纸和发送队列不变。
+无新后端开关/权限/落盘状态；工单61记录验证和真实设备缺口。
+
 58稳定帧验收未覆盖历史加载前：本机unknown曾先被render到空聊天，再由历史刷新替换。现旧unknown只恢复到投递详情，相关无回复历史回声不进主聊天；真实回复照常对账。同一会话新发送的失败/未知反馈、有效排队和诊断跳过/删除保留。无新增持久字段或mobile wire，见[工单59](../../cc-tasks/59-cold-start-outbox-flash.md)。
 
 ## 工单58 升级后旧消息残留（2026-11-15）

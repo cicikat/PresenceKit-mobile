@@ -98,6 +98,42 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @phoneAmbientTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'手机环境触发主动行为'**
+  String get phoneAmbientTitle;
+
+  /// No description provided for @phoneAmbientHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'默认关闭，与环境上传和使用情况权限独立。只报告设备变化；仍会遵守免打扰、发言预算和冷却。'**
+  String get phoneAmbientHint;
+
+  /// No description provided for @phoneAmbientReady.
+  ///
+  /// In zh, this message translates to:
+  /// **'已生效，仍需持续稳定的变化才会考虑主动交流'**
+  String get phoneAmbientReady;
+
+  /// No description provided for @phoneAmbientPending.
+  ///
+  /// In zh, this message translates to:
+  /// **'等待前台的可用设备读数，请先允许相应环境上传'**
+  String get phoneAmbientPending;
+
+  /// No description provided for @phoneAmbientAutonomyOff.
+  ///
+  /// In zh, this message translates to:
+  /// **'尚未生效，请先开启角色的自主活动'**
+  String get phoneAmbientAutonomyOff;
+
+  /// No description provided for @phoneAmbientLoadFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时无法读取或保存，请重试。'**
+  String get phoneAmbientLoadFailed;
+
   /// No description provided for @chatCancelSend.
   ///
   /// In zh, this message translates to:

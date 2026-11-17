@@ -1,5 +1,10 @@
 # 多端与硬件传感器入口协议
 
+第一轮增量：GET/PATCH /sensor/ambient/policy 独立控制后端手机环境候选，默认关闭。
+同凭据 Reality session 与 mobile profile；字段、权限和失败语义见 backend/integration.md。
+采集授权与 Android Usage Access 不由此接口更改；30秒前台节奏、120秒TTL及匿名聚合不变。
+后端只从持续变化生成设备事实，不能据重力/暗光推断身体姿态、睡眠或位置。
+
 > 当前事实核对：2026-07-29。本文只记录已经存在的 endpoint、真实调用方、鉴权和 payload
 > 边界；不定义统一 sensor event bus，也不把规划中的 envelope 当作当前协议。
 

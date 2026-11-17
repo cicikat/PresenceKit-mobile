@@ -1,5 +1,12 @@
 ## 手机 #49 常驻通知去重（2026-11-14）
 
+第一轮 F3：AmbientSensors.sample 在锁屏或非交互屏幕时返回 unavailable，
+不上传测量/使用详情；保持前台采样与本机包名归类，仅上传匿名 games/media 聚合。
+独立后端主动授权由 Flutter 设置提供，不代替 Usage Access；后台尽力清除旧事实。
+Robolectric 锁屏失败先行，修复后 AmbientSensorsTest 两项通过；真实功耗/锁屏/ROM仍待验收。
+Android UsageStats 的授权与锁定限制参见
+[官方文档](https://developer.android.com/reference/android/app/usage/UsageStatsManager)。
+
 MobileNotificationService 对最后成功渲染文字串行去重，重复start不重置为等待状态，销毁后不接受迟到更新；短断线沿既有60秒宽限，持续不可用仍展示fallback。真实消息频道、FCM/SSE所有权、poll/inbox/ACK及权限不变。系统设置感知入口明确、失败可重试；屏幕观察读取实际无障碍授权并随恢复刷新。Android相关19项、Flutter全量416项通过，真机NOT RUN；逐项后端effective/最近上报观测仍open。详见 [#49报告](../mobile/device-permissions-relay-49.md)。
 
 ## 2026-10-24 R0/R1 完整消息交接

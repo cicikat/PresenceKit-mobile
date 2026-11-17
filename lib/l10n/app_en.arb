@@ -1,4 +1,10 @@
 {
+  "phoneAmbientTitle":"Phone environment and proactive activity",
+  "phoneAmbientHint":"Off by default, separate from uploads and Usage Access. Reports device changes only; DND, speech budgets and cooldown still apply.",
+  "phoneAmbientReady":"Active; only sustained changes may lead to a conversation",
+  "phoneAmbientPending":"Waiting for foreground readings. Allow the corresponding environment upload first.",
+  "phoneAmbientAutonomyOff":"Not active yet. Enable the character's autonomous activity first.",
+  "phoneAmbientLoadFailed":"Unable to read or save right now. Please retry.",
   "chatCancelSend": "Cancel sending",
   "chatQueueExpired": "Waited too long. Not sent.",
   "chatSendCancelled": "Sending cancelled",

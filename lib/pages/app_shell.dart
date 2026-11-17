@@ -793,8 +793,9 @@ class _CompanionAppState extends State<CompanionApp>
         pushCharacter: () => _currentCharacterId,
         c: c,
         onLoadStatus: _capabilitySettings.loadStatus,
-        onAmbientChanged: (kind, enabled) =>
-            _deviceController.pushAmbient(cleared: enabled ? null : kind),
+        onAmbientChanged: _deviceController.handleAmbientChanged,
+        onLoadAmbientPolicy: _deviceController.loadAmbientPolicy,
+        onSaveAmbientPolicy: _deviceController.saveAmbientPolicyForCharacter,
         onRequestNotifications: _deviceService.requestNotificationPermission,
         onRequestIgnoreBatteryOptimizations:
             _deviceService.requestIgnoreBatteryOptimizations,
@@ -807,8 +808,7 @@ class _CompanionAppState extends State<CompanionApp>
         onToggleScreenContextUpload: _changeScreenContextUploadEnabled,
         onTestBackend: _testBackendConnectivity,
         onPushScreenContext: () => _pushScreenContextOnce(silent: false),
-        onCaptureScreenContext: () =>
-            _captureScreenContextForDebug(silent: false),
+        onCaptureScreenContext: _captureScreenContextForDebug,
         onPushCapturedScreenContext: (snapshot) =>
             _pushScreenContextSnapshot(snapshot, silent: false),
         onPushBehaviorTest: _pushBehaviorTest,

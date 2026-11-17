@@ -9,6 +9,24 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get phoneAmbientTitle => '手机环境触发主动行为';
+
+  @override
+  String get phoneAmbientHint => '默认关闭，与环境上传和使用情况权限独立。只报告设备变化；仍会遵守免打扰、发言预算和冷却。';
+
+  @override
+  String get phoneAmbientReady => '已生效，仍需持续稳定的变化才会考虑主动交流';
+
+  @override
+  String get phoneAmbientPending => '等待前台的可用设备读数，请先允许相应环境上传';
+
+  @override
+  String get phoneAmbientAutonomyOff => '尚未生效，请先开启角色的自主活动';
+
+  @override
+  String get phoneAmbientLoadFailed => '暂时无法读取或保存，请重试。';
+
+  @override
   String get chatCancelSend => '取消发送';
 
   @override

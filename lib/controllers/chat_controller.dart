@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import '../models/app_models.dart';
 import '../models/chat_artifact.dart';
 import '../models/inline_display.dart';
+import '../models/markdown_display.dart';
 import '../models/screen_context.dart';
 import '../models/session_scope.dart';
 import '../services/app_settings_store.dart';
@@ -2311,6 +2312,7 @@ class ChatController extends ChangeNotifier {
   }
 
   List<String> _splitSegments(String text) {
+    if (hasMarkdownBlock(text)) return [text];
     final value = text.trim();
     if (value.isEmpty) return const ['……'];
     // Keep a markup tree intact across newlines in live, poll and replay paths.

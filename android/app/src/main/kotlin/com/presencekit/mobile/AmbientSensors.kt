@@ -1,6 +1,7 @@
 package com.presencekit.mobile
 
 import android.app.AppOpsManager
+import android.app.KeyguardManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
@@ -13,6 +14,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
 import android.os.Process
+import android.os.PowerManager
 import android.os.SystemClock
 import kotlin.math.abs
 
@@ -54,6 +56,10 @@ internal class AmbientSensors(context: Context, private val prefs: SharedPrefere
     fun sample(): Map<String, Map<String, Any>> {
         if (!active) return emptyMap()
         val now = System.currentTimeMillis() / 1000.0
+        if (context.getSystemService(KeyguardManager::class.java).isKeyguardLocked ||
+            !context.getSystemService(PowerManager::class.java).isInteractive) {
+            return AmbientSensors.keys.filter { enabled(it) }.associateWith { fact("unavailable", now) }
+        }
         return buildMap {
             for (kind in AmbientSensors.keys) {
                 if (!enabled(kind)) continue

@@ -9,6 +9,29 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get phoneAmbientTitle => 'Phone environment and proactive activity';
+
+  @override
+  String get phoneAmbientHint =>
+      'Off by default, separate from uploads and Usage Access. Reports device changes only; DND, speech budgets and cooldown still apply.';
+
+  @override
+  String get phoneAmbientReady =>
+      'Active; only sustained changes may lead to a conversation';
+
+  @override
+  String get phoneAmbientPending =>
+      'Waiting for foreground readings. Allow the corresponding environment upload first.';
+
+  @override
+  String get phoneAmbientAutonomyOff =>
+      'Not active yet. Enable the character\'s autonomous activity first.';
+
+  @override
+  String get phoneAmbientLoadFailed =>
+      'Unable to read or save right now. Please retry.';
+
+  @override
   String get chatCancelSend => 'Cancel sending';
 
   @override

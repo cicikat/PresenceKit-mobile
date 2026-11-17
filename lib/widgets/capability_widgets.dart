@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'screen_observation_settings.dart';
 import 'fcm_push_settings.dart';
 import 'ambient_permissions.dart';
+import 'phone_ambient_settings.dart';
 import 'settings_editor_widgets.dart';
 
 import '../app_constants.dart';
@@ -24,6 +25,8 @@ class CapabilitySheet extends StatefulWidget {
     this.pushCharacter,
     required this.onLoadStatus,
     this.onAmbientChanged,
+    this.onLoadAmbientPolicy,
+    this.onSaveAmbientPolicy,
     required this.onRequestNotifications,
     required this.onRequestIgnoreBatteryOptimizations,
     required this.onRequestOverlay,
@@ -60,6 +63,9 @@ class CapabilitySheet extends StatefulWidget {
   final String? Function()? pushCharacter;
   final Future<CapabilityStatus> Function() onLoadStatus;
   final Future<void> Function(String kind, bool enabled)? onAmbientChanged;
+  final Future<Map<String, dynamic>> Function()? onLoadAmbientPolicy;
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic>, String?)?
+  onSaveAmbientPolicy;
   final Future<void> Function() onRequestNotifications;
   final Future<void> Function() onRequestIgnoreBatteryOptimizations;
   final Future<void> Function() onRequestOverlay;
@@ -353,6 +359,14 @@ class _CapabilitySheetState extends State<CapabilitySheet>
                       c: c,
                       onChanged: widget.onAmbientChanged!,
                       readOnly: !widget.controlsOnly,
+                    ),
+                  if (widget.onLoadAmbientPolicy != null &&
+                      widget.onSaveAmbientPolicy != null)
+                    PhoneAmbientSettings(
+                      c: c,
+                      readOnly: !widget.controlsOnly,
+                      load: widget.onLoadAmbientPolicy!,
+                      save: widget.onSaveAmbientPolicy!,
                     ),
                   CapabilityRow(
                     c: c,
