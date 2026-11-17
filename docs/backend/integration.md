@@ -1,5 +1,11 @@
 ## 第一轮手机环境主动行为（current / observe）
 
+R4投递回执补强：`/mobile/ack` 仍用chat scope与ack_seq，成功响应不变。
+后端先保存匹配owner/char/message ID的Autonomy持久收件回执再删队列；
+任一持久化失败明确503（mobile_ack_persistence_unavailable），保留信封供ACK重试。
+手机既有持久inbox→ACK→精确本地确认、相同ID去重继续有效，ACK不表示用户已读。
+无新手机字段、设置、权限或生成重试；真机/生产端到端仍未验证。
+
 GET/PATCH /sensor/ambient/policy 使用 mobile profile 与同token Reality session。
 读需 state.read+chat，写需 persona+sensor.write+chat；只写 enabled/light/motion/usage 布尔值。
 返回 char_id/configured/effective/reason_codes/source_status；授权默认关闭，独立于采集授权。
