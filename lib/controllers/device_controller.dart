@@ -143,6 +143,14 @@ class DeviceController extends ChangeNotifier {
 
   Future<Map<String, dynamic>> loadAmbientPolicy() => _ambientPolicy();
 
+  Future<void> handleAmbientChanged(String kind, bool enabled) =>
+      pushAmbient(cleared: enabled ? null : kind);
+
+  Future<Map<String, dynamic>> saveAmbientPolicyForCharacter(
+    Map<String, dynamic> patch,
+    String? character,
+  ) => saveAmbientPolicy(patch, expectedCharacter: character);
+
   Future<Map<String, dynamic>> saveAmbientPolicy(
     Map<String, dynamic> patch, {
     String? expectedCharacter,

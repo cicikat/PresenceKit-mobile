@@ -208,8 +208,7 @@ class _CompanionAppState extends State<CompanionApp>
       stickerEnabled: () => _capabilitySettings.stickerEnabled,
       autoPlayVoice: () => _capabilitySettings.autoPlayVoice,
       deliveryOrigin: () => _backendBaseUrl,
-      deliveryOwner: () =>
-          _profileAppearance.presenceGrant?.ownerId ?? _ownerUserId,
+      deliveryOwner: () => _profileAppearance.presenceGrant?.ownerId ?? _ownerUserId,
       deliveryCharId: () => _currentCharacterId,
       resolvePresenceSession: ({required String charId, bool force = false}) {
         return _profileAppearance.ensurePresenceSession(
@@ -794,11 +793,9 @@ class _CompanionAppState extends State<CompanionApp>
         pushCharacter: () => _currentCharacterId,
         c: c,
         onLoadStatus: _capabilitySettings.loadStatus,
-        onAmbientChanged: (kind, enabled) =>
-            _deviceController.pushAmbient(cleared: enabled ? null : kind),
+        onAmbientChanged: _deviceController.handleAmbientChanged,
         onLoadAmbientPolicy: _deviceController.loadAmbientPolicy,
-        onSaveAmbientPolicy: (patch, character) => _deviceController
-            .saveAmbientPolicy(patch, expectedCharacter: character),
+        onSaveAmbientPolicy: _deviceController.saveAmbientPolicyForCharacter,
         onRequestNotifications: _deviceService.requestNotificationPermission,
         onRequestIgnoreBatteryOptimizations:
             _deviceService.requestIgnoreBatteryOptimizations,
@@ -811,8 +808,7 @@ class _CompanionAppState extends State<CompanionApp>
         onToggleScreenContextUpload: _changeScreenContextUploadEnabled,
         onTestBackend: _testBackendConnectivity,
         onPushScreenContext: () => _pushScreenContextOnce(silent: false),
-        onCaptureScreenContext: () =>
-            _captureScreenContextForDebug(silent: false),
+        onCaptureScreenContext: _captureScreenContextForDebug,
         onPushCapturedScreenContext: (snapshot) =>
             _pushScreenContextSnapshot(snapshot, silent: false),
         onPushBehaviorTest: _pushBehaviorTest,
@@ -1223,9 +1219,10 @@ class _CompanionAppState extends State<CompanionApp>
       case null:
         break;
     }
-    await _chatController.uploadFiles([
-      picked,
-    ], preview: _attachments.filePreview(picked));
+    await _chatController.uploadFiles(
+      [picked],
+      preview: _attachments.filePreview(picked),
+    );
   }
 
   Future<void> _pickAndUploadImages() async {
@@ -1392,8 +1389,7 @@ class _CompanionAppState extends State<CompanionApp>
     c: c,
     name: _profileDisplayName,
     onRoute: _pickRoute,
-    connected:
-        _chatController.mobileActive && _chatController.mobileError == null,
+    connected: _chatController.mobileActive && _chatController.mobileError == null,
     avatarBytes: _profileAppearance.profileAvatarBytes,
     onDetails: () => showChatDeliveryDetails(context, _chatController),
     onSettings: _openSettings,
