@@ -1,5 +1,10 @@
 ## 工单59 冷启动恢复中间帧（2026-11-15）
 
+第一轮 F3：PhoneAmbientSettings 管理独立后端授权；CapabilitySheet 控制页可编辑、
+观察页只读，AppShell 仅注入回调。DeviceController 复用 Reality session、检查
+token/节点/角色/generation，后台仅尽力清除事实，不新增采集计时器或持久状态。
+BackendClient 封装 policy HTTP；失败不把开关当作已保存。见工单62与 backend/integration.md。
+
 第一轮 F2：AnimatedRevealText 完成后将 Markdown 助手正文交给 AssistantMarkdown，
 逐字期间保留既有安全文本；Dream 复用该入口。代码、列表、表格和引用在 live/poll/history
 分段时保持完整。远程 Markdown 图片只显示替代文字，外链仅允许显式无凭据 HTTP(S)，

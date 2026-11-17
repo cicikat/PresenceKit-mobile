@@ -120,6 +120,7 @@ class DeviceController extends ChangeNotifier {
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
       case AppLifecycleState.detached:
+        unawaited(pushAmbient(clearAll: true));
         stop();
         break;
     }
@@ -140,7 +141,64 @@ class DeviceController extends ChangeNotifier {
   Future<void> requestActivityPermission() =>
       _screen.requestActivityPermission();
 
-  Future<void> pushAmbient({String? cleared}) async {
+  Future<Map<String, dynamic>> loadAmbientPolicy() => _ambientPolicy();
+
+  Future<Map<String, dynamic>> saveAmbientPolicy(
+    Map<String, dynamic> patch, {
+    String? expectedCharacter,
+  }) => _ambientPolicy(patch: patch, expectedCharacter: expectedCharacter);
+
+  Future<Map<String, dynamic>> _ambientPolicy({
+    Map<String, dynamic>? patch,
+    String? expectedCharacter,
+  }) async {
+    final token = _token()?.trim();
+    final character = _character?.call();
+    if (_disposed ||
+        token == null ||
+        token.isEmpty ||
+        character == null ||
+        expectedCharacter != null && expectedCharacter != character) {
+      throw StateError('ambient scope unavailable');
+    }
+    final generation = _generation, backend = _backend();
+    var grant = _ambientGrant;
+    if (grant == null || grant.charId != character || grant.isExpired) {
+      grant = await backend.createPresenceSession(
+        token: token,
+        charId: character,
+      );
+    }
+    if (!_live(generation, token, backend) || _character?.call() != character) {
+      throw StateError('ambient scope changed');
+    }
+    _ambientGrant = grant;
+    final Map<String, dynamic> result;
+    try {
+      result = patch == null
+          ? await backend.loadAmbientPolicy(
+              token: token,
+              sessionId: grant.sessionId,
+            )
+          : await backend.saveAmbientPolicy(
+              token: token,
+              sessionId: grant.sessionId,
+              patch: patch,
+            );
+    } on BackendException catch (error) {
+      if (_live(generation, token, backend) &&
+          const [401, 403, 404, 409, 410].contains(error.statusCode)) {
+        _ambientGrant = null;
+      }
+      rethrow;
+    }
+    if (!_live(generation, token, backend) || _character?.call() != character) {
+      throw StateError('ambient scope changed');
+    }
+    return result;
+  }
+
+  Future<void> pushAmbient({String? cleared, bool clearAll = false}) async {
     final token = _token()?.trim();
     final character = _character?.call();
     if (!PlatformSettingsChannel.available ||
@@ -148,24 +206,31 @@ class DeviceController extends ChangeNotifier {
         token.isEmpty ||
         character == null ||
         _disposed ||
-        (cleared == null && !_foreground())) {
+        (cleared == null && !clearAll && !_foreground()) ||
+        (clearAll && _ambientGrant == null)) {
       return;
     }
-    if (_ambientBusy && cleared == null) return;
+    final collecting = cleared == null && !clearAll;
+    if (_ambientBusy && collecting) return;
     final generation = _generation;
     final backend = _backend();
     final observedAt = DateTime.now().millisecondsSinceEpoch / 1000;
-    if (cleared == null) _ambientBusy = true;
+    if (collecting) _ambientBusy = true;
     var stage = 'sample';
     try {
-      final observation = cleared == null
+      final observation = clearAll
+          ? {
+              for (final kind in ['light', 'motion', 'usage'])
+                kind: {'status': 'unavailable', 'observed_at': observedAt},
+            }
+          : cleared == null
           ? await PlatformSettingsChannel.deliveryCall<Map>('sampleAmbient')
           : {
               cleared: {'status': 'unavailable', 'observed_at': observedAt},
             };
       if (observation == null || observation.isEmpty) return;
       var grant = _ambientGrant;
-      if (grant == null || grant.charId != character) {
+      if (grant == null || grant.charId != character || grant.isExpired) {
         stage = 'session';
         grant = await backend.createPresenceSession(
           token: token,
@@ -174,7 +239,7 @@ class DeviceController extends ChangeNotifier {
       }
       if (!_live(generation, token, backend) ||
           _character?.call() != character ||
-          (cleared == null && !_foreground())) {
+          (collecting && !_foreground())) {
         return;
       }
       _ambientGrant = grant;
@@ -191,7 +256,7 @@ class DeviceController extends ChangeNotifier {
       );
       if (_live(generation, token, backend)) _ambientGrant = null;
     } finally {
-      if (cleared == null) _ambientBusy = false;
+      if (collecting) _ambientBusy = false;
     }
   }
 

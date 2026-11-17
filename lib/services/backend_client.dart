@@ -302,8 +302,7 @@ class BackendClient {
         ..idleTimeout = const Duration(seconds: 30);
       return _sharedClient!;
     }
-    return _httpClientFactory()
-      ..connectionTimeout = const Duration(seconds: 3);
+    return _httpClientFactory()..connectionTimeout = const Duration(seconds: 3);
   }
 
   Future<bool> _isAllowedBaseUrl(String baseUrl) async {
@@ -451,6 +450,29 @@ class BackendClient {
       timeout: const Duration(seconds: 8),
     );
   }
+
+  Future<Map<String, dynamic>> loadAmbientPolicy({
+    required String token,
+    required String sessionId,
+  }) => _request(
+    '/sensor/ambient/policy',
+    token: token,
+    sessionId: sessionId,
+    timeout: const Duration(seconds: 8),
+  );
+
+  Future<Map<String, dynamic>> saveAmbientPolicy({
+    required String token,
+    required String sessionId,
+    required Map<String, dynamic> patch,
+  }) => _request(
+    '/sensor/ambient/policy',
+    token: token,
+    sessionId: sessionId,
+    method: 'PATCH',
+    body: patch,
+    timeout: const Duration(seconds: 8),
+  );
 
   Future<PresenceSessionGrant> createPresenceSession({
     required String token,
@@ -622,7 +644,9 @@ class BackendClient {
     String? requestId,
     String? voiceReceipt,
   }) async {
-    final receipt = voiceReceipt ?? (requestId == null ? takeVoiceReceipt(message, token) : null);
+    final receipt =
+        voiceReceipt ??
+        (requestId == null ? takeVoiceReceipt(message, token) : null);
     final scoped = sessionId?.trim();
     final scopedRequestId = (scoped == null || scoped.isEmpty)
         ? null
