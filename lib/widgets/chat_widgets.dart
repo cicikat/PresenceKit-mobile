@@ -21,6 +21,8 @@ import '../services/character_naming.dart';
 import '../widgets/common_widgets.dart';
 import 'chat_image.dart';
 import 'inline_display_text.dart';
+import 'assistant_markdown.dart';
+import '../models/markdown_display.dart';
 import '../models/inline_display.dart';
 import '../models/screen_context.dart';
 
@@ -929,6 +931,12 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
         final cursor = _animate && !_skipped && _controller.value < 1
             ? '▍'
             : '';
+        if (cursor.isEmpty && hasMarkdownSyntax(widget.displayText ?? widget.text)) {
+          final source = widget.displayText != null && inlinePlainText(widget.displayText!) == inlinePlainText(widget.text)
+              ? widget.displayText! : widget.text;
+          return AssistantMarkdown(text:source,style:widget.style,
+            accent:widget.accent ?? Theme.of(context).colorScheme.primary);
+        }
         final span = inlineDisplaySpan(
           text: widget.text,
           displayText: widget.displayText,
