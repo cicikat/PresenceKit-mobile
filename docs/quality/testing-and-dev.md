@@ -330,7 +330,7 @@ Kotlin 单元测试：`android/app/src/test/kotlin/com/presencekit/mobile/Creden
 
 ## CI、发布与真机边界
 
-`.github/workflows/ci.yml` 当前执行 `flutter pub get`、`flutter gen-l10n`、`flutter analyze` 和 `flutter test`，但没有执行 `android/gradlew.bat testDebugUnitTest`。独立的 `.github/workflows/android-instrumented.yml` 会在 API 35 模拟器执行 `connectedDevDebugAndroidTest`，覆盖部分 Android 框架级契约；它不覆盖 OEM 权限页面、真实通知投递、Doze、进程被杀、设备重启或网络恢复等真机生命周期场景。
+`.github/workflows/ci.yml` 在 main push / PR 执行 `flutter pub get`、`flutter gen-l10n`、`flutter analyze` 和全量 `flutter test`。工单63新增独立 `finance-native` job，以 Java17 / Flutter3.32 执行 `:app:testDevDebugUnitTest --tests com.presencekit.mobile.FinanceTest`，上传 JUnit XML 与 HTML；它不是全部原生测试或真实 HTTP 合同。`financeContract` 仍须显式启用并启动隔离后端，真实支付/权限往返/后台恢复保持人工验收。独立的 `.github/workflows/android-instrumented.yml` 会在 API 35 模拟器执行 `connectedDevDebugAndroidTest`，覆盖部分 Android 框架级契约；它不覆盖 OEM 权限页面、真实通知投递、Doze、进程被杀、设备重启或网络恢复等真机生命周期场景。
 
 `.github/workflows/release.yml` 当前使用 `prod` flavor，并在构建前接受 Android SDK license、安装项目要求的 `ndk;30.0.14904198`；它要求四个 GitHub Actions signing secrets（`ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`），构建后校验 `com.presencekit.mobile`，并将 APK 上传为 Actions artifact。它仍不会自动把 APK 挂到 GitHub Release，正式 Release 的 APK 附件仍需按发行指南手动上传。该 workflow 支持 tag push 和 `workflow_dispatch`，可用已存在的 v1 tag 重跑。
 

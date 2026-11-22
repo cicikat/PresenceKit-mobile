@@ -59,7 +59,13 @@ class FinanceStore(context: Context) : SQLiteOpenHelper(context, "finance_v1.db"
             db.update("candidates", ContentValues().apply { put("data", record.toString()); if (it.isNull(2) || (!it.isNull(3) && it.getString(3) == "rejected")) put("operation", operation(record, revision).toString()); putNull("error") }, "realm=? AND id=?", arrayOf(realm, id))
         }
     }
-    fun next(realm: String): JSONObject? = readableDatabase.rawQuery("SELECT operation FROM candidates WHERE realm=? AND operation IS NOT NULL AND error IS NULL ORDER BY rowid LIMIT 1", arrayOf(realm)).use { if (it.moveToFirst()) JSONObject(it.getString(0)) else null }
+    fun next(realm: String, includeAutomatic: Boolean = true): JSONObject? = readableDatabase.rawQuery("SELECT operation FROM candidates WHERE realm=? AND operation IS NOT NULL AND error IS NULL ORDER BY rowid", arrayOf(realm)).use {
+        while (it.moveToNext()) {
+            val op = JSONObject(it.getString(0))
+            if (includeAutomatic || op.getJSONObject("record").optString("source_app") == "manual") return@use op
+        }
+        null
+    }
     fun acknowledge(realm: String, op: JSONObject, ack: JSONObject) = transaction { db ->
         require(ack.getString("operation_id") == op.getString("operation_id") && ack.getString("candidate_id") == op.getString("candidate_id") && ack.getInt("revision") == op.getInt("base_revision") + 1) { "invalid_response" }
         val id = op.getString("candidate_id")

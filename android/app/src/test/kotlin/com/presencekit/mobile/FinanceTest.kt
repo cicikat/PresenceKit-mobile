@@ -45,9 +45,9 @@ class FinanceTest {
         for (key in listOf("direction", "currency", "merchant")) assertEquals(expected.get(key), parsed.get(key))
     }
     @Test fun listenerEntryDeduplicatesUpdatesAndDropsSummaryOldAndRevoked() {
-        val at = System.currentTimeMillis() + 10
         Settings.Secure.putString(context.contentResolver, "enabled_notification_listeners", android.content.ComponentName(context, PaymentNotificationListenerService::class.java).flattenToString())
         FinanceAccess.setEnabled(context, realm, true)
+        val at = FinanceAccess.since(context, realm) + 10
         val service = org.robolectric.Robolectric.buildService(PaymentNotificationListenerService::class.java).create().get()
         fun event(id: Int, time: Long = at, summary: Boolean = false): android.service.notification.StatusBarNotification {
             val notification = android.app.Notification.Builder(context, "fixture").setContentTitle("微信支付").setContentText("支付成功16.00元").setWhen(time).build()
@@ -145,5 +145,182 @@ class FinanceTest {
             assertEquals(0, uploads)
             assertEquals(operation, store.next(realm)!!.getString("operation_id"))
         }
+    }
+
+    @Test fun pausedAutomaticRecordsDoNotBlockManualSync() {
+        for (revoked in listOf(false, true)) {
+            context.deleteDatabase("finance_v1.db")
+            Settings.Secure.putString(context.contentResolver, "enabled_notification_listeners", android.content.ComponentName(context, PaymentNotificationListenerService::class.java).flattenToString())
+            FinanceAccess.setEnabled(context, realm, revoked)
+            if (revoked) Settings.Secure.putString(context.contentResolver, "enabled_notification_listeners", "")
+            val original = FinanceStore(context).use { store ->
+                store.capture(realm, "automatic", record())
+                store.next(realm)!!.toString()
+            }
+            FinanceStore(context).use { store ->
+                val manualId = store.capture(realm, "manual", record().put("source_app", "manual"))
+                val uploaded = mutableListOf<String>()
+                val sync = FinanceSync(context, store) { path, body ->
+                    when {
+                        path == "/finance/capabilities" -> JSONObject().put("schema_version", 1).put("effective", true)
+                        body != null -> { uploaded.add(body.getString("candidate_id")); ack(body) }
+                        else -> JSONObject().put("records", org.json.JSONArray())
+                    }
+                }
+                sync.run(origin, "owner", true)
+                assertEquals("Manual record must sync past a paused automatic head", listOf(manualId), uploaded)
+                assertEquals(original, store.next(realm)!!.toString())
+                val rows = store.snapshot(realm).getJSONArray("records")
+                assertEquals("synced", (0 until rows.length()).map { rows.getJSONObject(it) }.single { it.getString("candidate_id") == manualId }.getString("sync_status"))
+            }
+        }
+    }
+
+    @Test fun userActionFailuresStopBackgroundRequestsAndJobsUntilExplicitSync() {
+        for ((code, expected) in listOf(401 to "auth", 403 to "forbidden", 404 to "unsupported")) {
+            context.deleteDatabase("finance_v1.db")
+            val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as android.app.job.JobScheduler
+            scheduler.cancelAll()
+            val operation = FinanceStore(context).use { store ->
+                store.capture(realm, "manual", record().put("source_app", "manual"))
+                val sync = FinanceSync(context, store) { _, _ -> throw FinanceHttpError(code) }
+                assertEquals(expected, sync.run(origin, "owner", true).getString("status"))
+                assertEquals("User action must not receive a timed retry", 0L, store.meta(realm).getLong("next_attempt"))
+                store.next(realm)!!.toString()
+            }
+            FinanceStore(context).use { store ->
+                var calls = 0
+                val sync = FinanceSync(context, store) { path, body ->
+                    calls++
+                    when {
+                        path == "/finance/capabilities" -> JSONObject().put("schema_version", 1).put("effective", true)
+                        body != null -> ack(body)
+                        else -> JSONObject().put("records", org.json.JSONArray())
+                    }
+                }
+                // Even a stale Android job must remain idle after reopening the database.
+                sync.run(origin, "owner")
+                assertEquals("Background must wait for the user", 0, calls)
+                FinanceBridge.schedule(context)
+                assertTrue("Blocked work must not be rescheduled", scheduler.allPendingJobs.isEmpty())
+                assertEquals(operation, store.next(realm)!!.toString())
+                assertEquals("ready", sync.run(origin, "owner", true).getString("status"))
+                assertNull(store.next(realm))
+            }
+        }
+    }
+    @Test fun conflictAndRejectedRowsDoNotBlockOtherRecordsOrRetryForever() {
+        for (code in listOf(409, 422)) {
+            context.deleteDatabase("finance_v1.db")
+            FinanceStore(context).use { store ->
+                val bad = store.capture(realm, "bad", record().put("source_app", "manual"))
+                val good = store.capture(realm, "good", record().put("source_app", "manual"))
+                val uploaded = mutableListOf<String>()
+                val sync = FinanceSync(context, store) { path, body ->
+                    when {
+                        path == "/finance/capabilities" -> JSONObject().put("schema_version", 1).put("effective", true)
+                        body != null -> {
+                            if (body.getString("candidate_id") == bad) throw FinanceHttpError(code)
+                            uploaded.add(body.getString("candidate_id")); ack(body)
+                        }
+                        else -> JSONObject().put("records", org.json.JSONArray())
+                    }
+                }
+                sync.run(origin, "owner", true)
+                assertEquals("Only the invalid row should be held", listOf(good), uploaded)
+                assertNull(store.next(realm))
+                val failed = store.snapshot(realm).getJSONArray("records").let { rows -> (0 until rows.length()).map { rows.getJSONObject(it) }.single { it.getString("candidate_id") == bad } }
+                assertEquals(if (code == 409) "conflict" else "rejected", failed.getString("sync_status"))
+                FinanceBridge.schedule(context)
+                val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as android.app.job.JobScheduler
+                assertTrue(scheduler.allPendingJobs.isEmpty())
+                if (code == 422) {
+                    store.edit(realm, bad, JSONObject().put("amount_minor", 1800))
+                    FinanceBridge.schedule(context)
+                    assertEquals(1, scheduler.allPendingJobs.size)
+                }
+            }
+            (context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as android.app.job.JobScheduler).cancelAll()
+        }
+    }
+    @Test fun transientFailuresKeepTimedRetryButDisabledAndInvalidReceiptsPause() {
+        for (status in listOf("offline", "rate_limited", "disabled", "invalid_response")) {
+            context.deleteDatabase("finance_v1.db")
+            val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as android.app.job.JobScheduler
+            scheduler.cancelAll()
+            FinanceStore(context).use { store ->
+                store.capture(realm, "manual", record().put("source_app", "manual"))
+                val op = store.next(realm)!!.toString()
+                var calls = 0
+                val sync = FinanceSync(context, store) { path, body ->
+                    calls++
+                    when {
+                        status == "disabled" -> JSONObject().put("schema_version", 1).put("effective", false)
+                        path == "/finance/capabilities" -> JSONObject().put("schema_version", 1).put("effective", true)
+                        status == "offline" -> throw java.io.IOException("timeout")
+                        status == "rate_limited" -> throw FinanceHttpError(429)
+                        else -> ack(body!!).put("operation_id", "wrong")
+                    }
+                }
+                assertEquals(status, sync.run(origin, "owner", true).getString("status"))
+                val before = calls
+                sync.run(origin, "owner")
+                assertEquals(before, calls)
+                assertEquals(op, store.next(realm)!!.toString())
+                FinanceBridge.schedule(context)
+                if (status in listOf("offline", "rate_limited")) {
+                    assertTrue(store.meta(realm).getLong("next_attempt") > System.currentTimeMillis())
+                    assertEquals(1, scheduler.allPendingJobs.size)
+                    assertTrue(scheduler.allPendingJobs.single().minLatencyMillis > 0)
+                } else {
+                    assertEquals(0L, store.meta(realm).getLong("next_attempt"))
+                    assertTrue(scheduler.allPendingJobs.isEmpty())
+                }
+            }
+        }
+    }
+
+    @Test fun disabledDuringUploadUsesRealHttpReasonAndStopsRescheduling() {
+        val server = java.net.ServerSocket(0, 2, java.net.InetAddress.getByName("127.0.0.1"))
+        server.soTimeout = 10000
+        val localOrigin = "http://127.0.0.1:" + server.localPort
+        val localRealm = FinanceAccess.realm(localOrigin, "owner")
+        val requests = java.util.concurrent.atomic.AtomicInteger()
+        val worker = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val served = worker.submit {
+            repeat(2) {
+                server.accept().use { socket ->
+                    socket.soTimeout = 10000
+                    val input = socket.getInputStream().bufferedReader(Charsets.ISO_8859_1)
+                    val capability = input.readLine().contains("/finance/capabilities")
+                    var length = 0
+                    while (true) {
+                        val line = input.readLine() ?: break
+                        if (line.isEmpty()) break
+                        if (line.startsWith("Content-Length:", true)) length = line.substringAfter(':').trim().toInt()
+                    }
+                    repeat(length) { input.read() }
+                    requests.incrementAndGet()
+                    val body = if (capability) "{\"schema_version\":1,\"effective\":true}" else "{\"detail\":\"finance_disabled\"}"
+                    val status = if (capability) "200 OK" else "503 Service Unavailable"
+                    socket.getOutputStream().write(("HTTP/1.1 $status\r\nContent-Length: " + body.toByteArray(Charsets.UTF_8).size + "\r\nConnection: close\r\n\r\n" + body).toByteArray(Charsets.UTF_8))
+                }
+            }
+        }
+        try {
+            FinanceAccess.prefs(context).edit().putString("backendBaseUrl", localOrigin).commit()
+            FinanceStore(context).use { store ->
+                store.capture(localRealm, "manual", record().put("source_app", "manual"))
+                val sync = FinanceSync(context, store, tokenProvider = { "public-fixture-only" })
+                assertEquals("disabled", sync.run(localOrigin, "owner", true).getString("status"))
+                assertEquals(2, requests.get())
+                sync.run(localOrigin, "owner")
+                assertEquals(2, requests.get())
+                FinanceBridge.schedule(context)
+                assertTrue((context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as android.app.job.JobScheduler).allPendingJobs.isEmpty())
+                assertNotNull(store.next(localRealm))
+            }
+            served.get(10, java.util.concurrent.TimeUnit.SECONDS)
+        } finally { server.close(); worker.shutdownNow() }
     }
 }

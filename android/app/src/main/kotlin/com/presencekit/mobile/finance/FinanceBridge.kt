@@ -64,7 +64,15 @@ object FinanceBridge {
     }
     fun schedule(context: Context) { runCatching {
         val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-        if (scheduler.allPendingJobs.none { it.id == jobId }) scheduler.schedule(JobInfo.Builder(jobId, ComponentName(context, FinanceJobService::class.java)).setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).setPersisted(true).setBackoffCriteria(30000, JobInfo.BACKOFF_POLICY_EXPONENTIAL).build())
+        val (origin, owner) = FinanceAccess.current(context)
+        FinanceStore(context).use { store ->
+            if (!FinanceSync.shouldRetry(context, store, origin, owner)) {
+                scheduler.cancel(jobId)
+                return@use
+            }
+            val delay = (store.meta(FinanceAccess.realm(origin, owner)).optLong("next_attempt") - System.currentTimeMillis()).coerceAtLeast(0)
+            if (scheduler.allPendingJobs.none { it.id == jobId }) scheduler.schedule(JobInfo.Builder(jobId, ComponentName(context, FinanceJobService::class.java)).setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).setPersisted(true).setMinimumLatency(delay).setBackoffCriteria(30000, JobInfo.BACKOFF_POLICY_EXPONENTIAL).build())
+        }
     } }
 }
 
@@ -77,23 +85,29 @@ class FinanceJobService : JobService() {
             try {
                 val (origin, owner) = FinanceAccess.current(this)
                 FinanceStore(this).use { store ->
-                    if (!cancellation.get() && store.next(FinanceAccess.realm(origin, owner)) != null) {
+                    if (!cancellation.get() && FinanceSync.shouldRetry(this, store, origin, owner)) {
                         FinanceSync(this, store).run(origin, owner, cancelled = { cancellation.get() })
-                        retry = store.next(FinanceAccess.realm(origin, owner)) != null
+                        retry = FinanceSync.shouldRetry(this, store, origin, owner)
                     }
                 }
-            } catch (_: Exception) { retry = true }
+            } catch (_: Exception) { retry = false }
             if (!cancellation.get()) Handler(Looper.getMainLooper()).post {
                 jobFinished(params, retry)
                 if (!retry) FinanceBridge.executor.execute {
                     runCatching {
                         val (origin, owner) = FinanceAccess.current(this)
-                        FinanceStore(this).use { store -> if (store.next(FinanceAccess.realm(origin, owner)) != null) FinanceBridge.schedule(this) }
+                        FinanceStore(this).use { store -> if (FinanceSync.shouldRetry(this, store, origin, owner)) FinanceBridge.schedule(this) }
                     }
                 }
             }
         }
         return true
     }
-    override fun onStopJob(params: JobParameters): Boolean { stopped.set(true); return true }
+    override fun onStopJob(params: JobParameters): Boolean {
+        stopped.set(true)
+        return runCatching {
+            val (origin, owner) = FinanceAccess.current(this)
+            FinanceStore(this).use { FinanceSync.shouldRetry(this, it, origin, owner) }
+        }.getOrDefault(false)
+    }
 }
