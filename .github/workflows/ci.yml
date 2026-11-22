@@ -44,6 +44,8 @@ jobs:
           flutter-version: 3.32.0
           cache: true
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install project NDK
         run: sdkmanager 'ndk;30.0.14904198'
       - run: flutter pub get
