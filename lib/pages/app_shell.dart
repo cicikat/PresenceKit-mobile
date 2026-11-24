@@ -216,13 +216,14 @@ class _CompanionAppState extends State<CompanionApp>
           force: force,
         );
       },
-      onPresenceSessionInvalid: _profileAppearance.invalidatePresenceGrant,
       presenceBindError: () => _profileAppearance.sessionBindError,
     );
     _voiceInputController = VoiceInputController(
       voice: _voiceService,
       backend: () => _backend,
       token: () => _adminToken,
+      presenceGrant: () => _profileAppearance.ensurePresenceSession(),
+      characterId: () => _currentCharacterId,
     );
     _dreamController = DreamController(
       backend: () => _backend,

@@ -1888,7 +1888,7 @@ void main() {
     expect(controller.sending, isFalse);
   });
 
-  test('history session_not_found rebinds the original character', () async {
+  test('history session_not_found stops without rebinding', () async {
     backend.offline = false;
     backend.historySessionMisses = 1;
     backend.day = ChatLogDay.fromJson({
@@ -1897,8 +1897,7 @@ void main() {
         {'time': '12:00', 'assistant': 'rebound'},
       ],
     });
-    var binds = 0;
-    var invalidated = 0;
+    var forcedBinds = 0;
     PresenceSessionGrant grantFor(String charId, {bool force = false}) =>
         PresenceSessionGrant(
           sessionId: force ? 'sess-rebound' : 'sess-$charId',
@@ -1916,25 +1915,22 @@ void main() {
       deliveryCharId: () => 'char-a',
       resolvePresenceSession:
           ({required String charId, bool force = false}) async {
-            binds += 1;
+            if (force) forcedBinds += 1;
             return grantFor(charId, force: force);
           },
-      onPresenceSessionInvalid: () => invalidated += 1,
     );
     addTearDown(scoped.dispose);
     await scoped.start();
-    expect(scoped.history.last.text, 'rebound');
-    expect(scoped.historyError, isNull);
-    expect(backend.historySessionIds, ['sess-char-a', 'sess-rebound']);
-    expect(binds, greaterThanOrEqualTo(2));
-    expect(invalidated, 1);
+    expect(scoped.history, isEmpty);
+    expect(scoped.historyError, isNotNull);
+    expect(backend.historySessionIds, ['sess-char-a']);
+    expect(forcedBinds, 0);
   });
 
-  test('session_not_found rebinds and retries the same request_id', () async {
+  test('session_not_found fails the message without rebinding or replay', () async {
     backend.offline = false;
     backend.sessionMisses = 1;
-    var binds = 0;
-    var invalidated = 0;
+    var forcedBinds = 0;
     final scoped = ChatController(
       backend: () => backend,
       token: () => 'test-token',
@@ -1945,7 +1941,7 @@ void main() {
       deliveryCharId: () => 'char-a',
       resolvePresenceSession:
           ({required String charId, bool force = false}) async {
-            binds += 1;
+            if (force) forcedBinds += 1;
             return PresenceSessionGrant(
               sessionId: force ? 'sess-rebound' : 'sess-$charId',
               charId: charId,
@@ -1953,22 +1949,20 @@ void main() {
               domain: 'reality',
             );
           },
-      onPresenceSessionInvalid: () => invalidated += 1,
     );
     addTearDown(scoped.dispose);
     scoped.send('ping');
     for (var i = 0; i < 20 && (scoped.sending || backend.chats < 2); i++) {
       await Future<void>.delayed(Duration.zero);
     }
-    expect(backend.chats, 2);
-    expect(backend.sentSessionIds, ['sess-char-a', 'sess-rebound']);
-    expect(backend.sentRequestIds, hasLength(2));
-    expect(backend.sentRequestIds[0], backend.sentRequestIds[1]);
+    expect(backend.chats, 1);
+    expect(backend.sentSessionIds, ['sess-char-a']);
+    expect(backend.sentRequestIds, hasLength(1));
     expect(backend.sentRequestIds.first, startsWith('req_'));
-    expect(binds, greaterThanOrEqualTo(2));
-    expect(invalidated, 1);
-    expect(scoped.backendError, isNull);
-    expect(scoped.sent.where((m) => m.role == 'him').single.text, 'echo:ping');
+    expect(forcedBinds, 0);
+    expect(scoped.backendError, 'session_not_found');
+    expect(scoped.sent.where((m) => m.role == 'him'), isEmpty);
+    expect(scoped.sent.singleWhere((m) => m.role == 'you').failed, isTrue);
   });
 
   test('manual retry reuses the failed bubble request_id', () async {

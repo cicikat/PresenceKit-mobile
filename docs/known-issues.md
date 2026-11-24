@@ -1,3 +1,9 @@
+## T4 Session Scope 真机验收（2026-11-24，open）
+
+Session 失效停止重绑重发与转写 grant 接入已完成本地合同/回归检查。
+真实手机对话、录音、角色/连接变化与生命周期联合验收未完成，当前为 partial；未发布 APK。
+后端强制 Session 后必须配套已迁移客户端，最终三仓 matrix 仍未验证。
+
 ## 330 自动记账（observe）
 
 第一轮安全 Markdown（observe）：widget/链接拦截、消息分段、日夜大字及发送回归已验证，

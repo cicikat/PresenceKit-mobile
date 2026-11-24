@@ -414,7 +414,9 @@ void main() {
       expiresAt: DateTime.now().toUtc().subtract(const Duration(minutes: 1)),
     );
     expect(controller.grantFor('char-a'), isNull);
-    final rebound = await controller.ensurePresenceSession(charId: 'char-a');
+    expect(await controller.ensurePresenceSession(charId: 'char-a'), isNull);
+    expect(controller.sessionBindError, 'session_not_found');
+    final rebound = await controller.ensurePresenceSession(charId: 'char-a', force: true);
     expect(rebound?.sessionId, 'sess-char-a');
     expect(controller.grantFor('char-a')?.sessionId, 'sess-char-a');
   });

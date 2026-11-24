@@ -1,3 +1,10 @@
+## T4 Session 拒绝语义（2026-11-24，partial）
+
+Reality chat/upload/history/media/artifact/transcribe 使用同一服务端 grant。
+缺失 Session Header：422 `session_scope_required`；未知/过期：404 `session_not_found`。
+客户端不再收到失效错误后自动绑定新 Session 并重发；当前消息进入可见失败状态。
+poll/ACK 仍按 owner 共享游标处理，不能按角色跳过后推进 ACK。真机联合验收尚未完成。
+
 ## 手机 #57 显示投影（2026-11-15）
 
 第一轮 R4：现有 `/mobile/ack` 的累计ack_seq和成功响应不变。后端回执或队列落盘失败

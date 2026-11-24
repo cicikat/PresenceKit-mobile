@@ -1,3 +1,10 @@
+## T4 Session 切断（2026-11-24，partial）
+
+后端相关 Reality 请求强制要求 `X-Presence-Session`。手机沿用既有 grant 传递；
+转写新增必填 `sessionId`，换角色或连接后忽略旧转写结果。会话过期/未知时停止当前调用，
+不再自动重绑重发；显式重新绑定才能恢复。poll/ACK 的 owner 共享游标不变。
+本地 134 项定向回归与静态分析通过；真机对话、录音和生命周期未验收。
+
 ## 第一轮手机环境主动行为（current / observe）
 
 R4投递回执补强：`/mobile/ack` 仍用chat scope与ack_seq，成功响应不变。

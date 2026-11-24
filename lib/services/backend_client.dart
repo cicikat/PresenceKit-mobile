@@ -1037,6 +1037,7 @@ class BackendClient {
   Future<String> transcribeAudio({
     required String filePath,
     required String token,
+    required String sessionId,
     String channel = 'mobile',
   }) async {
     _voiceReceipt = null;
@@ -1061,6 +1062,7 @@ class BackendClient {
       final request = await budget.open(client.postUrl(endpoint));
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.set(_presenceSessionHeader, sessionId);
       final boundary =
           '----presence-mobile-${DateTime.now().millisecondsSinceEpoch}';
       request.headers.set(

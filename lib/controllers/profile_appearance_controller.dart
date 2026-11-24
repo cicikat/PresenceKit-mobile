@@ -431,8 +431,14 @@ class ProfileAppearanceController extends ChangeNotifier {
     final requested = SessionScope.normalize(charId) ?? currentCharacterId;
     if (token == null || requested == null) return null;
     if (!force) {
-      final existing = grantFor(requested);
-      if (existing != null) return existing;
+      final existing = presenceGrant;
+      if (existing != null && existing.charId == requested) {
+        if (existing.isExpired) {
+          sessionBindError = 'session_not_found';
+          return null;
+        }
+        return existing;
+      }
     }
     final generation = ++_sessionBindGeneration;
     bindingPresenceSession = true;
