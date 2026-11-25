@@ -210,12 +210,7 @@ class _CompanionAppState extends State<CompanionApp>
       deliveryOrigin: () => _backendBaseUrl,
       deliveryOwner: () => _profileAppearance.presenceGrant?.ownerId ?? _ownerUserId,
       deliveryCharId: () => _currentCharacterId,
-      resolvePresenceSession: ({required String charId, bool force = false}) {
-        return _profileAppearance.ensurePresenceSession(
-          charId: charId,
-          force: force,
-        );
-      },
+      resolvePresenceSession: _profileAppearance.ensurePresenceSession,
       presenceBindError: () => _profileAppearance.sessionBindError,
     );
     _voiceInputController = VoiceInputController(
