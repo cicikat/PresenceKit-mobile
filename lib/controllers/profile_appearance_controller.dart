@@ -129,6 +129,16 @@ class ProfileAppearanceController extends ChangeNotifier {
     return grant;
   }
 
+  VoiceInputScope? get voiceScope {
+    final grant = grantFor(currentCharacterId);
+    if (_disposed || grant == null) return null;
+    return VoiceInputScope(
+      origin: _currentOrigin ?? _backend().baseUrl,
+      grant: grant,
+      generation: _sessionBindGeneration,
+    );
+  }
+
   Future<void> restore({bool includeSessionCharacter = true}) async {
     final chatAppearance = await _settings.loadChatAppearance();
     final dreamBackground = await _settings.loadDreamBackground();
@@ -299,7 +309,7 @@ class ProfileAppearanceController extends ChangeNotifier {
       return;
     }
     sessionCharacterId = cleaned;
-    presenceGrant = null;
+    invalidatePresenceGrant();
     sessionBindError = null;
     await _settings.saveSessionCharacterId(
       cleaned,
@@ -386,7 +396,9 @@ class ProfileAppearanceController extends ChangeNotifier {
       sessionScopeCapability = await _backend().loadSessionScopeCapability(
         token: token,
       );
-      sessionBindError = sessionScopeSupported ? null : 'session_scope_unsupported';
+      sessionBindError = sessionScopeSupported
+          ? null
+          : 'session_scope_unsupported';
       if (!sessionScopeSupported) {
         presenceGrant = null;
         return;
@@ -440,6 +452,7 @@ class ProfileAppearanceController extends ChangeNotifier {
         return existing;
       }
     }
+    _backend().invalidateVoiceReceipts();
     final generation = ++_sessionBindGeneration;
     bindingPresenceSession = true;
     sessionBindError = null;
@@ -488,15 +501,20 @@ class ProfileAppearanceController extends ChangeNotifier {
   }
 
   void invalidatePresenceGrant() {
+    _sessionBindGeneration++;
+    _backend().invalidateVoiceReceipts();
+    _sessionBind = null;
+    _sessionBindKey = null;
+    bindingPresenceSession = false;
     presenceGrant = null;
   }
 
   /// Drops in-flight prompt/session work after a token, owner, or node change.
   /// Theme, fonts, and local user profile are not owned here and stay put.
-  Future<void> invalidateForIdentityChange({
-    required bool realmChanged}) async {
+  Future<void> invalidateForIdentityChange({required bool realmChanged}) async {
     _assetsGeneration++;
     _sessionBindGeneration++;
+    _backend().invalidateVoiceReceipts();
     _sessionBind = null;
     _sessionBindKey = null;
     presenceGrant = null;

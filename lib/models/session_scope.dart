@@ -53,6 +53,27 @@ class SessionScope {
 }
 
 /// Server-advertised session-scope capability from `GET /auth/whoami`.
+/// Value captured from the existing grant owner; owns no session state.
+class VoiceInputScope {
+  const VoiceInputScope({
+    required this.origin,
+    required this.grant,
+    required this.generation,
+  });
+  final String origin;
+  final PresenceSessionGrant grant;
+  final int generation;
+
+  bool matches(VoiceInputScope? other) =>
+      other != null &&
+      generation == other.generation &&
+      origin == other.origin &&
+      grant.sessionId == other.grant.sessionId &&
+      grant.ownerId == other.grant.ownerId &&
+      grant.charId == other.grant.charId &&
+      grant.domain == other.grant.domain;
+}
+
 class SessionScopeCapability {
   const SessionScopeCapability({required this.supported, this.version});
 

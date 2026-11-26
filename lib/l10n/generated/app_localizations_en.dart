@@ -837,6 +837,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voiceTranscriptionFailed => 'Transcription failed';
 
   @override
+  String get voiceSessionChanged =>
+      'This conversation has changed. Please record again.';
+
+  @override
   String get drawerTooltip => 'Drawer';
 
   @override

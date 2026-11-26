@@ -443,12 +443,19 @@ void main() {
 
   test('selectSessionCharacter rebinds and keeps server active unchanged', () async {
     await controller.loadPromptAssets();
+    final firstA = controller.voiceScope!;
     await controller.selectSessionCharacter('char-b');
     expect(controller.currentCharacterId, 'char-b');
     expect(controller.serverActiveCharacterId, 'char-a');
     expect(controller.presenceGrant?.charId, 'char-b');
     expect(backend.lastBoundCharId, 'char-b');
     expect(backend.updates, 0);
+    expect(firstA.matches(controller.voiceScope), isFalse);
+    await controller.selectSessionCharacter('char-a');
+    expect(controller.voiceScope?.grant.charId, 'char-a');
+    expect(firstA.matches(controller.voiceScope), isFalse);
+    controller.invalidatePresenceGrant();
+    expect(controller.voiceScope, isNull);
   },
   );
 

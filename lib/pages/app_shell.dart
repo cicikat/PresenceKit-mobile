@@ -212,13 +212,14 @@ class _CompanionAppState extends State<CompanionApp>
       deliveryCharId: () => _currentCharacterId,
       resolvePresenceSession: _profileAppearance.ensurePresenceSession,
       presenceBindError: () => _profileAppearance.sessionBindError,
+      voiceScope: () => _profileAppearance.voiceScope,
     );
     _voiceInputController = VoiceInputController(
       voice: _voiceService,
       backend: () => _backend,
       token: () => _adminToken,
       presenceGrant: () => _profileAppearance.ensurePresenceSession(),
-      characterId: () => _currentCharacterId,
+      scope: () => _profileAppearance.voiceScope,
     );
     _dreamController = DreamController(
       backend: () => _backend,
@@ -602,6 +603,7 @@ class _CompanionAppState extends State<CompanionApp>
 
   String _localizeVoiceError(String error) {
     final l10n = context.l10n;
+    if (error == 'session_scope_stale' || error == 'session_not_found') return l10n.voiceSessionChanged;
     if (error.contains('正在录音')) return l10n.voiceRecordingActive;
     if (error.contains('权限')) return l10n.voicePermissionDenied;
     if (error.contains('开始录音')) return l10n.voiceStartFailed;

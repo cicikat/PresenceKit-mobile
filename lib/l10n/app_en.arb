@@ -310,6 +310,7 @@
   "voiceRecordingFailed": "Recording failed",
   "voiceCredentialRequired": "An access credential is required for transcription",
   "voiceTranscriptionFailed": "Transcription failed",
+  "voiceSessionChanged": "This conversation has changed. Please record again.",
   "drawerTooltip": "Drawer",
   "preferencesTooltip": "Preferences",
   "switchToLightTooltip": "Switch to light mode",

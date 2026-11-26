@@ -774,6 +774,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get voiceTranscriptionFailed => '语音转写失败';
 
   @override
+  String get voiceSessionChanged => '当前对话已变化，请重新录音';
+
+  @override
   String get drawerTooltip => '抽屉';
 
   @override
