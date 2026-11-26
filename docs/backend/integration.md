@@ -5,6 +5,14 @@
 不再自动重绑重发；显式重新绑定才能恢复。poll/ACK 的 owner 共享游标不变。
 本地 134 项定向回归与静态分析通过；真机对话、录音和生命周期未验收。
 
+2026-11-26：PR #21 已合并，结构补丁未提高 1499 行门禁；此前完整 Flutter 479 passed、
+analyze 与 dev APK 构建通过。main `07033f5916a8a7b31d4ef09ac83763f10c8da32d` 的
+[Flutter/native CI](https://github.com/cicikat/PresenceKit-mobile/actions/runs/45744803953) 与
+[Android instrumented](https://github.com/cicikat/PresenceKit-mobile/actions/runs/45744804032) 通过。
+本轮 ADB 无设备，真机十项均 NOT RUN；未安装本轮 dev 包、未正式发布。
+最新固定 SHA matrix 与逐项合同见后端 `docs/refactors/t4-02-final-acceptance.md`；
+compatible 不代表整体验收 verified。用户默认合并规则覆盖旧待绿灯/设备/审查门禁。
+
 ## 第一轮手机环境主动行为（current / observe）
 
 R4投递回执补强：`/mobile/ack` 仍用chat scope与ack_seq，成功响应不变。

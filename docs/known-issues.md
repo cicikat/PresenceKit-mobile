@@ -4,6 +4,11 @@ Session 失效停止重绑重发与转写 grant 接入已完成本地合同/回�
 真实手机对话、录音、角色/连接变化与生命周期联合验收未完成，当前为 partial；未发布 APK。
 后端强制 Session 后必须配套已迁移客户端，最终三仓 matrix 仍未验证。
 
+2026-11-26 校准：PR #21 已合并；代码 CI 通过，固定 SHA 合同状态以相邻后端
+`docs/refactors/t4-02-final-acceptance.md` 为准。ADB 仍无设备，普通聊天、角色切换、录音/
+转写/语音回执、前后台、Session 过期、后端重启、断网恢复、不重绑不重放、迟到响应隔离、
+owner 共享 poll/ACK 真机证据均 NOT RUN。独立审查未记录，overall partial；没有正式发布。
+
 ## 330 自动记账（observe）
 
 第一轮安全 Markdown（observe）：widget/链接拦截、消息分段、日夜大字及发送回归已验证，
