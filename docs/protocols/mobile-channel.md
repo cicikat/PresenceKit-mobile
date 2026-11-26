@@ -1,5 +1,10 @@
 ## T4 Session 拒绝语义（2026-11-24，partial）
 
+T4.1（2026-11-26）仅收紧本机录音与回执缓存生命周期，不改 wire 字段：仍发送既有
+audio_perception_id、Session Header 与 request_id。客户端 scope 是既有 grant/epoch 的值快照，
+不新增服务端字段；同 owner/角色的新 grant 不成为新的后端持久业务主键。已入 outbox 的回执随
+原角色/请求身份继续对账，不自动改绑或重放；普通文字和 owner 共享 poll/ACK 不受影响。
+
 Reality chat/upload/history/media/artifact/transcribe 使用同一服务端 grant。
 缺失 Session Header：422 `session_scope_required`；未知/过期：404 `session_not_found`。
 客户端不再收到失效错误后自动绑定新 Session 并重发；当前消息进入可见失败状态。

@@ -1,5 +1,12 @@
 ## T4 Session 切断（2026-11-24，partial）
 
+2026-11-26 T4.1：录音开始由 ProfileAppearanceController 的正式 grant/epoch 冻结
+owner、角色、Session、连接；录音、转写提交和缓存取出均检验同一归属。旧异步响应不能覆盖新录音，
+角色/授权失效由现有所有者清理。sendChat 不再隐式取缓存；ChatController 在原 durable outbox
+入队前按相同冻结身份取一次，持久回执字段和未知结果/手动重试/request_id 语义不变。
+HTTP、scope、共享 poll/ACK、数据布局、设置和后台权限不变，没有迁移或清空队列。
+两项旧实现失败已复现，完整 Flutter 495 passed、analyze 无问题；本修补尚未部署或正式发布。
+
 后端相关 Reality 请求强制要求 `X-Presence-Session`。手机沿用既有 grant 传递；
 转写新增必填 `sessionId`，换角色或连接后忽略旧转写结果。会话过期/未知时停止当前调用，
 不再自动重绑重发；显式重新绑定才能恢复。poll/ACK 的 owner 共享游标不变。

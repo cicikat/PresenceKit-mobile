@@ -43,6 +43,7 @@ class ChatController extends ChangeNotifier {
     })?
     resolvePresenceSession,
     String? Function()? presenceBindError,
+    VoiceInputScope? Function()? voiceScope,
     Stream<void>? networkChanges,
     this.localWaitTimeout = const Duration(seconds: 120),
     this.outgoingAttemptTimeout = const Duration(seconds: 120),
@@ -62,7 +63,8 @@ class ChatController extends ChangeNotifier {
        _deliveryOwner = deliveryOwner ?? _alwaysNull,
        _deliveryCharId = deliveryCharId ?? _alwaysNull,
        _resolvePresenceSession = resolvePresenceSession,
-       _presenceBindError = presenceBindError {
+       _presenceBindError = presenceBindError,
+       _voiceScope = voiceScope {
     scrollController.addListener(_handleScroll);
     _networkSubscription =
         (networkChanges ?? const NetworkStatusService().changes).listen(
@@ -96,6 +98,7 @@ class ChatController extends ChangeNotifier {
   })?
   _resolvePresenceSession;
   final String? Function()? _presenceBindError;
+  final VoiceInputScope? Function()? _voiceScope;
   String? pendingHandoffError;
   String? _boundDeliveryOrigin;
   String? _boundDeliveryOwner;
@@ -604,7 +607,10 @@ class ChatController extends ChangeNotifier {
     final saved = await _enqueueOutgoing(
       value,
       replyTo: replyTo,
-      voiceReceipt: _backend().takeVoiceReceipt(value, token),
+      voiceReceipt: _backend().takeVoiceReceipt(
+        value,
+        scope: _voiceScope?.call(),
+      ),
     );
     if (saved &&
         !_session.disposed &&

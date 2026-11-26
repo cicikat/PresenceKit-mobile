@@ -1550,6 +1550,12 @@ abstract class AppLocalizations {
   /// **'语音转写失败'**
   String get voiceTranscriptionFailed;
 
+  /// No description provided for @voiceSessionChanged.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前对话已变化，请重新录音'**
+  String get voiceSessionChanged;
+
   /// No description provided for @drawerTooltip.
   ///
   /// In zh, this message translates to:

@@ -11,6 +11,22 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:presencekit_mobile/services/app_settings_store.dart';
 import 'package:presencekit_mobile/services/backend_client.dart';
+import 'package:presencekit_mobile/models/session_scope.dart';
+
+VoiceInputScope voiceScope(
+  String session, {
+  String character = 'char-a',
+  int generation = 1,
+}) => VoiceInputScope(
+  origin: 'http://127.0.0.1:8080',
+  generation: generation,
+  grant: PresenceSessionGrant(
+    sessionId: session,
+    charId: character,
+    ownerId: 'fixture-owner',
+    domain: 'reality',
+  ),
+);
 
 class _FakeHttpHeaders implements HttpHeaders {
   final Map<String, String> values = {};
@@ -55,6 +71,8 @@ class _FakeHttpClientRequest implements HttpClientRequest {
     _client.lastRequestBody = utf8.decode(_body.toBytes());
     final error = _client.errorOnClose;
     if (error != null) throw error;
+    final respond = _client.respond;
+    if (respond != null) return respond(this);
     return _FakeHttpClientResponse(
       _client.statusCode,
       _client.responseBytes ?? utf8.encode(_client.responseBody),
@@ -100,6 +118,7 @@ class _FakeHttpClient implements HttpClient {
   String responseBody = '{}';
   List<int>? responseBytes;
   Object? errorOnClose;
+  Future<HttpClientResponse> Function(_FakeHttpClientRequest)? respond;
 
   String? method;
   Uri? requestedUri;
@@ -311,6 +330,234 @@ void main() {
     },
   );
 
+  test(
+    'T4.1 same token and text cannot move a receipt to another role session',
+    () async {
+      final temp = await Directory.systemTemp.createTemp('voice-scope-');
+      addTearDown(() => temp.delete(recursive: true));
+      final file = File('${temp.path}/voice.m4a');
+      await file.writeAsBytes([1, 2, 3]);
+      fakeClient.responseBody = jsonEncode({
+        'text': 'hello',
+        'audio_perception_id': 'receipt-a',
+      });
+      final a = voiceScope('session-a');
+      await backend.transcribeAudio(
+        filePath: file.path,
+        token: 'same-token',
+        scope: a,
+        isCurrent: () => true,
+      );
+      fakeClient.responseBody = jsonEncode({'reply': 'ok'});
+      await backend.sendChat(
+        'hello',
+        token: 'same-token',
+        sessionId: 'session-b',
+        voiceReceipt: backend.takeVoiceReceipt(
+          'hello',
+          scope: voiceScope('session-b', character: 'char-b'),
+        ),
+      );
+      expect(
+        jsonDecode(
+          fakeClient.lastRequestBody,
+        ).containsKey('audio_perception_id'),
+        isFalse,
+      );
+      expect(backend.takeVoiceReceipt('hello', scope: a), 'receipt-a');
+      expect(backend.takeVoiceReceipt('hello', scope: a), isNull);
+    },
+  );
+
+  test(
+    'T4.1 late A transcription cannot commit a receipt after switching to B',
+    () async {
+      final temp = await Directory.systemTemp.createTemp('voice-late-');
+      addTearDown(() => temp.delete(recursive: true));
+      final file = File('${temp.path}/voice.m4a');
+      await file.writeAsBytes([1, 2, 3]);
+      final entered = Completer<void>();
+      final response = Completer<HttpClientResponse>();
+      fakeClient.respond = (_) {
+        entered.complete();
+        return response.future;
+      };
+      var live = voiceScope('session-a');
+      final a = live;
+      final pending = backend.transcribeAudio(
+        filePath: file.path,
+        token: 'same-token',
+        scope: a,
+        isCurrent: () => a.matches(live),
+      );
+      await entered.future;
+      live = voiceScope('session-b', character: 'char-b', generation: 2);
+      fakeClient.respond = null;
+      final rejected = expectLater(pending, throwsA(isA<BackendException>()));
+      response.complete(
+        _FakeHttpClientResponse(
+          200,
+          utf8.encode(
+            jsonEncode({'text': 'hello', 'audio_perception_id': 'receipt-a'}),
+          ),
+        ),
+      );
+      await rejected;
+      fakeClient.responseBody = jsonEncode({'reply': 'ok'});
+      await backend.sendChat(
+        'hello',
+        token: 'same-token',
+        sessionId: 'session-b',
+      );
+      expect(
+        jsonDecode(
+          fakeClient.lastRequestBody,
+        ).containsKey('audio_perception_id'),
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'T4.1 reverse transcription completion keeps the newer receipt',
+    () async {
+      final temp = await Directory.systemTemp.createTemp('voice-order-');
+      addTearDown(() => temp.delete(recursive: true));
+      final file = File('${temp.path}/voice.m4a');
+      await file.writeAsBytes([1, 2, 3]);
+      final entered = [Completer<void>(), Completer<void>()];
+      final responses = [
+        Completer<HttpClientResponse>(),
+        Completer<HttpClientResponse>(),
+      ];
+      var index = 0;
+      fakeClient.respond = (_) {
+        final n = index++;
+        entered[n].complete();
+        return responses[n].future;
+      };
+      final scope = voiceScope('session-a');
+      final old = backend.transcribeAudio(
+        filePath: file.path,
+        token: 'same-token',
+        scope: scope,
+        isCurrent: () => true,
+      );
+      await entered[0].future;
+      final newer = backend.transcribeAudio(
+        filePath: file.path,
+        token: 'same-token',
+        scope: scope,
+        isCurrent: () => true,
+      );
+      await entered[1].future;
+      responses[1].complete(
+        _FakeHttpClientResponse(
+          200,
+          utf8.encode(
+            jsonEncode({
+              'text': 'new text',
+              'audio_perception_id': 'new-receipt',
+            }),
+          ),
+        ),
+      );
+      expect(await newer, 'new text');
+      final rejected = expectLater(old, throwsA(isA<BackendException>()));
+      responses[0].complete(
+        _FakeHttpClientResponse(
+          200,
+          utf8.encode(
+            jsonEncode({
+              'text': 'old text',
+              'audio_perception_id': 'old-receipt',
+            }),
+          ),
+        ),
+      );
+      await rejected;
+      expect(backend.takeVoiceReceipt('new text', scope: scope), 'new-receipt');
+    },
+  );
+
+  test(
+    'T4.1 returning to A with a newer epoch cannot recover its old receipt',
+    () async {
+      final temp = await Directory.systemTemp.createTemp('voice-epoch-');
+      addTearDown(() => temp.delete(recursive: true));
+      final file = File('${temp.path}/voice.m4a');
+      await file.writeAsBytes([1, 2, 3]);
+      var live = voiceScope('session-a');
+      final a = live;
+      fakeClient.responseBody = jsonEncode({
+        'text': 'hello',
+        'audio_perception_id': 'old-a',
+      });
+      await backend.transcribeAudio(
+        filePath: file.path,
+        token: 'same-token',
+        scope: a,
+        isCurrent: () => a.matches(live),
+      );
+      live = voiceScope('session-b', character: 'char-b', generation: 2);
+      live = voiceScope('session-a', generation: 3);
+      expect(backend.takeVoiceReceipt('hello', scope: live), isNull);
+      expect(backend.takeVoiceReceipt('hello', scope: a), isNull);
+    },
+  );
+
+  test(
+    'T4.1 expired cache and expired grant never dispatch a voice receipt',
+    () async {
+      var now = DateTime.utc(2026, 11, 26);
+      backend = BackendClient(
+        baseUrl: baseUrl,
+        settingsStore: const _AllowedSettingsStore(),
+        httpClientFactory: () => fakeClient,
+        now: () => now,
+      );
+      final temp = await Directory.systemTemp.createTemp('voice-expiry-');
+      addTearDown(() => temp.delete(recursive: true));
+      final file = File('${temp.path}/voice.m4a');
+      await file.writeAsBytes([1, 2, 3]);
+      final scope = voiceScope('session-a');
+      fakeClient.responseBody = jsonEncode({
+        'text': 'hello',
+        'audio_perception_id': 'receipt',
+      });
+      await backend.transcribeAudio(
+        filePath: file.path,
+        token: 'token',
+        scope: scope,
+        isCurrent: () => true,
+      );
+      now = now.add(const Duration(minutes: 5));
+      expect(backend.takeVoiceReceipt('hello', scope: scope), isNull);
+      fakeClient.method = null;
+      final expired = VoiceInputScope(
+        origin: baseUrl,
+        generation: 1,
+        grant: PresenceSessionGrant(
+          sessionId: 'expired',
+          charId: 'char-a',
+          ownerId: 'fixture-owner',
+          domain: 'reality',
+          expiresAt: DateTime.utc(2000),
+        ),
+      );
+      await expectLater(
+        backend.transcribeAudio(
+          filePath: file.path,
+          token: 'token',
+          scope: expired,
+          isCurrent: () => true,
+        ),
+        throwsA(isA<BackendException>()),
+      );
+      expect(fakeClient.method, isNull);
+    },
+  );
+
   test('voice receipt is scoped to unchanged text and consumed once', () async {
     final temp = await Directory.systemTemp.createTemp('voice-receipt-');
     final file = File('${temp.path}/voice.m4a');
@@ -321,12 +568,24 @@ void main() {
         'audio_perception_id': 'receipt',
       });
       expect(
-        await backend.transcribeAudio(filePath: file.path, token: 'tok-1', sessionId: 'sess-a'),
+        await backend.transcribeAudio(
+          filePath: file.path,
+          token: 'tok-1',
+          scope: voiceScope('sess-a'),
+          isCurrent: () => true,
+        ),
         'hello',
       );
       expect(fakeClient.lastRequestHeaders['X-Presence-Session'], 'sess-a');
       fakeClient.responseBody = jsonEncode({'reply': 'ok'});
-      await backend.sendChat('hello', token: 'tok-1');
+      await backend.sendChat(
+        'hello',
+        token: 'tok-1',
+        voiceReceipt: backend.takeVoiceReceipt(
+          'hello',
+          scope: voiceScope('sess-a'),
+        ),
+      );
       expect(
         jsonDecode(fakeClient.lastRequestBody)['audio_perception_id'],
         'receipt',
@@ -342,9 +601,21 @@ void main() {
         'text': 'hello',
         'audio_perception_id': 'receipt',
       });
-      await backend.transcribeAudio(filePath: file.path, token: 'tok-1', sessionId: 'sess-a');
+      await backend.transcribeAudio(
+        filePath: file.path,
+        token: 'tok-1',
+        scope: voiceScope('sess-a'),
+        isCurrent: () => true,
+      );
       fakeClient.responseBody = jsonEncode({'reply': 'ok'});
-      await backend.sendChat('edited', token: 'tok-1');
+      await backend.sendChat(
+        'edited',
+        token: 'tok-1',
+        voiceReceipt: backend.takeVoiceReceipt(
+          'edited',
+          scope: voiceScope('sess-a'),
+        ),
+      );
       expect(
         jsonDecode(
           fakeClient.lastRequestBody,
@@ -517,9 +788,13 @@ void main() {
             fakeClient.lastRequestHeaders['X-Presence-Session'],
         'pss_fixture',
       );
-      expect(jsonDecode(fakeClient.lastRequestBody)['request_id'], 'req_fixture',
+      expect(
+        jsonDecode(fakeClient.lastRequestBody)['request_id'],
+        'req_fixture',
       );
-      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('char_id'), isFalse,
+      expect(
+        jsonDecode(fakeClient.lastRequestBody).containsKey('char_id'),
+        isFalse,
       );
     });
 
@@ -535,7 +810,9 @@ void main() {
             .contains('x-presence-session'),
         isFalse,
       );
-      expect(jsonDecode(fakeClient.lastRequestBody).containsKey('request_id'), isFalse,
+      expect(
+        jsonDecode(fakeClient.lastRequestBody).containsKey('request_id'),
+        isFalse,
       );
     });
 
@@ -558,21 +835,23 @@ void main() {
       );
     });
 
-    test('legacy chat-log query is omitted when a session header is present', () async {
-      fakeClient.responseBody = jsonEncode({'dates': []});
-      await backend.loadChatLogDates(
-        token: 'tok-1',
-        sessionId: 'pss_fixture',
-        characterId: 'char-b',
-      );
-      expect(fakeClient.requestedUri!.path, '/chat-log/dates');
-      expect(fakeClient.requestedUri!.query, isEmpty);
-      expect(
-        fakeClient.lastRequestHeaders['x-presence-session'] ??
-            fakeClient.lastRequestHeaders['X-Presence-Session'],
-        'pss_fixture',
-      );
-    },
+    test(
+      'legacy chat-log query is omitted when a session header is present',
+      () async {
+        fakeClient.responseBody = jsonEncode({'dates': []});
+        await backend.loadChatLogDates(
+          token: 'tok-1',
+          sessionId: 'pss_fixture',
+          characterId: 'char-b',
+        );
+        expect(fakeClient.requestedUri!.path, '/chat-log/dates');
+        expect(fakeClient.requestedUri!.query, isEmpty);
+        expect(
+          fakeClient.lastRequestHeaders['x-presence-session'] ??
+              fakeClient.lastRequestHeaders['X-Presence-Session'],
+          'pss_fixture',
+        );
+      },
     );
   });
 

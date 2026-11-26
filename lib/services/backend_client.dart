@@ -61,16 +61,21 @@ class BackendClient {
     required this.baseUrl,
     required this.settingsStore,
     @visibleForTesting HttpClient Function()? httpClientFactory,
-  }) : _httpClientFactory = httpClientFactory ?? HttpClient.new;
+    @visibleForTesting DateTime Function()? now,
+  }) : _httpClientFactory = httpClientFactory ?? HttpClient.new,
+       _now = now ?? DateTime.now;
 
   String? _voiceText;
   String? _voiceReceipt;
-  String? _voiceToken;
+  VoiceInputScope? _voiceScope;
+  bool Function()? _voiceIsCurrent;
+  int _voiceRequest = 0;
   DateTime? _voiceExpires;
 
   final String baseUrl;
   final AppSettingsStore settingsStore;
   final HttpClient Function() _httpClientFactory;
+  final DateTime Function() _now;
   final Set<HttpRequestBudget> _mobileReceives = {};
   final Set<HttpClient> _mobileUpgrades = {};
 
@@ -622,17 +627,29 @@ class BackendClient {
         .join('\n\n');
   }
 
-  String? takeVoiceReceipt(String message, String token) {
-    final receipt =
-        _voiceToken == token &&
-            _voiceText?.trim() == message.trim() &&
-            (_voiceExpires?.isAfter(DateTime.now()) ?? false)
-        ? _voiceReceipt
-        : null;
+  void _clearVoiceReceipt() {
     _voiceReceipt = null;
     _voiceText = null;
-    _voiceToken = null;
+    _voiceScope = null;
+    _voiceIsCurrent = null;
     _voiceExpires = null;
+  }
+
+  void invalidateVoiceReceipts() {
+    _voiceRequest++;
+    _clearVoiceReceipt();
+  }
+
+  String? takeVoiceReceipt(String message, {required VoiceInputScope? scope}) {
+    if (!(_voiceExpires?.isAfter(_now()) ?? false) ||
+        _voiceScope?.grant.isExpired == true ||
+        _voiceIsCurrent?.call() != true) {
+      _clearVoiceReceipt();
+      return null;
+    }
+    if (_voiceScope?.matches(scope) != true) return null;
+    final receipt = _voiceText?.trim() == message.trim() ? _voiceReceipt : null;
+    _clearVoiceReceipt();
     return receipt;
   }
 
@@ -644,9 +661,7 @@ class BackendClient {
     String? requestId,
     String? voiceReceipt,
   }) async {
-    final receipt =
-        voiceReceipt ??
-        (requestId == null ? takeVoiceReceipt(message, token) : null);
+    final receipt = voiceReceipt;
     final scoped = sessionId?.trim();
     final scopedRequestId = (scoped == null || scoped.isEmpty)
         ? null
@@ -1037,13 +1052,21 @@ class BackendClient {
   Future<String> transcribeAudio({
     required String filePath,
     required String token,
-    required String sessionId,
+    required VoiceInputScope scope,
+    required bool Function() isCurrent,
     String channel = 'mobile',
   }) async {
-    _voiceReceipt = null;
-    _voiceText = null;
-    _voiceToken = null;
-    _voiceExpires = null;
+    if (!isCurrent() || scope.grant.isExpired) {
+      throw const BackendException('session_scope_stale');
+    }
+    invalidateVoiceReceipts();
+    final requestId = _voiceRequest;
+    void checkCurrent() {
+      if (requestId != _voiceRequest || !isCurrent() || scope.grant.isExpired) {
+        throw const BackendException('session_scope_stale');
+      }
+    }
+
     final file = File(filePath);
     if (!await file.exists()) {
       throw const BackendException('录音文件不存在');
@@ -1052,6 +1075,7 @@ class BackendClient {
     if (bytes.isEmpty) {
       throw const BackendException('录音内容为空');
     }
+    checkCurrent();
     final client = _httpClientFactory()
       ..connectionTimeout = const Duration(seconds: 8);
     final budget = HttpRequestBudget(client, const Duration(seconds: 60));
@@ -1059,10 +1083,12 @@ class BackendClient {
       final endpoint = await budget.wait(
         _endpoint('/transcribe', token: token),
       );
+      checkCurrent();
       final request = await budget.open(client.postUrl(endpoint));
+      checkCurrent();
       request.followRedirects = false;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-      request.headers.set(_presenceSessionHeader, sessionId);
+      request.headers.set(_presenceSessionHeader, scope.grant.sessionId);
       final boundary =
           '----presence-mobile-${DateTime.now().millisecondsSinceEpoch}';
       request.headers.set(
@@ -1106,11 +1132,13 @@ class BackendClient {
       }
       final text = decoded['text'];
       final receipt = decoded['audio_perception_id'];
+      checkCurrent();
       if (text is String && receipt is String && receipt.length <= 128) {
         _voiceText = text;
         _voiceReceipt = receipt;
-        _voiceToken = token;
-        _voiceExpires = DateTime.now().add(const Duration(minutes: 5));
+        _voiceScope = scope;
+        _voiceIsCurrent = isCurrent;
+        _voiceExpires = _now().add(const Duration(minutes: 5));
       }
       return text is String ? text : '';
     } on HttpRequestCancelled {
