@@ -5,6 +5,10 @@ Reality chat/upload/history/media/artifact/transcribe 使用同一服务端 gran
 客户端不再收到失效错误后自动绑定新 Session 并重发；当前消息进入可见失败状态。
 poll/ACK 仍按 owner 共享游标处理，不能按角色跳过后推进 ACK。真机联合验收尚未完成。
 
+2026-11-26：上述迁移已随 PR #21 合并；CI 与真机证据分开，ADB 无设备导致十项真机
+验收 NOT RUN。固定 SHA 合同与各端生命周期结果见后端 T4-02 验收报告及 protocol-matrix.json。
+本轮只同步交付状态，未更改 grant、错误码、队列、ACK、TTL 或后台行为，未发布 APK。
+
 ## 手机 #57 显示投影（2026-11-15）
 
 第一轮 R4：现有 `/mobile/ack` 的累计ack_seq和成功响应不变。后端回执或队列落盘失败
