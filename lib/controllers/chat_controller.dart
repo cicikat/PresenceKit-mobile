@@ -42,7 +42,6 @@ class ChatController extends ChangeNotifier {
       bool force,
     })?
     resolvePresenceSession,
-    void Function()? onPresenceSessionInvalid,
     String? Function()? presenceBindError,
     Stream<void>? networkChanges,
     this.localWaitTimeout = const Duration(seconds: 120),
@@ -63,7 +62,6 @@ class ChatController extends ChangeNotifier {
        _deliveryOwner = deliveryOwner ?? _alwaysNull,
        _deliveryCharId = deliveryCharId ?? _alwaysNull,
        _resolvePresenceSession = resolvePresenceSession,
-       _onPresenceSessionInvalid = onPresenceSessionInvalid,
        _presenceBindError = presenceBindError {
     scrollController.addListener(_handleScroll);
     _networkSubscription =
@@ -97,7 +95,6 @@ class ChatController extends ChangeNotifier {
     bool force,
   })?
   _resolvePresenceSession;
-  final void Function()? _onPresenceSessionInvalid;
   final String? Function()? _presenceBindError;
   String? pendingHandoffError;
   String? _boundDeliveryOrigin;
@@ -884,17 +881,8 @@ class ChatController extends ChangeNotifier {
       return call(grant);
     }
 
-    var grant = await _requirePresenceGrant();
-    try {
-      return await invoke(grant);
-    } on BackendException catch (e) {
-      if (!e.isSessionNotFound || !_scopeStillLive(generation, scope)) {
-        rethrow;
-      }
-      _onPresenceSessionInvalid?.call();
-      grant = await _requirePresenceGrant(force: true);
-      return invoke(grant);
-    }
+    final grant = await _requirePresenceGrant();
+    return invoke(grant);
   }
 
   Future<void> _applyChatResponse({

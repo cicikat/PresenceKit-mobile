@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../services/backend_client.dart';
+import '../models/session_scope.dart';
 import '../services/device_services.dart';
 
 class VoiceInputResult {
@@ -17,13 +18,19 @@ class VoiceInputController extends ChangeNotifier {
     required VoiceService voice,
     required BackendClient Function() backend,
     required String? Function() token,
+    required Future<PresenceSessionGrant?> Function() presenceGrant,
+    required String? Function() characterId,
   }) : _voice = voice,
        _backend = backend,
-       _token = token;
+       _token = token,
+       _presenceGrant = presenceGrant,
+       _characterId = characterId;
 
   final VoiceService _voice;
   final BackendClient Function() _backend;
   final String? Function() _token;
+  final Future<PresenceSessionGrant?> Function() _presenceGrant;
+  final String? Function() _characterId;
   bool _recording = false;
 
   Future<String?> start() async {
@@ -63,9 +70,19 @@ class VoiceInputController extends ChangeNotifier {
       if (token == null || token.isEmpty) {
         return const VoiceInputResult(error: '语音转写需要先配置访问凭证');
       }
-      return VoiceInputResult(
-        text: await _backend().transcribeAudio(filePath: path, token: token),
+      final backend = _backend();
+      final characterId = _characterId();
+      final grant = await _presenceGrant();
+      if (grant == null || grant.charId != characterId || grant.isExpired) {
+        throw const BackendException('session_not_found');
+      }
+      final text = await backend.transcribeAudio(
+        filePath: path, token: token, sessionId: grant.sessionId,
       );
+      if (_token() != token || _characterId() != characterId || !identical(_backend(), backend)) {
+        throw const BackendException('session_scope_stale');
+      }
+      return VoiceInputResult(text: text);
     } on BackendException catch (e) {
       return VoiceInputResult(error: e.message);
     } catch (_) {

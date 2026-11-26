@@ -321,9 +321,10 @@ void main() {
         'audio_perception_id': 'receipt',
       });
       expect(
-        await backend.transcribeAudio(filePath: file.path, token: 'tok-1'),
+        await backend.transcribeAudio(filePath: file.path, token: 'tok-1', sessionId: 'sess-a'),
         'hello',
       );
+      expect(fakeClient.lastRequestHeaders['X-Presence-Session'], 'sess-a');
       fakeClient.responseBody = jsonEncode({'reply': 'ok'});
       await backend.sendChat('hello', token: 'tok-1');
       expect(
@@ -341,7 +342,7 @@ void main() {
         'text': 'hello',
         'audio_perception_id': 'receipt',
       });
-      await backend.transcribeAudio(filePath: file.path, token: 'tok-1');
+      await backend.transcribeAudio(filePath: file.path, token: 'tok-1', sessionId: 'sess-a');
       fakeClient.responseBody = jsonEncode({'reply': 'ok'});
       await backend.sendChat('edited', token: 'tok-1');
       expect(
