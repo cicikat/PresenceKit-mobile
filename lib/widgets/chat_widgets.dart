@@ -262,7 +262,7 @@ class MetaLine extends StatelessWidget {
   }
 }
 
-enum ChatBubbleAction { copy, selectAll, reply, cancelSend }
+enum ChatBubbleAction { copy, selectAll, reply, cancelSend, deleteRound }
 
 /// 长按气泡弹出的复制/全选/回复菜单；回复仅对角色气泡传 [showReply]=true。
 Future<ChatBubbleAction?> showChatBubbleMenu({
@@ -270,6 +270,7 @@ Future<ChatBubbleAction?> showChatBubbleMenu({
   required Offset position,
   required bool showReply,
   bool showCancelSend = false,
+  bool showDeleteRound = false,
 }) {
   FocusManager.instance.primaryFocus?.unfocus();
   final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -281,6 +282,11 @@ Future<ChatBubbleAction?> showChatBubbleMenu({
       Offset.zero & overlay.size,
     ),
     items: [
+      if (showDeleteRound)
+        PopupMenuItem(
+          value: ChatBubbleAction.deleteRound,
+          child: Text(context.l10n.chatDeleteRound),
+        ),
       if (showCancelSend)
         PopupMenuItem(
           value: ChatBubbleAction.cancelSend,
@@ -530,6 +536,7 @@ class HimMessage extends StatefulWidget {
     this.onRevealStarted,
     this.onRevealSkipped,
     this.onReply,
+    this.onDeleteRound,
     this.quotedText,
     this.quotedAuthor,
     this.showDateDivider = false,
@@ -554,6 +561,7 @@ class HimMessage extends StatefulWidget {
 
   /// 长按菜单「回复」;仅角色气泡传入,气泡分段场景下引用目标是这一段本身。
   final VoidCallback? onReply;
+  final VoidCallback? onDeleteRound;
   final String? quotedText;
   final String? quotedAuthor;
   final bool showDateDivider;
@@ -569,6 +577,7 @@ class _HimMessageState extends State<HimMessage> {
       context: context,
       position: globalPosition,
       showReply: widget.onReply != null,
+      showDeleteRound: widget.onDeleteRound != null,
     );
     if (!mounted || action == null) return;
     switch (action) {
@@ -592,6 +601,9 @@ class _HimMessageState extends State<HimMessage> {
         break;
       case ChatBubbleAction.reply:
         widget.onReply?.call();
+        break;
+      case ChatBubbleAction.deleteRound:
+        widget.onDeleteRound?.call();
         break;
       case ChatBubbleAction.cancelSend:
         // Only outgoing queued bubbles offer this action.
@@ -684,7 +696,8 @@ class _HimMessageState extends State<HimMessage> {
                   if (!letter && !window && !messenger)
                     const SizedBox(height: 4),
                   GestureDetector(
-                    onLongPressStart: widget.sticker == null
+                    onLongPressStart:
+                        widget.sticker == null || widget.onDeleteRound != null
                         ? (details) => unawaited(
                             _handleLongPress(details.globalPosition),
                           )
@@ -931,11 +944,19 @@ class _AnimatedRevealTextState extends State<AnimatedRevealText>
         final cursor = _animate && !_skipped && _controller.value < 1
             ? '▍'
             : '';
-        if (cursor.isEmpty && hasMarkdownSyntax(widget.displayText ?? widget.text)) {
-          final source = widget.displayText != null && inlinePlainText(widget.displayText!) == inlinePlainText(widget.text)
-              ? widget.displayText! : widget.text;
-          return AssistantMarkdown(text:source,style:widget.style,
-            accent:widget.accent ?? Theme.of(context).colorScheme.primary);
+        if (cursor.isEmpty &&
+            hasMarkdownSyntax(widget.displayText ?? widget.text)) {
+          final source =
+              widget.displayText != null &&
+                  inlinePlainText(widget.displayText!) ==
+                      inlinePlainText(widget.text)
+              ? widget.displayText!
+              : widget.text;
+          return AssistantMarkdown(
+            text: source,
+            style: widget.style,
+            accent: widget.accent ?? Theme.of(context).colorScheme.primary,
+          );
         }
         final span = inlineDisplaySpan(
           text: widget.text,
@@ -1206,6 +1227,7 @@ class YouMessage extends StatefulWidget {
     this.onDeliveryDetails,
     this.onRetry,
     this.onReply,
+    this.onDeleteRound,
     this.showDateDivider = false,
     this.dateKey,
     this.attachments = const [],
@@ -1229,6 +1251,7 @@ class YouMessage extends StatefulWidget {
   final VoidCallback? onDeliveryDetails;
   final VoidCallback? onRetry;
   final VoidCallback? onReply;
+  final VoidCallback? onDeleteRound;
   final bool showDateDivider;
   final String? dateKey;
   final List<PickedUploadFile> attachments;
@@ -1247,6 +1270,7 @@ class _YouMessageState extends State<YouMessage> {
       context: context,
       position: globalPosition,
       showReply: widget.onReply != null,
+      showDeleteRound: widget.onDeleteRound != null,
       showCancelSend: widget.onCancelSend != null,
     );
     if (!mounted || action == null) return;
@@ -1259,6 +1283,9 @@ class _YouMessageState extends State<YouMessage> {
         break;
       case ChatBubbleAction.reply:
         widget.onReply?.call();
+        break;
+      case ChatBubbleAction.deleteRound:
+        widget.onDeleteRound?.call();
         break;
       case ChatBubbleAction.cancelSend:
         widget.onCancelSend?.call();
@@ -1377,7 +1404,9 @@ class _YouMessageState extends State<YouMessage> {
                   const SizedBox(height: 4),
                 GestureDetector(
                   onLongPressStart:
-                      attachment == null || widget.onCancelSend != null
+                      attachment == null ||
+                          widget.onCancelSend != null ||
+                          widget.onDeleteRound != null
                       ? (details) =>
                             unawaited(_handleLongPress(details.globalPosition))
                       : null,

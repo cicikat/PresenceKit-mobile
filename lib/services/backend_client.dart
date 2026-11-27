@@ -318,6 +318,34 @@ class BackendClient {
     return allowed;
   }
 
+  Future<Map<String, dynamic>> conversationState({
+    required String token,
+    required String sessionId,
+  }) => _request('/conversation/state', token: token, sessionId: sessionId);
+
+  Future<Map<String, dynamic>> conversationAction(
+    String action,
+    String id, {
+    required String token,
+    required String sessionId,
+    Map<String, dynamic>? body,
+  }) {
+    final key = Uri.encodeComponent(id);
+    final path = switch (action) {
+      'stop' => '/conversation/executions/$key/stop',
+      'stop_request' => '/conversation/requests/$key/stop',
+      'delete' => '/conversation/turns/$key/delete',
+      _ => throw ArgumentError.value(action),
+    };
+    return _request(
+      path,
+      method: 'POST',
+      token: token,
+      sessionId: sessionId,
+      body: body ?? {},
+    );
+  }
+
   Future<Map<String, dynamic>> _request(
     String path, {
     required String token,

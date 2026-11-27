@@ -1,4 +1,10 @@
 {
+  "chatDeleteRound": "Delete this round",
+  "chatDeleteRoundHint": "Delete this question and answer on all devices. You can restore it on desktop later.",
+  "chatControlCancel": "Cancel",
+  "chatControlFailed": "Could not complete this. Try again shortly. Stop the current reply first if needed.",
+  "chatStopGeneration": "Stop generating",
+
   "phoneAmbientTitle":"Phone environment and proactive activity",
   "phoneAmbientHint":"Off by default, separate from uploads and Usage Access. Reports device changes only; DND, speech budgets and cooldown still apply.",
   "phoneAmbientReady":"Active; only sustained changes may lead to a conversation",

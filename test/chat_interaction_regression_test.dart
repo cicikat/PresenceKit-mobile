@@ -35,6 +35,45 @@ Future<Uint8List> picture() async {
 }
 
 void main() {
+  testWidgets('long press deletes one canonical round only when offered', (
+    tester,
+  ) async {
+    var deleted = 0;
+    await tester.pumpWidget(
+      app(
+        Scaffold(
+          body: YouMessage(
+            c: YxPalette.light,
+            time: '12:00',
+            prefs: const YxPrefs(),
+            text: 'fixture round',
+            onDeleteRound: () => deleted++,
+          ),
+        ),
+      ),
+    );
+    await tester.longPress(find.text('fixture round'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete this round'));
+    await tester.pumpAndSettle();
+    expect(deleted, 1);
+    await tester.pumpWidget(
+      app(
+        Scaffold(
+          body: YouMessage(
+            c: YxPalette.light,
+            time: '12:00',
+            prefs: const YxPrefs(),
+            text: 'legacy round',
+          ),
+        ),
+      ),
+    );
+    await tester.longPress(find.text('legacy round'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete this round'), findsNothing);
+  });
+
   testWidgets('delivery state copy and refresh controls stay outside bubbles', (
     tester,
   ) async {

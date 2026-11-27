@@ -98,6 +98,36 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @chatDeleteRound.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除本轮'**
+  String get chatDeleteRound;
+
+  /// No description provided for @chatDeleteRoundHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'将删除这一轮的提问与回答，并同步到其他设备。之后可在电脑端恢复。'**
+  String get chatDeleteRoundHint;
+
+  /// No description provided for @chatControlCancel.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消'**
+  String get chatControlCancel;
+
+  /// No description provided for @chatControlFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时没能完成，请稍后重试。若正在回复，请先停止。'**
+  String get chatControlFailed;
+
+  /// No description provided for @chatStopGeneration.
+  ///
+  /// In zh, this message translates to:
+  /// **'停止生成'**
+  String get chatStopGeneration;
+
   /// No description provided for @phoneAmbientTitle.
   ///
   /// In zh, this message translates to:

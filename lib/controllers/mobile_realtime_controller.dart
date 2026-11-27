@@ -14,12 +14,14 @@ class MobileRealtimeController {
     required this.grant,
     required this.apply,
     required this.isLive,
+    this.controlChanged,
   });
   final BackendClient Function() backend;
   final String? Function() token;
   final Future<PresenceSessionGrant?> Function() grant;
   final void Function(Map<String, dynamic>) apply;
   final bool Function() isLive;
+  final void Function()? controlChanged;
   final String _clientId = mintRequestId();
   MobileRealtimeSocket? _socket;
   Timer? _retry;
@@ -140,6 +142,8 @@ class MobileRealtimeController {
           throw const FormatException('generation');
         } else if (frame['type'] == 'ping') {
           socket.pong(generation);
+        } else if (frame['type'] == 'conversation_changed') {
+          controlChanged?.call();
         } else if (frame['type'] == 'final' && frame['message'] is Map) {
           final message = Map<String, dynamic>.from(frame['message'] as Map);
           if (_accept(message, scope)) {

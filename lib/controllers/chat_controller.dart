@@ -22,6 +22,7 @@ import '../models/chat_history_display.dart';
 import 'chat_session_coordinator.dart';
 import 'mobile_realtime_controller.dart';
 import 'chat_scroll_controller.dart';
+import 'conversation_control.dart';
 
 enum ChatDeliverySource { initialSync, catchUp, live }
 
@@ -106,8 +107,122 @@ class ChatController extends ChangeNotifier {
 
   @override
   void notifyListeners() {
+    bool withdrawn(ChatMessage item) =>
+        (item.turnId != null &&
+            conversationControl.hidden.contains(item.turnId)) ||
+        (item.requestId != null &&
+            conversationControl.hiddenRequests.contains(item.requestId));
+    history.removeWhere(withdrawn);
+    sent.removeWhere(withdrawn);
+    for (final batch in _messageQueue) {
+      batch.removeWhere(withdrawn);
+    }
     scrollController.preserveBeforeLayout();
     super.notifyListeners();
+  }
+
+  bool _controlRereadDates = false;
+  late final ConversationControl conversationControl = ConversationControl(
+    backend: _backend,
+    token: () => _accessToken,
+    grant: () => _requirePresenceGrant(),
+    scopeKey: () =>
+        '${_deliveryOrigin()}|${_deliveryOwner()}|${_deliveryCharId()}|${_session.generation}',
+    changed: (refresh) {
+      if (_session.disposed) return;
+      for (final request in conversationControl.hiddenRequests) {
+        if (_outboxStates.containsKey(request)) _settleSend(requestId: request);
+      }
+      for (final terminal in conversationControl.terminals.where(
+        (row) => row['state'] == 'stopped',
+      )) {
+        final request = terminal['request_id'] as String;
+        if (_acceptedRequestIds.contains(request)) continue;
+        final local = history
+            .followedBy(sent)
+            .where((row) => row.requestId == request)
+            .toList();
+        if (local.isEmpty && !_outboxStates.containsKey(request)) continue;
+        _settleSend(requestId: request);
+        for (final store in [history, sent]) {
+          for (var i = 0; i < store.length; i++) {
+            if (store[i].requestId == request) {
+              store[i] = store[i].copyWith(
+                turnId: terminal['turn_id'] as String?,
+                failed: false,
+                clearUncertain: true,
+              );
+            }
+          }
+        }
+      }
+      notifyListeners();
+      if (refresh) {
+        _controlRereadDates = true;
+        if (_session.historyRead != null) _session.deferHistoryRefresh();
+        unawaited(loadHistory(reconcileLocal: true, backgroundRefresh: true));
+      }
+    },
+  );
+  bool get canStopGeneration =>
+      conversationControl.executions.any(
+        (row) => row['state'] != 'committing',
+      ) ||
+      sending;
+  bool controlBusy = false;
+  Future<void> stopGeneration() async {
+    if (controlBusy) return;
+    controlBusy = true;
+    notifyListeners();
+    try {
+      final active = List<Map<String, dynamic>>.of(
+        conversationControl.executions,
+      );
+      final target = conversationControl.stopTarget;
+      if (target != null) {
+        await conversationControl.action(
+          'stop',
+          target['execution_id'] as String,
+        );
+      } else {
+        final known = active.map((row) => row['request_id']).toSet();
+        final local = _outboxStates.keys
+            .where(
+              (id) =>
+                  _outboxStates[id] == OutboxState.sending &&
+                  !known.contains(id),
+            )
+            .firstOrNull;
+        if (local != null) {
+          await conversationControl.action('stop_request', local);
+        }
+      }
+    } finally {
+      controlBusy = false;
+      if (!_session.disposed) notifyListeners();
+    }
+  }
+
+  Future<void> deleteRound(ChatMessage message) async {
+    final id = message.turnId;
+    if (id == null || controlBusy) return;
+    controlBusy = true;
+    notifyListeners();
+    try {
+      final operation = conversationControl.operations.putIfAbsent(
+        id,
+        mintRequestId,
+      );
+      await conversationControl.action(
+        'delete',
+        id,
+        body: {'operation_id': operation},
+      );
+      if (replyTarget?.turnId == id) replyTarget = null;
+    } finally {
+      controlBusy = false;
+      if (!_session.disposed) notifyListeners();
+    }
   }
 
   final List<ChatMessage> history = [];
@@ -181,11 +296,14 @@ class ChatController extends ChangeNotifier {
     },
     isLive: () => _pollingEnabled && !_session.disposed,
     apply: _applyRealtimeFinal,
+    controlChanged: () =>
+        unawaited(conversationControl.sync().catchError((Object _) {})),
   );
 
   void _applyRealtimeFinal(Map<String, dynamic> message) {
     if (!_pollingEnabled || _session.disposed) return;
     final envelope = PendingMobileEnvelope.fromJson(message);
+    if (conversationControl.hidden.contains(envelope.identity)) return;
     if (envelope.charId != _deliveryCharId() ||
         message['user_id'] != _deliveryOwner()) {
       return;
@@ -328,6 +446,7 @@ class ChatController extends ChangeNotifier {
     if (_accessToken == null) return;
     if (_session.disposed) return;
     _pollingEnabled = true;
+    conversationControl.start();
     if (_session.initialSync != null) return _session.initialSync!;
     if (_session.initialSyncComplete) {
       realtime.start();
@@ -424,6 +543,7 @@ class ChatController extends ChangeNotifier {
   }
 
   void pausePolling() {
+    conversationControl.stop();
     final waiting = _localWaitRequest != null || _session.himTyping;
     _endLocalWait(uncertain: true);
     himTyping = false;
@@ -433,6 +553,7 @@ class ChatController extends ChangeNotifier {
   }
 
   void resumePolling() {
+    conversationControl.start();
     _pollingEnabled = true;
     _cancelReceiveWork();
     realtime.start();
@@ -553,6 +674,8 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> resetForConnectionChange({bool restart = true}) async {
+    conversationControl.stop(reset: true);
+    _controlRereadDates = false;
     _session.beginEpoch();
     for (final stop in _preDispatchStops.values) {
       if (!stop.isCompleted) {
@@ -896,6 +1019,19 @@ class ChatController extends ChangeNotifier {
     required int userId,
     required ChatMessage anchor,
   }) async {
+    if (response.state == 'stopped' || response.state == 'interrupted') {
+      himTyping = false;
+      sent.removeWhere((row) => row.id == anchor.id);
+      await loadHistory(reconcileLocal: true, backgroundRefresh: true);
+      return;
+    }
+    if (response.turnId != null &&
+        conversationControl.hidden.contains(response.turnId)) {
+      sent.removeWhere((row) => row.id == userId || row.id == anchor.id);
+      notifyListeners();
+      return;
+    }
+
     if (response.criticalWritten == false) {
       throw const BackendException(
         'execution_outcome_unknown',
@@ -1554,6 +1690,8 @@ class ChatController extends ChangeNotifier {
     if (loadingHistory || token == null) return;
     final backend = _backend();
     final generation = _session.generation;
+    final rereadLoaded = _controlRereadDates;
+    _controlRereadDates = false;
     final previousSnapshot = List<ChatMessage>.of(history);
     final localSnapshot = List<ChatMessage>.of(sent);
     final silent = backgroundRefresh && historyLoaded;
@@ -1651,6 +1789,28 @@ class ChatController extends ChangeNotifier {
         );
       }
 
+      if (rereadLoaded) {
+        for (final date
+            in _loadedDates
+                .where((date) => !loaded.contains(date) && dates.contains(date))
+                .toList()) {
+          final day = await _withLiveGrant(
+            scope: scope,
+            generation: generation,
+            call: (grant) => backend.loadChatLogDay(
+              date,
+              token: token,
+              sessionId: grant.sessionId,
+              characterId: _deliveryCharId(),
+            ),
+          );
+          if (_session.isStale(generation)) return;
+          messages = [..._messagesFromDay(day), ...messages];
+          loaded.insert(0, date);
+        }
+        loaded.sort();
+        messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      }
       final older = history
           .where(
             (m) =>

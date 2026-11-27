@@ -48,6 +48,17 @@ class _Backend extends BackendClient {
     : super(baseUrl: 'http://localhost:8080', settingsStore: superStore);
   bool offline = true;
   ChatLogDay? day;
+  final Map<String, ChatLogDay> days = {};
+  Map<String, dynamic> controlState = {
+    'revision': 1,
+    'executions': [],
+    'visibility': [],
+  };
+  @override
+  Future<Map<String, dynamic>> conversationState({
+    required String token,
+    required String sessionId,
+  }) async => controlState;
   int activations = 0;
   int historyReads = 0;
   int uploads = 0;
@@ -95,7 +106,11 @@ class _Backend extends BackendClient {
     }
     if (offline) throw const BackendException('offline');
     return ChatLogDates.fromJson({
-      'dates': day == null ? [] : [day!.date],
+      'dates': days.isNotEmpty
+          ? (days.keys.toList()..sort((a, b) => b.compareTo(a)))
+          : day == null
+          ? []
+          : [day!.date],
     });
   }
 
@@ -107,7 +122,7 @@ class _Backend extends BackendClient {
     String? characterId,
   }) async {
     await historyGate?.future;
-    return day!;
+    return days[date] ?? day!;
   }
 
   @override
@@ -279,6 +294,145 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
   }
+
+  test(
+    'deleted remote round removes an unknown request-only local bubble',
+    () async {
+      backend.offline = false;
+      controller.sent.add(
+        ChatMessage(
+          role: 'you',
+          text: 'already deleted',
+          time: '12:00',
+          requestId: 'deleted_request',
+          uncertainSince: DateTime.now(),
+        ),
+      );
+      controller.sent.add(
+        ChatMessage(
+          role: 'you',
+          text: 'other question',
+          time: '12:01',
+          requestId: 'other_request',
+          uncertainSince: DateTime.now(),
+        ),
+      );
+      backend.controlState = {
+        'revision': 1,
+        'executions': [],
+        'visibility': [],
+        'withdrawn_requests': ['deleted_request'],
+      };
+      controller.conversationControl.start();
+      await controller.conversationControl.sync();
+      await settle();
+      expect(controller.sent.map((row) => row.text), ['other question']);
+      expect(backend.chats, 0);
+    },
+  );
+
+  test(
+    'stopped terminal reconciles an unknown local request without replay',
+    () async {
+      backend.offline = false;
+      controller.sent.add(
+        ChatMessage(
+          role: 'you',
+          text: 'fixture question',
+          time: '12:00',
+          requestId: 'stopped_request',
+          uncertainSince: DateTime.now(),
+        ),
+      );
+      backend.controlState = {
+        'revision': 1,
+        'executions': [],
+        'visibility': [],
+        'recent_terminal': [
+          {
+            'request_id': 'stopped_request',
+            'state': 'stopped',
+            'turn_id': 'stopped_turn',
+          },
+        ],
+      };
+      controller.conversationControl.start();
+      await controller.conversationControl.sync();
+      await settle();
+      expect(controller.sent.single.uncertain, isFalse);
+      expect(controller.sent.single.turnId, 'stopped_turn');
+      expect(backend.chats, 0);
+    },
+  );
+
+  test(
+    'restoring on another device refreshes an already loaded older day',
+    () async {
+      backend.offline = false;
+      final recent = List.generate(
+        10,
+        (i) => {
+          'time': '12:00',
+          'user': 'question $i',
+          'assistant': 'answer $i',
+          'turn_id': 'recent_$i',
+        },
+      );
+      backend.days['2026-11-27'] = ChatLogDay.fromJson({
+        'date': '2026-11-27',
+        'entries': recent,
+      });
+      backend.days['2026-11-26'] = ChatLogDay.fromJson({
+        'date': '2026-11-26',
+        'entries': [
+          {
+            'time': '10:00',
+            'user': 'old kept',
+            'assistant': 'kept answer',
+            'turn_id': 'kept',
+          },
+        ],
+      });
+      controller.conversationControl.start();
+      await controller.conversationControl.sync();
+      await controller.loadHistory();
+      await controller.loadOlderHistory();
+      expect(controller.history.any((row) => row.turnId == 'kept'), isTrue);
+      backend.days['2026-11-26'] = ChatLogDay.fromJson({
+        'date': '2026-11-26',
+        'entries': [
+          {
+            'time': '09:00',
+            'user': 'restored question',
+            'assistant': 'restored answer',
+            'turn_id': 'restored',
+          },
+          {
+            'time': '10:00',
+            'user': 'old kept',
+            'assistant': 'kept answer',
+            'turn_id': 'kept',
+          },
+        ],
+      });
+      backend.controlState = {
+        'revision': 2,
+        'executions': [],
+        'visibility': [
+          {'turn_id': 'restored', 'hidden': 0, 'revision': 2},
+        ],
+      };
+      await controller.conversationControl.sync();
+      await settle();
+      expect(
+        controller.history
+            .where((row) => row.role == 'him' && row.turnId == 'restored')
+            .map((row) => row.text),
+        ['restored answer'],
+      );
+      expect(controller.history.any((row) => row.turnId == 'kept'), isTrue);
+    },
+  );
 
   test(
     '59: restored unknown never flashes before or after delayed history',

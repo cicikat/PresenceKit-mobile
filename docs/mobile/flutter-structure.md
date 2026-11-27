@@ -313,3 +313,18 @@ LifeRecordsController 的保存/连接/手动同步在 busy 期间合并为后�
 # 330 自动记账
 
 生活记录页组合 `FinanceController` 与独立 `FinancePage`。服务门面 `finance_service.dart` 使用专用Channel，原生拥有持久队列与网络；页面生命周期刷新真实系统授权，控制器丢弃旧owner/origin结果，编辑器固定开启时的作用域。UI使用既有YxPalette/serif/Theme/卡片与中英文l10n，不在AppShell新增领域状态。参见 [实现和验收](auto-bookkeeping-330.md)。
+
+
+## 2026-11-27：单轮删除与服务端停止
+
+Reality 聊天新增 Session-scoped `/conversation/state`、精确 turn delete 与 execution/request stop；WS `conversation_changed` 只做无正文 revision 提示。前台 2s state 补校准独立于原 ACK/seq/history_index，删除按 canonical turn_id 屏蔽迟到 history/WS/HTTP，恢复重读已加载旧日页。停止只保留安全已见前缀为显示记录，不写普通记忆，不保证上游停止计费或撤回已完成工具动作。
+
+桌面 `shared/api/conversation.ts` → allowlisted Tauri `conversation_request`；右键确认删除，输入区停止与独立删除记录列表/详情/恢复/repair。`chat.recovery` 为 desktop profile 专用，手机 profile 不含。手机 `ConversationControl` → BackendClient，长按确认删除、输入区停止，仍 final-only WS，无恢复 API/UI。权限、归档、失败与 CAS 状态以后端为真；没有新增本地能力开关。
+
+观测：后端 executions/state/mutations 与 desktop archive。自动化覆盖 scoped 请求、真实取消、迟到/重连过滤、长按菜单；desktop 隔离组件浏览器验收不等于 native/双设备/真实模型验收。未安装新包、未生产部署。旧无可靠来源的 facts/identity 不做猜测批量删除，恢复向量待既有 missing-projection 修复，Dossier 源恢复后需重算。
+
+
+验收补记：control HTTP + recovery upload + outbox deadline + interaction + realtime 共 92 passed；analyze no issues；`flutter build apk --debug --flavor dev --no-pub` 成功（仅构建，未安装）。未选 flavor 的 assembleDebug 曾触发两个 flavor 同写 l10n 的 Gradle 依赖检查，改用仓内既定 dev 命令通过，未改 Gradle 签名/发布配置。旧日恢复回归撤销重读后会在可见 restored answer 断言真实失败，还原后通过。停止状态也可在重开时结束旧未知请求；withdrawn_requests 清理无 turn_id 的本机副本，但不补发。实体手机/后台与生产服务仍未验收。
+
+
+单次停止精确选当前 running（其次 stop_requested/queued）一个 execution，保留后续排队输入；未准入只针对本机当前 request 保存停止意图，不把该按钮做成清空队列。

@@ -9,6 +9,23 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get chatDeleteRound => 'Delete this round';
+
+  @override
+  String get chatDeleteRoundHint =>
+      'Delete this question and answer on all devices. You can restore it on desktop later.';
+
+  @override
+  String get chatControlCancel => 'Cancel';
+
+  @override
+  String get chatControlFailed =>
+      'Could not complete this. Try again shortly. Stop the current reply first if needed.';
+
+  @override
+  String get chatStopGeneration => 'Stop generating';
+
+  @override
   String get phoneAmbientTitle => 'Phone environment and proactive activity';
 
   @override

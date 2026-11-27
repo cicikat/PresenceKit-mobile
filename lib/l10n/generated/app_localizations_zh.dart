@@ -9,6 +9,21 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get chatDeleteRound => '删除本轮';
+
+  @override
+  String get chatDeleteRoundHint => '将删除这一轮的提问与回答，并同步到其他设备。之后可在电脑端恢复。';
+
+  @override
+  String get chatControlCancel => '取消';
+
+  @override
+  String get chatControlFailed => '暂时没能完成，请稍后重试。若正在回复，请先停止。';
+
+  @override
+  String get chatStopGeneration => '停止生成';
+
+  @override
   String get phoneAmbientTitle => '手机环境触发主动行为';
 
   @override

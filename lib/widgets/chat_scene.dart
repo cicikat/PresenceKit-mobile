@@ -87,6 +87,41 @@ class ChatScene extends StatelessWidget {
 
   Widget _build(BuildContext context) {
     final l10n = context.l10n;
+    Future<void> controlAction(Future<void> Function() action) async {
+      try {
+        await action();
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.chatControlFailed)));
+        }
+      }
+    }
+
+    Future<void> deleteRound(ChatMessage message) async {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.chatDeleteRound),
+          content: Text(l10n.chatDeleteRoundHint),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.chatControlCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.chatDeleteRound),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true && context.mounted) {
+        await controlAction(() => controller.deleteRound(message));
+      }
+    }
+
     String? deliveryLabel(ChatMessage message) =>
         switch (controller.deliveryState(message)) {
           OutboxState.expired => l10n.chatQueueExpired,
@@ -339,12 +374,17 @@ class ChatScene extends StatelessWidget {
                         m.artifacts.isNotEmpty &&
                         m.text.isEmpty &&
                         m.sticker == null) {
-                      return ArtifactMessage(
-                        key: ValueKey('chat-${m.id}'),
-                        c: c,
-                        artifacts: m.artifacts,
-                        fetch: controller.fetchArtifactBytes,
-                        bubbleOpacity: prefs.chatBubbleOpacity,
+                      return GestureDetector(
+                        onLongPress: m.turnId == null
+                            ? null
+                            : () => deleteRound(m),
+                        child: ArtifactMessage(
+                          key: ValueKey('chat-${m.id}'),
+                          c: c,
+                          artifacts: m.artifacts,
+                          fetch: controller.fetchArtifactBytes,
+                          bubbleOpacity: prefs.chatBubbleOpacity,
+                        ),
                       );
                     }
                     final preceding = historyMessages
@@ -423,6 +463,9 @@ class ChatScene extends StatelessWidget {
                                       ? () => controller.cancelQueuedMessage(m)
                                       : null,
                                   onReply: () => controller.setReplyTarget(m),
+                                  onDeleteRound: m.turnId == null
+                                      ? null
+                                      : () => deleteRound(m),
                                   showDateDivider:
                                       !messenger && showDateDivider,
                                   dateKey: m.dateKey,
@@ -442,6 +485,9 @@ class ChatScene extends StatelessWidget {
                                       !messenger && showDateDivider,
                                   dateKey: m.dateKey,
                                   onReply: () => controller.setReplyTarget(m),
+                                  onDeleteRound: m.turnId == null
+                                      ? null
+                                      : () => deleteRound(m),
                                   sticker: m.sticker,
                                   animate: m.animate,
                                   onRevealStarted: m.animate
@@ -468,6 +514,17 @@ class ChatScene extends StatelessWidget {
                       : profileDisplayName,
                 ),
                 onCancel: controller.clearReplyTarget,
+              ),
+            if (controller.canStopGeneration)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: controller.controlBusy
+                      ? null
+                      : () => controlAction(controller.stopGeneration),
+                  icon: const Icon(Icons.stop_circle_outlined, size: 18),
+                  label: Text(l10n.chatStopGeneration),
+                ),
               ),
             Composer(
               key: const ValueKey('daily-composer'),

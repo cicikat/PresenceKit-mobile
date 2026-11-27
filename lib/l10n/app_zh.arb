@@ -1,4 +1,10 @@
 {
+  "chatDeleteRound": "删除本轮",
+  "chatDeleteRoundHint": "将删除这一轮的提问与回答，并同步到其他设备。之后可在电脑端恢复。",
+  "chatControlCancel": "取消",
+  "chatControlFailed": "暂时没能完成，请稍后重试。若正在回复，请先停止。",
+  "chatStopGeneration": "停止生成",
+
   "phoneAmbientTitle":"手机环境触发主动行为",
   "phoneAmbientHint":"默认关闭，与环境上传和使用情况权限独立。只报告设备变化；仍会遵守免打扰、发言预算和冷却。",
   "phoneAmbientReady":"已生效，仍需持续稳定的变化才会考虑主动交流",
