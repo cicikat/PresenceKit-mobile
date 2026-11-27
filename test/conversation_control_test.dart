@@ -49,6 +49,7 @@ void main() {
       final seen = <String>[];
       var revision = 1;
       var hidden = false;
+      final completedOperations = <String>{};
       const grant = PresenceSessionGrant(
         sessionId: 'session_fixture',
         charId: 'character_fixture',
@@ -77,10 +78,15 @@ void main() {
         } else {
           final body =
               jsonDecode(await utf8.decoder.bind(request).join()) as Map;
-          expect(body['operation_id'], 'operation_fixture');
-          hidden = true;
-          revision++;
-          request.response.write(jsonEncode({'state': 'completed'}));
+          final operation = body['operation_id'] as String;
+          final fresh = completedOperations.add(operation);
+          if (fresh) {
+            hidden = true;
+            revision++;
+          }
+          request.response.write(
+            jsonEncode({'state': fresh ? 'completed' : 'restored'}),
+          );
         }
         await request.response.close();
       });
@@ -104,6 +110,7 @@ void main() {
         control.start();
         await control.sync();
         expect(control.hidden, isEmpty);
+        control.operations['turn_fixture'] = 'operation_fixture';
         await control.action(
           'delete',
           'turn_fixture',
@@ -114,6 +121,19 @@ void main() {
         revision++;
         await control.sync();
         expect(control.hidden, isEmpty);
+        // A restored round must accept a new delete in this same app session;
+        // reusing the old retry identity returns its prior restored outcome.
+        final nextOperation = control.operations.putIfAbsent(
+          'turn_fixture',
+          () => 'operation_second',
+        );
+        await control.action(
+          'delete',
+          'turn_fixture',
+          body: {'operation_id': nextOperation},
+        );
+        expect(control.hidden, {'turn_fixture'});
+        expect(completedOperations, {'operation_fixture', 'operation_second'});
         expect(refreshes, greaterThanOrEqualTo(2));
         expect(seen, contains('POST /conversation/turns/turn_fixture/delete'));
         expect(seen.any((path) => path.contains('/ack')), isFalse);

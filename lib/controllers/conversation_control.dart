@@ -126,7 +126,10 @@ class ConversationControl {
     if (action == 'delete' && result['state'] != 'completed') {
       throw StateError('repair_pending');
     }
-    if (action == 'delete') hidden.add(id);
+    if (action == 'delete') {
+      hidden.add(id);
+      operations.remove(id);
+    }
     changed(true);
     await _reading;
     await sync();
