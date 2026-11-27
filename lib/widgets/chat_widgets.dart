@@ -2153,22 +2153,25 @@ class _ComposerState extends State<Composer> {
                         ),
                       );
                     }
-                    return GestureDetector(
-                      onLongPressStart: (_) => unawaited(_handleRecordStart()),
-                      onLongPressEnd: (_) => unawaited(_handleRecordEnd()),
-                      onLongPressCancel: _handleRecordCancel,
-                      child: YxIconButton(
-                        c: widget.c,
-                        borderless: reference,
-                        icon: _recording
-                            ? Icons.mic_rounded
-                            : Icons.mic_none_rounded,
-                        size: 38,
-                        onPressed: () {},
-                        onDark: _recording,
-                        tooltip: _recording
-                            ? l10n.releaseToSendTooltip
-                            : l10n.holdToTalkTooltip,
+                    return Tooltip(
+                      message: _recording
+                          ? l10n.releaseToSendTooltip
+                          : l10n.holdToTalkTooltip,
+                      child: GestureDetector(
+                        onLongPressStart: (_) =>
+                            unawaited(_handleRecordStart()),
+                        onLongPressEnd: (_) => unawaited(_handleRecordEnd()),
+                        onLongPressCancel: _handleRecordCancel,
+                        child: YxIconButton(
+                          c: widget.c,
+                          borderless: reference,
+                          icon: _recording
+                              ? Icons.mic_rounded
+                              : Icons.mic_none_rounded,
+                          size: 38,
+                          onPressed: () {},
+                          onDark: _recording,
+                        ),
                       ),
                     );
                   }

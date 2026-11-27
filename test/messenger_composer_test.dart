@@ -9,6 +9,49 @@ import 'package:presencekit_mobile/widgets/conversation_presentation.dart';
 
 void main() {
   testWidgets(
+    'classic microphone long press starts recording and release transcribes',
+    (tester) async {
+      var starts = 0, stops = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Composer(
+              c: YxPalette.light,
+              bubbleOpacity: .94,
+              fontSize: 16,
+              sending: false,
+              onOpenAttach: () {},
+              onSend: (_) async => true,
+              onVoiceRecordStart: () async {
+                starts++;
+                return null;
+              },
+              onVoiceRecordStop: () async {
+                stops++;
+                return const VoiceInputResult(text: 'native sample');
+              },
+              onVoiceRecordCancel: () {},
+            ),
+          ),
+        ),
+      );
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byIcon(Icons.mic_none_rounded)),
+      );
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(starts, 1);
+      expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
+      await gesture.up();
+      await tester.pump();
+      expect(stops, 1);
+      expect(find.text('native sample'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'messenger emoji edits draft, attachment opens, recording and send stay wired',
     (tester) async {
       var attached = 0;
